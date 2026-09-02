@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Sekbid — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .agenda-admin-wrap { max-width: 720px; margin: 0 auto; padding: 18px; }
+        .agenda-toolbar { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+        .agenda-toolbar select { flex:1; min-width:160px; }
+        .agenda-form { background:var(--white); border:3px solid var(--ink); border-radius:18px; padding:16px; box-shadow:4px 4px 0 var(--ink); margin-bottom:18px; display:none; }
+        .agenda-form.open { display:block; }
+        .agenda-grid { display:flex; flex-direction:column; gap:12px; }
+        .agenda-card { background:var(--white); border:2.5px solid var(--ink); border-radius:14px; padding:12px 14px; box-shadow:3px 3px 0 var(--ink); }
+        .agenda-card h4 { font-size:0.95rem; font-weight:900; }
+        .agenda-meta { font-size:0.72rem; color:var(--gray); display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 8px; }
+        .agenda-status { padding:2px 8px; border-radius:999px; font-size:0.68rem; font-weight:800; border:1.5px solid var(--ink); }
+        .agenda-status.rencana { background:var(--yellow); }
+        .agenda-status.proses { background:#ffd6a5; }
+        .agenda-status.selesai { background:#d6f5d6; }
+        .agenda-status.batal { background:#ffe9e9; }
+        .agenda-fotos { display:flex; gap:8px; overflow-x:auto; padding:4px 0; }
+        .agenda-fotos img { width:90px; height:90px; object-fit:cover; border:2px solid var(--ink); border-radius:10px; }
+        .agenda-actions { display:flex; gap:6px; margin-top:8px; }
+    </style>
+</head>
+<body>
+    <header class="top-nav">
+        <a href="../index.html#/" class="brand">
+            <div class="logo-box"><img data-foto="logo1" alt="Logo"></div>
+            <div class="brand-text"><h2>AGENDA</h2><p>Kelola per Sekbid</p></div>
+        </a>
+        <div class="top-nav-extra">
+            <a href="../index.html#/sekbid" class="btn btn-white btn-sm"><i class="fa-solid fa-arrow-left"></i> Sekbid</a>
+            <div id="areaAuth"></div>
+        </div>
+    </header>
+
+    <div class="agenda-admin-wrap">
+        <div class="agenda-toolbar">
+            <select id="pilihSekbid" class="admin-input" style="max-width:280px"></select>
+            <button class="btn btn-red" id="btnTambahAgenda"><i class="fa-solid fa-plus"></i> Tambah Agenda</button>
+        </div>
+
+        <div class="agenda-form" id="agendaForm">
+            <div class="field"><label>Judul</label><input type="text" id="agendaJudul" class="admin-input" placeholder="Judul agenda" maxlength="80"></div>
+            <div class="field"><label>Deskripsi</label><textarea id="agendaDeskripsi" class="admin-input admin-textarea" placeholder="Deskripsi singkat" maxlength="500" rows="3"></textarea></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+                <div class="field"><label>Tanggal</label><input type="date" id="agendaTanggal" class="admin-input"></div>
+                <div class="field"><label>Lokasi</label><input type="text" id="agendaLokasi" class="admin-input" placeholder="Aula / Lapangan" maxlength="80"></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+                <div class="field"><label>Status</label><select id="agendaStatus" class="admin-input"><option value="rencana">Rencana</option><option value="proses">Proses</option><option value="selesai" selected>Selesai</option><option value="batal">Batal</option></select></div>
+                <div class="field"><label>Urutan</label><input type="number" id="agendaOrder" class="admin-input" value="99" min="1" max="999"></div>
+            </div>
+            <div class="field"><label>Foto (opsional, bisa banyak)</label><input type="file" id="agendaFotos" accept="image/*" multiple></div>
+            <div id="agendaPreview" class="agenda-fotos" style="display:none"></div>
+            <div class="form-actions-row" style="margin-top:12px">
+                <button class="btn btn-white" id="btnBatalAgenda">Batal</button>
+                <button class="btn btn-red" id="btnSimpanAgenda"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+            </div>
+            <input type="hidden" id="agendaId">
+        </div>
+
+        <div id="agendaList"><div class="loading-block"><div class="spinner"></div>Memuat agenda...</div></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js"></script>
+    <script src="../js/app.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/show-popup.js"></script>
+    <script src="../js/osis-auth.js"></script>
+    <script src="../js/agenda.js"></script>
+</body>
+</html>

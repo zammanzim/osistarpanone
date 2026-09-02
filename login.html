@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masuk — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="login-body">
+
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="login-logo">
+                <img data-foto="logo1" alt="Logo OSIS">
+            </div>
+            <h1>Masuk</h1>
+            <p class="login-sub">Login ke web OSIS</p>
+
+            <div class="slider-window">
+                <div class="slider-content" id="mainSlider">
+
+                    <!-- STEP 1: form guest (default) -->
+                    <div class="slide-step">
+                        <label class="lbl">Nama Panggilan</label>
+                        <input type="text" id="guestNickname" class="admin-input" placeholder="Nama" maxlength="30" autocomplete="off">
+                        <button class="btn btn-red btn-block" onclick="Login.masukGuest()"><i class="fa-solid fa-arrow-right"></i> Masuk</button>
+                        <div class="login-or"><span>atau</span></div>
+                        <a class="login-back login-center" onclick="Login.pilih('osis')"><i class="fa-solid fa-id-card"></i> Masuk sebagai OSIS</a>
+                    </div>
+
+                    <!-- STEP 2: osis -->
+                    <div class="slide-step">
+                        <label class="lbl">Username</label>
+                        <input type="text" id="osisUsername" class="admin-input" placeholder="Username akun OSIS" autocomplete="off">
+                        <label class="lbl">Password</label>
+                        <input type="password" id="osisPassword" class="admin-input" placeholder="Password" autocomplete="off">
+                        <button class="btn btn-red btn-block" onclick="Login.masukOsis()"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>
+                        <a class="login-back login-center" onclick="Login.pilih('')"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="login-error" id="loginError"></div>
+
+            <a class="login-back login-center" href="index#/"><i class="fa-solid fa-house"></i> Kembali ke beranda</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/db.js" defer></script>
+    <script src="js/app.js" defer></script>
+    <script src="js/osis-auth.js" defer></script>
+    <script src="js/login.js" defer></script>
+</body>
+</html>
