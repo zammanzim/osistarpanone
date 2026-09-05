@@ -1,467 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OSIS TARPAN ONE — SMK Taruna Harapan 1 Cipatat</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-</head>
-<body>
-
-    <!-- ===== TOP NAV ===== -->
-    <header class="top-nav">
-        <a href="#/" class="brand">
-            <div class="logo-box">
-                <img data-foto="logo1" alt="Logo OSIS">
-            </div>
-            <div class="brand-text">
-                <h2>OSIS TARPAN ONE</h2>
-                <p>SMK Taruna Harapan 1 Cipatat</p>
-            </div>
-        </a>
-        <div class="top-nav-extra">
-            <label class="edit-toggle-wrap" id="editToggleWrap" style="display:none">
-                <input type="checkbox" id="editToggle" onchange="SiteEdit.toggle(this.checked)" autocomplete="off">
-                <span class="edit-slider"></span>
-                <span>Edit</span>
-            </label>
-            <button class="visitor-trigger" id="visitorTrigger" onclick="Visitor.bukaPopup()" title="Statistik pengunjung">
-                <i class="fa-solid fa-eye"></i>
-                <span id="headerVisitorCount">-</span>
-            </button>
-            <div id="areaAuth"></div>
-            <div class="header-more-wrap" id="headerMoreWrap" style="display:none">
-                <button class="icon-btn" id="headerMoreBtn" onclick="HeaderMore.toggle()" title="Menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                <div class="header-more-menu" id="headerMoreMenu">
-                    <label class="header-more-item" id="headerMoreEditRow" style="display:none">
-                        <span>Edit mode</span>
-                        <label class="edit-toggle-wrap small"><input type="checkbox" id="headerMoreEditToggle" onchange="HeaderMore.onEditToggle(this.checked)" autocomplete="off"><span class="edit-slider"></span></label>
-                    </label>
-                    <button class="header-more-item danger" id="headerMoreLogout" onclick="HeaderMore.logout()" style="display:none"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar</button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- ============================================================
-         VIEW: HOME
-         ============================================================ -->
-    <section class="view" data-view="home">
-
-        <!-- HERO -->
-        <section class="hero">
-            <div class="hero-inner">
-                <div class="hero-content">
-                    <span class="hero-badge" data-edit-key="hero_badge"><i class="fa-solid fa-bolt"></i> Est. 2010 — Satu Keluarga</span>
-                    <h1>
-                        <span data-edit-key="hero_line1">OSIS</span><br>
-                        <span class="outline" data-edit-key="hero_line2">TARPAN</span><br>
-                        <span class="red" data-edit-key="hero_line3">ONE</span>
-                    </h1>
-                    <p class="hero-tagline" data-edit-key="hero_tagline">Organisasi kepemimpinan siswa yang berintegritas, beretika mulia, dan berdampak nyata untuk sekolah.</p>
-                    <div class="hero-cta">
-                        <a href="#/sekbid" class="btn btn-red">Lihat Sekbid →</a>
-                        <a href="#/aspirasi" class="btn btn-white">Sampaikan Aspirasi</a>
-                    </div>
-                    <div class="hero-chip">
-                        <span class="chip"><b id="chipTahun">2010–2027</b>&nbsp;Jejak Angkatan</span>
-                        <span class="chip"><b id="chipSekbid">15</b>&nbsp;Seksi Bidang</span>
-                        <span class="chip"><b id="chipVisitor">-</b>&nbsp;Pengunjung</span>
-                    </div>
-                </div>
-                <div class="hero-logo">
-                    <img data-foto="logo1" alt="Logo OSIS Tarpan One">
-                </div>
-            </div>
-            <div class="hero-stripes"></div>
-        </section>
-
-        <!-- TICKER -->
-        <div class="ticker" aria-hidden="true">
-            <div class="ticker-track" id="tickerTrack">
-                <span><i class="fa-solid fa-bolt"></i> GENERASI EMAS PENUH AKSI <i class="fa-solid fa-bolt"></i></span>
-                <span class="red">MAKRAB OSIS 2026</span>
-                <span class="yellow">PESAK — PENTAS SENI ANTAR KELAS</span>
-                <span>TAKJILIN & KEMAH TANGKAS 1.0</span>
-                <span class="red">BERSATU KITA TEGUH <i class="fa-solid fa-hand-fist"></i></span>
-            </div>
-        </div>
-
-        <!-- VISI MISI -->
-        <section class="visimisi">
-            <div class="wrap">
-                <div class="sec-head">
-                    <div>
-                        <div class="sec-tag">Identitas Kami</div>
-                        <h2 class="sec-title">Visi & <span class="red">Misi</span></h2>
-                    </div>
-                </div>
-
-                <div class="vm-grid">
-                    <div class="vm-card visi">
-                        <h3><i class="fa-solid fa-shield-halved"></i> Visi</h3>
-                        <p data-edit-key="visi_text">Menjadikan OSIS sebagai laboratorium kepemimpinan siswa yang berintegritas, beretika mulia, dan berdampak positif bagi sekolah dan masyarakat.</p>
-                    </div>
-
-                    <div class="vm-card">
-                        <h3><i class="fa-solid fa-bullseye"></i> Misi</h3>
-                        <div class="misi-item">
-                            <div class="misi-num">1</div>
-                            <div>
-                                <h4 data-edit-key="misi_1_title">Pembinaan Kepemimpinan</h4>
-                                <p data-edit-key="misi_1_desc">Menjadikan OSIS sebagai sarana pembinaan kepemimpinan siswa yang berlandaskan integritas dan etika mulia.</p>
-                            </div>
-                        </div>
-                        <div class="misi-item">
-                            <div class="misi-num">2</div>
-                            <div>
-                                <h4 data-edit-key="misi_2_title">Tanggung Jawab & Disiplin</h4>
-                                <p data-edit-key="misi_2_desc">Menumbuhkan sikap tanggung jawab, kedisiplinan, dan keteladanan dalam setiap peran dan aktivitas OSIS.</p>
-                            </div>
-                        </div>
-                        <div class="misi-item">
-                            <div class="misi-num">3</div>
-                            <div>
-                                <h4 data-edit-key="misi_3_title">Tata Kelola Adaptif</h4>
-                                <p data-edit-key="misi_3_desc">Mewujudkan tata kelola OSIS yang adaptif, tertib administrasi, dan menjunjung keterbukaan di setiap prosesnya.</p>
-                            </div>
-                        </div>
-                        <div class="misi-item">
-                            <div class="misi-num">4</div>
-                            <div>
-                                <h4 data-edit-key="misi_4_title">Program Kerja Inovatif</h4>
-                                <p data-edit-key="misi_4_desc">Menghadirkan program kerja yang inovatif, solutif, dan berdampak nyata bagi warga sekolah serta masyarakat.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- PEMBINA -->
-        <section class="pembina-section">
-            <div class="wrap">
-                <div class="sec-head">
-                    <div>
-                        <div class="sec-tag">Pembina</div>
-                        <h2 class="sec-title">Sang <span class="red">Pengayom</span></h2>
-                    </div>
-                </div>
-
-                <div class="pembina-card">
-                    <div class="pembina-photo">
-                        <img data-foto="pembina" alt="Pembina OSIS">
-                    </div>
-                    <div class="pembina-info">
-                        <span class="pembina-badge">PEMBINA OSIS</span>
-                        <h3 data-edit-key="pembina_name">Robi Sanusi, S.E</h3>
-                        <p class="pembina-jabatan" data-edit-key="pembina_jabatan">Masa Jabatan: 2010 — 2026</p>
-                        <div class="pembina-quote">
-                            <span class="mark">“</span><span data-edit-key="pembina_quote">Bersatu kita teguh, bercerai kita runtuh.</span><span class="mark">”</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- JEJAK ORGANISASI -->
-        <section class="wrap" style="padding-top: 8px;">
-            <div class="sec-head">
-                <div>
-                    <div class="sec-tag">Arsip</div>
-                    <h2 class="sec-title">Jejak <span class="red">Organisasi</span></h2>
-                </div>
-                <span class="chip" style="transform: rotate(2deg);"><b>2010–2027</b></span>
-            </div>
-            <div class="year-grid" id="yearGrid"></div>
-        </section>
-
-        <!-- PRESTASI -->
-        <section class="prestasi">
-            <div class="wrap">
-                <div class="sec-head">
-                    <div>
-                        <div class="sec-tag" style="color: var(--yellow);">Pencapaian</div>
-                        <h2 class="sec-title">Prestasi <span class="red">OSIS</span></h2>
-                    </div>
-                    <button class="btn btn-red" id="btnTambahPrestasi" onclick="Prestasi.bukaForm()" style="display:none"><i class="fa-solid fa-plus"></i> Tambah</button>
-                </div>
-
-                <div class="prestasi-grid" id="prestasiGrid"><div class="loading-block"><div class="spinner"></div>Memuat prestasi...</div></div>
-
-                <div class="prestasi-banner">
-                    <span class="medal"><i class="fa-solid fa-trophy"></i></span>
-                    <div>
-                        <h4 data-edit-key="prestasi_banner_title">Generasi Emas Penuh Aksi</h4>
-                        <p data-edit-key="prestasi_banner_desc">OSIS Taruna Harapan 1 Cipatat meraih penghargaan tingkat kabupaten.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- KEGIATAN -->
-        <section class="kegiatan wrap">
-            <div class="sec-head">
-                <div>
-                    <div class="sec-tag">Kilas Balik</div>
-                    <h2 class="sec-title">Dokumentasi <span class="red">Kegiatan</span></h2>
-                </div>
-                <button class="btn btn-red" id="btnTambahKegiatan" onclick="Kegiatan.buatDraft()" style="display:none"><i class="fa-solid fa-plus"></i> Tambah</button>
-            </div>
-
-            <div class="bento-stack" id="kegiatanGrid"><div class="loading-block"><div class="spinner"></div>Memuat kegiatan...</div></div>
-        </section>
-
-    </section>
-
-    <!-- ============================================================
-         VIEW: SEKBID
-         ============================================================ -->
-    <section class="view" data-view="sekbid">
-        <div class="wrap">
-            <div class="sec-head">
-                <div>
-                    <div class="sec-tag">Struktur Organisasi</div>
-                    <h2 class="sec-title"><span id="jumSekbid">…</span> <span class="red">Seksi</span> Bidang</h2>
-                    <p class="sec-sub">Penggerak roda organisasi OSIS Tarpan One dalam mewujudkan visi dan aksi nyata sekolah.</p>
-                </div>
-            </div>
-
-            <div id="sekbidList"><div class="loading-block"><div class="spinner"></div>Memuat seksi bidang...</div></div>
-        </div>
-    </section>
-
-    <!-- ============================================================
-         VIEW: GALERI
-         ============================================================ -->
-    <section class="view" data-view="galeri">
-        <div class="wrap">
-            <div class="sec-head">
-                <div>
-                    <div class="sec-tag">Galeri</div>
-                    <h2 class="sec-title">Dokumentasi <span class="red">Kegiatan</span></h2>
-                    <p class="sec-sub">Momen-momen seru perjalanan OSIS Tarpan One, terekam abadi di sini.</p>
-                </div>
-                <button class="btn btn-red" id="btnBukaUpload" onclick="Galeri.buatDraft()" style="display:none">
-                    <i class="fa-solid fa-plus"></i> Tambah
-                </button>
-            </div>
-
-            <!-- Editor inline (cuma muncul kalo login sbg OSIS, klik tombol +) -->
-            <div class="bento-stack" id="galGrid">
-                <div class="loading-block"><div class="spinner"></div>Memuat galeri...</div>
-            </div>
-            <input type="file" id="galFileInput" accept="image/*" style="display:none">
-        </div>
-    </section>
-
-    <!-- ============================================================
-         VIEW: ASPIRASI
-         ============================================================ -->
-    <section class="view" data-view="aspirasi">
-        <div class="wrap">
-            <div class="sec-head">
-                <div>
-                    <div class="sec-tag">Suara Siswa</div>
-                    <h2 class="sec-title">Sampaikan <span class="red">Aspirasimu</span></h2>
-                    <p class="sec-sub">Punya kritik, saran, atau ide seru untuk SMK Taruna Harapan 1? Suarakan langsung di bawah ini dengan aman!</p>
-                </div>
-            </div>
-
-            <div class="rule-strip">
-                <div class="rule-card">
-                    <div class="rule-emoji"><i class="fa-solid fa-lock"></i></div>
-                    <h5>100% Terjaga</h5>
-                    <p>Identitas di-keep rahasia oleh OSIS</p>
-                </div>
-                <div class="rule-card">
-                    <div class="rule-emoji"><i class="fa-solid fa-pen-nib"></i></div>
-                    <h5>Etika Bahasa</h5>
-                    <p>Wajib pakai kalimat yang sopan</p>
-                </div>
-                <div class="rule-card">
-                    <div class="rule-emoji"><i class="fa-solid fa-ban"></i></div>
-                    <h5>Sistem Bersih</h5>
-                    <p>Semua pesan dibaca, dilarang spam</p>
-                </div>
-            </div>
-
-            <div class="aspirasi-grid">
-                <div class="form-card">
-                    <div class="form-head">Formulir Suara Tarpan</div>
-
-                    <div class="field">
-                        <label>Nama Lengkap</label>
-                        <input type="text" id="namaSiswa" placeholder="Nama lengkap (opsional, boleh anonim)">
-                    </div>
-                    <div class="field">
-                        <label>Kelas</label>
-                        <input type="text" id="kelasSiswa" placeholder="Contoh: XII RPL 1 (opsional)">
-                    </div>
-                    <div class="field">
-                        <label>Isi Aspirasi</label>
-                        <textarea id="isiAspirasi" placeholder="Tulis kritik, saran, atau ide kreatifmu di sini secara jelas & detail..."></textarea>
-                    </div>
-                    <div class="field">
-                        <label class="aspirasi-private" style="display:flex;align-items:center;gap:8px;font-size:0.78rem;font-weight:700;cursor:pointer;"><input type="checkbox" id="isPrivateAspirasi" style="width:16px;height:16px;accent-color:var(--red)"> <i class="fa-solid fa-lock" style="color:var(--red)"></i> Private — hanya OSIS yang bisa lihat</label>
-                    </div>
-
-                    <div class="form-actions-row">
-                        <button class="btn btn-red" id="btnKirimAspirasi" onclick="Aspirasi.kirim()">
-                            <i class="fa-solid fa-paper-plane"></i> Kirim Suara Tarpan
-                        </button>
-                    </div>
-                </div>
-
-                <div class="pesan-card">
-                    <div class="pesan-head">
-                        <h4><i class="fa-solid fa-comments"></i> Suara yang Masuk</h4>
-                        <span class="pesan-count" id="jumPesan">0</span>
-                    </div>
-                    <div class="pesan-list" id="daftarPesan">
-                        <div class="pesan-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat suara...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ============================================================
-         VIEW: KONTAK
-         ============================================================ -->
-    <section class="view" data-view="kontak">
-        <div class="wrap">
-            <div class="sec-head">
-                <div>
-                    <div class="sec-tag">Social Hub</div>
-                    <h2 class="sec-title">Mari <span class="red">Terhubung</span></h2>
-                    <p class="sec-sub">Ikuti keseruan kegiatan OSIS lewat sosial media resmi kami!</p>
-                </div>
-            </div>
-
-            <h3 class="social-title"><i class="fa-solid fa-share-nodes"></i> Sosial Media Kami</h3>
-
-            <div class="social-grid">
-                <a class="social-card" href="https://instagram.com/osis_smktarpanone" data-edit-href="kontak_ig_url" target="_blank" rel="noopener">
-                    <span class="social-ico sc-ig"><i class="fa-brands fa-instagram"></i></span>
-                    <span class="social-name">Instagram</span>
-                    <span class="social-handle" data-edit-key="kontak_ig_handle">@osis_smktarpanone</span>
-                </a>
-
-                <a class="social-card" href="https://tiktok.com/@osis_tarpan" data-edit-href="kontak_tt_url" target="_blank" rel="noopener">
-                    <span class="social-ico sc-tt"><i class="fa-brands fa-tiktok"></i></span>
-                    <span class="social-name">TikTok</span>
-                    <span class="social-handle" data-edit-key="kontak_tt_handle">@osis_tarpan</span>
-                </a>
-
-                <a class="social-card" href="https://youtube.com/@osisrinyuhtarpanone" data-edit-href="kontak_yt_url" target="_blank" rel="noopener">
-                    <span class="social-ico sc-yt"><i class="fa-brands fa-youtube"></i></span>
-                    <span class="social-name">YouTube</span>
-                    <span class="social-handle" data-edit-key="kontak_yt_handle">OSIS Rinyuh Tarpan One</span>
-                </a>
-
-                <a class="social-card" href="https://whatsapp.com/channel/0029VavIK3L5a23uXQChYz02" data-edit-href="kontak_wa_url" target="_blank" rel="noopener">
-                    <span class="social-ico sc-wa"><i class="fa-brands fa-whatsapp"></i></span>
-                    <span class="social-name">WhatsApp</span>
-                    <span class="social-handle" data-edit-key="kontak_wa_handle">Saluran Resmi</span>
-                </a>
-
-                <a class="social-card" href="mailto:osisrinyuh10@gmail.com" data-edit-href="kontak_email_url" target="_blank" rel="noopener">
-                    <span class="social-ico sc-mail"><i class="fa-solid fa-envelope"></i></span>
-                    <span class="social-name">E-Mail</span>
-                    <span class="social-handle" data-edit-key="kontak_email_handle">osisrinyuh10@gmail.com</span>
-                </a>
-            </div>
-
-            <div class="kontak-grid">
-                <div class="form-card">
-                    <div class="form-head">Form Request Lagu</div>
-
-                    <div class="field">
-                        <label>Judul Lagu</label>
-                        <input type="text" id="judulLagu" placeholder="Judul lagu yang mau diputar (wajib)">
-                    </div>
-                    <div class="field">
-                        <label>Penyanyi / Band</label>
-                        <input type="text" id="penyanyiLagu" placeholder="Siapa yang nyanyiin? (wajib)">
-                    </div>
-                    <div class="field">
-                        <label>Kata-kata yang mau disampaikan</label>
-                        <textarea id="kataLagu" placeholder="Tulis pesan, salam, atau kata-kata buat teman... (opsional)" maxlength="300" rows="3"></textarea>
-                    </div>
-                    <div class="field">
-                        <label>Nama (Opsional)</label>
-                        <input type="text" id="namaPengirim" placeholder="Nama kamu biar di-announce (opsional)">
-                    </div>
-
-                    <div class="form-actions-row">
-                        <button class="btn btn-red" id="btnKirimLagu" onclick="Lagu.kirim()">
-                            <i class="fa-solid fa-music"></i> Kirim Request Lagu
-                        </button>
-                    </div>
-                </div>
-
-                <div class="pesan-card">
-                    <div class="pesan-head">
-                        <h4><i class="fa-solid fa-headphones"></i> Playlist Request</h4>
-                        <span class="pesan-count" id="jumLagu">0</span>
-                    </div>
-                    <div class="pesan-list" id="daftarLagu">
-                        <div class="pesan-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat playlist...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===== BOTTOM NAV ===== -->
-    <nav class="bottom-nav" id="bottomNav">
-        <span class="nav-pill" id="navPill"></span>
-        <a href="#/" class="tab-item" data-route="home"><span class="ico"><i class="fa-solid fa-house"></i></span>Home</a>
-        <a href="#/sekbid" class="tab-item" data-route="sekbid"><span class="ico"><i class="fa-solid fa-folder-open"></i></span>Sekbid</a>
-        <a href="#/galeri" class="tab-item" data-route="galeri"><span class="ico"><i class="fa-solid fa-images"></i></span>Galeri</a>
-        <a href="#/kontak" class="tab-item" data-route="kontak"><span class="ico"><i class="fa-solid fa-phone"></i></span>Kontak</a>
-        <a href="#/aspirasi" class="tab-item" data-route="aspirasi"><span class="ico"><i class="fa-solid fa-inbox"></i></span>Aspirasi</a>
-    </nav>
-
-    <!-- ===== POPUP VISITOR ===== -->
-    <div class="visitor-overlay" id="visitorOverlay">
-        <div class="visitor-popup">
-            <div class="visitor-pop-head">
-                <h3><i class="fa-solid fa-eye"></i> Pengunjung</h3>
-                <button id="tutupVisitor" onclick="Visitor.tutupPopup()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="visitor-stats">
-                <div class="vstat-card">
-                    <b id="vstatTotal">-</b>
-                    <span>Total</span>
-                </div>
-                <div class="vstat-card">
-                    <b id="vstatHari">-</b>
-                    <span>Hari Ini</span>
-                </div>
-                <div class="vstat-card">
-                    <b id="vstatUnik">-</b>
-                    <span>Perangkat Unik</span>
-                </div>
-            </div>
-
-            <div class="visitor-list-head">
-                <h4><i class="fa-solid fa-mobile-screen"></i> Daftar Perangkat</h4>
-                <div class="vtab-wrap">
-                    <button type="button" class="vtab active" data-vtab="hari" onclick="Visitor.gantiTab('hari')">Hari Ini</button>
-                    <button type="button" class="vtab" data-vtab="total" onclick="Visitor.gantiTab('total')">Total</button>
-                </div>
-            </div>
-            <div class="visitor-list" id="visitorList">
-                <div class="pesan-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar...</div>
-            </div>
-            <p class="visitor-note"><i class="fa-solid fa-circle-info"></i> Satu perangkat dihitung 1x per hari.</p>
-        </div>
-    </div>
-
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      /* OSIS menu di header root — desktop pill, mobile masuk titik tiga */
+      .osis-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .osis-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--white);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-decoration: none;
+        color: var(--ink);
+        box-shadow: 2px 2px 0 var(--ink);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .osis-nav-link:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .osis-nav-link:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .osis-nav-link.active {
+        background: var(--red);
+        color: #fff;
+      }
+      #headerMoreMenu .header-more-item.active {
+        background: var(--red);
+        color: #fff;
+      }
+      @media (max-width: 700px) {
+        .osis-nav {
+          display: none !important;
+        }
+      }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/db.js" defer></script>
@@ -478,5 +79,767 @@
     <script src="js/galeri.js" defer></script>
     <script src="js/osis-auth.js" defer></script>
     <script src="js/site-edit.js" defer></script>
-</body>
+  </head>
+  <body>
+    <!-- ===== TOP NAV ===== -->
+    <header class="top-nav">
+      <a href="#/" class="brand">
+        <div class="logo-box">
+          <img data-foto="logo1" alt="Logo OSIS" />
+        </div>
+        <div class="brand-text">
+          <h2>OSIS TARPAN ONE</h2>
+          <p>SMK Taruna Harapan 1 Cipatat</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <button
+          class="visitor-trigger"
+          id="visitorTrigger"
+          onclick="Visitor.bukaPopup()"
+          title="Statistik pengunjung"
+        >
+          <i class="fa-solid fa-eye"></i>
+          <span id="headerVisitorCount">-</span>
+        </button>
+        <label
+          class="edit-toggle-wrap"
+          id="editToggleWrap"
+          style="display: none"
+        >
+          <input
+            type="checkbox"
+            id="editToggle"
+            onchange="SiteEdit.toggle(this.checked)"
+            autocomplete="off"
+          />
+          <span class="edit-slider"></span>
+          <span>Edit</span>
+        </label>
+        <nav
+          class="osis-nav"
+          id="rootOsisNav"
+          aria-label="Menu OSIS"
+          style="display: none"
+        >
+          <a href="osis/index" class="osis-nav-link" id="rootOsisDash"
+            ><i class="fa-solid fa-grip"></i> Dashboard OSIS</a
+          >
+        </nav>
+        <div id="areaAuth"></div>
+        <div class="header-more-wrap" id="headerMoreWrap" style="display: none">
+          <button
+            class="icon-btn"
+            id="headerMoreBtn"
+            onclick="HeaderMore.toggle()"
+            title="Menu"
+          >
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <div class="header-more-menu" id="headerMoreMenu">
+            <a
+              href="osis/index"
+              class="header-more-item"
+              id="headerMoreOsisDash"
+              style="display: none"
+              ><i class="fa-solid fa-grip"></i> Dashboard OSIS</a
+            >
+            <label
+              class="header-more-item"
+              id="headerMoreEditRow"
+              style="display: none"
+            >
+              <span>Edit mode</span>
+              <label class="edit-toggle-wrap small"
+                ><input
+                  type="checkbox"
+                  id="headerMoreEditToggle"
+                  onchange="HeaderMore.onEditToggle(this.checked)"
+                  autocomplete="off" /><span class="edit-slider"></span
+              ></label>
+            </label>
+            <button
+              class="header-more-item danger"
+              id="headerMoreLogout"
+              onclick="HeaderMore.logout()"
+              style="display: none"
+            >
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         VIEW: HOME
+         ============================================================ -->
+    <section class="view" data-view="home">
+      <!-- HERO -->
+      <section class="hero">
+        <div class="hero-inner">
+          <div class="hero-content">
+            <span class="hero-badge" data-edit-key="hero_badge"
+              ><i class="fa-solid fa-bolt"></i> Est. 2010 — Satu Keluarga</span
+            >
+            <h1>
+              <span data-edit-key="hero_line1">OSIS</span><br />
+              <span class="outline" data-edit-key="hero_line2">TARPAN</span
+              ><br />
+              <span class="red" data-edit-key="hero_line3">ONE</span>
+            </h1>
+            <p class="hero-tagline" data-edit-key="hero_tagline">
+              Organisasi kepemimpinan siswa yang berintegritas, beretika mulia,
+              dan berdampak nyata untuk sekolah.
+            </p>
+            <div class="hero-cta">
+              <a href="#/sekbid" class="btn btn-red">Lihat Sekbid →</a>
+              <a href="#/aspirasi" class="btn btn-white">Sampaikan Aspirasi</a>
+            </div>
+            <div class="hero-chip">
+              <span class="chip"
+                ><b id="chipTahun">2010–2027</b>&nbsp;Jejak Angkatan</span
+              >
+              <span class="chip"
+                ><b id="chipSekbid">15</b>&nbsp;Seksi Bidang</span
+              >
+              <span class="chip"
+                ><b id="chipVisitor">-</b>&nbsp;Pengunjung</span
+              >
+            </div>
+          </div>
+          <div class="hero-logo">
+            <img data-foto="logo1" alt="Logo OSIS Tarpan One" />
+          </div>
+        </div>
+        <div class="hero-stripes"></div>
+      </section>
+
+      <!-- TICKER -->
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker-track" id="tickerTrack">
+          <span
+            ><i class="fa-solid fa-bolt"></i> GENERASI EMAS PENUH AKSI
+            <i class="fa-solid fa-bolt"></i
+          ></span>
+          <span class="red">MAKRAB OSIS 2026</span>
+          <span class="yellow">PESAK — PENTAS SENI ANTAR KELAS</span>
+          <span>TAKJILIN & KEMAH TANGKAS 1.0</span>
+          <span class="red"
+            >BERSATU KITA TEGUH <i class="fa-solid fa-hand-fist"></i
+          ></span>
+        </div>
+      </div>
+
+      <!-- VISI MISI -->
+      <section class="visimisi">
+        <div class="wrap">
+          <div class="sec-head">
+            <div>
+              <div class="sec-tag">Identitas Kami</div>
+              <h2 class="sec-title">Visi & <span class="red">Misi</span></h2>
+            </div>
+          </div>
+
+          <div class="vm-grid">
+            <div class="vm-card visi">
+              <h3><i class="fa-solid fa-shield-halved"></i> Visi</h3>
+              <p data-edit-key="visi_text">
+                Menjadikan OSIS sebagai laboratorium kepemimpinan siswa yang
+                berintegritas, beretika mulia, dan berdampak positif bagi
+                sekolah dan masyarakat.
+              </p>
+            </div>
+
+            <div class="vm-card">
+              <h3><i class="fa-solid fa-bullseye"></i> Misi</h3>
+              <div class="misi-item">
+                <div class="misi-num">1</div>
+                <div>
+                  <h4 data-edit-key="misi_1_title">Pembinaan Kepemimpinan</h4>
+                  <p data-edit-key="misi_1_desc">
+                    Menjadikan OSIS sebagai sarana pembinaan kepemimpinan siswa
+                    yang berlandaskan integritas dan etika mulia.
+                  </p>
+                </div>
+              </div>
+              <div class="misi-item">
+                <div class="misi-num">2</div>
+                <div>
+                  <h4 data-edit-key="misi_2_title">
+                    Tanggung Jawab & Disiplin
+                  </h4>
+                  <p data-edit-key="misi_2_desc">
+                    Menumbuhkan sikap tanggung jawab, kedisiplinan, dan
+                    keteladanan dalam setiap peran dan aktivitas OSIS.
+                  </p>
+                </div>
+              </div>
+              <div class="misi-item">
+                <div class="misi-num">3</div>
+                <div>
+                  <h4 data-edit-key="misi_3_title">Tata Kelola Adaptif</h4>
+                  <p data-edit-key="misi_3_desc">
+                    Mewujudkan tata kelola OSIS yang adaptif, tertib
+                    administrasi, dan menjunjung keterbukaan di setiap
+                    prosesnya.
+                  </p>
+                </div>
+              </div>
+              <div class="misi-item">
+                <div class="misi-num">4</div>
+                <div>
+                  <h4 data-edit-key="misi_4_title">Program Kerja Inovatif</h4>
+                  <p data-edit-key="misi_4_desc">
+                    Menghadirkan program kerja yang inovatif, solutif, dan
+                    berdampak nyata bagi warga sekolah serta masyarakat.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PEMBINA -->
+      <section class="pembina-section">
+        <div class="wrap">
+          <div class="sec-head">
+            <div>
+              <div class="sec-tag">Pembina</div>
+              <h2 class="sec-title">Sang <span class="red">Pengayom</span></h2>
+            </div>
+          </div>
+
+          <div class="pembina-card">
+            <div class="pembina-photo">
+              <img data-foto="pembina" alt="Pembina OSIS" />
+            </div>
+            <div class="pembina-info">
+              <span class="pembina-badge">PEMBINA OSIS</span>
+              <h3 data-edit-key="pembina_name">Robi Sanusi, S.E</h3>
+              <p class="pembina-jabatan" data-edit-key="pembina_jabatan">
+                Masa Jabatan: 2010 — 2026
+              </p>
+              <div class="pembina-quote">
+                <span class="mark">“</span
+                ><span data-edit-key="pembina_quote"
+                  >Bersatu kita teguh, bercerai kita runtuh.</span
+                ><span class="mark">”</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- JEJAK ORGANISASI -->
+      <section class="wrap" style="padding-top: 8px">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Arsip</div>
+            <h2 class="sec-title">Jejak <span class="red">Organisasi</span></h2>
+          </div>
+          <span class="chip" style="transform: rotate(2deg)"
+            ><b>2010–2027</b></span
+          >
+        </div>
+        <div class="year-grid" id="yearGrid"></div>
+      </section>
+
+      <!-- PRESTASI -->
+      <section class="prestasi">
+        <div class="wrap">
+          <div class="sec-head">
+            <div>
+              <div class="sec-tag" style="color: var(--yellow)">Pencapaian</div>
+              <h2 class="sec-title">Prestasi <span class="red">OSIS</span></h2>
+            </div>
+            <button
+              class="btn btn-red"
+              id="btnTambahPrestasi"
+              onclick="Prestasi.bukaForm()"
+              style="display: none"
+            >
+              <i class="fa-solid fa-plus"></i> Tambah
+            </button>
+          </div>
+
+          <div class="prestasi-grid" id="prestasiGrid">
+            <div class="loading-block">
+              <div class="spinner"></div>
+              Memuat prestasi...
+            </div>
+          </div>
+
+          <div class="prestasi-banner">
+            <span class="medal"><i class="fa-solid fa-trophy"></i></span>
+            <div>
+              <h4 data-edit-key="prestasi_banner_title">
+                Generasi Emas Penuh Aksi
+              </h4>
+              <p data-edit-key="prestasi_banner_desc">
+                OSIS Taruna Harapan 1 Cipatat meraih penghargaan tingkat
+                kabupaten.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- KEGIATAN -->
+      <section class="kegiatan wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Kilas Balik</div>
+            <h2 class="sec-title">
+              Dokumentasi <span class="red">Kegiatan</span>
+            </h2>
+          </div>
+          <button
+            class="btn btn-red"
+            id="btnTambahKegiatan"
+            onclick="Kegiatan.buatDraft()"
+            style="display: none"
+          >
+            <i class="fa-solid fa-plus"></i> Tambah
+          </button>
+        </div>
+
+        <div class="bento-stack" id="kegiatanGrid">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat kegiatan...
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ============================================================
+         VIEW: SEKBID
+         ============================================================ -->
+    <section class="view" data-view="sekbid">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Struktur Organisasi</div>
+            <h2 class="sec-title">
+              <span id="jumSekbid">…</span>
+              <span class="red">Seksi</span> Bidang
+            </h2>
+            <p class="sec-sub">
+              Penggerak roda organisasi OSIS Tarpan One dalam mewujudkan visi
+              dan aksi nyata sekolah.
+            </p>
+          </div>
+        </div>
+
+        <div id="sekbidList">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat seksi bidang...
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         VIEW: GALERI
+         ============================================================ -->
+    <section class="view" data-view="galeri">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Galeri</div>
+            <h2 class="sec-title">
+              Dokumentasi <span class="red">Kegiatan</span>
+            </h2>
+            <p class="sec-sub">
+              Momen-momen seru perjalanan OSIS Tarpan One, terekam abadi di
+              sini.
+            </p>
+          </div>
+          <button
+            class="btn btn-red"
+            id="btnBukaUpload"
+            onclick="Galeri.buatDraft()"
+            style="display: none"
+          >
+            <i class="fa-solid fa-plus"></i> Tambah
+          </button>
+        </div>
+
+        <!-- Editor inline (cuma muncul kalo login sbg OSIS, klik tombol +) -->
+        <div class="bento-stack" id="galGrid">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat galeri...
+          </div>
+        </div>
+        <input
+          type="file"
+          id="galFileInput"
+          accept="image/*"
+          style="display: none"
+        />
+      </div>
+    </section>
+
+    <!-- ============================================================
+         VIEW: ASPIRASI
+         ============================================================ -->
+    <section class="view" data-view="aspirasi">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Suara Siswa</div>
+            <h2 class="sec-title">
+              Sampaikan <span class="red">Aspirasimu</span>
+            </h2>
+            <p class="sec-sub">
+              Punya kritik, saran, atau ide seru untuk SMK Taruna Harapan 1?
+              Suarakan langsung di bawah ini dengan aman!
+            </p>
+          </div>
+        </div>
+
+        <div class="rule-strip">
+          <div class="rule-card">
+            <div class="rule-emoji"><i class="fa-solid fa-lock"></i></div>
+            <h5>100% Terjaga</h5>
+            <p>Identitas di-keep rahasia oleh OSIS</p>
+          </div>
+          <div class="rule-card">
+            <div class="rule-emoji"><i class="fa-solid fa-pen-nib"></i></div>
+            <h5>Etika Bahasa</h5>
+            <p>Wajib pakai kalimat yang sopan</p>
+          </div>
+          <div class="rule-card">
+            <div class="rule-emoji"><i class="fa-solid fa-ban"></i></div>
+            <h5>Sistem Bersih</h5>
+            <p>Semua pesan dibaca, dilarang spam</p>
+          </div>
+        </div>
+
+        <div class="aspirasi-grid">
+          <div class="form-card">
+            <div class="form-head">Formulir Suara Tarpan</div>
+
+            <div class="field">
+              <label>Nama Lengkap</label>
+              <input
+                type="text"
+                id="namaSiswa"
+                placeholder="Nama lengkap (opsional, boleh anonim)"
+              />
+            </div>
+            <div class="field">
+              <label>Kelas</label>
+              <input
+                type="text"
+                id="kelasSiswa"
+                placeholder="Contoh: XII RPL 1 (opsional)"
+              />
+            </div>
+            <div class="field">
+              <label>Isi Aspirasi</label>
+              <textarea
+                id="isiAspirasi"
+                placeholder="Tulis kritik, saran, atau ide kreatifmu di sini secara jelas & detail..."
+              ></textarea>
+            </div>
+            <div class="field">
+              <label
+                class="aspirasi-private"
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  font-size: 0.78rem;
+                  font-weight: 700;
+                  cursor: pointer;
+                "
+                ><input
+                  type="checkbox"
+                  id="isPrivateAspirasi"
+                  style="width: 16px; height: 16px; accent-color: var(--red)"
+                />
+                <i class="fa-solid fa-lock" style="color: var(--red)"></i>
+                Private — hanya OSIS yang bisa lihat</label
+              >
+            </div>
+
+            <div class="form-actions-row">
+              <button
+                class="btn btn-red"
+                id="btnKirimAspirasi"
+                onclick="Aspirasi.kirim()"
+              >
+                <i class="fa-solid fa-paper-plane"></i> Kirim Suara Tarpan
+              </button>
+            </div>
+          </div>
+
+          <div class="pesan-card">
+            <div class="pesan-head">
+              <h4><i class="fa-solid fa-comments"></i> Suara yang Masuk</h4>
+              <span class="pesan-count" id="jumPesan">0</span>
+            </div>
+            <div class="pesan-list" id="daftarPesan">
+              <div class="pesan-empty">
+                <i class="fa-solid fa-spinner fa-spin"></i> Memuat suara...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         VIEW: KONTAK
+         ============================================================ -->
+    <section class="view" data-view="kontak">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Social Hub</div>
+            <h2 class="sec-title">Mari <span class="red">Terhubung</span></h2>
+            <p class="sec-sub">
+              Ikuti keseruan kegiatan OSIS lewat sosial media resmi kami!
+            </p>
+          </div>
+        </div>
+
+        <h3 class="social-title">
+          <i class="fa-solid fa-share-nodes"></i> Sosial Media Kami
+        </h3>
+
+        <div class="social-grid">
+          <a
+            class="social-card"
+            href="https://instagram.com/osis_smktarpanone"
+            data-edit-href="kontak_ig_url"
+            target="_blank"
+            rel="noopener"
+          >
+            <span class="social-ico sc-ig"
+              ><i class="fa-brands fa-instagram"></i
+            ></span>
+            <span class="social-name">Instagram</span>
+            <span class="social-handle" data-edit-key="kontak_ig_handle"
+              >@osis_smktarpanone</span
+            >
+          </a>
+
+          <a
+            class="social-card"
+            href="https://tiktok.com/@osis_tarpan"
+            data-edit-href="kontak_tt_url"
+            target="_blank"
+            rel="noopener"
+          >
+            <span class="social-ico sc-tt"
+              ><i class="fa-brands fa-tiktok"></i
+            ></span>
+            <span class="social-name">TikTok</span>
+            <span class="social-handle" data-edit-key="kontak_tt_handle"
+              >@osis_tarpan</span
+            >
+          </a>
+
+          <a
+            class="social-card"
+            href="https://youtube.com/@osisrinyuhtarpanone"
+            data-edit-href="kontak_yt_url"
+            target="_blank"
+            rel="noopener"
+          >
+            <span class="social-ico sc-yt"
+              ><i class="fa-brands fa-youtube"></i
+            ></span>
+            <span class="social-name">YouTube</span>
+            <span class="social-handle" data-edit-key="kontak_yt_handle"
+              >OSIS Rinyuh Tarpan One</span
+            >
+          </a>
+
+          <a
+            class="social-card"
+            href="https://whatsapp.com/channel/0029VavIK3L5a23uXQChYz02"
+            data-edit-href="kontak_wa_url"
+            target="_blank"
+            rel="noopener"
+          >
+            <span class="social-ico sc-wa"
+              ><i class="fa-brands fa-whatsapp"></i
+            ></span>
+            <span class="social-name">WhatsApp</span>
+            <span class="social-handle" data-edit-key="kontak_wa_handle"
+              >Saluran Resmi</span
+            >
+          </a>
+
+          <a
+            class="social-card"
+            href="mailto:osisrinyuh10@gmail.com"
+            data-edit-href="kontak_email_url"
+            target="_blank"
+            rel="noopener"
+          >
+            <span class="social-ico sc-mail"
+              ><i class="fa-solid fa-envelope"></i
+            ></span>
+            <span class="social-name">E-Mail</span>
+            <span class="social-handle" data-edit-key="kontak_email_handle"
+              >osisrinyuh10@gmail.com</span
+            >
+          </a>
+        </div>
+
+        <div class="kontak-grid">
+          <div class="form-card">
+            <div class="form-head">Form Request Lagu</div>
+
+            <div class="field">
+              <label>Judul Lagu</label>
+              <input
+                type="text"
+                id="judulLagu"
+                placeholder="Judul lagu yang mau diputar (wajib)"
+              />
+            </div>
+            <div class="field">
+              <label>Penyanyi / Band</label>
+              <input
+                type="text"
+                id="penyanyiLagu"
+                placeholder="Siapa yang nyanyiin? (wajib)"
+              />
+            </div>
+            <div class="field">
+              <label>Kata-kata yang mau disampaikan</label>
+              <textarea
+                id="kataLagu"
+                placeholder="Tulis pesan, salam, atau kata-kata buat teman... (opsional)"
+                maxlength="300"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label>Nama (Opsional)</label>
+              <input
+                type="text"
+                id="namaPengirim"
+                placeholder="Nama kamu biar di-announce (opsional)"
+              />
+            </div>
+
+            <div class="form-actions-row">
+              <button
+                class="btn btn-red"
+                id="btnKirimLagu"
+                onclick="Lagu.kirim()"
+              >
+                <i class="fa-solid fa-music"></i> Kirim Request Lagu
+              </button>
+            </div>
+          </div>
+
+          <div class="pesan-card">
+            <div class="pesan-head">
+              <h4><i class="fa-solid fa-headphones"></i> Playlist Request</h4>
+              <span class="pesan-count" id="jumLagu">0</span>
+            </div>
+            <div class="pesan-list" id="daftarLagu">
+              <div class="pesan-empty">
+                <i class="fa-solid fa-spinner fa-spin"></i> Memuat playlist...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== BOTTOM NAV ===== -->
+    <nav class="bottom-nav" id="bottomNav">
+      <span class="nav-pill" id="navPill"></span>
+      <a href="#/" class="tab-item" data-route="home"
+        ><span class="ico"><i class="fa-solid fa-house"></i></span>Home</a
+      >
+      <a href="#/sekbid" class="tab-item" data-route="sekbid"
+        ><span class="ico"><i class="fa-solid fa-folder-open"></i></span
+        >Sekbid</a
+      >
+      <a href="#/galeri" class="tab-item" data-route="galeri"
+        ><span class="ico"><i class="fa-solid fa-images"></i></span>Galeri</a
+      >
+      <a href="#/kontak" class="tab-item" data-route="kontak"
+        ><span class="ico"><i class="fa-solid fa-phone"></i></span>Kontak</a
+      >
+      <a href="#/aspirasi" class="tab-item" data-route="aspirasi"
+        ><span class="ico"><i class="fa-solid fa-inbox"></i></span>Aspirasi</a
+      >
+    </nav>
+
+    <!-- ===== POPUP VISITOR ===== -->
+    <div class="visitor-overlay" id="visitorOverlay">
+      <div class="visitor-popup">
+        <div class="visitor-pop-head">
+          <h3><i class="fa-solid fa-eye"></i> Pengunjung</h3>
+          <button
+            id="tutupVisitor"
+            onclick="Visitor.tutupPopup()"
+            aria-label="Tutup"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="visitor-stats">
+          <div class="vstat-card">
+            <b id="vstatTotal">-</b>
+            <span>Total</span>
+          </div>
+          <div class="vstat-card">
+            <b id="vstatHari">-</b>
+            <span>Hari Ini</span>
+          </div>
+          <div class="vstat-card">
+            <b id="vstatUnik">-</b>
+            <span>Perangkat Unik</span>
+          </div>
+        </div>
+
+        <div class="visitor-list-head">
+          <h4><i class="fa-solid fa-mobile-screen"></i> Daftar Perangkat</h4>
+          <div class="vtab-wrap">
+            <button
+              type="button"
+              class="vtab active"
+              data-vtab="hari"
+              onclick="Visitor.gantiTab('hari')"
+            >
+              Hari Ini
+            </button>
+            <button
+              type="button"
+              class="vtab"
+              data-vtab="total"
+              onclick="Visitor.gantiTab('total')"
+            >
+              Total
+            </button>
+          </div>
+        </div>
+        <div class="visitor-list" id="visitorList">
+          <div class="pesan-empty">
+            <i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar...
+          </div>
+        </div>
+        <p class="visitor-note">
+          <i class="fa-solid fa-circle-info"></i> Satu perangkat dihitung 1x per
+          hari.
+        </p>
+      </div>
+    </div>
+
+  </body>
 </html>

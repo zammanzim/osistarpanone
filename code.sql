@@ -472,6 +472,30 @@ BEGIN
     RETURN 'ERR_NOT_FOUND';
 END $$;
 
+-- Update fotos galeri (hapus 1 foto → auto hapus kalau kosong di client, tapi RPC ini untuk update array)
+CREATE OR REPLACE FUNCTION public.galeri_update_fotos(
+    p_user_id bigint,
+    p_id bigint,
+    p_fotos jsonb
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS
+        (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+        RETURN 'ERR_NO_AUTH';
+    END IF;
+    IF p_fotos IS NULL OR jsonb_typeof(p_fotos) <> 'array' THEN
+        RETURN 'ERR_NO_FOTO';
+    END IF;
+    UPDATE public.gallery SET fotos = p_fotos WHERE id = p_id;
+    IF FOUND THEN
+        RETURN 'OK';
+    END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
 -- Hapus kegiatan galeri (khusus akun OSIS)
 CREATE OR REPLACE FUNCTION public.hapus_gallery(
     p_user_id bigint,
@@ -495,10 +519,12 @@ END $$;
 REVOKE EXECUTE ON FUNCTION public.buat_gallery(bigint, text, text, jsonb) FROM public;
 REVOKE EXECUTE ON FUNCTION public.galeri_add_foto(bigint, bigint, text) FROM public;
 REVOKE EXECUTE ON FUNCTION public.galeri_update_meta(bigint, bigint, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.galeri_update_fotos(bigint, bigint, jsonb) FROM public;
 REVOKE EXECUTE ON FUNCTION public.hapus_gallery(bigint, bigint) FROM public;
 GRANT EXECUTE ON FUNCTION public.buat_gallery(bigint, text, text, jsonb) TO anon;
 GRANT EXECUTE ON FUNCTION public.galeri_add_foto(bigint, bigint, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.galeri_update_meta(bigint, bigint, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.galeri_update_fotos(bigint, bigint, jsonb) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_gallery(bigint, bigint) TO anon;
 
 -- ============ 7. STORAGE — FOLDER GALLERY DI BUCKET osis-foto ============

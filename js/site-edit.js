@@ -112,8 +112,10 @@ const SiteEdit = {
         HeaderMore.refresh();
         if (typeof Prestasi !== "undefined" && Prestasi.render) Prestasi.render();
         if (typeof Kegiatan !== "undefined" && Kegiatan.render) Kegiatan.render();
+        if (typeof Galeri !== "undefined" && Galeri.render) Galeri.render();
         if (typeof Prestasi !== "undefined" && Prestasi.cekLogin) Prestasi.cekLogin();
         if (typeof Kegiatan !== "undefined" && Kegiatan.cekLogin) Kegiatan.cekLogin();
+        if (typeof Galeri !== "undefined" && Galeri.cekLogin) Galeri.cekLogin();
     },
 
     // Save pas selesai ngetik (blur)
@@ -614,15 +616,22 @@ const HeaderMore = {
         const editRow = document.getElementById("headerMoreEditRow");
         const logoutBtn = document.getElementById("headerMoreLogout");
         const moreEdit = document.getElementById("headerMoreEditToggle");
+        const rootOsisNav = document.getElementById("rootOsisNav");
+        const moreOsisDash = document.getElementById("headerMoreOsisDash");
         const u = OsisAuth.getUser && OsisAuth.getUser();
         const isOsis = !!(u && u.mode === "osis");
         const isLogged = !!(u && (u.mode === "osis" || u.mode === "guest" || u.mode === "tamu"));
-        const narrow = window.innerWidth <= 500;
+        const narrow = window.innerWidth <= 700;
         if (wrap) {
             const showWrap = narrow && isLogged;
             wrap.classList.toggle("show", showWrap);
             wrap.style.display = showWrap ? "" : "none";
         }
+        if (rootOsisNav) {
+            // desktop: tampil pill, mobile: sembunyi (masuk titik tiga)
+            rootOsisNav.style.display = (isOsis && !narrow) ? "flex" : "none";
+        }
+        if (moreOsisDash) moreOsisDash.style.display = (isOsis && narrow) ? "" : "none";
         if (editRow) editRow.style.display = isOsis ? "" : "none";
         if (logoutBtn) logoutBtn.style.display = isLogged ? "" : "none";
         if (moreEdit) {

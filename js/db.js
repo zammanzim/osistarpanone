@@ -491,6 +491,18 @@ async function galeriUpdateMeta(userId, id, judul, deskripsi) {
     Cache.del("gallery");
 }
 
+// Update fotos galeri (hapus 1 foto)
+async function galeriUpdateFotos(userId, id, fotos) {
+    const { data, error } = await supa.rpc("galeri_update_fotos", {
+        p_user_id: userId,
+        p_id: id,
+        p_fotos: fotos
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("gallery");
+}
+
 // Hapus kegiatan (server validasi id OSIS)
 async function hapusGallery(userId, id) {
     const { data, error } = await supa.rpc("hapus_gallery", {

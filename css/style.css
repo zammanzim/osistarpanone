@@ -43,6 +43,33 @@ img {
   max-width: 100%;
 }
 
+/* Anti-offroad: huruf dipanjangin tanpa spasi tetap break kayak hero line */
+[data-edit-key],
+.hero h1 span,
+.hero-tagline,
+.sec-title,
+.sec-sub,
+.vm-card h3,
+.vm-card p,
+.misi-item h4,
+.misi-item p,
+.bento-block .bento-meta h4,
+.bento-block .bento-meta p,
+.bento-badge,
+.prestasi-tag,
+.orang-info h4,
+.orang-info p,
+.agenda-card h4,
+.agenda-card p,
+.prestasi-banner h4,
+.prestasi-banner p,
+.social-name,
+.social-handle,
+.pembina-info h3 {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 /* ============================================================
    TOP NAV
    ============================================================ */
@@ -87,9 +114,8 @@ img {
   font-weight: 900;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .brand-text p {
   font-size: clamp(0.5rem, 2.3vw, 0.62rem);
@@ -97,9 +123,8 @@ img {
   color: var(--red);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .top-nav-extra {
@@ -496,6 +521,8 @@ img {
   line-height: 0.95;
   letter-spacing: -0.03em;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .hero h1 .outline {
   color: var(--yellow);
@@ -2572,7 +2599,8 @@ body.edit-mode .bento-meta .gal-del {
   position: relative;
   padding-right: 82px;
 }
-#kegiatanGrid .bento-block.draft .bento-meta {
+#kegiatanGrid .bento-block.draft .bento-meta,
+#galGrid .bento-block.draft .bento-meta {
   position: relative;
   padding-right: 82px;
 }
@@ -2582,6 +2610,12 @@ body.edit-mode .bento-meta .gal-del {
   right: 0;
   display: flex;
   gap: 6px;
+}
+/* draft: tombol save & del tetap di dalam flex, jangan jadi absolute terpisah */
+.bento-block.draft .gal-actions .gal-save,
+.bento-block.draft .gal-actions .gal-del {
+  position: static !important;
+  display: inline-flex !important;
 }
 
 .gal-row {

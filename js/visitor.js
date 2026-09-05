@@ -53,6 +53,8 @@ const Visitor = {
             Visitor.rowsSemua = [...rows].sort((a, b) => new Date(b.last_seen) - new Date(a.last_seen));
             const el = document.getElementById("headerVisitorCount");
             if (el) el.textContent = total.toLocaleString("id-ID");
+            const chip = document.getElementById("chipVisitor");
+            if (chip) chip.textContent = total.toLocaleString("id-ID");
             const t = document.getElementById("vstatTotal");
             if (t) t.textContent = total.toLocaleString("id-ID");
             const h = document.getElementById("vstatHari");
