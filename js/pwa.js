@@ -59,7 +59,7 @@
     tombol.id = "pwaInstallBtn";
     tombol.type = "button";
     tombol.innerHTML = '<i class="fa-solid fa-download"></i><span>Install App</span>';
-    tombol.setAttribute("aria-label", "Install aplikasi TARPAN ONE");
+    tombol.setAttribute("aria-label", "Install aplikasi OSIS TARPAN ONE");
     tombol.style.cssText = [
       "position:fixed", "right:16px", "bottom:96px", "z-index:9999",
       "display:none", "align-items:center", "gap:8px",

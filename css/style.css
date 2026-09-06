@@ -3236,6 +3236,23 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
     repeating-linear-gradient(-45deg, rgba(26, 19, 20, 0.05) 0 14px, transparent 14px 28px),
     var(--paper-2);
 }
+.sekbid-foto-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    repeating-linear-gradient(-45deg, rgba(26, 19, 20, 0.05) 0 14px, transparent 14px 28px),
+    var(--paper-2);
+}
+.sekbid-foto-loading .spinner {
+  margin: 0;
+}
+.sekbid-foto.sudah-muat .sekbid-foto-loading {
+  display: none;
+}
 .sekbid-body {
   flex: 1;
   min-width: 0;

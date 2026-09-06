@@ -51,9 +51,9 @@ const Sekbid = {
     }
   },
 
-  // 1 Sekbid = 1 foto background, dari folder "sekbid photos" di project.
+  // Fallback lokal kalau kolom foto di DB kosong (cth. kartu sintetis "Pengurus OSIS").
+  // Foto utama Sekbid sudah di-upload ke storage (folder sekbid/) dan dibaca dari DB.
   // (File "INFORMASI DAN TEKNOLOGI Copy" isinya foto Kewirausahaan.)
-  // Ini murni pemetaan UI — tidak mengubah DB/API/struktur data.
   fotoLatar(item) {
     const n = String(item && item.nama ? item.nama : "").toLowerCase();
     const F = "sekbid photos/";
@@ -93,13 +93,13 @@ const Sekbid = {
   seksi(item, peran, nomor) {
     const nama = escapeHtml(item.nama);
     const no = String(nomor || item.urutan || 1).padStart(2, "0");
-    // Prioritas: foto editorial lokal; fallback ke foto DB kalau tidak ada padanannya.
-    const lokal = Sekbid.fotoLatar(item);
-    const bg = lokal || (item.foto ? getFoto(item.foto) : "");
+    // Sumber utama: kolom foto di database; fallback lokal kalau DB kosong.
+    const bg = item.foto ? getFoto(item.foto) : Sekbid.fotoLatar(item);
     const bgSrc = bg ? encodeURI(bg) : "";
     const fotoIsi = bgSrc
       ? `<img class="sekbid-img" src="${bgSrc}" alt="Foto ${nama}" loading="lazy"
-                   onerror="this.closest('.sekbid-card').classList.add('tanpa-foto'); this.remove();">`
+                   onload="this.closest('.sekbid-foto').classList.add('sudah-muat')"
+                   onerror="this.closest('.sekbid-card').classList.add('tanpa-foto'); this.closest('.sekbid-foto').classList.add('sudah-muat'); this.remove();"><span class="sekbid-foto-loading" aria-hidden="true"><span class="spinner"></span></span>`
       : `<span class="sekbid-foto-fallback">${no}</span>`;
     return `
             <article class="sekbid-card${bgSrc ? "" : " tanpa-foto"}">
