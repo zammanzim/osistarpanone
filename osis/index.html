@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OSIS — Dashboard</title>
     <link rel="stylesheet" href="../css/style.css" />
+<meta name="theme-color" content="#e11d2e" />
+<link rel="manifest" href="../manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="TARPAN ONE" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -15,9 +23,12 @@
     />
     <style>
       .osis-wrap {
-        max-width: 920px;
+        max-width: 1020px;
         margin: 0 auto;
         padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
       }
       .osis-hero {
         background: var(--white);
@@ -39,8 +50,40 @@
         display: grid;
         place-items: center;
         font-size: 1.4rem;
+        font-weight: 900;
         box-shadow: 2px 2px 0 var(--ink);
         flex-shrink: 0;
+        overflow: hidden;
+      }
+      .osis-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .osis-clock {
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .osis-clock b {
+        display: block;
+        font-size: 0.86rem;
+        font-weight: 900;
+      }
+      .osis-clock .jam {
+        font-size: 1.3rem;
+        font-weight: 900;
+        color: var(--red);
+        font-variant-numeric: tabular-nums;
+        display: flex;
+        align-items: baseline;
+        justify-content: flex-end;
+        gap: 5px;
+      }
+      .osis-clock .jam small {
+        font-size: 0.64rem;
+        font-weight: 800;
+        color: var(--gray);
       }
       .osis-hero h1 {
         font-size: 1.25rem;
@@ -74,158 +117,221 @@
         color: #fff;
       }
 
-      .osis-grid {
+      .dash-stats {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        margin-top: 18px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
       }
       @media (min-width: 720px) {
-        .osis-grid {
-          grid-template-columns: repeat(3, 1fr);
+        .dash-stats {
+          grid-template-columns: repeat(4, 1fr);
         }
       }
-      .osis-card {
+      .dash-stat {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+      .dash-stat .lbl {
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--gray);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .dash-stat .lbl i {
+        color: var(--red);
+      }
+      .dash-stat b {
+        display: block;
+        font-size: 1.6rem;
+        font-weight: 900;
+        margin-top: 4px;
+      }
+      .dash-stat small {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--gray);
+        display: block;
+        margin-top: 2px;
+        overflow-wrap: anywhere;
+      }
+      .dash-stat.danger {
+        background: #ffe9e9;
+      }
+
+      .dash-cols {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      @media (min-width: 860px) {
+        .dash-cols {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .dash-panel {
         background: var(--white);
         border: 3px solid var(--ink);
         border-radius: 18px;
         padding: 16px;
         box-shadow: 4px 4px 0 var(--ink);
-        text-decoration: none;
-        color: inherit;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        transition:
-          transform 0.15s ease,
-          box-shadow 0.15s ease;
-        position: relative;
-        overflow: hidden;
+        min-width: 0;
       }
-      .osis-card:hover {
-        transform: translate(-2px, -2px);
-        box-shadow: 6px 6px 0 var(--ink);
+      .dash-panel.full {
+        grid-column: 1 / -1;
       }
-      .osis-card:active {
-        transform: translate(2px, 2px);
-        box-shadow: none;
-      }
-      .osis-card.disabled {
-        opacity: 0.62;
-        pointer-events: none;
-        border-style: dashed;
-        background: var(--paper-2);
-        box-shadow: 3px 3px 0 var(--ink);
-      }
-      .osis-ico {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        border: 2.5px solid var(--ink);
-        display: grid;
-        place-items: center;
-        font-size: 1.25rem;
-        background: var(--yellow);
-        flex-shrink: 0;
-      }
-      .osis-card h3 {
-        font-size: 0.95rem;
+      .dash-panel > h3 {
+        font-size: 0.86rem;
         font-weight: 900;
-        line-height: 1.2;
-      }
-      .osis-card p {
-        font-size: 0.74rem;
-        color: var(--gray);
-        font-weight: 600;
-        line-height: 1.4;
-        flex: 1;
-      }
-      .osis-card .go {
-        font-size: 0.72rem;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: var(--red);
-      }
-      .osis-card .count {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        font-size: 0.62rem;
-        font-weight: 900;
-        background: var(--ink);
-        color: #fff;
-        padding: 3px 8px;
-        border-radius: 999px;
-      }
-      .osis-foot {
-        margin-top: 18px;
-        text-align: center;
-        font-size: 0.72rem;
-        color: var(--gray);
-        font-weight: 600;
-      }
-      .osis-foot a {
-        color: var(--red);
-        font-weight: 800;
-        text-decoration: none;
-      }
-
-      /* OSIS header menu — desktop pill nav, mobile titik tiga */
-      .osis-nav {
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
         display: flex;
         align-items: center;
         gap: 8px;
-        flex-shrink: 0;
+        margin-bottom: 10px;
       }
-      .osis-nav-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
-        border: 2.5px solid var(--ink);
-        border-radius: 999px;
-        background: var(--white);
-        font-size: 0.78rem;
+      .dash-panel > h3 i {
+        color: var(--red);
+      }
+      .dash-panel > h3 .go {
+        margin-left: auto;
+        font-size: 0.7rem;
         font-weight: 800;
+        color: var(--red);
         text-decoration: none;
-        color: var(--ink);
-        box-shadow: 2px 2px 0 var(--ink);
-        transition:
-          transform 0.12s,
-          box-shadow 0.12s,
-          background 0.12s,
-          color 0.12s;
+        text-transform: none;
+        letter-spacing: 0;
         white-space: nowrap;
       }
-      .osis-nav-link:hover {
-        transform: translate(-1px, -1px);
-        box-shadow: 3px 3px 0 var(--ink);
+      .dash-item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 9px 0;
+        border-bottom: 1.5px dashed var(--line);
+        font-size: 0.8rem;
       }
-      .osis-nav-link:active {
-        transform: translate(1px, 1px);
-        box-shadow: none;
+      .dash-item:last-child {
+        border-bottom: none;
       }
-      .osis-nav-link.active {
+      .dash-item .di {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 2px solid var(--ink);
+        background: var(--paper-2);
+        display: grid;
+        place-items: center;
+        font-size: 0.9rem;
+        color: var(--red);
+        flex-shrink: 0;
+      }
+      .dash-item .db {
+        flex: 1;
+        min-width: 0;
+      }
+      .dash-item .db b {
+        display: block;
+        font-weight: 900;
+        overflow-wrap: anywhere;
+        line-height: 1.3;
+      }
+      .dash-item .db small {
+        color: var(--gray);
+        font-weight: 600;
+        display: block;
+        margin-top: 1px;
+        overflow-wrap: anywhere;
+      }
+      .dash-item .tag {
+        flex-shrink: 0;
+        font-size: 0.62rem;
+        font-weight: 900;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+        white-space: nowrap;
+      }
+      .tag.red { background: var(--red); color: #fff; }
+      .tag.yellow { background: var(--yellow); }
+      .tag.green { background: #d6f5d6; color: #146314; }
+      .tag.gray { background: var(--paper-2); color: var(--gray); }
+      .prio {
+        font-size: 0.6rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+        white-space: nowrap;
+      }
+      .prio.urgent { background: var(--red); color: #fff; }
+      .prio.high { background: #ff9f43; }
+      .prio.medium { background: var(--yellow); }
+      .prio.low { background: var(--white); color: var(--gray); }
+      .dash-bar {
+        height: 10px;
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        background: var(--paper-2);
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .dash-bar > span {
+        display: block;
+        height: 100%;
         background: var(--red);
-        color: #fff;
+        border-radius: 999px;
       }
-      #osisMoreWrap {
-        display: none;
-        position: relative;
+      .tl-item {
+        display: flex;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1.5px dashed var(--line);
+        font-size: 0.78rem;
       }
-      #osisMoreWrap.show {
-        display: inline-flex !important;
+      .tl-item:last-child {
+        border-bottom: none;
       }
-      #osisMoreMenu .header-more-item.active {
-        background: var(--red);
-        color: #fff;
+      .tl-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid var(--ink);
+        background: var(--yellow);
+        flex-shrink: 0;
+        margin-top: 3px;
       }
-      @media (max-width: 640px) {
-        .osis-nav {
-          display: none !important;
-        }
+      .tl-item .tb {
+        flex: 1;
+        min-width: 0;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+      .tl-item .tb b {
+        font-weight: 900;
+      }
+      .tl-item time {
+        flex-shrink: 0;
+        font-size: 0.66rem;
+        font-weight: 700;
+        color: var(--gray);
+        white-space: nowrap;
+      }
+      .dash-empty {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--gray);
+        padding: 10px 2px;
       }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -235,7 +341,7 @@
     <script src="../js/toast.js" defer></script>
     <script src="../js/show-popup.js" defer></script>
     <script src="../js/osis-auth.js" defer></script>
-    <script src="../js/osis-menu.js" defer></script>
+    <script src="../js/osis-sidebar.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -247,38 +353,7 @@
         </div>
       </a>
       <!-- Menu khusus OSIS: desktop tampil pill, mobile masuk titik tiga -->
-      <nav class="osis-nav" id="osisNav" aria-label="Menu OSIS">
-        <a href="index" class="osis-nav-link"
-          ><i class="fa-solid fa-grip"></i> Dashboard</a
-        >
-        <a href="agenda" class="osis-nav-link"
-          ><i class="fa-solid fa-calendar-days"></i> Agenda</a
-        >
-        <a href="profil" class="osis-nav-link"
-          ><i class="fa-solid fa-user"></i> Profil</a
-        >
-        <a href="anggota" class="osis-nav-link"
-          ><i class="fa-solid fa-users"></i> Anggota</a
-        >
-          <a href="notulensi" class="osis-nav-link"
-            ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
-          >
-            <a href="proker" class="osis-nav-link"
-              ><i class="fa-solid fa-list-check"></i> Proker</a
-            >
-            <a href="dokumen" class="osis-nav-link"
-                ><i class="fa-solid fa-folder-open"></i> Dokumen</a
-              >
-            <a href="task" class="osis-nav-link"
-                ><i class="fa-solid fa-clipboard-check"></i> Task</a
-              >
-            <a href="keuangan" class="osis-nav-link"
-                ><i class="fa-solid fa-wallet"></i> Keuangan</a
-              >
-            <a href="evaluasi" class="osis-nav-link"
-                ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
-              >
-      </nav>
+      
       <div class="top-nav-extra">
         <a
           href="../index#/"
@@ -286,237 +361,61 @@
           style="display: inline-flex"
           ><i class="fa-solid fa-house"></i> Beranda</a
         >
-        <div class="header-more-wrap" id="osisMoreWrap" style="display: none">
-          <button
-            class="icon-btn"
-            id="osisMoreBtn"
-            onclick="OsisMenu.toggle()"
-            title="Menu OSIS"
-          >
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-          </button>
-          <div class="header-more-menu" id="osisMoreMenu">
-            <a href="index" class="header-more-item"
-              ><i class="fa-solid fa-grip"></i> Dashboard</a
-            >
-            <a href="agenda" class="header-more-item"
-              ><i class="fa-solid fa-calendar-days"></i> Agenda</a
-            >
-            <a href="profil" class="header-more-item"
-              ><i class="fa-solid fa-user"></i> Profil</a
-            >
-            <a href="anggota" class="header-more-item"
-              ><i class="fa-solid fa-users"></i> Anggota</a
-            >
-            <a href="notulensi" class="header-more-item"
-              ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
-            >
-              <a href="proker" class="header-more-item"
-                ><i class="fa-solid fa-list-check"></i> Proker</a
-              >
-              <a href="dokumen" class="header-more-item"
-                  ><i class="fa-solid fa-folder-open"></i> Dokumen</a
-                >
-              <a href="task" class="header-more-item"
-                  ><i class="fa-solid fa-clipboard-check"></i> Task</a
-                >
-              <a href="keuangan" class="header-more-item"
-                  ><i class="fa-solid fa-wallet"></i> Keuangan</a
-                >
-              <a href="evaluasi" class="header-more-item"
-                  ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
-                >
-          </div>
-        </div>
+        
         <div id="areaAuth"></div>
       </div>
     </header>
 
     <div class="osis-wrap">
       <div class="osis-hero" id="osisHero">
-        <div class="osis-avatar"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="osis-avatar" id="osisAvatar">O</div>
         <div style="flex: 1; min-width: 180px">
           <h1 id="osisHello">Halo, OSIS!</h1>
-          <p id="osisSub">Kelola halaman khusus OSIS di satu tempat.</p>
+          <p id="osisSub">Berikut ringkasan aktivitas OSIS saat ini.</p>
           <div class="osis-meta" id="osisMeta"></div>
         </div>
-        <a href="../index#/sekbid" class="btn btn-white btn-sm"
-          ><i class="fa-solid fa-folder-open"></i> Lihat Sekbid</a
-        >
+        <div class="osis-clock">
+          <b id="dashTanggal">—</b>
+          <div class="jam"><span id="dashJam">—</span><small>WIB</small></div>
+        </div>
       </div>
 
-      <div class="osis-grid" id="osisMenu">
-        <!-- Agenda -->
-        <a href="agenda" class="osis-card">
-          <span class="count" id="countAgenda">—</span>
-          <span class="osis-ico" style="background: #ffd6a5"
-            ><i class="fa-solid fa-calendar-days"></i
-          ></span>
-          <h3>Agenda Sekbid</h3>
-          <p>
-            Atur rencana & dokumentasi kegiatan per Sekbid. Foto drag & drop,
-            status, urutan terbaru di atas.
-          </p>
-          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <!-- Profil -->
-        <a href="profil" class="osis-card">
-          <span class="osis-ico" style="background: var(--yellow)"
-            ><i class="fa-solid fa-user"></i
-          ></span>
-          <h3>Profil Saya</h3>
-          <p>
-            Ganti nama, username, password, foto PP, dan bio akun OSIS kamu.
-          </p>
-          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <!-- Anggota & Pengurus -->
-        <a href="anggota" class="osis-card">
-          <span class="osis-ico" style="background: #d6f5d6"
-            ><i class="fa-solid fa-users"></i
-          ></span>
-          <h3>Anggota &amp; Pengurus</h3>
-          <p>
-            Kelola anggota per periode, pengurus ketua/wakil, dan data
-            sekbid/BPH lewat kartu + popup.
-          </p>
-          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <!-- Notulensi -->
-        <a href="notulensi" class="osis-card">
-          <span class="osis-ico" style="background: #ffd6a5"
-            ><i class="fa-solid fa-clipboard-list"></i
-          ></span>
-          <h3>Notulensi Rapat</h3>
-          <p>
-            Catat hasil rapat: pembahasan, keputusan, tindak lanjut, lampiran —
-            bisa cetak &amp; export PDF.
-          </p>
-          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <!-- Program Kerja -->
-        <a href="proker" class="osis-card">
-          <span class="osis-ico" style="background: #e3d0ff"
-            ><i class="fa-solid fa-list-check"></i
-          ></span>
-          <h3>Program Kerja</h3>
-          <p>
-            Pantau proker per periode: progress, agenda terkait, tugas, evaluasi,
-            dan dokumentasi.
-          </p>
-          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <!-- Dokumen -->
-        <a href="dokumen" class="osis-card">
-          <span class="osis-ico" style="background: var(--white)"
-            ><i class="fa-solid fa-folder-open"></i
-          ></span>
-          <h3>Dokumen OSIS</h3>
-          <p>
-            Arsip digital: proposal, LPJ, surat, SK — cari, preview, download
-            dalam satu tempat.
-          </p>
-          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <!-- Task -->
-        <a href="task" class="osis-card">
-          <span class="osis-ico" style="background: var(--paper-2)"
-            ><i class="fa-solid fa-clipboard-check"></i
-          ></span>
-          <h3>Task</h3>
-          <p>
-            Kanban tugas pengurus: deadline, prioritas, dan relasi ke proker
-            serta agenda.
-          </p>
-          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <!-- Keuangan -->
-        <a href="keuangan" class="osis-card">
-          <span class="osis-ico" style="background: #d6f5d6"
-            ><i class="fa-solid fa-wallet"></i
-          ></span>
-          <h3>Keuangan</h3>
-          <p>
-            Kas masuk/keluar, saldo otomatis, rekap bulanan, dan laporan siap
-            cetak.
-          </p>
-          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <!-- Evaluasi -->
-        <a href="evaluasi" class="osis-card">
-          <span class="osis-ico" style="background: #ffe9d6"
-            ><i class="fa-solid fa-star-half-stroke"></i
-          ></span>
-          <h3>Evaluasi</h3>
-          <p>
-            Nilai kegiatan 1-5, catat hasil dan kendala, tindak lanjut, dan
-            cetak laporan evaluasi.
-          </p>
-          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <a
-          href="../index#/"
-          class="osis-card"
-          style="background: var(--paper-2)"
-        >
-          <span class="osis-ico" style="background: var(--white)"
-            ><i class="fa-solid fa-globe"></i
-          ></span>
-          <h3>Lihat Website</h3>
-          <p>
-            Kembali ke halaman publik buat cek tampilan home, sekbid, galeri,
-            aspirasi.
-          </p>
-          <span class="go"
-            >Ke Beranda <i class="fa-solid fa-arrow-up-right-from-square"></i
-          ></span>
-        </a>
+      <div class="dash-stats">
+        <a href="agenda" class="dash-stat"><span class="lbl"><i class="fa-solid fa-calendar-days"></i> Total Agenda</span><b id="statAgenda">—</b><small id="statAgendaSub">memuat...</small></a>
+        <a href="proker" class="dash-stat"><span class="lbl"><i class="fa-solid fa-list-check"></i> Proker Aktif</span><b id="statProker">—</b><small id="statProkerSub">memuat...</small></a>
+        <a href="task" class="dash-stat"><span class="lbl"><i class="fa-solid fa-clipboard-check"></i> Task Belum Selesai</span><b id="statTask">—</b><small id="statTaskSub">memuat...</small></a>
+        <a href="notulensi" class="dash-stat"><span class="lbl"><i class="fa-solid fa-clipboard-list"></i> Rapat Terbaru</span><b id="statRapat" style="font-size: 1.05rem">—</b><small id="statRapatSub">memuat...</small></a>
       </div>
 
-      <p class="osis-foot">
-        Butuh halaman baru? Duplikat <code>osis/agenda</code> → tambah card di
-        <code>osis/index</code> → link otomatis kebaca.
-      </p>
+      <div class="dash-cols">
+        <div class="dash-panel">
+          <h3><i class="fa-solid fa-calendar-days"></i> Agenda Terdekat <a class="go" href="agenda">Lihat semua →</a></h3>
+          <div id="agendaDekat"><div class="dash-empty">Memuat agenda...</div></div>
+        </div>
+        <div class="dash-panel">
+          <h3><i class="fa-solid fa-triangle-exclamation"></i> Butuh Perhatian <a class="go" href="task">Lihat semua →</a></h3>
+          <div id="taskPerhatian"><div class="dash-empty">Memuat task...</div></div>
+        </div>
+      </div>
+
+      <div class="dash-cols">
+        <div class="dash-panel">
+          <h3><i class="fa-solid fa-list-check"></i> Proker Berjalan <a class="go" href="proker">Lihat semua →</a></h3>
+          <div id="prokerJalan"><div class="dash-empty">Memuat proker...</div></div>
+        </div>
+        <div class="dash-panel">
+          <h3><i class="fa-solid fa-folder-open"></i> Dokumen Terbaru <a class="go" href="dokumen">Lihat semua →</a></h3>
+          <div id="dokBaru"><div class="dash-empty">Memuat dokumen...</div></div>
+        </div>
+      </div>
+
+      <div class="dash-panel full">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Aktivitas Terbaru</h3>
+        <div id="aktivitasList"><div class="dash-empty">Memuat aktivitas...</div></div>
+      </div>
     </div>
 
-    <script>
-      // Guard: hanya OSIS boleh masuk dashboard
-      (async function () {
-        const u = OsisAuth.getUser && OsisAuth.getUser();
-        if (!u || u.mode !== "osis") {
-          location.replace("../login");
-          return;
-        }
-        document.getElementById("osisHello").textContent =
-          "Halo, " + (u.nama || u.username || "OSIS") + "!";
-        document.getElementById("osisSub").textContent =
-          (u.jabatan ? u.jabatan + " — " : "") +
-          "Kelola halaman khusus OSIS di satu tempat.";
-        const meta = document.getElementById("osisMeta");
-        if (meta) {
-          meta.innerHTML = `
-                    <span class="osis-badge red"><i class="fa-solid fa-id-card"></i> ${escapeHtml(u.jabatan || "OSIS")}</span>
-                    <span class="osis-badge">@${escapeHtml(u.username || "-")}</span>
-                `;
-        }
-        // hitung agenda sekbid (opsional, fail silent)
-        try {
-          if (typeof getAllAgenda === "function") {
-            const all = await getAllAgenda();
-            const el = document.getElementById("countAgenda");
-            if (el) el.textContent = (all?.length || 0) + " agenda";
-          }
-        } catch {}
-      })();
-    </script>
+    <script src="../js/dashboard.js" defer></script>
+  <script src="../js/pwa.js" defer></script>
   </body>
 </html>

@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agenda Sekbid — OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
+<meta name="theme-color" content="#e11d2e" />
+<link rel="manifest" href="../manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="TARPAN ONE" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -268,8 +276,9 @@
     <script src="../js/toast.js" defer></script>
     <script src="../js/show-popup.js" defer></script>
     <script src="../js/osis-auth.js" defer></script>
-    <script src="../js/osis-menu.js" defer></script>
+    <script src="../js/osis-sidebar.js" defer></script>
     <script src="../js/agenda.js" defer></script>
+  <script src="../js/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -280,84 +289,12 @@
           <p>Kelola per Sekbid</p>
         </div>
       </a>
-      <nav class="osis-nav" id="osisNav" aria-label="Menu OSIS">
-        <a href="index" class="osis-nav-link"
-          ><i class="fa-solid fa-grip"></i> Dashboard</a
-        >
-        <a href="agenda" class="osis-nav-link"
-          ><i class="fa-solid fa-calendar-days"></i> Agenda</a
-        >
-        <a href="profil" class="osis-nav-link"
-          ><i class="fa-solid fa-user"></i> Profil</a
-        >
-        <a href="anggota" class="osis-nav-link"
-          ><i class="fa-solid fa-users"></i> Anggota</a
-        >
-        <a href="notulensi" class="osis-nav-link"
-          ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
-        >
-        <a href="proker" class="osis-nav-link"
-          ><i class="fa-solid fa-list-check"></i> Proker</a
-        >
-        <a href="dokumen" class="osis-nav-link"
-          ><i class="fa-solid fa-folder-open"></i> Dokumen</a
-        >
-        <a href="task" class="osis-nav-link"
-          ><i class="fa-solid fa-clipboard-check"></i> Task</a
-        >
-        <a href="keuangan" class="osis-nav-link"
-          ><i class="fa-solid fa-wallet"></i> Keuangan</a
-        >
-        <a href="evaluasi" class="osis-nav-link"
-          ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
-        >
-      </nav>
+      
       <div class="top-nav-extra">
         <a href="../index#/" class="btn btn-white btn-sm"
           ><i class="fa-solid fa-house"></i> Beranda</a
         >
-        <div class="header-more-wrap" id="osisMoreWrap" style="display: none">
-          <button
-            class="icon-btn"
-            id="osisMoreBtn"
-            onclick="OsisMenu.toggle()"
-            title="Menu OSIS"
-          >
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-          </button>
-          <div class="header-more-menu" id="osisMoreMenu">
-            <a href="index" class="header-more-item"
-              ><i class="fa-solid fa-grip"></i> Dashboard</a
-            >
-            <a href="agenda" class="header-more-item"
-              ><i class="fa-solid fa-calendar-days"></i> Agenda</a
-            >
-            <a href="profil" class="header-more-item"
-              ><i class="fa-solid fa-user"></i> Profil</a
-            >
-            <a href="anggota" class="header-more-item"
-              ><i class="fa-solid fa-users"></i> Anggota</a
-            >
-            <a href="notulensi" class="header-more-item"
-              ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
-            >
-            <a href="proker" class="header-more-item"
-              ><i class="fa-solid fa-list-check"></i> Proker</a
-            >
-            <a href="dokumen" class="header-more-item"
-              ><i class="fa-solid fa-folder-open"></i> Dokumen</a
-            >
-            <a href="task" class="header-more-item"
-              ><i class="fa-solid fa-clipboard-check"></i> Task</a
-            >
-            <a href="keuangan" class="header-more-item"
-              ><i class="fa-solid fa-wallet"></i> Keuangan</a
-            >
-            <a href="evaluasi" class="header-more-item"
-              ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
-            >
-          </div>
-        </div>
+        
         <div id="areaAuth"></div>
       </div>
     </header>

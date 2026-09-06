@@ -3177,3 +3177,213 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
 .agenda-mini-item:last-child { border-bottom:none; }
 .agenda-mini-date { font-weight:800; color:var(--red); white-space:nowrap; min-width:60px; }
 .agenda-mini-judul { flex:1; font-weight:700; }
+
+/* ============================================================
+   SEKBID REDESIGN — editorial: 1 foto background per section
+   Scope: hanya view sekbid. Logic/DB/API/routing tidak diubah.
+   ============================================================ */
+.view[data-view="sekbid"] {
+  background: var(--paper);
+}
+
+/* ---- List vertikal ---- */
+.sekbid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- Card: foto 4:5 tampil full + panel info solid ---- */
+.sekbid-card {
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  background: var(--ink);
+  box-shadow: var(--shadow-hard);
+}
+.sekbid-foto {
+  position: relative;
+  flex: 0 0 240px;
+  aspect-ratio: 4 / 5;
+  background: var(--paper-2);
+  overflow: hidden;
+  border-right: 3px solid var(--ink);
+}
+.sekbid-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+.sekbid-card:hover .sekbid-img {
+  transform: scale(1.03);
+}
+.sekbid-foto-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--red);
+  background:
+    repeating-linear-gradient(-45deg, rgba(26, 19, 20, 0.05) 0 14px, transparent 14px 28px),
+    var(--paper-2);
+}
+.sekbid-body {
+  flex: 1;
+  min-width: 0;
+  padding: 22px;
+  background: var(--ink);
+}
+.sekbid-no {
+  display: block;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #fff;
+  opacity: 0.95;
+  text-shadow: 2px 2px 0 rgba(15, 10, 11, 0.6);
+}
+.sekbid-label {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 3px 11px;
+  background: var(--red);
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 rgba(15, 10, 11, 0.55);
+}
+.sekbid-nama {
+  margin-top: 8px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: #fff;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.sekbid-desc {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.86);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ---- Mobile khusus (bukan sekadar mengecilkan desktop) ---- */
+@media (max-width: 700px) {
+  .sekbid-card {
+    position: relative;
+    flex-direction: column;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+  .sekbid-foto {
+    flex: none;
+    width: calc(100% + 44px);
+    margin: 0 -22px;
+    border-right: none;
+    -webkit-mask-image:
+      linear-gradient(to bottom,
+        transparent 0%, rgba(0, 0, 0, 0.35) 4%, rgba(0, 0, 0, 0.75) 7%, black 10%,
+        black 90%, rgba(0, 0, 0, 0.75) 93%, rgba(0, 0, 0, 0.35) 96%, transparent 100%),
+      linear-gradient(to right,
+        transparent 0%, rgba(0, 0, 0, 0.4) 3%, rgba(0, 0, 0, 0.8) 6%, black 9%,
+        black 91%, rgba(0, 0, 0, 0.8) 94%, rgba(0, 0, 0, 0.4) 97%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to bottom,
+        transparent 0%, rgba(0, 0, 0, 0.35) 4%, rgba(0, 0, 0, 0.75) 7%, black 10%,
+        black 90%, rgba(0, 0, 0, 0.75) 93%, rgba(0, 0, 0, 0.35) 96%, transparent 100%),
+      linear-gradient(to right,
+        transparent 0%, rgba(0, 0, 0, 0.4) 3%, rgba(0, 0, 0, 0.8) 6%, black 9%,
+        black 91%, rgba(0, 0, 0, 0.8) 94%, rgba(0, 0, 0, 0.4) 97%, transparent 100%);
+    mask-composite: intersect;
+  }
+  .sekbid-body {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 70px 22px 30px;
+    background: linear-gradient(
+      to top,
+      transparent 0%,
+      rgba(15, 10, 11, 0.9) 14%,
+      rgba(15, 10, 11, 0.88) 45%,
+      rgba(15, 10, 11, 0.6) 72%,
+      rgba(15, 10, 11, 0.28) 88%,
+      transparent 100%
+    );
+    -webkit-mask-image:
+      linear-gradient(to right,
+        transparent 0%, rgba(0, 0, 0, 0.5) 2.5%, black 5%,
+        black 95%, rgba(0, 0, 0, 0.5) 97.5%, transparent 100%);
+    mask-image:
+      linear-gradient(to right,
+        transparent 0%, rgba(0, 0, 0, 0.5) 2.5%, black 5%,
+        black 95%, rgba(0, 0, 0, 0.5) 97.5%, transparent 100%);
+  }
+  .sekbid-no {
+    font-size: 1.6rem;
+  }
+  .sekbid-nama {
+    font-size: 1.1rem;
+  }
+  .sekbid-desc {
+    font-size: 0.76rem;
+  }
+}
+
+/* ---- Desktop ---- */
+@media (min-width: 1024px) {
+  .sekbid-list {
+    gap: 16px;
+  }
+  .sekbid-card {
+    flex-direction: row;
+  }
+  .sekbid-foto {
+    flex: 0 0 400px;
+  }
+  .sekbid-list .sekbid-card:nth-child(even) {
+    flex-direction: row-reverse;
+  }
+  .sekbid-list .sekbid-card:nth-child(even) .sekbid-foto {
+    border-right: none;
+    border-left: 3px solid var(--ink);
+  }
+  .sekbid-body {
+    padding: 26px 28px;
+  }
+  .sekbid-no {
+    font-size: 2.4rem;
+  }
+  .sekbid-nama {
+    font-size: 1.7rem;
+  }
+  .sekbid-desc {
+    font-size: 0.88rem;
+    max-width: 62ch;
+  }
+}

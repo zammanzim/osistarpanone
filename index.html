@@ -4,6 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OSIS TARPAN ONE — SMK Taruna Harapan 1 Cipatat</title>
+    <meta
+      name="description"
+      content="Aplikasi web OSIS SMK Taruna Harapan 1 Cipatat: sekbid, galeri, aspirasi, kontak, dan dashboard OSIS."
+    />
+    <meta name="theme-color" content="#e11d2e" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TARPAN ONE" />
     <link rel="stylesheet" href="css/style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
@@ -79,6 +91,7 @@
     <script src="js/galeri.js" defer></script>
     <script src="js/osis-auth.js" defer></script>
     <script src="js/site-edit.js" defer></script>
+    <script src="js/pwa.js" defer></script>
   </head>
   <body>
     <!-- ===== TOP NAV ===== -->
@@ -418,7 +431,7 @@
          VIEW: SEKBID
          ============================================================ -->
     <section class="view" data-view="sekbid">
-      <div class="wrap">
+      <div class="wrap sekbid-wrap">
         <div class="sec-head">
           <div>
             <div class="sec-tag">Struktur Organisasi</div>
@@ -432,7 +445,6 @@
             </p>
           </div>
         </div>
-
         <div id="sekbidList">
           <div class="loading-block">
             <div class="spinner"></div>

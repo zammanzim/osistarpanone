@@ -732,6 +732,63 @@ async function hapusEvaluasi(userId, id) {
 }
 
 // =========================================================================
+// FORMULIR — DB-driven form builder (halaman osis/formulir)
+// =========================================================================
+async function getFormulir() {
+    const { data, error } = await supa
+        .from("osis_formulir")
+        .select("id, judul, deskripsi, status, settings, created_by, created_at, updated_at")
+        .order("updated_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+}
+async function getPertanyaan(formId) {
+    const { data, error } = await supa
+        .from("osis_pertanyaan")
+        .select("id, form_id, tipe, teks, opsi, wajib, config, urutan")
+        .eq("form_id", formId)
+        .order("urutan", { ascending: true });
+    if (error) throw error;
+    return data || [];
+}
+async function getRespons(formId) {
+    const { data, error } = await supa
+        .from("osis_respons")
+        .select("id, form_id, jawaban, created_by, created_at")
+        .eq("form_id", formId)
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+}
+async function simpanFormulir(userId, id, judul, deskripsi, status, settings, pertanyaan) {
+    const { data, error } = await supa.rpc("simpan_formulir", {
+        p_user_id: userId, p_id: id, p_judul: judul, p_deskripsi: deskripsi,
+        p_status: status, p_settings: settings, p_pertanyaan: pertanyaan
+    });
+    if (error) throw error;
+    if (!data || data <= 0) throw new Error(String(data));
+    Cache.del("formulir");
+    return data;
+}
+async function hapusFormulir(userId, id) {
+    const { data, error } = await supa.rpc("hapus_formulir", {
+        p_user_id: userId, p_id: id
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("formulir");
+}
+async function kirimRespons(formId, jawaban, userId) {
+    const { data, error } = await supa.rpc("kirim_respons", {
+        p_form_id: formId, p_jawaban: jawaban, p_user_id: userId || null
+    });
+    if (error) throw error;
+    if (!data || data <= 0) throw new Error(String(data));
+    Cache.del("formulir");
+    return data;
+}
+
+// =========================================================================
 // AGENDA PER SEKBID — DB-driven (judul, deskripsi, tanggal, lokasi, status, fotos)
 // =========================================================================
 async function getAgendaBySekbid(sekbidId) {

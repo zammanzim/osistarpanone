@@ -19,14 +19,12 @@ const Sekbid = {
       let html = "";
       html += Sekbid.renderGrup("Badan Pengurus Harian", listBPH, "BPH");
       html += Sekbid.renderGrup("Seksi Bidang", listSekbid, "SEKBID");
-      // tombol kelola agenda buat OSIS
-      const u = OsisAuth.getUser && OsisAuth.getUser();
-      if (u && u.mode === "osis") {
-        html += `<div style="margin:12px 0 8px; text-align:center"><a href="osis/agenda" class="btn btn-red btn-sm"><i class="fa-solid fa-calendar-check"></i> Kelola Agenda Sekbid</a></div>`;
-      }
+      html += Sekbid.renderGrup("Anggota", [{
+        nama: "Pengurus OSIS",
+        deskripsi: "Keluarga besar Pengurus OSIS Tarpan One — seluruh anggota dari setiap seksi bidang yang bergerak bersama menyukseskan setiap program dan kegiatan sekolah.",
+        foto: "",
+      }], "ANGGOTA");
       container.innerHTML = html;
-      // render agenda per sekbid di bawahnya
-      Sekbid.renderAgendaForList(data);
     };
 
     const cached = Cache.get("sekbid");
@@ -53,48 +51,29 @@ const Sekbid = {
     }
   },
 
-  async renderAgendaForList(sekbidList) {
-    try {
-      const all = await getAllAgenda();
-      if (!all || all.length === 0) return;
-      // group by sekbid_id
-      const bySekbid = {};
-      all.forEach((a) => {
-        const k = String(a.sekbid_id);
-        if (!bySekbid[k]) bySekbid[k] = [];
-        bySekbid[k].push(a);
-      });
-      const container = document.getElementById("sekbidList");
-      if (!container) return;
-      let html = `<div class="agenda-public-wrap" style="margin-top:18px"><div class="grup-label">Agenda Terbaru <span class="chip-num">${all.length}</span></div>`;
-      for (const sid of Object.keys(bySekbid)) {
-        const sek = (sekbidList || []).find((s) => String(s.id) === sid);
-        const nama = sek ? sek.nama : `Sekbid #${sid}`;
-        const list = bySekbid[sid].slice(0, 3);
-        html += `
-                    <div class="agenda-sekbid">
-                        <div class="agenda-sekbid-head"><i class="fa-solid fa-calendar"></i> ${escapeHtml(nama)} <span class="chip-num">${bySekbid[sid].length}</span></div>
-                        <div class="agenda-mini-list">
-                            ${list
-                              .map(
-                                (a) => `
-                                <div class="agenda-mini-item">
-                                    <span class="agenda-mini-date">${a.tanggal ? new Date(a.tanggal).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : ""}</span>
-                                    <span class="agenda-mini-judul">${escapeHtml(a.judul)}</span>
-                                    <span class="agenda-status ${a.status}">${a.status}</span>
-                                </div>
-                            `,
-                              )
-                              .join("")}
-                            ${bySekbid[sid].length > 3 ? `<div style="font-size:0.7rem; color:var(--gray); text-align:center; margin-top:6px"><a href="osis/agenda">Lihat semua (${bySekbid[sid].length}) →</a></div>` : ""}
-                        </div>
-                    </div>`;
-      }
-      html += `</div>`;
-      container.insertAdjacentHTML("beforeend", html);
-    } catch (e) {
-      console.warn("agenda public fail", e.message);
-    }
+  // 1 Sekbid = 1 foto background, dari folder "sekbid photos" di project.
+  // (File "INFORMASI DAN TEKNOLOGI Copy" isinya foto Kewirausahaan.)
+  // Ini murni pemetaan UI — tidak mengubah DB/API/struktur data.
+  fotoLatar(item) {
+    const n = String(item && item.nama ? item.nama : "").toLowerCase();
+    const F = "sekbid photos/";
+    if (!n) return "";
+    if (n.includes("pengurus") || n.includes("anggota osis") || n === "anggota") return F + "ANGGOTA OSIS [AA19ADE].webp";
+    if (n.includes("wakil") || n === "ketua osis") return F + "KETUA&WAKIL [FF2EC1E].webp";
+    if (n.includes("sekretaris")) return F + "SEKERTARIS [5EDF175].webp";
+    if (n.includes("bendahara")) return F + "BENDAHARA [3FC38E4].webp";
+    if (n.includes("humas")) return F + "HUMAS [CD64C22].webp";
+    if (n.includes("budi")) return F + "BUDI PEKERTI LUHUR [F9D0487].webp";
+    if (n.includes("kerohanian")) return F + "KEROHANIAN [639FCB8].webp";
+    if (n.includes("politik")) return F + "POLITIK [087655A].webp";
+    if (n.includes("olahraga")) return F + "OLAHRAGA [C83DCB9].webp";
+    if (n.includes("kbb") || n.includes("berbangsa")) return F + "KBB [E49EC4E].webp";
+    if (n.includes("bela negara")) return F + "BELA NEGARA [3459EA0].webp";
+    if (n.includes("kesenian")) return F + "KESENIAN [2100D88].webp";
+    if (n.includes("bahasa") && !n.includes("berbangsa")) return F + "BAHASA [ACD8A6F].webp";
+    if (n.includes("kewirausahaan")) return F + "INFORMASI DAN TEKNOLOGI Copy [C1CE5CA].webp";
+    if (n.includes("teknologi") || n.includes("(it)") || n === "it") return F + "INFORMASI DAN TEKNOLOGI [0E419E1].webp";
+    return "";
   },
 
   renderGrup(judul, list, peran) {
@@ -102,35 +81,36 @@ const Sekbid = {
     let html = `
             <div class="grup-label">
                 ${judul} <span class="chip-num">${list.length}</span>
-            </div>`;
-    list.forEach((item) => {
-      html += Sekbid.seksi(item, peran);
+            </div>
+            <div class="sekbid-list">`;
+    list.forEach((item, idx) => {
+      html += Sekbid.seksi(item, peran, idx + 1);
     });
+    html += `</div>`;
     return html;
   },
 
-  seksi(item, peran) {
+  seksi(item, peran, nomor) {
     const nama = escapeHtml(item.nama);
-    const icon = item.icon || "fa-solid fa-users";
-    const ikon = icon.trim().startsWith("fa")
-      ? `<i class="${escapeHtml(icon)}"></i>`
-      : escapeHtml(icon);
-    const foto = item.foto
-      ? `<img src="${getFoto(item.foto)}" alt="${nama}" loading="lazy"
-                   onerror="this.parentNode.classList.add('tanpa-foto'); this.remove();">`
-      : "";
+    const no = String(nomor || item.urutan || 1).padStart(2, "0");
+    // Prioritas: foto editorial lokal; fallback ke foto DB kalau tidak ada padanannya.
+    const lokal = Sekbid.fotoLatar(item);
+    const bg = lokal || (item.foto ? getFoto(item.foto) : "");
+    const bgSrc = bg ? encodeURI(bg) : "";
+    const fotoIsi = bgSrc
+      ? `<img class="sekbid-img" src="${bgSrc}" alt="Foto ${nama}" loading="lazy"
+                   onerror="this.closest('.sekbid-card').classList.add('tanpa-foto'); this.remove();">`
+      : `<span class="sekbid-foto-fallback">${no}</span>`;
     return `
-            <div class="orang-block">
-                <div class="orang-photo${item.foto ? "" : " tanpa-foto"}">
-                    ${foto}
-                    <span class="orang-fallback">${ikon}</span>
+            <article class="sekbid-card${bgSrc ? "" : " tanpa-foto"}">
+                <div class="sekbid-foto">${fotoIsi}</div>
+                <div class="sekbid-body">
+                    <span class="sekbid-no">${no}</span>
+                    <span class="sekbid-label">${peran}</span>
+                    <h4 class="sekbid-nama">${nama}</h4>
+                    <p class="sekbid-desc">${escapeHtml(item.deskripsi)}</p>
                 </div>
-                <div class="orang-info">
-                    <span class="orang-role">${peran}</span>
-                    <h4>${nama}</h4>
-                    <p>${escapeHtml(item.deskripsi)}</p>
-                </div>
-            </div>`;
+            </article>`;
   },
 };
 

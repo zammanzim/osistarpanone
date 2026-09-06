@@ -1739,6 +1739,211 @@ CREATE POLICY "osis_foto_evaluasi_insert" ON storage.objects FOR INSERT TO anon 
 DROP POLICY IF EXISTS "osis_foto_evaluasi_delete" ON storage.objects;
 CREATE POLICY "osis_foto_evaluasi_delete" ON storage.objects FOR DELETE TO anon USING (bucket_id='osis-foto' AND (storage.foldername(name))[1]='evaluasi');
 
+-- ============ 20. FORMULIR (halaman osis/formulir, form builder) ============
+-- General purpose: evaluasi, survei, pendaftaran, pendataan, polling.
+-- osis_formulir = bungkus + settings jsonb. osis_pertanyaan = fleksibel:
+-- tipe short/paragraf/radio/checkbox/dropdown/skala/rating/tanggal/file,
+-- opsi jsonb (pilihan), config jsonb (skala/rating/file). osis_respons =
+-- jawaban jsonb keyed by id pertanyaan. Tulis via RPC SECURITY DEFINER.
+CREATE TABLE IF NOT EXISTS public.osis_formulir (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    judul text NOT NULL DEFAULT '',
+    deskripsi text NOT NULL DEFAULT '',
+    status text NOT NULL DEFAULT 'draft',
+    settings jsonb NOT NULL DEFAULT '{}'::jsonb,
+    created_by bigint,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS public.osis_pertanyaan (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    form_id bigint NOT NULL REFERENCES public.osis_formulir(id) ON DELETE CASCADE,
+    tipe text NOT NULL DEFAULT 'short',
+    teks text NOT NULL DEFAULT '',
+    opsi jsonb NOT NULL DEFAULT '[]'::jsonb,
+    wajib boolean NOT NULL DEFAULT false,
+    config jsonb NOT NULL DEFAULT '{}'::jsonb,
+    urutan integer NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_pertanyaan_form ON public.osis_pertanyaan (form_id, urutan);
+CREATE TABLE IF NOT EXISTS public.osis_respons (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    form_id bigint NOT NULL REFERENCES public.osis_formulir(id) ON DELETE CASCADE,
+    jawaban jsonb NOT NULL DEFAULT '{}'::jsonb,
+    created_by bigint,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_respons_form ON public.osis_respons (form_id, created_at DESC);
+ALTER TABLE public.osis_formulir ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.osis_pertanyaan ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.osis_respons ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "formulir_public_select" ON public.osis_formulir;
+CREATE POLICY "formulir_public_select" ON public.osis_formulir FOR SELECT USING (true);
+DROP POLICY IF EXISTS "formulir_public_insert" ON public.osis_formulir;
+DROP POLICY IF EXISTS "pertanyaan_public_select" ON public.osis_pertanyaan;
+CREATE POLICY "pertanyaan_public_select" ON public.osis_pertanyaan FOR SELECT USING (true);
+DROP POLICY IF EXISTS "pertanyaan_public_insert" ON public.osis_pertanyaan;
+DROP POLICY IF EXISTS "respons_public_select" ON public.osis_respons;
+CREATE POLICY "respons_public_select" ON public.osis_respons FOR SELECT USING (true);
+DROP POLICY IF EXISTS "respons_public_insert" ON public.osis_respons;
+
+-- Simpan form + seluruh pertanyaan sekaligus (buat baru kalau p_id null,
+-- kalau tidak: update form, hapus pertanyaan lama, insert ulang urut).
+-- Dipakai buat simpan, publish, tutup, duplicate (client kirim array).
+CREATE OR REPLACE FUNCTION public.simpan_formulir(
+    p_user_id bigint, p_id bigint, p_judul text, p_deskripsi text, p_status text,
+    p_settings jsonb, p_pertanyaan jsonb
+)
+RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE fid bigint; q jsonb;
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF COALESCE(btrim(p_status),'') NOT IN ('draft','aktif','ditutup') THEN p_status := 'draft'; END IF;
+    IF p_settings IS NULL OR jsonb_typeof(p_settings) <> 'object' THEN p_settings := '{}'::jsonb; END IF;
+    IF p_pertanyaan IS NULL OR jsonb_typeof(p_pertanyaan) <> 'array' THEN p_pertanyaan := '[]'::jsonb; END IF;
+    IF p_id IS NULL THEN
+        INSERT INTO public.osis_formulir (judul, deskripsi, status, settings, created_by)
+        VALUES (left(COALESCE(NULLIF(btrim(p_judul),''),'Tanpa Judul'),160), left(COALESCE(p_deskripsi,''),1000), p_status, p_settings, p_user_id)
+        RETURNING id INTO fid;
+    ELSE
+        UPDATE public.osis_formulir SET judul=left(COALESCE(NULLIF(btrim(p_judul),judul),judul),160), deskripsi=left(COALESCE(p_deskripsi,deskripsi),1000),
+            status=p_status, settings=p_settings, updated_at=now() WHERE id=p_id;
+        IF NOT FOUND THEN RETURN -2; END IF;
+        fid := p_id;
+        DELETE FROM public.osis_pertanyaan WHERE form_id=fid;
+    END IF;
+    FOR q IN SELECT * FROM jsonb_array_elements(p_pertanyaan) LOOP
+        INSERT INTO public.osis_pertanyaan (form_id, tipe, teks, opsi, wajib, config, urutan)
+        VALUES (fid,
+            COALESCE(NULLIF(btrim(q->>'tipe'),''),'short'),
+            left(COALESCE(q->>'teks','Tanpa pertanyaan'),300),
+            CASE WHEN jsonb_typeof(COALESCE(q->'opsi','[]'::jsonb))='array' THEN q->'opsi' ELSE '[]'::jsonb END,
+            COALESCE((q->>'wajib')::boolean, false),
+            CASE WHEN jsonb_typeof(COALESCE(q->'config','{}'::jsonb))='object' THEN q->'config' ELSE '{}'::jsonb END,
+            COALESCE((q->>'urutan')::integer, 0));
+    END LOOP;
+    RETURN fid;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.hapus_formulir(p_user_id bigint, p_id bigint)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    DELETE FROM public.osis_respons WHERE form_id=p_id;
+    DELETE FROM public.osis_pertanyaan WHERE form_id=p_id;
+    DELETE FROM public.osis_formulir WHERE id=p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+-- Kirim respons (boleh anonim/responden umum). Kode: -1 form tidak ada,
+-- -2 form tidak aktif, -3 kuota respons penuh.
+CREATE OR REPLACE FUNCTION public.kirim_respons(p_form_id bigint, p_jawaban jsonb, p_user_id bigint)
+RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE nid bigint; st text; cfg jsonb; batas integer; terisi integer;
+BEGIN
+    SELECT status, settings INTO st, cfg FROM public.osis_formulir WHERE id=p_form_id;
+    IF NOT FOUND THEN RETURN -1; END IF;
+    IF st <> 'aktif' THEN RETURN -2; END IF;
+    IF p_jawaban IS NULL OR jsonb_typeof(p_jawaban) <> 'object' THEN p_jawaban := '{}'::jsonb; END IF;
+    batas := COALESCE((cfg->>'batas_respons')::integer, 0);
+    IF batas > 0 THEN
+        SELECT COUNT(*) INTO terisi FROM public.osis_respons WHERE form_id=p_form_id;
+        IF terisi >= batas THEN RETURN -3; END IF;
+    END IF;
+    INSERT INTO public.osis_respons (form_id, jawaban, created_by) VALUES (p_form_id, p_jawaban, p_user_id)
+    RETURNING id INTO nid;
+    RETURN nid;
+END $$;
+
+REVOKE EXECUTE ON FUNCTION public.simpan_formulir(bigint, bigint, text, text, text, jsonb, jsonb) FROM public;
+REVOKE EXECUTE ON FUNCTION public.hapus_formulir(bigint, bigint) FROM public;
+REVOKE EXECUTE ON FUNCTION public.kirim_respons(bigint, jsonb, bigint) FROM public;
+GRANT EXECUTE ON FUNCTION public.simpan_formulir(bigint, bigint, text, text, text, jsonb, jsonb) TO anon;
+GRANT EXECUTE ON FUNCTION public.hapus_formulir(bigint, bigint) TO anon;
+GRANT EXECUTE ON FUNCTION public.kirim_respons(bigint, jsonb, bigint) TO anon;
+
+-- Storage formulir/ (file jawaban responden) di bucket osis-foto
+DROP POLICY IF EXISTS "osis_foto_formulir_select" ON storage.objects;
+CREATE POLICY "osis_foto_formulir_select" ON storage.objects FOR SELECT TO anon USING (bucket_id='osis-foto' AND (storage.foldername(name))[1]='formulir');
+DROP POLICY IF EXISTS "osis_foto_formulir_insert" ON storage.objects;
+CREATE POLICY "osis_foto_formulir_insert" ON storage.objects FOR INSERT TO anon WITH CHECK (bucket_id='osis-foto' AND (storage.foldername(name))[1]='formulir');
+DROP POLICY IF EXISTS "osis_foto_formulir_delete" ON storage.objects;
+CREATE POLICY "osis_foto_formulir_delete" ON storage.objects FOR DELETE TO anon USING (bucket_id='osis-foto' AND (storage.foldername(name))[1]='formulir');
+
+-- Seed dummy formulir (cuma kalau tabel masih kosong)
+INSERT INTO public.osis_formulir (judul, deskripsi, status, settings)
+SELECT * FROM (VALUES
+    ('Evaluasi Kegiatan Class Meeting', 'Ceritakan pengalamanmu ikut Class Meeting kemarin.', 'aktif', '{"pesan_sukses":"Terima kasih, respons kamu telah berhasil dikirim.","simpan_waktu":true}'::jsonb),
+    ('Pendataan Peserta LDKS', 'Isi data diri untuk Latihan Dasar Kepemimpinan Siswa.', 'aktif', '{"pesan_sukses":"Data tersimpan, sampai jumpa di LDKS!","simpan_waktu":true}'::jsonb),
+    ('Pendaftaran Panitia HUT Sekolah', 'Ayo gabung panitia HUT sekolah tahun ini.', 'draft', '{}'::jsonb),
+    ('Survei Kepuasan Siswa', 'Survei layanan OSIS semester ini (sudah ditutup).', 'ditutup', '{}'::jsonb)
+) AS v(judul, deskripsi, status, settings)
+WHERE NOT EXISTS (SELECT 1 FROM public.osis_formulir);
+
+-- Seed pertanyaan per form (cuma kalau form itu belum punya pertanyaan)
+INSERT INTO public.osis_pertanyaan (form_id, tipe, teks, opsi, wajib, config, urutan)
+SELECT (SELECT id FROM public.osis_formulir WHERE judul='Evaluasi Kegiatan Class Meeting'), tipe, teks, opsi, wajib, config, urutan FROM (VALUES
+    ('short','Nama lengkap','[]'::jsonb,true,'{}'::jsonb,0),
+    ('short','Kelas','[]'::jsonb,true,'{}'::jsonb,1),
+    ('rating','Penilaian keseluruhan acara','[]'::jsonb,true,'{"max":5}'::jsonb,2),
+    ('radio','Bagian paling berkesan','["Pertandingan","Pentas seni","Konsumsi","Kekompakan panitia"]'::jsonb,false,'{}'::jsonb,3),
+    ('paragraf','Saran untuk tahun depan','[]'::jsonb,false,'{}'::jsonb,4),
+    ('file','Upload foto momen favoritmu','[]'::jsonb,false,'{"types":"JPG, PNG","max_mb":10}'::jsonb,5)
+) AS q(tipe, teks, opsi, wajib, config, urutan)
+WHERE NOT EXISTS (SELECT 1 FROM public.osis_pertanyaan WHERE form_id=(SELECT id FROM public.osis_formulir WHERE judul='Evaluasi Kegiatan Class Meeting'));
+
+INSERT INTO public.osis_pertanyaan (form_id, tipe, teks, opsi, wajib, config, urutan)
+SELECT (SELECT id FROM public.osis_formulir WHERE judul='Pendataan Peserta LDKS'), tipe, teks, opsi, wajib, config, urutan FROM (VALUES
+    ('short','Nama lengkap','[]'::jsonb,true,'{}'::jsonb,0),
+    ('short','Kelas','[]'::jsonb,true,'{}'::jsonb,1),
+    ('short','No HP aktif','[]'::jsonb,true,'{}'::jsonb,2),
+    ('dropdown','Ukuran kaos','["S","M","L","XL","XXL"]'::jsonb,true,'{}'::jsonb,3),
+    ('paragraf','Alergi / kebutuhan khusus','[]'::jsonb,false,'{}'::jsonb,4),
+    ('file','Upload surat izin orang tua (PDF/JPG)','[]'::jsonb,true,'{"types":"PDF, JPG, PNG","max_mb":10}'::jsonb,5)
+) AS q(tipe, teks, opsi, wajib, config, urutan)
+WHERE NOT EXISTS (SELECT 1 FROM public.osis_pertanyaan WHERE form_id=(SELECT id FROM public.osis_formulir WHERE judul='Pendataan Peserta LDKS'));
+
+INSERT INTO public.osis_pertanyaan (form_id, tipe, teks, opsi, wajib, config, urutan)
+SELECT (SELECT id FROM public.osis_formulir WHERE judul='Pendaftaran Panitia HUT Sekolah'), tipe, teks, opsi, wajib, config, urutan FROM (VALUES
+    ('short','Nama lengkap','[]'::jsonb,true,'{}'::jsonb,0),
+    ('radio','Divisi pilihan','["Acara","Humas","Konsumsi","Dokumentasi","Keamanan"]'::jsonb,true,'{}'::jsonb,1),
+    ('paragraf','Alasan gabung panitia','[]'::jsonb,false,'{}'::jsonb,2)
+) AS q(tipe, teks, opsi, wajib, config, urutan)
+WHERE NOT EXISTS (SELECT 1 FROM public.osis_pertanyaan WHERE form_id=(SELECT id FROM public.osis_formulir WHERE judul='Pendaftaran Panitia HUT Sekolah'));
+
+INSERT INTO public.osis_pertanyaan (form_id, tipe, teks, opsi, wajib, config, urutan)
+SELECT (SELECT id FROM public.osis_formulir WHERE judul='Survei Kepuasan Siswa'), tipe, teks, opsi, wajib, config, urutan FROM (VALUES
+    ('skala','Seberapa puas dengan layanan OSIS semester ini','[]'::jsonb,true,'{"min":1,"max":5,"label_min":"Sangat Tidak Puas","label_max":"Sangat Puas"}'::jsonb,0),
+    ('checkbox','Layanan yang pernah dipakai','["Aspirasi","Request lagu","Peminjaman alat","Info lomba"]'::jsonb,false,'{}'::jsonb,1),
+    ('tanggal','Terakhir berinteraksi dengan OSIS','[]'::jsonb,false,'{}'::jsonb,2),
+    ('paragraf','Kritik dan saran','[]'::jsonb,false,'{}'::jsonb,3)
+) AS q(tipe, teks, opsi, wajib, config, urutan)
+WHERE NOT EXISTS (SELECT 1 FROM public.osis_pertanyaan WHERE form_id=(SELECT id FROM public.osis_formulir WHERE judul='Survei Kepuasan Siswa'));
+
+-- Seed respons contoh buat form evaluasi (cuma kalau belum ada respons)
+DO $$
+DECLARE fid bigint; q bigint[];
+BEGIN
+    SELECT id INTO fid FROM public.osis_formulir WHERE judul='Evaluasi Kegiatan Class Meeting';
+    IF fid IS NULL THEN RETURN; END IF;
+    IF EXISTS (SELECT 1 FROM public.osis_respons WHERE form_id=fid) THEN RETURN; END IF;
+    SELECT array_agg(id ORDER BY urutan) INTO q FROM public.osis_pertanyaan WHERE form_id=fid;
+    IF array_length(q,1) < 5 THEN RETURN; END IF;
+    INSERT INTO public.osis_respons (form_id, jawaban, created_at) VALUES
+    (fid, jsonb_build_object(q[1]::text,'Andini Pratiwi', q[2]::text,'XII RPL 1', q[3]::text,'5', q[4]::text,'Pentas seni', q[5]::text,'Tahun depan tambah stand bazar.'), now() - interval '2 days'),
+    (fid, jsonb_build_object(q[1]::text,'Bagas Ramadhan', q[2]::text,'XI TKJ 2', q[3]::text,'5', q[4]::text,'Pertandingan', q[5]::text,'Suaranya kurang kencang pas final.'), now() - interval '2 days'),
+    (fid, jsonb_build_object(q[1]::text,'Citra Ayu', q[2]::text,'X AKL 1', q[3]::text,'4', q[4]::text,'Kekompakan panitia', q[5]::text,'Konsumsi antre terlalu lama.'), now() - interval '1 day'),
+    (fid, jsonb_build_object(q[1]::text,'Dimas Saputra', q[2]::text,'XII RPL 2', q[3]::text,'5', q[4]::text,'Pertandingan', q[5]::text,''), now() - interval '1 day'),
+    (fid, jsonb_build_object(q[1]::text,'Eka Putri', q[2]::text,'XI AKL 3', q[3]::text,'4', q[4]::text,'Pentas seni', q[5]::text,'Parkir perlu diatur lagi.'), now() - interval '5 hours'),
+    (fid, jsonb_build_object(q[1]::text,'Fajar Nugroho', q[2]::text,'X TKJ 1', q[3]::text,'3', q[4]::text,'Konsumsi', q[5]::text,'Jadwal molor satu jam.'), now() - interval '1 hour');
+END $$;
+
 -- Seed dummy (cuma kalau tabel masih kosong)
 INSERT INTO public.osis_evaluasi (nama_kegiatan, agenda_id, proker_id, tgl_kegiatan, divisi, pj, status, rating_total, r_persiapan, r_pelaksanaan, r_koordinasi, r_waktu, r_anggaran, baik, kendala, penyebab, solusi, perbaiki, rekomendasi, dokumentasi, tugas)
 SELECT * FROM (VALUES
@@ -1762,4 +1967,3 @@ SELECT * FROM (VALUES
      '', 'Jadwal bentrok dengan ujian.', '', '', '', '', '[]'::jsonb, '[]'::jsonb)
 ) AS v(nama_kegiatan, agenda_id, proker_id, tgl_kegiatan, divisi, pj, status, rating_total, r_persiapan, r_pelaksanaan, r_koordinasi, r_waktu, r_anggaran, baik, kendala, penyebab, solusi, perbaiki, rekomendasi, dokumentasi, tugas)
 WHERE NOT EXISTS (SELECT 1 FROM public.osis_evaluasi);
-gi

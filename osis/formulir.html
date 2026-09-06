@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Formulir — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+<meta name="theme-color" content="#e11d2e" />
+<link rel="manifest" href="../manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .formulir-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .formulir-head {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .formulir-head .ico {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .formulir-head h1 {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .formulir-head p {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .fcard {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .fcard.accent-top {
+        border-top: 10px solid var(--red);
+      }
+      .fcard h3 {
+        font-size: 0.95rem;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .fcard h3 i {
+        color: var(--red);
+      }
+      .fcard .sub {
+        font-size: 0.74rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      #formList {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      @media (min-width: 720px) {
+        #formList {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .form-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .form-card h4 {
+        font-size: 0.92rem;
+        font-weight: 900;
+        overflow-wrap: anywhere;
+      }
+      .form-card .desc {
+        font-size: 0.76rem;
+        color: var(--gray);
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+      .form-card .meta {
+        font-size: 0.7rem;
+        color: var(--gray);
+        font-weight: 700;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .form-card .meta i {
+        color: var(--red);
+        margin-right: 3px;
+      }
+      .status-badge {
+        font-size: 0.64rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 3px 10px;
+        border-radius: 999px;
+        border: 2px solid var(--ink);
+      }
+      .status-badge.draft { background: #e8e0da; }
+      .status-badge.aktif { background: #d6f5d6; color: #146314; }
+      .status-badge.ditutup { background: var(--red); color: #fff; }
+      .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        margin-right: 5px;
+      }
+      .form-card .actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 6px;
+      }
+      /* builder */
+      .builder-bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .builder-bar .spacer {
+        flex: 1;
+      }
+      .q-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .q-card .q-top {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        margin-bottom: 8px;
+      }
+      .q-card .q-num {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: var(--ink);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 900;
+        display: grid;
+        place-items: center;
+      }
+      .q-card textarea.q-teks {
+        flex: 1;
+        border: 2px solid transparent;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 0.92rem;
+        font-weight: 800;
+        padding: 8px 10px;
+        background: var(--paper);
+        outline: none;
+        resize: vertical;
+        min-height: 44px;
+      }
+      .q-card textarea.q-teks:focus {
+        border-color: var(--red);
+        background: #fff;
+      }
+      .q-card select.q-tipe {
+        width: 100%;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-family: inherit;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background: var(--white);
+        margin-bottom: 8px;
+      }
+      .q-opt {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        font-size: 0.84rem;
+      }
+      .q-opt input {
+        flex: 1;
+        border: none;
+        border-bottom: 2px solid var(--line);
+        font-family: inherit;
+        font-size: 0.84rem;
+        padding: 6px 2px;
+        outline: none;
+        background: transparent;
+      }
+      .q-opt input:focus {
+        border-color: var(--red);
+      }
+      .q-opt button {
+        border: none;
+        background: transparent;
+        color: var(--gray);
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+      .q-opt button:hover {
+        color: var(--red);
+      }
+      .q-add-opt {
+        border: none;
+        background: transparent;
+        color: var(--gray);
+        font-family: inherit;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 4px 0;
+      }
+      .q-add-opt:hover {
+        color: var(--red);
+      }
+      .q-cfg {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .q-cfg .field {
+        margin-bottom: 0;
+      }
+      .q-cfg input {
+        width: 100%;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-family: inherit;
+        font-size: 0.82rem;
+        background: var(--white);
+      }
+      .q-foot {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1.5px dashed var(--line);
+      }
+      .q-foot .wajib {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        margin-left: auto;
+      }
+      .q-foot .wajib input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--red);
+      }
+      .q-icon-btn {
+        width: 32px;
+        height: 32px;
+        border: 2px solid var(--ink);
+        border-radius: 9px;
+        background: var(--white);
+        cursor: pointer;
+        font-size: 0.78rem;
+        display: inline-grid;
+        place-items: center;
+      }
+      .q-icon-btn:active {
+        transform: translate(1px, 1px);
+      }
+      .q-icon-btn.del {
+        background: #ffe9e9;
+        color: var(--red-dark);
+      }
+      .addq-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      @media (min-width: 720px) {
+        .addq-grid {
+          grid-template-columns: repeat(5, 1fr);
+        }
+      }
+      .addq-btn {
+        border: 2.5px dashed var(--ink);
+        border-radius: 12px;
+        background: var(--white);
+        font-family: inherit;
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 10px 4px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .addq-btn i {
+        font-size: 1.1rem;
+        color: var(--red);
+      }
+      .addq-btn:hover {
+        background: var(--paper-2);
+      }
+      .set-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1.5px dashed var(--line);
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+      .set-row:last-child {
+        border-bottom: none;
+      }
+      .set-row small {
+        display: block;
+        color: var(--gray);
+        font-weight: 600;
+        font-size: 0.7rem;
+      }
+      .set-row input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--red);
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .set-row input[type="number"],
+      .set-row input[type="text"] {
+        width: 110px;
+        margin-left: auto;
+        border: 2px solid var(--ink);
+        border-radius: 9px;
+        padding: 6px 9px;
+        font-family: inherit;
+        font-size: 0.8rem;
+      }
+      .set-row textarea {
+        width: 100%;
+        border: 2px solid var(--ink);
+        border-radius: 9px;
+        padding: 8px 10px;
+        font-family: inherit;
+        font-size: 0.8rem;
+        margin-top: 4px;
+      }
+      /* isi / preview */
+      .isi-q {
+        margin-bottom: 4px;
+      }
+      .isi-q label {
+        display: block;
+        font-size: 0.86rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+        overflow-wrap: anywhere;
+      }
+      .isi-q label .wajib-star {
+        color: var(--red);
+      }
+      .isi-q input[type="text"],
+      .isi-q input[type="date"],
+      .isi-q textarea,
+      .isi-q select {
+        width: 100%;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-family: inherit;
+        font-size: 0.86rem;
+        background: var(--white);
+        outline: none;
+      }
+      .isi-q input:focus,
+      .isi-q textarea:focus,
+      .isi-q select:focus {
+        box-shadow: 2px 2px 0 var(--red);
+      }
+      .isi-q textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+      .isi-opt {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 0;
+        font-size: 0.86rem;
+        font-weight: 600;
+      }
+      .isi-opt input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--red);
+        flex-shrink: 0;
+      }
+      .skala-row {
+        display: flex;
+        gap: 6px;
+        align-items: flex-end;
+        justify-content: space-between;
+      }
+      .skala-opt {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        cursor: pointer;
+        flex: 1;
+      }
+      .skala-opt input {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--red);
+      }
+      .skala-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.7rem;
+        color: var(--gray);
+        font-weight: 700;
+        margin-top: 4px;
+      }
+      .rate-pick {
+        display: flex;
+        gap: 2px;
+      }
+      .rate-pick button {
+        border: none;
+        background: transparent;
+        font-size: 1.9rem;
+        cursor: pointer;
+        color: var(--line);
+        line-height: 1;
+        padding: 0 1px;
+      }
+      .rate-pick button.on {
+        color: #e8a100;
+        text-shadow: 1.5px 1.5px 0 var(--ink);
+      }
+      .share-box {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .share-box input {
+        flex: 1;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-family: inherit;
+        font-size: 0.78rem;
+        background: var(--paper);
+        min-width: 0;
+      }
+      /* respons */
+      .sum-bar {
+        margin-bottom: 10px;
+      }
+      .sum-bar .top {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.76rem;
+        font-weight: 800;
+        margin-bottom: 3px;
+        gap: 8px;
+      }
+      .sum-bar .top span:last-child {
+        color: var(--red);
+      }
+      .bar {
+        height: 12px;
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        background: var(--paper-2);
+        overflow: hidden;
+      }
+      .bar > span {
+        display: block;
+        height: 100%;
+        background: var(--red);
+        border-radius: 999px;
+      }
+      table.resp-tabel {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.76rem;
+        min-width: 480px;
+      }
+      table.resp-tabel th {
+        text-align: left;
+        font-size: 0.64rem;
+        text-transform: uppercase;
+        color: var(--gray);
+        padding: 7px;
+        border-bottom: 2px solid var(--ink);
+      }
+      table.resp-tabel td {
+        padding: 7px;
+        border-bottom: 1.5px dashed var(--line);
+        vertical-align: top;
+        overflow-wrap: anywhere;
+      }
+      .resp-scroll {
+        overflow-x: auto;
+      }
+      /* OSIS header menu — desktop pill, mobile titik tiga */
+      .osis-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .osis-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--white);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-decoration: none;
+        color: var(--ink);
+        box-shadow: 2px 2px 0 var(--ink);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .osis-nav-link:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .osis-nav-link:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .osis-nav-link.active {
+        background: var(--red);
+        color: #fff;
+      }
+      #osisMoreWrap {
+        display: none;
+        position: relative;
+      }
+      #osisMoreWrap.show {
+        display: inline-flex !important;
+      }
+      #osisMoreMenu .header-more-item.active {
+        background: var(--red);
+        color: #fff;
+      }
+      @media (min-width: 900px) {
+        .osis-nav { flex-wrap: wrap; row-gap: 6px; }
+      }
+      @media (max-width: 640px) {
+        .osis-nav {
+          display: none !important;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-sidebar.js" defer></script>
+    <script src="../js/formulir.js" defer></script>
+  <script src="../js/pwa.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>FORMULIR</h2>
+          <p>Form Builder OSIS</p>
+        </div>
+      </a>
+      
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
+        
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="formulir-wrap">
+      <!-- DAFTAR -->
+      <div id="viewDaftar" style="display: flex; flex-direction: column; gap: 14px">
+        <div class="formulir-head">
+          <div class="ico"><i class="fa-solid fa-clipboard-question"></i></div>
+          <div style="flex: 1; min-width: 180px">
+            <h1>FORMULIR</h1>
+            <p>BUAT DAN KELOLA FORMULIR OSIS</p>
+          </div>
+          <button class="btn btn-red" id="btnBuatForm"><i class="fa-solid fa-plus"></i> Buat Formulir</button>
+        </div>
+        <div id="formList"><div class="loading-block"><div class="spinner"></div>Memuat formulir...</div></div>
+      </div>
+
+      <!-- BUILDER -->
+      <div id="viewBuilder" style="display: none; flex-direction: column; gap: 14px">
+        <div class="builder-bar">
+          <button class="btn btn-white btn-sm" id="btnKembaliDaftar"><i class="fa-solid fa-arrow-left"></i> Daftar</button>
+          <span class="status-badge draft" id="builderStatus">Draft</span>
+          <span class="spacer"></span>
+          <button class="btn btn-white btn-sm" id="btnPreview"><i class="fa-solid fa-eye"></i> Preview</button>
+          <button class="btn btn-white btn-sm" id="btnSimpanBuilder"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+          <button class="btn btn-red btn-sm" id="btnPublish"><i class="fa-solid fa-paper-plane"></i> Publikasikan</button>
+        </div>
+        <div class="fcard accent-top">
+          <div class="field"><label>Judul formulir</label><input type="text" id="bJudul" class="admin-input" placeholder="cth: Evaluasi Class Meeting" maxlength="160" style="font-weight: 900; font-size: 1.05rem" /></div>
+          <div class="field"><label>Deskripsi</label><textarea id="bDeskripsi" class="admin-input admin-textarea" rows="2" maxlength="1000" placeholder="Deskripsi untuk responden..."></textarea></div>
+        </div>
+        <div id="builderList" style="display: flex; flex-direction: column; gap: 12px"></div>
+        <div class="fcard">
+          <h3><i class="fa-solid fa-plus"></i> Tambah Pertanyaan</h3>
+          <p class="sub">Klik tipe buat nambah kartu pertanyaan baru.</p>
+          <div class="addq-grid" id="addqGrid"></div>
+        </div>
+        <div class="fcard">
+          <h3><i class="fa-solid fa-gear"></i> Pengaturan</h3>
+          <p class="sub">Berlaku saat form dipublikasikan.</p>
+          <div class="set-row"><div>Status<small>Aktif = bisa diisi · Ditutup = responden ditolak</small></div><span style="margin-left: auto; display: flex; gap: 6px"><button class="btn btn-white btn-sm" id="btnStatusAktif">Aktif</button><button class="btn btn-white btn-sm" id="btnStatusTutup">Tutup</button></span></div>
+          <div class="set-row"><div>Batas respons<small>0 = tanpa batas</small></div><input type="number" id="setBatas" min="0" max="100000" value="0" /></div>
+          <div class="set-row"><div>Boleh isi lebih dari 1x<small>Responden yang sama boleh kirim berkali-kali</small></div><input type="checkbox" id="setMulti" checked /></div>
+          <div class="set-row"><div>Acak urutan pertanyaan<small>Urutan diacak tiap responden buka</small></div><input type="checkbox" id="setAcak" /></div>
+          <div class="set-row"><div>Simpan waktu pengisian<small>Catat jam kirim tiap respons</small></div><input type="checkbox" id="setWaktu" checked /></div>
+          <div class="set-row" style="display: block"><div>Pesan setelah submit</div><textarea id="setPesan" rows="2" style="width: 100%; border: 2px solid var(--ink); border-radius: 9px; padding: 8px 10px; font-family: inherit; font-size: 0.8rem; margin-top: 6px">Terima kasih, respons kamu telah berhasil dikirim.</textarea></div>
+          <div class="share-box" id="shareBox" style="display: none">
+            <input type="text" id="shareLink" readonly onclick="this.select()" />
+            <button class="btn btn-red btn-sm" id="btnSalinLink"><i class="fa-solid fa-copy"></i> Salin Link</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ISI / PREVIEW -->
+      <div id="viewIsi" style="display: none; flex-direction: column; gap: 14px">
+        <div class="builder-bar">
+          <button class="btn btn-white btn-sm" id="btnIsiKembali"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+          <span class="status-badge aktif" id="isiModeBadge">Preview</span>
+        </div>
+        <div class="fcard accent-top">
+          <h2 id="isiJudul" style="font-size: 1.3rem; font-weight: 900; overflow-wrap: anywhere">—</h2>
+          <p id="isiDeskripsi" class="sub" style="margin-bottom: 0; margin-top: 4px; font-size: 0.84rem"></p>
+        </div>
+        <div id="isiBody" style="display: flex; flex-direction: column; gap: 12px"></div>
+        <button class="btn btn-red" id="btnKirimIsi" style="justify-content: center"><i class="fa-solid fa-paper-plane"></i> Kirim</button>
+      </div>
+
+      <!-- RESPONS -->
+      <div id="viewRespons" style="display: none; flex-direction: column; gap: 14px">
+        <div class="builder-bar">
+          <button class="btn btn-white btn-sm" id="btnResponsKembali"><i class="fa-solid fa-arrow-left"></i> Daftar</button>
+          <span class="status-badge aktif" id="responsJudulBadge">Respons</span>
+        </div>
+        <div class="fcard">
+          <h3 id="responsJudul">—</h3>
+          <p class="sub" id="responsMeta">—</p>
+          <div id="responsRingkas" style="display: flex; flex-direction: column; gap: 14px; margin-top: 8px"></div>
+        </div>
+        <div class="fcard">
+          <h3><i class="fa-solid fa-users"></i> Daftar Responden</h3>
+          <p class="sub">Klik baris buat lihat jawaban lengkap.</p>
+          <div class="resp-scroll" id="responsTabel"></div>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="isiFileInput" hidden />
+  </body>
+</html>

@@ -1,0 +1,52 @@
+{
+  "name": "OSIS TARPAN ONE — SMK Taruna Harapan 1 Cipatat",
+  "short_name": "TARPAN ONE",
+  "description": "Aplikasi web OSIS SMK Taruna Harapan 1 Cipatat: sekbid, galeri, aspirasi, kontak, dan dashboard OSIS.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fffdfa",
+  "theme_color": "#e11d2e",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["education", "social"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Seksi Bidang",
+      "url": "./#/sekbid",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Galeri",
+      "url": "./#/galeri",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Aspirasi",
+      "url": "./#/aspirasi",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
