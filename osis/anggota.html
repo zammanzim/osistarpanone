@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anggota & Pengurus — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .anggota-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .anggota-toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .anggota-toolbar select {
+        flex: 1;
+        min-width: 140px;
+        max-width: 220px;
+      }
+      .anggota-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .angg-tab {
+        padding: 9px 16px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--white);
+        font-family: inherit;
+        font-size: 0.78rem;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 2px 2px 0 var(--ink);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s;
+      }
+      .angg-tab:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .angg-tab.active {
+        background: var(--red);
+        color: #fff;
+      }
+      .anggota-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 4px 4px 0 var(--ink);
+        overflow-x: auto;
+      }
+      .anggota-card h3 {
+        font-size: 0.95rem;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .anggota-card h3 i {
+        color: var(--red);
+      }
+      .anggota-card .sub {
+        font-size: 0.74rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+      .angg-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      @media (min-width: 640px) {
+        .angg-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      .angg-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 6px;
+      }
+      .angg-card .angg-foto {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 2.5px solid var(--ink);
+        background: var(--paper-2);
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        font-weight: 900;
+        color: var(--red);
+        flex-shrink: 0;
+      }
+      .angg-card .angg-foto img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .angg-card h4 {
+        font-size: 0.88rem;
+        font-weight: 900;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+      }
+      .angg-card .jabatan {
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--red);
+        background: var(--paper-2);
+        border: 2px solid var(--ink);
+        padding: 2px 9px;
+        border-radius: 999px;
+      }
+      .angg-card p {
+        font-size: 0.72rem;
+        color: var(--gray);
+        font-weight: 600;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+      }
+      .angg-card .angg-foto-l {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 10px;
+        border: 2px solid var(--ink);
+        background: var(--paper-2);
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        font-size: 1.2rem;
+        color: var(--red);
+      }
+      .angg-card .angg-foto-l img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .angg-card .angg-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 4px;
+      }
+      .angg-add {
+        border-style: dashed;
+        background: var(--paper-2);
+        cursor: pointer;
+        justify-content: center;
+        min-height: 170px;
+        color: var(--gray);
+        font-weight: 800;
+        font-size: 0.82rem;
+      }
+      .angg-add i {
+        font-size: 1.5rem;
+        color: var(--red);
+      }
+      .angg-add:active {
+        transform: translate(2px, 2px);
+        box-shadow: none;
+      }
+      .angg-grup {
+        font-size: 0.74rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin: 14px 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .angg-grup:first-child {
+        margin-top: 0;
+      }
+      .angg-grup::after {
+        content: "";
+        flex: 1;
+        height: 2.5px;
+        background: var(--ink);
+        border-radius: 2px;
+      }
+      /* popup tambah/edit — pola agenda */
+      .angg-popup {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 10, 11, 0.78);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 210;
+        padding: 18px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.22s ease,
+          visibility 0.22s ease;
+      }
+      .angg-popup.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      .angg-popup-inner {
+        width: min(460px, 100%);
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.96) translateY(10px);
+        transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+      }
+      .angg-popup.open .angg-popup-inner {
+        transform: scale(1) translateY(0);
+      }
+      .angg-drop {
+        border: 2.5px dashed var(--ink);
+        border-radius: 14px;
+        background: var(--paper-2);
+        height: 110px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        overflow: hidden;
+        position: relative;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .angg-drop.dragover {
+        background: var(--white);
+        border-color: var(--red);
+      }
+      .angg-drop img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .angg-drop-inner {
+        text-align: center;
+        color: var(--gray);
+        font-weight: 700;
+        font-size: 0.8rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px;
+      }
+      .angg-drop-inner i {
+        font-size: 1.4rem;
+        color: var(--red);
+      }
+      .angg-drop-inner small {
+        font-size: 0.66rem;
+        font-weight: 600;
+        opacity: 0.8;
+      }
+      .pengurus-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 560px) {
+        .pengurus-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .pengurus-foto-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 12px 0;
+      }
+      @media (max-width: 560px) {
+        .pengurus-foto-row {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .pf-box {
+        border: 2.5px dashed var(--ink);
+        border-radius: 14px;
+        background: var(--paper-2);
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        cursor: pointer;
+        overflow: hidden;
+        position: relative;
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--gray);
+        text-align: center;
+        padding: 4px;
+      }
+      .pf-box img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .pf-box.dragover {
+        border-color: var(--red);
+        background: var(--white);
+      }
+      .pf-box i {
+        font-size: 1.2rem;
+        color: var(--red);
+      }
+      /* OSIS header menu — desktop pill, mobile titik tiga */
+      .osis-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .osis-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--white);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-decoration: none;
+        color: var(--ink);
+        box-shadow: 2px 2px 0 var(--ink);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .osis-nav-link:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .osis-nav-link:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .osis-nav-link.active {
+        background: var(--red);
+        color: #fff;
+      }
+      #osisMoreWrap {
+        display: none;
+        position: relative;
+      }
+      #osisMoreWrap.show {
+        display: inline-flex !important;
+      }
+      #osisMoreMenu .header-more-item.active {
+        background: var(--red);
+        color: #fff;
+      }
+      @media (max-width: 640px) {
+        .osis-nav {
+          display: none !important;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-menu.js" defer></script>
+    <script src="../js/anggota.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>ANGGOTA</h2>
+          <p>Data &amp; Pengurus</p>
+        </div>
+      </a>
+      <nav class="osis-nav" id="osisNav" aria-label="Menu OSIS">
+        <a href="index" class="osis-nav-link"
+          ><i class="fa-solid fa-grip"></i> Dashboard</a
+        >
+        <a href="agenda" class="osis-nav-link"
+          ><i class="fa-solid fa-calendar-days"></i> Agenda</a
+        >
+        <a href="profil" class="osis-nav-link"
+          ><i class="fa-solid fa-user"></i> Profil</a
+        >
+        <a href="anggota" class="osis-nav-link"
+          ><i class="fa-solid fa-users"></i> Anggota</a
+        >
+        <a href="notulensi" class="osis-nav-link"
+          ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
+        >
+        <a href="proker" class="osis-nav-link"
+          ><i class="fa-solid fa-list-check"></i> Proker</a
+        >
+        <a href="dokumen" class="osis-nav-link"
+          ><i class="fa-solid fa-folder-open"></i> Dokumen</a
+        >
+        <a href="task" class="osis-nav-link"
+          ><i class="fa-solid fa-clipboard-check"></i> Task</a
+        >
+        <a href="keuangan" class="osis-nav-link"
+          ><i class="fa-solid fa-wallet"></i> Keuangan</a
+        >
+        <a href="evaluasi" class="osis-nav-link"
+          ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
+        >
+      </nav>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+        <div class="header-more-wrap" id="osisMoreWrap" style="display: none">
+          <button
+            class="icon-btn"
+            id="osisMoreBtn"
+            onclick="OsisMenu.toggle()"
+            title="Menu OSIS"
+          >
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <div class="header-more-menu" id="osisMoreMenu">
+            <a href="index" class="header-more-item"
+              ><i class="fa-solid fa-grip"></i> Dashboard</a
+            >
+            <a href="agenda" class="header-more-item"
+              ><i class="fa-solid fa-calendar-days"></i> Agenda</a
+            >
+            <a href="profil" class="header-more-item"
+              ><i class="fa-solid fa-user"></i> Profil</a
+            >
+            <a href="anggota" class="header-more-item"
+              ><i class="fa-solid fa-users"></i> Anggota</a
+            >
+            <a href="notulensi" class="header-more-item"
+              ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
+            >
+            <a href="proker" class="header-more-item"
+              ><i class="fa-solid fa-list-check"></i> Proker</a
+            >
+            <a href="dokumen" class="header-more-item"
+              ><i class="fa-solid fa-folder-open"></i> Dokumen</a
+            >
+            <a href="task" class="header-more-item"
+              ><i class="fa-solid fa-clipboard-check"></i> Task</a
+            >
+            <a href="keuangan" class="header-more-item"
+              ><i class="fa-solid fa-wallet"></i> Keuangan</a
+            >
+            <a href="evaluasi" class="header-more-item"
+              ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
+            >
+          </div>
+        </div>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="anggota-wrap">
+      <div class="anggota-toolbar">
+        <select id="pilihTahun" class="admin-input" title="Periode tahun"></select>
+        <button class="btn btn-white btn-sm" id="btnTambahTahun">
+          <i class="fa-solid fa-plus"></i> Periode
+        </button>
+      </div>
+
+      <div class="anggota-tabs">
+        <button class="angg-tab active" data-tab="anggota">
+          <i class="fa-solid fa-users"></i> Anggota
+        </button>
+        <button class="angg-tab" data-tab="pengurus">
+          <i class="fa-solid fa-crown"></i> Pengurus
+        </button>
+        <button class="angg-tab" data-tab="sekbid">
+          <i class="fa-solid fa-layer-group"></i> Sekbid
+        </button>
+      </div>
+
+      <!-- ANGGOTA -->
+      <div class="anggota-card" id="panelAnggota">
+        <h3><i class="fa-solid fa-users"></i> Anggota <span id="anggotaCount"></span></h3>
+        <p class="sub">Klik kartu + buat tambah, ikon pen buat edit.</p>
+        <div id="anggotaTable"><div class="loading-block"><div class="spinner"></div>Memuat anggota...</div></div>
+      </div>
+
+      <!-- POPUP ANGGOTA -->
+      <div class="angg-popup" id="anggotaPopup">
+        <div class="angg-popup-inner">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
+            <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-user" style="color: var(--red)"></i> <span id="anggotaPopupTitle">Tambah Anggota</span></span>
+            <button class="icon-btn" onclick="Anggota.tutupPopupAnggota()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="field"><label>Foto (opsional)</label>
+            <div id="anggotaDrop" class="angg-drop">
+              <div class="angg-drop-inner" id="anggotaDropInner">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>Klik atau drop foto ke sini</span>
+                <small>JPG/PNG/WEBP — otomatis kompres &lt;1MB</small>
+              </div>
+            </div>
+            <input type="file" id="anggotaPopupFile" accept="image/*" hidden />
+          </div>
+          <div class="field"><label>Nama</label><input type="text" id="anggotaNama" class="admin-input" placeholder="Nama lengkap" maxlength="80" /></div>
+          <div class="field"><label>Jabatan</label><input type="text" id="anggotaJabatan" class="admin-input" placeholder="cth: Ketua Sekbid 1" maxlength="80" /></div>
+          <div class="field"><label>Urutan</label><input type="number" id="anggotaUrutan" class="admin-input" value="99" min="1" max="999" /></div>
+          <div class="form-actions-row" style="margin-top: 12px">
+            <button class="btn btn-white" onclick="Anggota.tutupPopupAnggota()">Batal</button>
+            <button class="btn btn-red" id="btnSimpanAnggotaPopup"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+          </div>
+          <input type="hidden" id="anggotaPopupId" />
+        </div>
+      </div>
+
+      <!-- PENGURUS -->
+      <div class="anggota-card" id="panelPengurus" style="display: none">
+        <h3><i class="fa-solid fa-crown"></i> Pengurus Periode <span id="pengurusTahun"></span></h3>
+        <p class="sub">Ketua &amp; wakil + foto. Klik kotak foto atau drop foto ke sana, lalu Simpan.</p>
+        <div class="pengurus-grid">
+          <div class="field"><label>Ketua</label><input type="text" id="pimpKetuaNama" class="admin-input" placeholder="Nama ketua" maxlength="80"></div>
+          <div class="field"><label>Wakil</label><input type="text" id="pimpWakilNama" class="admin-input" placeholder="Nama wakil" maxlength="80"></div>
+        </div>
+        <div class="pengurus-foto-row">
+          <div class="pf-box" id="pfKetua" title="Foto ketua"><i class="fa-solid fa-camera"></i><span>Ketua</span></div>
+          <div class="pf-box" id="pfWakil" title="Foto wakil"><i class="fa-solid fa-camera"></i><span>Wakil</span></div>
+          <div class="pf-box" id="pfAngkatan" title="Foto angkatan"><i class="fa-solid fa-camera"></i><span>Angkatan</span></div>
+        </div>
+        <div class="form-actions-row">
+          <button class="btn btn-red" id="btnSimpanPimpinan"><i class="fa-solid fa-floppy-disk"></i> Simpan Pengurus</button>
+        </div>
+      </div>
+
+      <!-- SEKBID -->
+      <div class="anggota-card" id="panelSekbid" style="display: none">
+        <h3><i class="fa-solid fa-layer-group"></i> Sekbid &amp; BPH <span id="sekbidCount"></span></h3>
+        <p class="sub">Klik kartu + buat tambah, ikon pen buat edit. Hati-hati hapus sekbid yang sudah punya agenda.</p>
+        <div id="sekbidTable"><div class="loading-block"><div class="spinner"></div>Memuat sekbid...</div></div>
+      </div>
+
+      <!-- POPUP SEKBID -->
+      <div class="angg-popup" id="sekbidPopup">
+        <div class="angg-popup-inner">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
+            <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-layer-group" style="color: var(--red)"></i> <span id="sekbidPopupTitle">Tambah Sekbid</span></span>
+            <button class="icon-btn" onclick="Anggota.tutupPopupSekbid()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="field"><label>Foto (opsional)</label>
+            <div id="sekbidDrop" class="angg-drop">
+              <div class="angg-drop-inner" id="sekbidDropInner">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>Klik atau drop foto ke sini</span>
+                <small>JPG/PNG/WEBP — otomatis kompres &lt;1MB</small>
+              </div>
+            </div>
+            <input type="file" id="sekbidPopupFile" accept="image/*" hidden />
+          </div>
+          <div class="field"><label>Nama</label><input type="text" id="sekbidNama" class="admin-input" placeholder="cth: Sekbid 1" maxlength="80" /></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+            <div class="field"><label>Kategori</label><select id="sekbidKategori" class="admin-input"><option value="SEKBID">SEKBID</option><option value="BPH">BPH</option></select></div>
+            <div class="field"><label>Urutan</label><input type="number" id="sekbidUrutan" class="admin-input" value="99" min="1" max="999" /></div>
+          </div>
+          <div class="field"><label>Icon</label><input type="text" id="sekbidIcon" class="admin-input" placeholder="fa-solid fa-users" maxlength="60" /></div>
+          <div class="field"><label>Deskripsi</label><textarea id="sekbidDeskripsi" class="admin-input admin-textarea" placeholder="Deskripsi singkat" maxlength="200" rows="3"></textarea></div>
+          <div class="form-actions-row" style="margin-top: 12px">
+            <button class="btn btn-white" onclick="Anggota.tutupPopupSekbid()">Batal</button>
+            <button class="btn btn-red" id="btnSimpanSekbidPopup"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+          </div>
+          <input type="hidden" id="sekbidPopupId" />
+        </div>
+      </div>
+
+      <input type="file" id="anggotaFile" accept="image/*" hidden />
+    </div>
+  </body>
+</html>

@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profil OSIS — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .profil-wrap {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .profil-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .profil-card h3 {
+        font-size: 0.95rem;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .profil-card h3 i {
+        color: var(--red);
+      }
+      .profil-card .sub {
+        font-size: 0.74rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+      .profil-hero {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .profil-drop {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        border: 3px solid var(--ink);
+        background: var(--paper-2);
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        box-shadow: 3px 3px 0 var(--ink);
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .profil-drop.dragover {
+        border-color: var(--red);
+        background: var(--white);
+      }
+      .profil-drop img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+      }
+      .profil-drop .profil-ph {
+        font-size: 2rem;
+        font-weight: 900;
+        color: var(--red);
+        display: grid;
+        place-items: center;
+        width: 100%;
+        height: 100%;
+      }
+      .profil-drop .profil-cam {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 0.7rem;
+      }
+      .profil-hero-info {
+        flex: 1;
+        min-width: 180px;
+      }
+      .profil-hero-info h2 {
+        font-size: 1.2rem;
+        font-weight: 900;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+      }
+      .profil-hero-info .uname {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--red);
+      }
+      .profil-hero-info .jabatan {
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: var(--paper-2);
+        border: 2px solid var(--ink);
+        padding: 3px 10px;
+        border-radius: 999px;
+      }
+      .profil-hero-info .bio {
+        margin-top: 8px;
+        font-size: 0.82rem;
+        color: var(--gray);
+        font-weight: 600;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+      }
+      .profil-foto-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      .profil-foto-hint {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--red-dark);
+      }
+      /* OSIS header menu — desktop pill, mobile titik tiga */
+      .osis-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .osis-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--white);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-decoration: none;
+        color: var(--ink);
+        box-shadow: 2px 2px 0 var(--ink);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .osis-nav-link:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .osis-nav-link:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .osis-nav-link.active {
+        background: var(--red);
+        color: #fff;
+      }
+      #osisMoreWrap {
+        display: none;
+        position: relative;
+      }
+      #osisMoreWrap.show {
+        display: inline-flex !important;
+      }
+      #osisMoreMenu .header-more-item.active {
+        background: var(--red);
+        color: #fff;
+      }
+      @media (max-width: 640px) {
+        .osis-nav {
+          display: none !important;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-menu.js" defer></script>
+    <script src="../js/profil.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>PROFIL</h2>
+          <p>Akun OSIS</p>
+        </div>
+      </a>
+      <nav class="osis-nav" id="osisNav" aria-label="Menu OSIS">
+        <a href="index" class="osis-nav-link"
+          ><i class="fa-solid fa-grip"></i> Dashboard</a
+        >
+        <a href="agenda" class="osis-nav-link"
+          ><i class="fa-solid fa-calendar-days"></i> Agenda</a
+        >
+        <a href="profil" class="osis-nav-link"
+          ><i class="fa-solid fa-user"></i> Profil</a
+        >
+        <a href="anggota" class="osis-nav-link"
+          ><i class="fa-solid fa-users"></i> Anggota</a
+        >
+        <a href="notulensi" class="osis-nav-link"
+          ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
+        >
+        <a href="proker" class="osis-nav-link"
+          ><i class="fa-solid fa-list-check"></i> Proker</a
+        >
+        <a href="dokumen" class="osis-nav-link"
+          ><i class="fa-solid fa-folder-open"></i> Dokumen</a
+        >
+        <a href="task" class="osis-nav-link"
+          ><i class="fa-solid fa-clipboard-check"></i> Task</a
+        >
+        <a href="keuangan" class="osis-nav-link"
+          ><i class="fa-solid fa-wallet"></i> Keuangan</a
+        >
+        <a href="evaluasi" class="osis-nav-link"
+          ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
+        >
+      </nav>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+        <div class="header-more-wrap" id="osisMoreWrap" style="display: none">
+          <button
+            class="icon-btn"
+            id="osisMoreBtn"
+            onclick="OsisMenu.toggle()"
+            title="Menu OSIS"
+          >
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <div class="header-more-menu" id="osisMoreMenu">
+            <a href="index" class="header-more-item"
+              ><i class="fa-solid fa-grip"></i> Dashboard</a
+            >
+            <a href="agenda" class="header-more-item"
+              ><i class="fa-solid fa-calendar-days"></i> Agenda</a
+            >
+            <a href="profil" class="header-more-item"
+              ><i class="fa-solid fa-user"></i> Profil</a
+            >
+            <a href="anggota" class="header-more-item"
+              ><i class="fa-solid fa-users"></i> Anggota</a
+            >
+            <a href="notulensi" class="header-more-item"
+              ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
+            >
+            <a href="proker" class="header-more-item"
+              ><i class="fa-solid fa-list-check"></i> Proker</a
+            >
+            <a href="dokumen" class="header-more-item"
+              ><i class="fa-solid fa-folder-open"></i> Dokumen</a
+            >
+            <a href="task" class="header-more-item"
+              ><i class="fa-solid fa-clipboard-check"></i> Task</a
+            >
+            <a href="keuangan" class="header-more-item"
+              ><i class="fa-solid fa-wallet"></i> Keuangan</a
+            >
+            <a href="evaluasi" class="header-more-item"
+              ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
+            >
+          </div>
+        </div>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="profil-wrap">
+      <!-- Hero -->
+      <div class="profil-card">
+        <div class="profil-hero">
+          <div class="profil-drop" id="profilDrop" title="Klik atau drop foto PP">
+            <img id="profilImg" alt="Foto profil" />
+            <span class="profil-ph" id="profilPlaceholder">O</span>
+            <span class="profil-cam"><i class="fa-solid fa-camera"></i></span>
+          </div>
+          <div class="profil-hero-info">
+            <h2 id="profilHeroNama">Memuat...</h2>
+            <div class="uname" id="profilHeroUser">@-</div>
+            <span class="jabatan" id="profilHeroJabatan">OSIS</span>
+            <p class="bio" id="profilHeroBio">Memuat bio...</p>
+          </div>
+        </div>
+        <input type="file" id="profilFile" accept="image/*" hidden />
+        <div class="profil-foto-row">
+          <span style="font-size: 0.72rem; color: var(--gray); font-weight: 600"
+            >Klik lingkaran atau drag &amp; drop foto ke sana buat ganti PP
+            (otomatis kompres &lt;1MB).</span
+          >
+          <span
+            class="profil-foto-hint"
+            id="profilFotoHint"
+            style="display: none"
+            ><i class="fa-solid fa-circle-info"></i> PP baru staged — klik
+            Simpan Profil.</span
+          >
+          <button
+            class="btn btn-white btn-sm"
+            id="btnHapusFoto"
+            style="display: none"
+          >
+            <i class="fa-solid fa-trash-can"></i> Hapus foto
+          </button>
+        </div>
+      </div>
+
+      <!-- Profil: nama + bio -->
+      <div class="profil-card">
+        <h3><i class="fa-solid fa-id-card"></i> Data Profil</h3>
+        <p class="sub">Nama tampil di header &amp; dashboard. Bio maks 200 karakter.</p>
+        <div class="field">
+          <label>Nama Lengkap</label>
+          <input
+            type="text"
+            id="profilNama"
+            class="admin-input"
+            placeholder="Nama lengkap"
+            maxlength="80"
+          />
+        </div>
+        <div class="field">
+          <label>Jabatan (read-only)</label>
+          <input type="text" id="profilJabatan" class="admin-input" disabled />
+        </div>
+        <div class="field">
+          <label>Bio</label>
+          <textarea
+            id="profilBio"
+            class="admin-input admin-textarea"
+            placeholder="Ceritain dikit tentang kamu..."
+            maxlength="200"
+            rows="3"
+          ></textarea>
+        </div>
+        <div class="form-actions-row">
+          <button class="btn btn-red" id="btnSimpanProfil">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Profil
+          </button>
+        </div>
+      </div>
+
+      <!-- Username -->
+      <div class="profil-card">
+        <h3><i class="fa-solid fa-at"></i> Ganti Username</h3>
+        <p class="sub">3-30 karakter, harus unik. Dipakai buat login.</p>
+        <div class="field">
+          <label>Username</label>
+          <input
+            type="text"
+            id="profilUsername"
+            class="admin-input"
+            placeholder="username"
+            maxlength="30"
+            autocomplete="off"
+          />
+        </div>
+        <div class="form-actions-row">
+          <button class="btn btn-white" id="btnSimpanUsername">
+            <i class="fa-solid fa-check"></i> Simpan
+          </button>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="profil-card">
+        <h3><i class="fa-solid fa-lock"></i> Ganti Password</h3>
+        <p class="sub">Password baru minimal 4 karakter.</p>
+        <div class="field">
+          <label>Password Lama</label>
+          <input
+            type="password"
+            id="profilPwLama"
+            class="admin-input"
+            placeholder="Password saat ini"
+            autocomplete="current-password"
+          />
+        </div>
+        <div class="field">
+          <label>Password Baru</label>
+          <input
+            type="password"
+            id="profilPwBaru"
+            class="admin-input"
+            placeholder="Password baru"
+            autocomplete="new-password"
+          />
+        </div>
+        <div class="field">
+          <label>Konfirmasi Password Baru</label>
+          <input
+            type="password"
+            id="profilPwKonfirm"
+            class="admin-input"
+            placeholder="Ulangi password baru"
+            autocomplete="new-password"
+          />
+        </div>
+        <div class="form-actions-row">
+          <button class="btn btn-white" id="btnSimpanPassword">
+            <i class="fa-solid fa-check"></i> Simpan
+          </button>
+        </div>
+      </div>
+
+      <!-- Keluar -->
+      <div class="profil-card">
+        <h3><i class="fa-solid fa-arrow-right-from-bracket"></i> Sesi</h3>
+        <p class="sub">Keluar dari akun OSIS di perangkat ini.</p>
+        <div class="form-actions-row">
+          <button class="btn btn-white" id="btnLogoutProfil">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

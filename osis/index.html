@@ -254,6 +254,30 @@
         <a href="agenda" class="osis-nav-link"
           ><i class="fa-solid fa-calendar-days"></i> Agenda</a
         >
+        <a href="profil" class="osis-nav-link"
+          ><i class="fa-solid fa-user"></i> Profil</a
+        >
+        <a href="anggota" class="osis-nav-link"
+          ><i class="fa-solid fa-users"></i> Anggota</a
+        >
+          <a href="notulensi" class="osis-nav-link"
+            ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
+          >
+            <a href="proker" class="osis-nav-link"
+              ><i class="fa-solid fa-list-check"></i> Proker</a
+            >
+            <a href="dokumen" class="osis-nav-link"
+                ><i class="fa-solid fa-folder-open"></i> Dokumen</a
+              >
+            <a href="task" class="osis-nav-link"
+                ><i class="fa-solid fa-clipboard-check"></i> Task</a
+              >
+            <a href="keuangan" class="osis-nav-link"
+                ><i class="fa-solid fa-wallet"></i> Keuangan</a
+              >
+            <a href="evaluasi" class="osis-nav-link"
+                ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
+              >
       </nav>
       <div class="top-nav-extra">
         <a
@@ -278,6 +302,30 @@
             <a href="agenda" class="header-more-item"
               ><i class="fa-solid fa-calendar-days"></i> Agenda</a
             >
+            <a href="profil" class="header-more-item"
+              ><i class="fa-solid fa-user"></i> Profil</a
+            >
+            <a href="anggota" class="header-more-item"
+              ><i class="fa-solid fa-users"></i> Anggota</a
+            >
+            <a href="notulensi" class="header-more-item"
+              ><i class="fa-solid fa-clipboard-list"></i> Notulensi</a
+            >
+              <a href="proker" class="header-more-item"
+                ><i class="fa-solid fa-list-check"></i> Proker</a
+              >
+              <a href="dokumen" class="header-more-item"
+                  ><i class="fa-solid fa-folder-open"></i> Dokumen</a
+                >
+              <a href="task" class="header-more-item"
+                  ><i class="fa-solid fa-clipboard-check"></i> Task</a
+                >
+              <a href="keuangan" class="header-more-item"
+                  ><i class="fa-solid fa-wallet"></i> Keuangan</a
+                >
+              <a href="evaluasi" class="header-more-item"
+                  ><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a
+                >
           </div>
         </div>
         <div id="areaAuth"></div>
@@ -312,18 +360,108 @@
           <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
         </a>
 
-        <!-- Placeholder untuk halaman berikutnya — tinggal duplikat card ini -->
-        <div class="osis-card disabled">
-          <span class="osis-ico" style="background: var(--white)"
-            ><i class="fa-solid fa-plus"></i
+        <!-- Profil -->
+        <a href="profil" class="osis-card">
+          <span class="osis-ico" style="background: var(--yellow)"
+            ><i class="fa-solid fa-user"></i
           ></span>
-          <h3>Segera Hadir</h3>
+          <h3>Profil Saya</h3>
           <p>
-            Halaman baru akan muncul di sini. Duplikat card Agenda untuk nambah
-            menu.
+            Ganti nama, username, password, foto PP, dan bio akun OSIS kamu.
           </p>
-          <span class="go" style="color: var(--gray)">Coming soon</span>
-        </div>
+          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+        <!-- Anggota & Pengurus -->
+        <a href="anggota" class="osis-card">
+          <span class="osis-ico" style="background: #d6f5d6"
+            ><i class="fa-solid fa-users"></i
+          ></span>
+          <h3>Anggota &amp; Pengurus</h3>
+          <p>
+            Kelola anggota per periode, pengurus ketua/wakil, dan data
+            sekbid/BPH lewat kartu + popup.
+          </p>
+          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+        <!-- Notulensi -->
+        <a href="notulensi" class="osis-card">
+          <span class="osis-ico" style="background: #ffd6a5"
+            ><i class="fa-solid fa-clipboard-list"></i
+          ></span>
+          <h3>Notulensi Rapat</h3>
+          <p>
+            Catat hasil rapat: pembahasan, keputusan, tindak lanjut, lampiran —
+            bisa cetak &amp; export PDF.
+          </p>
+          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+        <!-- Program Kerja -->
+        <a href="proker" class="osis-card">
+          <span class="osis-ico" style="background: #e3d0ff"
+            ><i class="fa-solid fa-list-check"></i
+          ></span>
+          <h3>Program Kerja</h3>
+          <p>
+            Pantau proker per periode: progress, agenda terkait, tugas, evaluasi,
+            dan dokumentasi.
+          </p>
+          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+        <!-- Dokumen -->
+        <a href="dokumen" class="osis-card">
+          <span class="osis-ico" style="background: var(--white)"
+            ><i class="fa-solid fa-folder-open"></i
+          ></span>
+          <h3>Dokumen OSIS</h3>
+          <p>
+            Arsip digital: proposal, LPJ, surat, SK — cari, preview, download
+            dalam satu tempat.
+          </p>
+          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+        <!-- Task -->
+        <a href="task" class="osis-card">
+          <span class="osis-ico" style="background: var(--paper-2)"
+            ><i class="fa-solid fa-clipboard-check"></i
+          ></span>
+          <h3>Task</h3>
+          <p>
+            Kanban tugas pengurus: deadline, prioritas, dan relasi ke proker
+            serta agenda.
+          </p>
+          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+        <!-- Keuangan -->
+        <a href="keuangan" class="osis-card">
+          <span class="osis-ico" style="background: #d6f5d6"
+            ><i class="fa-solid fa-wallet"></i
+          ></span>
+          <h3>Keuangan</h3>
+          <p>
+            Kas masuk/keluar, saldo otomatis, rekap bulanan, dan laporan siap
+            cetak.
+          </p>
+          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+
+        <!-- Evaluasi -->
+        <a href="evaluasi" class="osis-card">
+          <span class="osis-ico" style="background: #ffe9d6"
+            ><i class="fa-solid fa-star-half-stroke"></i
+          ></span>
+          <h3>Evaluasi</h3>
+          <p>
+            Nilai kegiatan 1-5, catat hasil dan kendala, tindak lanjut, dan
+            cetak laporan evaluasi.
+          </p>
+          <span class="go">Buka <i class="fa-solid fa-arrow-right"></i></span>
+        </a>
 
         <a
           href="../index#/"

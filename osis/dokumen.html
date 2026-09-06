@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dokumen OSIS — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .dokumen-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .dokumen-head {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .dokumen-head .ico {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .dokumen-head h1 {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .dokumen-head p {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .stat-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+      .stat-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .stat-card .lbl {
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--gray);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .stat-card .lbl i {
+        color: var(--red);
+      }
+      .stat-card b {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 900;
+        margin-top: 4px;
+      }
+      .folder-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .folder-grid {
+          grid-template-columns: repeat(5, 1fr);
+        }
+      }
+      .folder-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px 10px;
+        box-shadow: 3px 3px 0 var(--ink);
+        cursor: pointer;
+        text-align: center;
+        font-family: inherit;
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s;
+      }
+      .folder-card:active {
+        transform: translate(2px, 2px);
+        box-shadow: none;
+      }
+      .folder-card.active {
+        background: var(--yellow);
+      }
+      .folder-card .fic {
+        font-size: 1.5rem;
+        color: var(--red);
+      }
+      .folder-card b {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+      }
+      .folder-card small {
+        font-size: 0.66rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+      .folder-card.active small {
+        color: var(--ink);
+      }
+      .terbaru-card {
+        background: var(--ink);
+        color: #fff;
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px 16px;
+        box-shadow: 4px 4px 0 var(--red);
+      }
+      .terbaru-card h3 {
+        font-size: 0.8rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .terbaru-card h3 i {
+        color: var(--yellow);
+      }
+      .terbaru-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 0;
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.25);
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .terbaru-item:last-child {
+        border-bottom: none;
+      }
+      .terbaru-item i {
+        color: var(--yellow);
+        width: 18px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .terbaru-item small {
+        margin-left: auto;
+        font-weight: 600;
+        opacity: 0.7;
+        white-space: nowrap;
+      }
+      .filter-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .filter-card {
+          grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+          align-items: end;
+        }
+      }
+      .filter-card .field {
+        margin-bottom: 0;
+      }
+      #dokumenList {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .dok-item {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .dok-ico {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 2.5px solid var(--ink);
+        display: grid;
+        place-items: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        background: var(--paper-2);
+      }
+      .dok-ico.pdf {
+        background: #ffe9e9;
+        color: var(--red-dark);
+      }
+      .dok-ico.doc {
+        background: #e3ecff;
+        color: #1d4ed8;
+      }
+      .dok-ico.xls {
+        background: #d6f5d6;
+        color: #146314;
+      }
+      .dok-ico.ppt {
+        background: #ffe9d6;
+        color: #c25700;
+      }
+      .dok-ico.zip {
+        background: var(--yellow);
+        color: var(--ink);
+      }
+      .dok-ico.img {
+        background: #e3d0ff;
+        color: #6d28d9;
+      }
+      .dok-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .dok-body h4 {
+        font-size: 0.88rem;
+        font-weight: 900;
+        overflow-wrap: anywhere;
+      }
+      .dok-meta {
+        font-size: 0.7rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 2px;
+        overflow-wrap: anywhere;
+      }
+      .dok-meta b {
+        color: var(--red);
+        font-weight: 800;
+      }
+      .dok-tag-contoh {
+        display: inline-block;
+        font-size: 0.62rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--yellow);
+        border: 1.5px solid var(--ink);
+        border-radius: 999px;
+        padding: 1px 8px;
+        margin-left: 6px;
+        vertical-align: middle;
+      }
+      .dok-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+      /* popup — pola agenda */
+      .dokumen-form {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 10, 11, 0.78);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 210;
+        padding: 18px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.22s ease,
+          visibility 0.22s ease;
+      }
+      .dokumen-form.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      .dokumen-form-inner {
+        width: min(520px, 100%);
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.96) translateY(10px);
+        transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+      }
+      .dokumen-form.open .dokumen-form-inner {
+        transform: scale(1) translateY(0);
+      }
+      .dok-drop {
+        border: 2.5px dashed var(--ink);
+        border-radius: 14px;
+        background: var(--paper-2);
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        overflow: hidden;
+        position: relative;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .dok-drop.dragover {
+        background: var(--white);
+        border-color: var(--red);
+      }
+      .dok-drop-inner {
+        text-align: center;
+        color: var(--gray);
+        font-weight: 700;
+        font-size: 0.82rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 12px;
+      }
+      .dok-drop-inner i {
+        font-size: 1.8rem;
+        color: var(--red);
+      }
+      .dok-drop-inner small {
+        font-size: 0.66rem;
+        font-weight: 600;
+        opacity: 0.8;
+      }
+      .dok-file-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+      .dok-file-info i {
+        font-size: 1.3rem;
+        color: var(--red);
+      }
+      .dok-file-info small {
+        display: block;
+        color: var(--gray);
+        font-weight: 600;
+      }
+      .dok-preview-box {
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--paper-2);
+        margin-top: 8px;
+      }
+      .dok-preview-box iframe,
+      .dok-preview-box img {
+        display: block;
+        width: 100%;
+        height: 320px;
+        border: none;
+        background: #fff;
+      }
+      .detail-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+        font-size: 0.82rem;
+        margin-top: 10px;
+      }
+      .detail-info .k {
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray);
+      }
+      .detail-info .v {
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+      .detail-text {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-top: 8px;
+      }
+      /* OSIS header menu — desktop pill, mobile titik tiga */
+      .osis-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .osis-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--white);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-decoration: none;
+        color: var(--ink);
+        box-shadow: 2px 2px 0 var(--ink);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .osis-nav-link:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .osis-nav-link:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .osis-nav-link.active {
+        background: var(--red);
+        color: #fff;
+      }
+      #osisMoreWrap {
+        display: none;
+        position: relative;
+      }
+      #osisMoreWrap.show {
+        display: inline-flex !important;
+      }
+      #osisMoreMenu .header-more-item.active {
+        background: var(--red);
+        color: #fff;
+      }
+      @media (max-width: 640px) {
+        .osis-nav {
+          display: none !important;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-menu.js" defer></script>
+    <script src="../js/dokumen.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>DOKUMEN</h2>
+          <p>Arsip OSIS</p>
+        </div>
+      </a>
+      <nav class="osis-nav" id="osisNav" aria-label="Menu OSIS">
+        <a href="index" class="osis-nav-link"><i class="fa-solid fa-grip"></i> Dashboard</a>
+        <a href="agenda" class="osis-nav-link"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+        <a href="profil" class="osis-nav-link"><i class="fa-solid fa-user"></i> Profil</a>
+        <a href="anggota" class="osis-nav-link"><i class="fa-solid fa-users"></i> Anggota</a>
+        <a href="notulensi" class="osis-nav-link"><i class="fa-solid fa-clipboard-list"></i> Notulensi</a>
+        <a href="proker" class="osis-nav-link"><i class="fa-solid fa-list-check"></i> Proker</a>
+        <a href="dokumen" class="osis-nav-link"><i class="fa-solid fa-folder-open"></i> Dokumen</a>
+        <a href="task" class="osis-nav-link"><i class="fa-solid fa-clipboard-check"></i> Task</a>
+        <a href="keuangan" class="osis-nav-link"><i class="fa-solid fa-wallet"></i> Keuangan</a>
+        <a href="evaluasi" class="osis-nav-link"><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a>
+      </nav>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
+        <div class="header-more-wrap" id="osisMoreWrap" style="display: none">
+          <button class="icon-btn" id="osisMoreBtn" onclick="OsisMenu.toggle()" title="Menu OSIS">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <div class="header-more-menu" id="osisMoreMenu">
+            <a href="index" class="header-more-item"><i class="fa-solid fa-grip"></i> Dashboard</a>
+            <a href="agenda" class="header-more-item"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+            <a href="profil" class="header-more-item"><i class="fa-solid fa-user"></i> Profil</a>
+            <a href="anggota" class="header-more-item"><i class="fa-solid fa-users"></i> Anggota</a>
+            <a href="notulensi" class="header-more-item"><i class="fa-solid fa-clipboard-list"></i> Notulensi</a>
+            <a href="proker" class="header-more-item"><i class="fa-solid fa-list-check"></i> Proker</a>
+            <a href="dokumen" class="header-more-item"><i class="fa-solid fa-folder-open"></i> Dokumen</a>
+            <a href="task" class="header-more-item"><i class="fa-solid fa-clipboard-check"></i> Task</a>
+            <a href="keuangan" class="header-more-item"><i class="fa-solid fa-wallet"></i> Keuangan</a>
+            <a href="evaluasi" class="header-more-item"><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a>
+          </div>
+        </div>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="dokumen-wrap">
+      <div class="dokumen-head">
+        <div class="ico"><i class="fa-solid fa-folder-open"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>DOKUMEN OSIS</h1>
+          <p>Arsip dan kelola seluruh dokumen OSIS dalam satu tempat.</p>
+        </div>
+        <button class="btn btn-red" id="btnUploadDokumen"><i class="fa-solid fa-plus"></i> Upload Dokumen</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-file"></i> Total File</span><b id="statTotal">—</b><small>semua dokumen</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-days"></i> Bulan Ini</span><b id="statBulan">—</b><small id="statBulanLbl">—</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-file-lines"></i> Proposal</span><b id="statProposal">—</b><small>kategori proposal</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-file-circle-check"></i> LPJ</span><b id="statLpj">—</b><small>kategori LPJ</small></div>
+      </div>
+
+      <div class="terbaru-card">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Dokumen Terbaru</h3>
+        <div id="dokTerbaru"><div class="pesan-empty" style="color:#fff">Memuat...</div></div>
+      </div>
+
+      <div class="folder-grid" id="folderGrid"></div>
+
+      <div class="filter-card">
+        <div class="field"><label>Cari nama dokumen</label><input type="text" id="filterQ" class="admin-input" placeholder="🔍 Cari nama dokumen..." /></div>
+        <div class="field"><label>Kategori</label><select id="filterKategori" class="admin-input"><option value="">Semua</option></select></div>
+        <div class="field"><label>Tahun</label><select id="filterTahun" class="admin-input"><option value="">Semua</option></select></div>
+        <div class="field"><label>Divisi</label><select id="filterDivisi" class="admin-input"><option value="">Semua</option></select></div>
+        <div class="field"><label>Urutkan</label><select id="filterSort" class="admin-input"><option value="baru">Terbaru</option><option value="lama">Terlama</option><option value="nama">Nama A–Z</option><option value="besar">Terbesar</option></select></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
+      </div>
+
+      <div id="dokumenList"><div class="loading-block"><div class="spinner"></div>Memuat dokumen...</div></div>
+    </div>
+
+    <!-- POPUP UPLOAD / EDIT -->
+    <div class="dokumen-form" id="dokumenForm">
+      <div class="dokumen-form-inner">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-upload" style="color: var(--red)"></i> <span id="dokumenFormTitle">Upload Dokumen</span></span>
+          <button class="icon-btn" onclick="Dokumen.tutupForm()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="field"><label>File</label>
+          <div id="dokDrop" class="dok-drop">
+            <div class="dok-drop-inner" id="dokDropInner">
+              <i class="fa-solid fa-file-arrow-up"></i>
+              <span>Tarik file ke sini atau</span>
+              <span class="btn btn-white btn-sm" style="pointer-events: none">Pilih File</span>
+              <small>PDF, DOCX, XLSX, PPTX, ZIP, JPG/PNG, dll. Maks 20MB.</small>
+            </div>
+          </div>
+          <input type="file" id="dokFile" hidden />
+        </div>
+        <div id="dokFileInfo" style="display: none"></div>
+        <div class="field" style="margin-top: 10px"><label>Nama dokumen</label><input type="text" id="dokNama" class="admin-input" placeholder="cth: Proposal Class Meeting 2026" maxlength="160" /></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>Kategori</label><select id="dokKategori" class="admin-input"></select></div>
+          <div class="field"><label>Tahun</label><input type="number" id="dokTahun" class="admin-input" value="2026" min="2000" max="2100" /></div>
+        </div>
+        <div class="field"><label>Divisi</label><select id="dokDivisi" class="admin-input"></select></div>
+        <div class="field"><label>Deskripsi (opsional)</label><textarea id="dokDeskripsi" class="admin-input admin-textarea" rows="3" maxlength="1000" placeholder="Keterangan singkat dokumen..."></textarea></div>
+        <div class="form-actions-row" style="margin-top: 12px">
+          <button class="btn btn-white" id="btnBatalDokumen">Batal</button>
+          <button class="btn btn-red" id="btnSimpanDokumen"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+        </div>
+        <input type="hidden" id="dokId" />
+      </div>
+    </div>
+
+    <!-- POPUP DETAIL -->
+    <div class="dokumen-form" id="dokumenDetail">
+      <div class="dokumen-form-inner" style="width: min(620px, 100%)">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-file-lines" style="color: var(--red)"></i> Detail Dokumen</span>
+          <button class="icon-btn" onclick="Dokumen.tutupDetail()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="dokDetailBody"></div>
+        <div class="form-actions-row" style="margin-top: 14px">
+          <button class="btn btn-white btn-sm" onclick="Dokumen.tutupDetail()">Tutup</button>
+          <button class="btn btn-white btn-sm" id="btnDownloadDetail"><i class="fa-solid fa-download"></i> Download</button>
+          <button class="btn btn-white btn-sm" id="btnEditDariDetail"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn btn-red btn-sm" id="btnHapusDariDetail"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Evaluasi — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .evaluasi-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .evaluasi-head {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .evaluasi-head .ico {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .evaluasi-head h1 {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .evaluasi-head p {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .stat-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+      .stat-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .stat-card .lbl {
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--gray);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .stat-card .lbl i {
+        color: var(--red);
+      }
+      .stat-card b {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 900;
+        margin-top: 4px;
+      }
+      .filter-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (min-width: 900px) {
+        .filter-card {
+          grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr auto;
+          align-items: end;
+        }
+      }
+      .filter-card .field {
+        margin-bottom: 0;
+      }
+      #evaluasiList {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      @media (min-width: 720px) {
+        #evaluasiList {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .evaluasi-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .evaluasi-card .top {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .evaluasi-card h4 {
+        font-size: 0.92rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        overflow-wrap: anywhere;
+        flex: 1;
+      }
+      .rating-pill {
+        font-size: 0.72rem;
+        font-weight: 900;
+        background: var(--yellow);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        padding: 3px 10px;
+        white-space: nowrap;
+        box-shadow: 2px 2px 0 var(--ink);
+      }
+      .evaluasi-meta {
+        font-size: 0.72rem;
+        color: var(--gray);
+        display: flex;
+        gap: 8px 14px;
+        flex-wrap: wrap;
+        font-weight: 600;
+      }
+      .evaluasi-meta i {
+        color: var(--red);
+        margin-right: 4px;
+      }
+      .agenda-status.belum {
+        background: var(--yellow);
+      }
+      .agenda-status.draft {
+        background: #e8e0da;
+      }
+      .evaluasi-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+      }
+      /* rating picker */
+      .rate-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 7px 0;
+        border-bottom: 1.5px dashed var(--line);
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+      .rate-row:last-child {
+        border-bottom: none;
+      }
+      .stars {
+        display: flex;
+        gap: 2px;
+      }
+      .stars button {
+        border: none;
+        background: transparent;
+        font-size: 1.3rem;
+        cursor: pointer;
+        color: var(--line);
+        padding: 0 1px;
+        line-height: 1;
+      }
+      .stars button.on {
+        color: #e8a100;
+        text-shadow: 1px 1px 0 var(--ink);
+      }
+      .stars.big button {
+        font-size: 1.8rem;
+      }
+      .stars-show {
+        color: #e8a100;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        white-space: nowrap;
+      }
+      .stars-show .off {
+        color: var(--line);
+      }
+      /* popup — pola agenda */
+      .evaluasi-form {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 10, 11, 0.78);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 210;
+        padding: 18px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.22s ease,
+          visibility 0.22s ease;
+      }
+      .evaluasi-form.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      .evaluasi-form-inner {
+        width: min(620px, 100%);
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.96) translateY(10px);
+        transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+      }
+      .evaluasi-form.open .evaluasi-form-inner {
+        transform: scale(1) translateY(0);
+      }
+      .form-sec {
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--red);
+        margin: 14px 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .form-sec::after {
+        content: "";
+        flex: 1;
+        height: 2px;
+        background: var(--line);
+        border-radius: 2px;
+      }
+      .tl-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        border: 2px dashed var(--line);
+        border-radius: 12px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: var(--paper);
+      }
+      .tl-row .full {
+        grid-column: 1 / -1;
+      }
+      .tl-row input,
+      .tl-row select {
+        width: 100%;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-family: inherit;
+        font-size: 0.82rem;
+        background: var(--white);
+        outline: none;
+      }
+      .tl-head {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.74rem;
+        font-weight: 900;
+      }
+      .tl-del {
+        border: 2px solid var(--ink);
+        border-radius: 8px;
+        background: #ffe9e9;
+        color: var(--red-dark);
+        width: 26px;
+        height: 26px;
+        cursor: pointer;
+        font-size: 0.68rem;
+      }
+      .evaluasi-drop {
+        border: 2.5px dashed var(--ink);
+        border-radius: 14px;
+        background: var(--paper-2);
+        height: 110px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        overflow: hidden;
+        position: relative;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .evaluasi-drop.dragover {
+        background: var(--white);
+        border-color: var(--red);
+      }
+      .evaluasi-drop-inner {
+        text-align: center;
+        color: var(--gray);
+        font-weight: 700;
+        font-size: 0.8rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px;
+      }
+      .evaluasi-drop-inner i {
+        font-size: 1.4rem;
+        color: var(--red);
+      }
+      .evaluasi-drop-inner small {
+        font-size: 0.66rem;
+        font-weight: 600;
+        opacity: 0.8;
+      }
+      .evaluasi-fotos {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 4px 0;
+        flex-wrap: wrap;
+      }
+      .evaluasi-preview-item {
+        position: relative;
+        flex-shrink: 0;
+      }
+      .evaluasi-preview-item img {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        display: block;
+      }
+      .evaluasi-preview-item .evaluasi-preview-del {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 22px;
+        height: 22px;
+        border: 2px solid var(--ink);
+        border-radius: 50%;
+        background: #ffe9e9;
+        color: var(--red-dark);
+        display: grid;
+        place-items: center;
+        font-size: 0.6rem;
+        cursor: pointer;
+        box-shadow: 1px 1px 0 var(--ink);
+        line-height: 1;
+      }
+      .detail-sec {
+        margin-top: 14px;
+      }
+      .detail-sec > h5 {
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--red);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .detail-sec > h5::after {
+        content: "";
+        flex: 1;
+        height: 2px;
+        background: var(--line);
+        border-radius: 2px;
+      }
+      .detail-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+        font-size: 0.82rem;
+      }
+      .detail-info .k {
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray);
+      }
+      .detail-info .v {
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+      .detail-text {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .rate-break {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 5px 0;
+        border-bottom: 1.5px dashed var(--line);
+      }
+      .rate-break:last-child {
+        border-bottom: none;
+      }
+      table.tl-tabel {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+      }
+      table.tl-tabel th {
+        text-align: left;
+        font-size: 0.64rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--gray);
+        padding: 6px;
+        border-bottom: 2px solid var(--ink);
+      }
+      table.tl-tabel td {
+        padding: 7px 6px;
+        border-bottom: 1.5px dashed var(--line);
+        vertical-align: top;
+        overflow-wrap: anywhere;
+      }
+      .tl-status {
+        font-size: 0.66rem;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+        white-space: nowrap;
+      }
+      .tl-status.selesai {
+        background: #d6f5d6;
+      }
+      .tl-status.belum {
+        background: var(--yellow);
+      }
+      .kas-mini {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+      .kas-mini span {
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        padding: 6px 12px;
+      }
+      /* OSIS header menu — desktop pill, mobile titik tiga */
+      .osis-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .osis-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--white);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-decoration: none;
+        color: var(--ink);
+        box-shadow: 2px 2px 0 var(--ink);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .osis-nav-link:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .osis-nav-link:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .osis-nav-link.active {
+        background: var(--red);
+        color: #fff;
+      }
+      #osisMoreWrap {
+        display: none;
+        position: relative;
+      }
+      #osisMoreWrap.show {
+        display: inline-flex !important;
+      }
+      #osisMoreMenu .header-more-item.active {
+        background: var(--red);
+        color: #fff;
+      }
+      @media (min-width: 900px) {
+        .osis-nav { flex-wrap: wrap; row-gap: 6px; }
+      }
+      @media (max-width: 640px) {
+        .osis-nav {
+          display: none !important;
+        }
+      }
+      @media print {
+        body > *:not(#printArea) {
+          display: none !important;
+        }
+        #printArea {
+          display: block !important;
+        }
+        #printArea .no-print {
+          display: none !important;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-menu.js" defer></script>
+    <script src="../js/evaluasi.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>EVALUASI</h2>
+          <p>Hasil Kegiatan</p>
+        </div>
+      </a>
+      <nav class="osis-nav" id="osisNav" aria-label="Menu OSIS">
+        <a href="index" class="osis-nav-link"><i class="fa-solid fa-grip"></i> Dashboard</a>
+        <a href="agenda" class="osis-nav-link"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+        <a href="profil" class="osis-nav-link"><i class="fa-solid fa-user"></i> Profil</a>
+        <a href="anggota" class="osis-nav-link"><i class="fa-solid fa-users"></i> Anggota</a>
+        <a href="notulensi" class="osis-nav-link"><i class="fa-solid fa-clipboard-list"></i> Notulensi</a>
+        <a href="proker" class="osis-nav-link"><i class="fa-solid fa-list-check"></i> Proker</a>
+        <a href="dokumen" class="osis-nav-link"><i class="fa-solid fa-folder-open"></i> Dokumen</a>
+        <a href="task" class="osis-nav-link"><i class="fa-solid fa-clipboard-check"></i> Task</a>
+        <a href="keuangan" class="osis-nav-link"><i class="fa-solid fa-wallet"></i> Keuangan</a>
+        <a href="evaluasi" class="osis-nav-link"><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a>
+      </nav>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
+        <div class="header-more-wrap" id="osisMoreWrap" style="display: none">
+          <button class="icon-btn" id="osisMoreBtn" onclick="OsisMenu.toggle()" title="Menu OSIS">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <div class="header-more-menu" id="osisMoreMenu">
+            <a href="index" class="header-more-item"><i class="fa-solid fa-grip"></i> Dashboard</a>
+            <a href="agenda" class="header-more-item"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+            <a href="profil" class="header-more-item"><i class="fa-solid fa-user"></i> Profil</a>
+            <a href="anggota" class="header-more-item"><i class="fa-solid fa-users"></i> Anggota</a>
+            <a href="notulensi" class="header-more-item"><i class="fa-solid fa-clipboard-list"></i> Notulensi</a>
+            <a href="proker" class="header-more-item"><i class="fa-solid fa-list-check"></i> Proker</a>
+            <a href="dokumen" class="header-more-item"><i class="fa-solid fa-folder-open"></i> Dokumen</a>
+            <a href="task" class="header-more-item"><i class="fa-solid fa-clipboard-check"></i> Task</a>
+            <a href="keuangan" class="header-more-item"><i class="fa-solid fa-wallet"></i> Keuangan</a>
+            <a href="evaluasi" class="header-more-item"><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a>
+          </div>
+        </div>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="evaluasi-wrap">
+      <div class="evaluasi-head">
+        <div class="ico"><i class="fa-solid fa-star-half-stroke"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>EVALUASI</h1>
+          <p>Catat hasil, kendala, dan pembelajaran dari setiap kegiatan OSIS.</p>
+        </div>
+        <button class="btn btn-red" id="btnBuatEvaluasi"><i class="fa-solid fa-plus"></i> Buat Evaluasi</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-star"></i> Total Evaluasi</span><b id="statTotal">—</b></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-days"></i> Bulan Ini</span><b id="statBulan">—</b><small id="statBulanLbl">—</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Kegiatan Selesai</span><b id="statKegiatan">—</b><small>agenda selesai</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-triangle-exclamation"></i> Belum Dievaluasi</span><b id="statBelum">—</b></div>
+      </div>
+
+      <div class="filter-card">
+        <div class="field"><label>Cari kegiatan</label><input type="text" id="filterQ" class="admin-input" placeholder="🔍 Cari kegiatan..." /></div>
+        <div class="field"><label>Divisi</label><select id="filterDivisi" class="admin-input"><option value="">Semua</option></select></div>
+        <div class="field"><label>Proker</label><select id="filterProker" class="admin-input"><option value="">Semua</option></select></div>
+        <div class="field"><label>Status</label><select id="filterStatus" class="admin-input"><option value="">Semua</option><option value="belum">Belum Dievaluasi</option><option value="draft">Draft</option><option value="selesai">Selesai</option></select></div>
+        <div class="field"><label>Periode</label><select id="filterPeriode" class="admin-input"><option value="">Semua</option></select></div>
+        <div class="field"><label>Urutkan</label><select id="filterSort" class="admin-input"><option value="baru">Terbaru</option><option value="lama">Terlama</option><option value="rating_tinggi">Rating tertinggi</option><option value="rating_rendah">Rating terendah</option></select></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
+      </div>
+
+      <div id="evaluasiList"><div class="loading-block"><div class="spinner"></div>Memuat evaluasi...</div></div>
+    </div>
+
+    <!-- POPUP FORM -->
+    <div class="evaluasi-form" id="evaluasiForm">
+      <div class="evaluasi-form-inner">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-star-half-stroke" style="color: var(--red)"></i> <span id="evaluasiFormTitle">Buat Evaluasi</span></span>
+          <button class="icon-btn" onclick="Evaluasi.tutupForm()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="form-sec">Informasi Kegiatan</div>
+        <div class="field"><label>Pilih kegiatan / agenda</label><select id="evAgenda" class="admin-input"><option value="">— Ketik manual —</option></select></div>
+        <div class="field"><label>Nama kegiatan</label><input type="text" id="evNama" class="admin-input" placeholder="cth: Pelaksanaan Class Meeting" maxlength="160" /></div>
+        <div class="field"><label>Program kerja terkait</label><select id="evProker" class="admin-input"><option value="">— Tidak ada —</option></select></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px">
+          <div class="field"><label>Tanggal kegiatan</label><input type="date" id="evTanggal" class="admin-input" /></div>
+          <div class="field"><label>Divisi</label><select id="evDivisi" class="admin-input"></select></div>
+          <div class="field"><label>PJ</label><input type="text" id="evPj" class="admin-input" placeholder="Nama PJ" maxlength="80" /></div>
+        </div>
+        <div class="field"><label>Status evaluasi</label><select id="evStatus" class="admin-input"><option value="draft" selected>Draft</option><option value="selesai">Selesai</option><option value="belum">Belum Dievaluasi</option></select></div>
+
+        <div class="form-sec">Penilaian (1–5)</div>
+        <div class="field"><label>Rating keseluruhan</label><div class="stars big" id="rateTotal"></div></div>
+        <div id="rateAspek"></div>
+
+        <div class="form-sec">Hasil Evaluasi</div>
+        <div class="field"><label>Hal yang berjalan baik</label><textarea id="evBaik" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>Kendala</label><textarea id="evKendala" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
+          <div class="field"><label>Penyebab</label><textarea id="evPenyebab" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>Solusi</label><textarea id="evSolusi" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
+          <div class="field"><label>Perlu diperbaiki</label><textarea id="evPerbaiki" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
+        </div>
+        <div class="field"><label>Rekomendasi berikutnya</label><textarea id="evRekomendasi" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
+
+        <div class="form-sec">Dokumentasi</div>
+        <div class="field"><label>Foto (opsional)</label>
+          <div id="evDrop" class="evaluasi-drop">
+            <div class="evaluasi-drop-inner" id="evDropInner">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Klik atau drag &amp; drop foto ke sini</span>
+              <small>JPG/PNG — otomatis kompres &lt;1MB</small>
+            </div>
+          </div>
+          <input type="file" id="evDokInput" accept="image/*" multiple hidden />
+        </div>
+        <div id="evPreview" class="evaluasi-fotos" style="display: none"></div>
+
+        <div class="form-sec">Tindak Lanjut</div>
+        <div class="field"><label>Tugas / perbaikan</label>
+          <div id="evTlList"></div>
+          <button type="button" class="btn btn-white btn-sm" id="btnTambahTl"><i class="fa-solid fa-plus"></i> Tambah tugas</button>
+        </div>
+
+        <div class="form-actions-row" style="margin-top: 12px">
+          <button class="btn btn-white" id="btnBatalEvaluasi">Batal</button>
+          <button class="btn btn-red" id="btnSimpanEvaluasi"><i class="fa-solid fa-floppy-disk"></i> Simpan Evaluasi</button>
+        </div>
+        <input type="hidden" id="evId" />
+      </div>
+    </div>
+
+    <!-- POPUP DETAIL -->
+    <div class="evaluasi-form" id="evaluasiDetail">
+      <div class="evaluasi-form-inner" style="width: min(680px, 100%)">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-file-lines" style="color: var(--red)"></i> Detail Evaluasi</span>
+          <button class="icon-btn" onclick="Evaluasi.tutupDetail()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="evDetailBody"></div>
+        <div class="form-actions-row" style="margin-top: 14px">
+          <button class="btn btn-white btn-sm" onclick="Evaluasi.tutupDetail()">Tutup</button>
+          <button class="btn btn-white btn-sm" id="btnEditDariDetail"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn btn-white btn-sm" id="btnCetakDetail"><i class="fa-solid fa-print"></i> Cetak</button>
+          <button class="btn btn-red btn-sm" id="btnHapusDariDetail"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+        </div>
+      </div>
+    </div>
+    <div id="printArea" style="display: none"></div>
+  </body>
+</html>

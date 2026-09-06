@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Program Kerja — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .proker-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .proker-head {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .proker-head .ico {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .proker-head h1 {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .proker-head p {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .periode-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        font-weight: 900;
+        background: var(--ink);
+        color: #fff;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        padding: 9px 14px;
+        box-shadow: 3px 3px 0 var(--red);
+      }
+      .periode-line i {
+        color: var(--yellow);
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .stat-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+      .stat-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .stat-card .lbl {
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--gray);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .stat-card .lbl i {
+        color: var(--red);
+      }
+      .stat-card b {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 900;
+        margin-top: 4px;
+      }
+      .overall-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .overall-card .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        margin-bottom: 8px;
+      }
+      .overall-card .top b {
+        color: var(--red);
+        font-size: 1rem;
+      }
+      .pk-bar {
+        height: 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--paper-2);
+        overflow: hidden;
+      }
+      .pk-bar > span {
+        display: block;
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, var(--red) 0 10px, var(--red-dark) 10px 20px);
+        border-radius: 999px;
+        transition: width 0.3s ease;
+      }
+      .filter-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .filter-card {
+          grid-template-columns: 2fr 1fr 1fr 1fr auto;
+          align-items: end;
+        }
+      }
+      .filter-card .field {
+        margin-bottom: 0;
+      }
+      #prokerList {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .proker-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .proker-card h4 {
+        font-size: 0.98rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        overflow-wrap: anywhere;
+      }
+      .proker-card .desc {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 3px;
+        overflow-wrap: anywhere;
+      }
+      .proker-meta {
+        font-size: 0.72rem;
+        color: var(--gray);
+        display: flex;
+        gap: 8px 14px;
+        flex-wrap: wrap;
+        margin: 6px 0 8px;
+        font-weight: 600;
+      }
+      .proker-meta i {
+        color: var(--red);
+        margin-right: 4px;
+      }
+      .agenda-status.belum_dimulai {
+        background: var(--yellow);
+      }
+      .agenda-status.berjalan {
+        background: #ffd6a5;
+      }
+      .agenda-status.ditunda {
+        background: #e8e0da;
+      }
+      .proker-progress {
+        margin-top: 8px;
+      }
+      .proker-progress .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.72rem;
+        font-weight: 800;
+        margin-bottom: 5px;
+      }
+      .proker-progress .row b {
+        color: var(--red);
+      }
+      .proker-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      /* popup — pola agenda/notulensi */
+      .proker-form {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 10, 11, 0.78);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 210;
+        padding: 18px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.22s ease,
+          visibility 0.22s ease;
+      }
+      .proker-form.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      .proker-form-inner {
+        width: min(620px, 100%);
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.96) translateY(10px);
+        transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+      }
+      .proker-form.open .proker-form-inner {
+        transform: scale(1) translateY(0);
+      }
+      .proker-form-inner .admin-textarea.big {
+        min-height: 100px;
+      }
+      .pk-progress-edit {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+      }
+      .pk-progress-edit input[type="range"] {
+        width: 100%;
+        accent-color: var(--red);
+      }
+      .pk-progress-edit b {
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: var(--red);
+        min-width: 52px;
+        text-align: right;
+      }
+      .pk-fase {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--gray);
+        margin-top: 2px;
+      }
+      .pk-agenda-list {
+        max-height: 180px;
+        overflow-y: auto;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        padding: 6px;
+        background: var(--paper);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .pk-agenda-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 7px 9px;
+        border-radius: 9px;
+        cursor: pointer;
+      }
+      .pk-agenda-item:hover {
+        background: var(--white);
+      }
+      .pk-agenda-item input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--red);
+        flex-shrink: 0;
+      }
+      .pk-agenda-item small {
+        margin-left: auto;
+        color: var(--gray);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .tl-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        border: 2px dashed var(--line);
+        border-radius: 12px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: var(--paper);
+      }
+      .tl-row .full {
+        grid-column: 1 / -1;
+      }
+      .tl-row input,
+      .tl-row select {
+        width: 100%;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-family: inherit;
+        font-size: 0.82rem;
+        background: var(--white);
+        outline: none;
+      }
+      .tl-head {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.74rem;
+        font-weight: 900;
+      }
+      .tl-del {
+        border: 2px solid var(--ink);
+        border-radius: 8px;
+        background: #ffe9e9;
+        color: var(--red-dark);
+        width: 26px;
+        height: 26px;
+        cursor: pointer;
+        font-size: 0.68rem;
+      }
+      .proker-drop {
+        border: 2.5px dashed var(--ink);
+        border-radius: 14px;
+        background: var(--paper-2);
+        height: 110px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        overflow: hidden;
+        position: relative;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+      }
+      .proker-drop.dragover {
+        background: var(--white);
+        border-color: var(--red);
+      }
+      .proker-drop-inner {
+        text-align: center;
+        color: var(--gray);
+        font-weight: 700;
+        font-size: 0.8rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px;
+      }
+      .proker-drop-inner i {
+        font-size: 1.4rem;
+        color: var(--red);
+      }
+      .proker-drop-inner small {
+        font-size: 0.66rem;
+        font-weight: 600;
+        opacity: 0.8;
+      }
+      .proker-fotos {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 4px 0;
+        flex-wrap: wrap;
+      }
+      .proker-preview-item {
+        position: relative;
+        flex-shrink: 0;
+      }
+      .proker-preview-item img {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        display: block;
+      }
+      .proker-preview-item .proker-preview-del {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 22px;
+        height: 22px;
+        border: 2px solid var(--ink);
+        border-radius: 50%;
+        background: #ffe9e9;
+        color: var(--red-dark);
+        display: grid;
+        place-items: center;
+        font-size: 0.6rem;
+        cursor: pointer;
+        box-shadow: 1px 1px 0 var(--ink);
+        line-height: 1;
+      }
+      .detail-sec {
+        margin-top: 14px;
+      }
+      .detail-sec > h5 {
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--red);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .detail-sec > h5::after {
+        content: "";
+        flex: 1;
+        height: 2px;
+        background: var(--line);
+        border-radius: 2px;
+      }
+      .detail-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+        font-size: 0.82rem;
+      }
+      .detail-info .k {
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray);
+      }
+      .detail-info .v {
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+      .detail-text {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      table.tl-tabel {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+      }
+      table.tl-tabel th {
+        text-align: left;
+        font-size: 0.64rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--gray);
+        padding: 6px;
+        border-bottom: 2px solid var(--ink);
+      }
+      table.tl-tabel td {
+        padding: 7px 6px;
+        border-bottom: 1.5px dashed var(--line);
+        vertical-align: top;
+        overflow-wrap: anywhere;
+      }
+      .tl-status {
+        font-size: 0.66rem;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+        white-space: nowrap;
+      }
+      .tl-status.selesai {
+        background: #d6f5d6;
+      }
+      .tl-status.belum {
+        background: var(--yellow);
+      }
+      .agenda-link-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 7px 0;
+        border-bottom: 1.5px dashed var(--line);
+      }
+      .agenda-link-item:last-child {
+        border-bottom: none;
+      }
+      .agenda-link-item i {
+        color: var(--red);
+        font-size: 0.7rem;
+      }
+      .agenda-link-item small {
+        margin-left: auto;
+        color: var(--gray);
+        white-space: nowrap;
+      }
+      /* OSIS header menu — desktop pill, mobile titik tiga */
+      .osis-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .osis-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--white);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-decoration: none;
+        color: var(--ink);
+        box-shadow: 2px 2px 0 var(--ink);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .osis-nav-link:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .osis-nav-link:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .osis-nav-link.active {
+        background: var(--red);
+        color: #fff;
+      }
+      #osisMoreWrap {
+        display: none;
+        position: relative;
+      }
+      #osisMoreWrap.show {
+        display: inline-flex !important;
+      }
+      #osisMoreMenu .header-more-item.active {
+        background: var(--red);
+        color: #fff;
+      }
+      @media (max-width: 640px) {
+        .osis-nav {
+          display: none !important;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-menu.js" defer></script>
+    <script src="../js/proker.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>PROKER</h2>
+          <p>Program Kerja OSIS</p>
+        </div>
+      </a>
+      <nav class="osis-nav" id="osisNav" aria-label="Menu OSIS">
+        <a href="index" class="osis-nav-link"><i class="fa-solid fa-grip"></i> Dashboard</a>
+        <a href="agenda" class="osis-nav-link"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+        <a href="profil" class="osis-nav-link"><i class="fa-solid fa-user"></i> Profil</a>
+        <a href="anggota" class="osis-nav-link"><i class="fa-solid fa-users"></i> Anggota</a>
+        <a href="notulensi" class="osis-nav-link"><i class="fa-solid fa-clipboard-list"></i> Notulensi</a>
+        <a href="proker" class="osis-nav-link"><i class="fa-solid fa-list-check"></i> Proker</a>
+        <a href="dokumen" class="osis-nav-link"><i class="fa-solid fa-folder-open"></i> Dokumen</a>
+        <a href="task" class="osis-nav-link"><i class="fa-solid fa-clipboard-check"></i> Task</a>
+        <a href="keuangan" class="osis-nav-link"><i class="fa-solid fa-wallet"></i> Keuangan</a>
+        <a href="evaluasi" class="osis-nav-link"><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a>
+      </nav>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
+        <div class="header-more-wrap" id="osisMoreWrap" style="display: none">
+          <button class="icon-btn" id="osisMoreBtn" onclick="OsisMenu.toggle()" title="Menu OSIS">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <div class="header-more-menu" id="osisMoreMenu">
+            <a href="index" class="header-more-item"><i class="fa-solid fa-grip"></i> Dashboard</a>
+            <a href="agenda" class="header-more-item"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+            <a href="profil" class="header-more-item"><i class="fa-solid fa-user"></i> Profil</a>
+            <a href="anggota" class="header-more-item"><i class="fa-solid fa-users"></i> Anggota</a>
+            <a href="notulensi" class="header-more-item"><i class="fa-solid fa-clipboard-list"></i> Notulensi</a>
+            <a href="proker" class="header-more-item"><i class="fa-solid fa-list-check"></i> Proker</a>
+            <a href="dokumen" class="header-more-item"><i class="fa-solid fa-folder-open"></i> Dokumen</a>
+            <a href="task" class="header-more-item"><i class="fa-solid fa-clipboard-check"></i> Task</a>
+            <a href="keuangan" class="header-more-item"><i class="fa-solid fa-wallet"></i> Keuangan</a>
+            <a href="evaluasi" class="header-more-item"><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a>
+          </div>
+        </div>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="proker-wrap">
+      <div class="proker-head">
+        <div class="ico"><i class="fa-solid fa-list-check"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>PROGRAM KERJA</h1>
+          <p>Kelola dan pantau seluruh program kerja OSIS dalam satu tempat.</p>
+        </div>
+        <button class="btn btn-red" id="btnTambahProker"><i class="fa-solid fa-plus"></i> Tambah Program Kerja</button>
+      </div>
+
+      <div class="periode-line"><i class="fa-solid fa-calendar-days"></i> <span id="periodeLabel">Program Kerja OSIS</span></div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-list-check"></i> Total</span><b id="statTotal">—</b><small>program kerja</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-hourglass-start"></i> Belum Mulai</span><b id="statBelum">—</b><small>rencana + belum dimulai</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span><b id="statJalan">—</b><small>sedang berjalan</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Selesai</span><b id="statSelesai">—</b><small>100% tuntas</small></div>
+      </div>
+
+      <div class="overall-card">
+        <div class="top"><span id="overallLabel">Progress Program Kerja Periode Ini</span><b id="overallPct">—</b></div>
+        <div class="pk-bar"><span id="overallBar" style="width: 0%"></span></div>
+      </div>
+
+      <div class="filter-card">
+        <div class="field"><label>Cari nama proker</label><input type="text" id="filterQ" class="admin-input" placeholder="cth: class meeting" /></div>
+        <div class="field"><label>Divisi</label><select id="filterDivisi" class="admin-input"><option value="">Semua divisi</option></select></div>
+        <div class="field"><label>Status</label><select id="filterStatus" class="admin-input"><option value="">Semua status</option><option value="rencana">Rencana</option><option value="belum_dimulai">Belum Dimulai</option><option value="berjalan">Sedang Berjalan</option><option value="selesai">Selesai</option><option value="ditunda">Ditunda</option><option value="batal">Dibatalkan</option></select></div>
+        <div class="field"><label>Periode</label><select id="filterPeriode" class="admin-input"><option value="">Semua periode</option></select></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
+      </div>
+
+      <div id="prokerList"><div class="loading-block"><div class="spinner"></div>Memuat program kerja...</div></div>
+    </div>
+
+    <!-- POPUP FORM -->
+    <div class="proker-form" id="prokerForm">
+      <div class="proker-form-inner">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-list-check" style="color: var(--red)"></i> <span id="prokerFormTitle">Tambah Program Kerja</span></span>
+          <button class="icon-btn" onclick="Proker.tutupForm()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="field"><label>Nama program kerja</label><input type="text" id="pkNama" class="admin-input" placeholder="cth: Class Meeting" maxlength="120" /></div>
+        <div class="field"><label>Deskripsi singkat</label><textarea id="pkDeskripsi" class="admin-input admin-textarea" placeholder="Gambaran program..." rows="3" maxlength="1000"></textarea></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>Divisi</label><select id="pkDivisi" class="admin-input"></select></div>
+          <div class="field"><label>Ketua / PJ</label><input type="text" id="pkPj" class="admin-input" placeholder="Nama penanggung jawab" maxlength="80" /></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px">
+          <div class="field"><label>Periode (tahun)</label><input type="number" id="pkPeriode" class="admin-input" value="2026" min="2000" max="2100" /></div>
+          <div class="field"><label>Tgl mulai</label><input type="date" id="pkTglMulai" class="admin-input" /></div>
+          <div class="field"><label>Tgl selesai</label><input type="date" id="pkTglSelesai" class="admin-input" /></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>Lokasi</label><input type="text" id="pkLokasi" class="admin-input" placeholder="Aula / Lapangan" maxlength="80" /></div>
+          <div class="field"><label>Target peserta</label><input type="text" id="pkTargetPeserta" class="admin-input" placeholder="cth: 500 siswa" maxlength="80" /></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>Status</label><select id="pkStatus" class="admin-input"><option value="rencana" selected>Rencana</option><option value="belum_dimulai">Belum Dimulai</option><option value="berjalan">Sedang Berjalan</option><option value="selesai">Selesai</option><option value="ditunda">Ditunda</option><option value="batal">Dibatalkan</option></select></div>
+          <div class="field"><label>Progress</label>
+            <div class="pk-progress-edit">
+              <input type="range" id="pkProgress" min="0" max="100" step="5" value="0" />
+              <b id="pkProgressVal">0%</b>
+            </div>
+            <div class="pk-fase" id="pkProgressFase">Belum Dimulai</div>
+          </div>
+        </div>
+        <div class="field"><label>Agenda terkait (induk dari agenda)</label>
+          <div class="pk-agenda-list" id="pkAgendaList"><div class="pesan-empty">Memuat agenda...</div></div>
+        </div>
+        <div class="field"><label>Tugas / tindak lanjut</label>
+          <div id="pkTlList"></div>
+          <button type="button" class="btn btn-white btn-sm" id="btnTambahTl"><i class="fa-solid fa-plus"></i> Tambah tugas</button>
+        </div>
+        <div class="field"><label>Hasil kegiatan</label><textarea id="pkEvHasil" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Hasil yang dicapai..."></textarea></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>Kendala</label><textarea id="pkEvKendala" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Kendala..."></textarea></div>
+          <div class="field"><label>Solusi</label><textarea id="pkEvSolusi" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Solusi..."></textarea></div>
+        </div>
+        <div class="field"><label>Catatan periode berikutnya</label><textarea id="pkEvLanjut" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Catatan untuk periode berikutnya..."></textarea></div>
+        <div class="field"><label>Catatan umum</label><textarea id="pkCatatan" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Catatan tambahan..."></textarea></div>
+        <div class="field"><label>Dokumentasi (opsional)</label>
+          <div id="pkDrop" class="proker-drop">
+            <div class="proker-drop-inner" id="pkDropInner">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Klik atau drag &amp; drop foto ke sini</span>
+              <small>JPG/PNG/WEBP, bisa banyak — otomatis kompres &lt;1MB</small>
+            </div>
+          </div>
+          <input type="file" id="pkDokInput" accept="image/*" multiple hidden />
+        </div>
+        <div id="pkPreview" class="proker-fotos" style="display: none"></div>
+        <div class="form-actions-row" style="margin-top: 12px">
+          <button class="btn btn-white" id="btnBatalProker">Batal</button>
+          <button class="btn btn-red" id="btnSimpanProker"><i class="fa-solid fa-floppy-disk"></i> Simpan Program Kerja</button>
+        </div>
+        <input type="hidden" id="pkId" />
+      </div>
+    </div>
+
+    <!-- POPUP DETAIL -->
+    <div class="proker-form" id="prokerDetail">
+      <div class="proker-form-inner" style="width: min(680px, 100%)">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-file-lines" style="color: var(--red)"></i> Detail Program Kerja</span>
+          <button class="icon-btn" onclick="Proker.tutupDetail()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="prokerDetailBody"></div>
+        <div class="form-actions-row" style="margin-top: 14px">
+          <button class="btn btn-white btn-sm" onclick="Proker.tutupDetail()">Tutup</button>
+          <button class="btn btn-white btn-sm" id="btnEditDariDetail"><i class="fa-solid fa-pen"></i> Edit</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

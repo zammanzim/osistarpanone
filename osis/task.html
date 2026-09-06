@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .task-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .task-head {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .task-head .ico {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .task-head h1 {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .task-head p {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .stat-grid {
+          grid-template-columns: repeat(5, 1fr);
+        }
+      }
+      .stat-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .stat-card .lbl {
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--gray);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .stat-card .lbl i {
+        color: var(--red);
+      }
+      .stat-card b {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 900;
+        margin-top: 4px;
+      }
+      .stat-card.danger {
+        background: #ffe9e9;
+      }
+      .filter-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (min-width: 900px) {
+        .filter-card {
+          grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
+          align-items: end;
+        }
+      }
+      .filter-card .field {
+        margin-bottom: 0;
+      }
+      /* kanban */
+      .kanban {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        align-items: flex-start;
+      }
+      @media (min-width: 1000px) {
+        .kanban {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          overflow: visible;
+        }
+      }
+      .kanban-col {
+        flex: 0 0 270px;
+        background: var(--paper-2);
+        border: 3px solid var(--ink);
+        border-radius: 16px;
+        box-shadow: 4px 4px 0 var(--ink);
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 120px;
+      }
+      @media (min-width: 1000px) {
+        .kanban-col {
+          flex: none;
+        }
+      }
+      .kanban-col > h3 {
+        font-size: 0.74rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 4px 4px 8px;
+        border-bottom: 2.5px solid var(--ink);
+      }
+      .kanban-col > h3 .n {
+        margin-left: auto;
+        background: var(--ink);
+        color: #fff;
+        font-size: 0.66rem;
+        border-radius: 999px;
+        padding: 1px 9px;
+      }
+      .kanban-col.col-todo > h3 i { color: var(--gray); }
+      .kanban-col.col-in_progress > h3 i { color: #c25700; }
+      .kanban-col.col-review > h3 i { color: #6d28d9; }
+      .kanban-col.col-done > h3 i { color: #146314; }
+      .task-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        padding: 10px 11px;
+        box-shadow: 2.5px 2.5px 0 var(--ink);
+        cursor: pointer;
+      }
+      .task-card:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .task-card.overdue {
+        border-color: var(--red-dark);
+        background: #fff5f5;
+      }
+      .task-card h4 {
+        font-size: 0.84rem;
+        font-weight: 900;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+      }
+      .task-card .desc {
+        font-size: 0.72rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 2px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+      }
+      .task-badges {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        margin-top: 7px;
+      }
+      .prio {
+        font-size: 0.62rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+      }
+      .prio.urgent { background: var(--red); color: #fff; }
+      .prio.high { background: #ff9f43; color: var(--ink); }
+      .prio.medium { background: var(--yellow); color: var(--ink); }
+      .prio.low { background: var(--white); color: var(--gray); }
+      .telat {
+        font-size: 0.62rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+        background: var(--red);
+        color: #fff;
+      }
+      .deadline-dekat {
+        font-size: 0.62rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+        background: var(--yellow);
+      }
+      .task-meta {
+        font-size: 0.68rem;
+        color: var(--gray);
+        font-weight: 700;
+        margin-top: 6px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .task-meta i {
+        color: var(--red);
+        margin-right: 3px;
+      }
+      .task-meta .telat-text {
+        color: var(--red-dark);
+        font-weight: 900;
+      }
+      .task-link {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--gray);
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        overflow-wrap: anywhere;
+      }
+      .task-link i {
+        color: var(--red);
+        font-size: 0.62rem;
+        flex-shrink: 0;
+      }
+      .task-move {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .task-move button {
+        flex: 1;
+        border: 2px solid var(--ink);
+        border-radius: 9px;
+        background: var(--white);
+        font-family: inherit;
+        font-size: 0.7rem;
+        font-weight: 900;
+        padding: 5px 0;
+        cursor: pointer;
+      }
+      .task-move button:active {
+        transform: translate(1px, 1px);
+      }
+      .task-move button:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+      .kanban-empty {
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: var(--gray);
+        text-align: center;
+        padding: 12px 4px;
+      }
+      /* popup — pola agenda */
+      .task-form {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 10, 11, 0.78);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 210;
+        padding: 18px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.22s ease,
+          visibility 0.22s ease;
+      }
+      .task-form.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      .task-form-inner {
+        width: min(520px, 100%);
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.96) translateY(10px);
+        transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+      }
+      .task-form.open .task-form-inner {
+        transform: scale(1) translateY(0);
+      }
+      .detail-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+        font-size: 0.82rem;
+        margin-top: 10px;
+      }
+      .detail-info .k {
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray);
+      }
+      .detail-info .v {
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+      .detail-text {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-top: 8px;
+      }
+      .detail-sec {
+        margin-top: 14px;
+      }
+      .detail-sec > h5 {
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--red);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .detail-sec > h5::after {
+        content: "";
+        flex: 1;
+        height: 2px;
+        background: var(--line);
+        border-radius: 2px;
+      }
+      /* OSIS header menu — desktop pill, mobile titik tiga */
+      .osis-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .osis-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        background: var(--white);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-decoration: none;
+        color: var(--ink);
+        box-shadow: 2px 2px 0 var(--ink);
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s,
+          background 0.12s,
+          color 0.12s;
+        white-space: nowrap;
+      }
+      .osis-nav-link:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .osis-nav-link:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .osis-nav-link.active {
+        background: var(--red);
+        color: #fff;
+      }
+      #osisMoreWrap {
+        display: none;
+        position: relative;
+      }
+      #osisMoreWrap.show {
+        display: inline-flex !important;
+      }
+      #osisMoreMenu .header-more-item.active {
+        background: var(--red);
+        color: #fff;
+      }
+      @media (max-width: 640px) {
+        .osis-nav {
+          display: none !important;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-menu.js" defer></script>
+    <script src="../js/task.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>TASK</h2>
+          <p>Tugas Pengurus</p>
+        </div>
+      </a>
+      <nav class="osis-nav" id="osisNav" aria-label="Menu OSIS">
+        <a href="index" class="osis-nav-link"><i class="fa-solid fa-grip"></i> Dashboard</a>
+        <a href="agenda" class="osis-nav-link"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+        <a href="profil" class="osis-nav-link"><i class="fa-solid fa-user"></i> Profil</a>
+        <a href="anggota" class="osis-nav-link"><i class="fa-solid fa-users"></i> Anggota</a>
+        <a href="notulensi" class="osis-nav-link"><i class="fa-solid fa-clipboard-list"></i> Notulensi</a>
+        <a href="proker" class="osis-nav-link"><i class="fa-solid fa-list-check"></i> Proker</a>
+        <a href="dokumen" class="osis-nav-link"><i class="fa-solid fa-folder-open"></i> Dokumen</a>
+        <a href="task" class="osis-nav-link"><i class="fa-solid fa-clipboard-check"></i> Task</a>
+        <a href="keuangan" class="osis-nav-link"><i class="fa-solid fa-wallet"></i> Keuangan</a>
+        <a href="evaluasi" class="osis-nav-link"><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a>
+      </nav>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
+        <div class="header-more-wrap" id="osisMoreWrap" style="display: none">
+          <button class="icon-btn" id="osisMoreBtn" onclick="OsisMenu.toggle()" title="Menu OSIS">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </button>
+          <div class="header-more-menu" id="osisMoreMenu">
+            <a href="index" class="header-more-item"><i class="fa-solid fa-grip"></i> Dashboard</a>
+            <a href="agenda" class="header-more-item"><i class="fa-solid fa-calendar-days"></i> Agenda</a>
+            <a href="profil" class="header-more-item"><i class="fa-solid fa-user"></i> Profil</a>
+            <a href="anggota" class="header-more-item"><i class="fa-solid fa-users"></i> Anggota</a>
+            <a href="notulensi" class="header-more-item"><i class="fa-solid fa-clipboard-list"></i> Notulensi</a>
+            <a href="proker" class="header-more-item"><i class="fa-solid fa-list-check"></i> Proker</a>
+            <a href="dokumen" class="header-more-item"><i class="fa-solid fa-folder-open"></i> Dokumen</a>
+            <a href="task" class="header-more-item"><i class="fa-solid fa-clipboard-check"></i> Task</a>
+            <a href="keuangan" class="header-more-item"><i class="fa-solid fa-wallet"></i> Keuangan</a>
+            <a href="evaluasi" class="header-more-item"><i class="fa-solid fa-star-half-stroke"></i> Evaluasi</a>
+          </div>
+        </div>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="task-wrap">
+      <div class="task-head">
+        <div class="ico"><i class="fa-solid fa-clipboard-check"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>TASK</h1>
+          <p>Kelola tugas dan tanggung jawab pengurus OSIS.</p>
+        </div>
+        <button class="btn btn-red" id="btnTambahTask"><i class="fa-solid fa-plus"></i> Tambah Task</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-list"></i> Semua Task</span><b id="statTotal">—</b></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle"></i> Belum</span><b id="statTodo">—</b></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span><b id="statJalan">—</b></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Selesai</span><b id="statSelesai">—</b></div>
+        <div class="stat-card danger"><span class="lbl"><i class="fa-solid fa-triangle-exclamation"></i> Terlambat</span><b id="statTelat">—</b></div>
+      </div>
+
+      <div class="filter-card">
+        <div class="field"><label>Cari task</label><input type="text" id="filterQ" class="admin-input" placeholder="🔍 Cari task..." /></div>
+        <div class="field"><label>PIC</label><select id="filterPic" class="admin-input"><option value="">Semua</option></select></div>
+        <div class="field"><label>Divisi</label><select id="filterDivisi" class="admin-input"><option value="">Semua</option></select></div>
+        <div class="field"><label>Priority</label><select id="filterPriority" class="admin-input"><option value="">Semua</option><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
+        <div class="field"><label>Status</label><select id="filterStatus" class="admin-input"><option value="">Semua</option><option value="todo">Todo</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Done</option></select></div>
+        <div class="field"><label>Proker</label><select id="filterProker" class="admin-input"><option value="">Semua</option></select></div>
+        <div class="field"><label>Urutkan</label><select id="filterSort" class="admin-input"><option value="deadline">Deadline</option><option value="baru">Terbaru</option><option value="prioritas">Prioritas</option></select></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
+      </div>
+
+      <div class="kanban" id="kanban">
+        <div class="kanban-col col-todo"><h3><i class="fa-regular fa-circle"></i> Todo <span class="n" id="countTodo">0</span></h3><div id="colTodo" style="display:flex; flex-direction:column; gap:10px"></div></div>
+        <div class="kanban-col col-in_progress"><h3><i class="fa-solid fa-spinner"></i> In Progress <span class="n" id="countProg">0</span></h3><div id="colProg" style="display:flex; flex-direction:column; gap:10px"></div></div>
+        <div class="kanban-col col-review"><h3><i class="fa-solid fa-eye"></i> Review <span class="n" id="countReview">0</span></h3><div id="colReview" style="display:flex; flex-direction:column; gap:10px"></div></div>
+        <div class="kanban-col col-done"><h3><i class="fa-solid fa-circle-check"></i> Done <span class="n" id="countDone">0</span></h3><div id="colDone" style="display:flex; flex-direction:column; gap:10px"></div></div>
+      </div>
+    </div>
+
+    <!-- POPUP FORM -->
+    <div class="task-form" id="taskForm">
+      <div class="task-form-inner">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-clipboard-check" style="color: var(--red)"></i> <span id="taskFormTitle">Tambah Task</span></span>
+          <button class="icon-btn" onclick="Task.tutupForm()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="field"><label>Judul task</label><input type="text" id="taskJudul" class="admin-input" placeholder="cth: Cetak poster PESAK" maxlength="160" /></div>
+        <div class="field"><label>Deskripsi</label><textarea id="taskDeskripsi" class="admin-input admin-textarea" rows="3" maxlength="2000" placeholder="Detail tugas..."></textarea></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>PIC</label><input type="text" id="taskPic" class="admin-input" placeholder="Nama penanggung jawab" maxlength="80" /></div>
+          <div class="field"><label>Divisi</label><select id="taskDivisi" class="admin-input"></select></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px">
+          <div class="field"><label>Priority</label><select id="taskPriority" class="admin-input"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
+          <div class="field"><label>Deadline</label><input type="date" id="taskDeadline" class="admin-input" /></div>
+          <div class="field"><label>Status</label><select id="taskStatus" class="admin-input"><option value="todo" selected>Todo</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Done</option></select></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>Program Kerja terkait</label><select id="taskProker" class="admin-input"><option value="">— Tidak ada —</option></select></div>
+          <div class="field"><label>Agenda terkait</label><select id="taskAgenda" class="admin-input"><option value="">— Tidak ada —</option></select></div>
+        </div>
+        <div class="field"><label>Catatan</label><textarea id="taskCatatan" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Catatan tambahan..."></textarea></div>
+        <div class="form-actions-row" style="margin-top: 12px">
+          <button class="btn btn-white" id="btnBatalTask">Batal</button>
+          <button class="btn btn-red" id="btnSimpanTask"><i class="fa-solid fa-floppy-disk"></i> Simpan Task</button>
+        </div>
+        <input type="hidden" id="taskId" />
+      </div>
+    </div>
+
+    <!-- POPUP DETAIL -->
+    <div class="task-form" id="taskDetail">
+      <div class="task-form-inner">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-file-lines" style="color: var(--red)"></i> Detail Task</span>
+          <button class="icon-btn" onclick="Task.tutupDetail()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="taskDetailBody"></div>
+        <div class="form-actions-row" style="margin-top: 14px">
+          <button class="btn btn-white btn-sm" onclick="Task.tutupDetail()">Tutup</button>
+          <button class="btn btn-white btn-sm" id="btnEditDariDetail"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn btn-yellow btn-sm" id="btnSelesaiDariDetail"><i class="fa-solid fa-check"></i> Tandai Selesai</button>
+          <button class="btn btn-red btn-sm" id="btnHapusDariDetail"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

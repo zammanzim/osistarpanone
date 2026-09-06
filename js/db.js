@@ -134,14 +134,76 @@ function getVisitorName() {
 // =========================================================================
 
 // Ambil akun OSIS by username (password dicompare di client, pola e-learniz)
+// Fallback ke kolom lama kalau migrasi foto/bio belum di-run di Supabase
 async function getOsisUser(username) {
-    const { data, error } = await supa
-        .from("osis_users")
-        .select("id, username, password, nama, jabatan")
-        .eq("username", username)
-        .maybeSingle();
+    try {
+        const { data, error } = await supa
+            .from("osis_users")
+            .select("id, username, password, nama, jabatan, foto, bio")
+            .eq("username", username)
+            .maybeSingle();
+        if (error) throw error;
+        return data || null;
+    } catch (err) {
+        // kolom foto/bio belum ada — pakai kolom lama
+        if (!String(err.message || "").match(/foto|bio|column/i)) throw err;
+        const { data, error } = await supa
+            .from("osis_users")
+            .select("id, username, password, nama, jabatan")
+            .eq("username", username)
+            .maybeSingle();
+        if (error) throw error;
+        return data ? { ...data, foto: "", bio: "" } : null;
+    }
+}
+
+// Ambil akun OSIS by id (buat refresh profil, termasuk password buat verifikasi)
+async function getOsisUserById(id) {
+    try {
+        const { data, error } = await supa
+            .from("osis_users")
+            .select("id, username, password, nama, jabatan, foto, bio")
+            .eq("id", id)
+            .maybeSingle();
+        if (error) throw error;
+        return data || null;
+    } catch (err) {
+        if (!String(err.message || "").match(/foto|bio|column/i)) throw err;
+        const { data, error } = await supa
+            .from("osis_users")
+            .select("id, username, password, nama, jabatan")
+            .eq("id", id)
+            .maybeSingle();
+        if (error) throw error;
+        return data ? { ...data, foto: "", bio: "" } : null;
+    }
+}
+
+// Update profil OSIS (nama + bio + foto PP) — validasi akun di server
+async function updateOsisProfil(userId, nama, bio, foto) {
+    const { data, error } = await supa.rpc("update_osis_profil", {
+        p_user_id: userId, p_nama: nama, p_bio: bio, p_foto: foto
+    });
     if (error) throw error;
-    return data || null;
+    if (data !== "OK") throw new Error(data);
+}
+
+// Ganti username OSIS (harus unik) — return OK atau throw ERR_TAKEN/ERR_INVALID
+async function gantiOsisUsername(userId, username) {
+    const { data, error } = await supa.rpc("ganti_osis_username", {
+        p_user_id: userId, p_username: username
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+}
+
+// Ganti password OSIS (verifikasi lama di server) — throw ERR_WRONG/ERR_INVALID
+async function gantiOsisPassword(userId, oldPw, newPw) {
+    const { data, error } = await supa.rpc("ganti_osis_password", {
+        p_user_id: userId, p_old: oldPw, p_new: newPw
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
 }
 
 // =========================================================================
@@ -382,6 +444,291 @@ async function hapusKegiatan(userId, id) {
     if (error) throw error;
     if (data !== "OK") throw new Error(data);
     Cache.del("kegiatan");
+}
+
+// =========================================================================
+// NOTULENSI RAPAT — DB-driven (halaman osis/notulensi)
+// =========================================================================
+async function getNotulensi() {
+    const { data, error } = await supa
+        .from("rapat_notulensi")
+        .select("id, judul, tanggal, waktu_mulai, waktu_selesai, lokasi, divisi, pimpinan, notulis, peserta, agenda_topik, isi_pembahasan, keputusan, tindak_lanjut, lampiran, status, created_at")
+        .order("tanggal", { ascending: false })
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+}
+async function buatNotulensi(userId, f) {
+    const { data, error } = await supa.rpc("buat_notulensi", {
+        p_user_id: userId, p_judul: f.judul, p_tanggal: f.tanggal, p_waktu_mulai: f.waktu_mulai, p_waktu_selesai: f.waktu_selesai,
+        p_lokasi: f.lokasi, p_divisi: f.divisi, p_pimpinan: f.pimpinan, p_notulis: f.notulis, p_peserta: f.peserta,
+        p_agenda_topik: f.agenda_topik, p_isi_pembahasan: f.isi_pembahasan, p_keputusan: f.keputusan,
+        p_tindak_lanjut: f.tindak_lanjut, p_lampiran: f.lampiran, p_status: f.status
+    });
+    if (error) throw error;
+    if (data <= 0) throw new Error(String(data));
+    Cache.del("notulensi");
+    return data;
+}
+async function updateNotulensi(userId, id, f) {
+    const { data, error } = await supa.rpc("update_notulensi", {
+        p_user_id: userId, p_id: id, p_judul: f.judul, p_tanggal: f.tanggal, p_waktu_mulai: f.waktu_mulai, p_waktu_selesai: f.waktu_selesai,
+        p_lokasi: f.lokasi, p_divisi: f.divisi, p_pimpinan: f.pimpinan, p_notulis: f.notulis, p_peserta: f.peserta,
+        p_agenda_topik: f.agenda_topik, p_isi_pembahasan: f.isi_pembahasan, p_keputusan: f.keputusan,
+        p_tindak_lanjut: f.tindak_lanjut, p_lampiran: f.lampiran, p_status: f.status
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("notulensi");
+}
+async function hapusNotulensi(userId, id) {
+    const { data, error } = await supa.rpc("hapus_notulensi", {
+        p_user_id: userId, p_id: id
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("notulensi");
+}
+
+// =========================================================================
+// PROGRAM KERJA — DB-driven (halaman osis/proker)
+// =========================================================================
+async function getProker() {
+    const { data, error } = await supa
+        .from("proker")
+        .select("id, nama, deskripsi, divisi, pj, periode, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, agenda_ids, tugas, evaluasi_hasil, evaluasi_kendala, evaluasi_solusi, evaluasi_lanjut, dokumentasi, created_at")
+        .order("periode", { ascending: false })
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+}
+async function buatProker(userId, f) {
+    const { data, error } = await supa.rpc("buat_proker", {
+        p_user_id: userId, p_nama: f.nama, p_deskripsi: f.deskripsi, p_divisi: f.divisi, p_pj: f.pj, p_periode: f.periode,
+        p_tgl_mulai: f.tgl_mulai, p_tgl_selesai: f.tgl_selesai, p_lokasi: f.lokasi, p_target_peserta: f.target_peserta,
+        p_status: f.status, p_progress: f.progress, p_catatan: f.catatan, p_agenda_ids: f.agenda_ids, p_tugas: f.tugas,
+        p_evaluasi_hasil: f.evaluasi_hasil, p_evaluasi_kendala: f.evaluasi_kendala, p_evaluasi_solusi: f.evaluasi_solusi,
+        p_evaluasi_lanjut: f.evaluasi_lanjut, p_dokumentasi: f.dokumentasi
+    });
+    if (error) throw error;
+    if (data <= 0) throw new Error(String(data));
+    Cache.del("proker");
+    return data;
+}
+async function updateProker(userId, id, f) {
+    const { data, error } = await supa.rpc("update_proker", {
+        p_user_id: userId, p_id: id, p_nama: f.nama, p_deskripsi: f.deskripsi, p_divisi: f.divisi, p_pj: f.pj, p_periode: f.periode,
+        p_tgl_mulai: f.tgl_mulai, p_tgl_selesai: f.tgl_selesai, p_lokasi: f.lokasi, p_target_peserta: f.target_peserta,
+        p_status: f.status, p_progress: f.progress, p_catatan: f.catatan, p_agenda_ids: f.agenda_ids, p_tugas: f.tugas,
+        p_evaluasi_hasil: f.evaluasi_hasil, p_evaluasi_kendala: f.evaluasi_kendala, p_evaluasi_solusi: f.evaluasi_solusi,
+        p_evaluasi_lanjut: f.evaluasi_lanjut, p_dokumentasi: f.dokumentasi
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("proker");
+}
+async function hapusProker(userId, id) {
+    const { data, error } = await supa.rpc("hapus_proker", {
+        p_user_id: userId, p_id: id
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("proker");
+}
+
+// =========================================================================
+// DOKUMEN OSIS — DB-driven (halaman osis/dokumen)
+// =========================================================================
+async function getDokumen() {
+    const { data, error } = await supa
+        .from("osis_dokumen")
+        .select("id, nama, kategori, tahun, divisi, deskripsi, file_path, file_type, mime, ukuran_bytes, pengunggah, created_by, created_at")
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+}
+async function buatDokumen(userId, f) {
+    const { data, error } = await supa.rpc("buat_dokumen", {
+        p_user_id: userId, p_nama: f.nama, p_kategori: f.kategori, p_tahun: f.tahun, p_divisi: f.divisi,
+        p_deskripsi: f.deskripsi, p_file_path: f.file_path, p_file_type: f.file_type, p_mime: f.mime,
+        p_ukuran_bytes: f.ukuran_bytes, p_pengunggah: f.pengunggah
+    });
+    if (error) throw error;
+    if (data <= 0) throw new Error(String(data));
+    Cache.del("dokumen");
+    return data;
+}
+async function updateDokumen(userId, id, f) {
+    const { data, error } = await supa.rpc("update_dokumen", {
+        p_user_id: userId, p_id: id, p_nama: f.nama, p_kategori: f.kategori, p_tahun: f.tahun, p_divisi: f.divisi,
+        p_deskripsi: f.deskripsi, p_file_path: f.file_path, p_file_type: f.file_type, p_mime: f.mime,
+        p_ukuran_bytes: f.ukuran_bytes, p_pengunggah: f.pengunggah
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("dokumen");
+}
+async function hapusDokumen(userId, id) {
+    const { data, error } = await supa.rpc("hapus_dokumen", {
+        p_user_id: userId, p_id: id
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("dokumen");
+}
+
+// =========================================================================
+// TASK — DB-driven (halaman osis/task, kanban)
+// =========================================================================
+async function getTask() {
+    const { data, error } = await supa
+        .from("osis_task")
+        .select("id, judul, deskripsi, pic, divisi, priority, deadline, status, proker_id, agenda_id, catatan, created_by, created_at, updated_at")
+        .order("deadline", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+}
+async function buatTask(userId, f) {
+    const { data, error } = await supa.rpc("buat_task", {
+        p_user_id: userId, p_judul: f.judul, p_deskripsi: f.deskripsi, p_pic: f.pic, p_divisi: f.divisi,
+        p_priority: f.priority, p_deadline: f.deadline, p_status: f.status,
+        p_proker_id: f.proker_id, p_agenda_id: f.agenda_id, p_catatan: f.catatan
+    });
+    if (error) throw error;
+    if (data <= 0) throw new Error(String(data));
+    Cache.del("task");
+    return data;
+}
+async function updateTask(userId, id, f) {
+    const { data, error } = await supa.rpc("update_task", {
+        p_user_id: userId, p_id: id, p_judul: f.judul, p_deskripsi: f.deskripsi, p_pic: f.pic, p_divisi: f.divisi,
+        p_priority: f.priority, p_deadline: f.deadline, p_status: f.status,
+        p_proker_id: f.proker_id, p_agenda_id: f.agenda_id, p_catatan: f.catatan
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("task");
+}
+async function pindahTask(userId, id, status) {
+    const { data, error } = await supa.rpc("pindah_task", {
+        p_user_id: userId, p_id: id, p_status: status
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("task");
+}
+async function hapusTask(userId, id) {
+    const { data, error } = await supa.rpc("hapus_task", {
+        p_user_id: userId, p_id: id
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("task");
+}
+
+// =========================================================================
+// KEUANGAN — DB-driven (halaman osis/keuangan, kas + saldo awal)
+// =========================================================================
+async function getKas() {
+    const { data, error } = await supa
+        .from("osis_kas")
+        .select("id, jenis, tanggal, keterangan, kategori, nominal, divisi, pic, proker_id, agenda_id, catatan, bukti_path, created_by, created_at, updated_at")
+        .order("tanggal", { ascending: false })
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+}
+async function getSaldoAwal() {
+    const { data, error } = await supa
+        .from("osis_saldo_awal")
+        .select("periode, nominal");
+    if (error) throw error;
+    return data || [];
+}
+async function buatKas(userId, f) {
+    const { data, error } = await supa.rpc("buat_kas", {
+        p_user_id: userId, p_jenis: f.jenis, p_tanggal: f.tanggal, p_keterangan: f.keterangan, p_kategori: f.kategori,
+        p_nominal: f.nominal, p_divisi: f.divisi, p_pic: f.pic, p_proker_id: f.proker_id, p_agenda_id: f.agenda_id,
+        p_catatan: f.catatan, p_bukti_path: f.bukti_path
+    });
+    if (error) throw error;
+    if (data <= 0) throw new Error(String(data));
+    Cache.del("kas");
+    return data;
+}
+async function updateKas(userId, id, f) {
+    const { data, error } = await supa.rpc("update_kas", {
+        p_user_id: userId, p_id: id, p_jenis: f.jenis, p_tanggal: f.tanggal, p_keterangan: f.keterangan, p_kategori: f.kategori,
+        p_nominal: f.nominal, p_divisi: f.divisi, p_pic: f.pic, p_proker_id: f.proker_id, p_agenda_id: f.agenda_id,
+        p_catatan: f.catatan, p_bukti_path: f.bukti_path
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("kas");
+}
+async function hapusKas(userId, id) {
+    const { data, error } = await supa.rpc("hapus_kas", {
+        p_user_id: userId, p_id: id
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("kas");
+}
+async function setSaldoAwal(userId, periode, nominal) {
+    const { data, error } = await supa.rpc("set_saldo_awal", {
+        p_user_id: userId, p_periode: periode, p_nominal: nominal
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+}
+
+// =========================================================================
+// EVALUASI — DB-driven (halaman osis/evaluasi)
+// =========================================================================
+async function getEvaluasi() {
+    const { data, error } = await supa
+        .from("osis_evaluasi")
+        .select("id, nama_kegiatan, agenda_id, proker_id, tgl_kegiatan, divisi, pj, status, rating_total, r_persiapan, r_pelaksanaan, r_koordinasi, r_waktu, r_anggaran, baik, kendala, penyebab, solusi, perbaiki, rekomendasi, dokumentasi, tugas, created_by, created_at, updated_at")
+        .order("tgl_kegiatan", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+}
+async function buatEvaluasi(userId, f) {
+    const { data, error } = await supa.rpc("buat_evaluasi", {
+        p_user_id: userId, p_nama_kegiatan: f.nama_kegiatan, p_agenda_id: f.agenda_id, p_proker_id: f.proker_id,
+        p_tgl_kegiatan: f.tgl_kegiatan, p_divisi: f.divisi, p_pj: f.pj, p_status: f.status,
+        p_rating_total: f.rating_total, p_r_persiapan: f.r_persiapan, p_r_pelaksanaan: f.r_pelaksanaan,
+        p_r_koordinasi: f.r_koordinasi, p_r_waktu: f.r_waktu, p_r_anggaran: f.r_anggaran,
+        p_baik: f.baik, p_kendala: f.kendala, p_penyebab: f.penyebab, p_solusi: f.solusi,
+        p_perbaiki: f.perbaiki, p_rekomendasi: f.rekomendasi, p_dokumentasi: f.dokumentasi, p_tugas: f.tugas
+    });
+    if (error) throw error;
+    if (data <= 0) throw new Error(String(data));
+    Cache.del("evaluasi");
+    return data;
+}
+async function updateEvaluasi(userId, id, f) {
+    const { data, error } = await supa.rpc("update_evaluasi", {
+        p_user_id: userId, p_id: id, p_nama_kegiatan: f.nama_kegiatan, p_agenda_id: f.agenda_id, p_proker_id: f.proker_id,
+        p_tgl_kegiatan: f.tgl_kegiatan, p_divisi: f.divisi, p_pj: f.pj, p_status: f.status,
+        p_rating_total: f.rating_total, p_r_persiapan: f.r_persiapan, p_r_pelaksanaan: f.r_pelaksanaan,
+        p_r_koordinasi: f.r_koordinasi, p_r_waktu: f.r_waktu, p_r_anggaran: f.r_anggaran,
+        p_baik: f.baik, p_kendala: f.kendala, p_penyebab: f.penyebab, p_solusi: f.solusi,
+        p_perbaiki: f.perbaiki, p_rekomendasi: f.rekomendasi, p_dokumentasi: f.dokumentasi, p_tugas: f.tugas
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("evaluasi");
+}
+async function hapusEvaluasi(userId, id) {
+    const { data, error } = await supa.rpc("hapus_evaluasi", {
+        p_user_id: userId, p_id: id
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+    Cache.del("evaluasi");
 }
 
 // =========================================================================
