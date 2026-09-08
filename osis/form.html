@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Formulir — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .pub-wrap {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .fcard {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .fcard.accent-top {
+        border-top: 10px solid var(--red);
+      }
+      .isi-q {
+        margin-bottom: 4px;
+      }
+      .isi-q label {
+        display: block;
+        font-size: 0.86rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+        overflow-wrap: anywhere;
+      }
+      .isi-q label .wajib-star {
+        color: var(--red);
+      }
+      .isi-q input[type="text"],
+      .isi-q input[type="date"],
+      .isi-q textarea,
+      .isi-q select {
+        width: 100%;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-family: inherit;
+        font-size: 0.86rem;
+        background: var(--white);
+        outline: none;
+      }
+      .isi-q input:focus,
+      .isi-q textarea:focus,
+      .isi-q select:focus {
+        box-shadow: 2px 2px 0 var(--red);
+      }
+      .isi-q textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+      .isi-opt {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 0;
+        font-size: 0.86rem;
+        font-weight: 600;
+      }
+      .isi-opt input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--red);
+        flex-shrink: 0;
+      }
+      .skala-row {
+        display: flex;
+        gap: 6px;
+        align-items: flex-end;
+        justify-content: space-between;
+      }
+      .skala-opt {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        cursor: pointer;
+        flex: 1;
+      }
+      .skala-opt input {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--red);
+      }
+      .skala-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.7rem;
+        color: var(--gray);
+        font-weight: 700;
+        margin-top: 4px;
+      }
+      .rate-pick {
+        display: flex;
+        gap: 2px;
+      }
+      .rate-pick button {
+        border: none;
+        background: transparent;
+        font-size: 1.9rem;
+        cursor: pointer;
+        color: var(--line);
+        line-height: 1;
+        padding: 0 1px;
+      }
+      .rate-pick button.on {
+        color: #e8a100;
+        text-shadow: 1.5px 1.5px 0 var(--ink);
+      }
+      .detail-text {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-top: 8px;
+        overflow-wrap: anywhere;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/form-publik.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo OSIS" /></div>
+        <div class="brand-text">
+          <h2>OSIS TARPAN ONE</h2>
+          <p>SMK Taruna Harapan 1 Cipatat</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <span class="status-badge" style="font-size: 0.64rem; font-weight: 900; text-transform: uppercase; padding: 6px 12px; border-radius: 999px; border: 2px solid var(--ink); background: #d6f5d6; color: #146314"><span class="status-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; margin-right: 5px"></span>Form Publik</span>
+      </div>
+    </header>
+
+    <div class="pub-wrap">
+      <div class="fcard accent-top">
+        <h2 id="pubJudul" style="font-size: 1.3rem; font-weight: 900; overflow-wrap: anywhere">Memuat...</h2>
+        <p id="pubDeskripsi" style="font-size: 0.84rem; color: var(--gray); font-weight: 600; margin-top: 4px"></p>
+      </div>
+      <div id="pubBody" style="display: flex; flex-direction: column; gap: 12px">
+        <div class="loading-block"><div class="spinner"></div>Memuat formulir...</div>
+      </div>
+      <button class="btn btn-red" id="btnPubKirim" style="justify-content: center"><i class="fa-solid fa-paper-plane"></i> Kirim</button>
+    </div>
+
+    <input type="file" id="pubFileInput" hidden />
+  </body>
+</html>

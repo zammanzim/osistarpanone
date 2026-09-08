@@ -22,7 +22,7 @@ const Sekbid = {
       html += Sekbid.renderGrup("Anggota", [{
         nama: "Pengurus OSIS",
         deskripsi: "Keluarga besar Pengurus OSIS Tarpan One — seluruh anggota dari setiap seksi bidang yang bergerak bersama menyukseskan setiap program dan kegiatan sekolah.",
-        foto: "",
+        foto: "sekbid/pengurus-osis.webp",
       }], "ANGGOTA");
       container.innerHTML = html;
     };
@@ -103,13 +103,13 @@ const Sekbid = {
       : `<span class="sekbid-foto-fallback">${no}</span>`;
     return `
             <article class="sekbid-card${bgSrc ? "" : " tanpa-foto"}">
-                <div class="sekbid-foto">${fotoIsi}</div>
-                <div class="sekbid-body">
+                <div class="sekbid-title">
                     <span class="sekbid-no">${no}</span>
                     <span class="sekbid-label">${peran}</span>
                     <h4 class="sekbid-nama">${nama}</h4>
-                    <p class="sekbid-desc">${escapeHtml(item.deskripsi)}</p>
                 </div>
+                <div class="sekbid-foto">${fotoIsi}</div>
+                <p class="sekbid-desc">${escapeHtml(item.deskripsi)}</p>
             </article>`;
   },
 };

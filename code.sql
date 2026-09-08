@@ -1776,6 +1776,29 @@ CREATE TABLE IF NOT EXISTS public.osis_respons (
 CREATE INDEX IF NOT EXISTS idx_respons_form ON public.osis_respons (form_id, created_at DESC);
 ALTER TABLE public.osis_formulir ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.osis_pertanyaan ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.osis_formulir ADD COLUMN IF NOT EXISTS slug text NOT NULL DEFAULT '';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_formulir_slug ON public.osis_formulir (slug) WHERE slug <> '';
+
+-- Set slug custom buat share link (?id=slug). Unik, 3-40 char a-z 0-9 dash.
+CREATE OR REPLACE FUNCTION public.set_formulir_slug(p_user_id bigint, p_id bigint, p_slug text)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    p_slug := lower(COALESCE(NULLIF(btrim(p_slug),''),''));
+    IF p_slug <> '' AND (char_length(p_slug) < 3 OR char_length(p_slug) > 40 OR p_slug !~ '^[a-z0-9-]+$') THEN
+        RETURN 'ERR_INVALID';
+    END IF;
+    IF p_slug <> '' AND EXISTS (SELECT 1 FROM public.osis_formulir WHERE slug=p_slug AND id<>p_id) THEN
+        RETURN 'ERR_TAKEN';
+    END IF;
+    UPDATE public.osis_formulir SET slug=p_slug, updated_at=now() WHERE id=p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+REVOKE EXECUTE ON FUNCTION public.set_formulir_slug(bigint, bigint, text) FROM public;
+GRANT EXECUTE ON FUNCTION public.set_formulir_slug(bigint, bigint, text) TO anon;
 ALTER TABLE public.osis_respons ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "formulir_public_select" ON public.osis_formulir;
 CREATE POLICY "formulir_public_select" ON public.osis_formulir FOR SELECT USING (true);

@@ -735,12 +735,30 @@ async function hapusEvaluasi(userId, id) {
 // FORMULIR — DB-driven form builder (halaman osis/formulir)
 // =========================================================================
 async function getFormulir() {
-    const { data, error } = await supa
-        .from("osis_formulir")
-        .select("id, judul, deskripsi, status, settings, created_by, created_at, updated_at")
-        .order("updated_at", { ascending: false });
+    try {
+        const { data, error } = await supa
+            .from("osis_formulir")
+            .select("id, judul, deskripsi, status, settings, slug, created_by, created_at, updated_at")
+            .order("updated_at", { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (err) {
+        if (!String(err.message || "").match(/slug|column/i)) throw err;
+        const { data, error } = await supa
+            .from("osis_formulir")
+            .select("id, judul, deskripsi, status, settings, created_by, created_at, updated_at")
+            .order("updated_at", { ascending: false });
+        if (error) throw error;
+        return (data || []).map(f => ({ ...f, slug: "" }));
+    }
+}
+async function setFormulirSlug(userId, id, slug) {
+    const { data, error } = await supa.rpc("set_formulir_slug", {
+        p_user_id: userId, p_id: id, p_slug: slug
+    });
     if (error) throw error;
-    return data || [];
+    if (data !== "OK") throw new Error(data);
+    Cache.del("formulir");
 }
 async function getPertanyaan(formId) {
     const { data, error } = await supa

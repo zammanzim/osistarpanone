@@ -113,6 +113,12 @@ window.showPopup = function (msg, type = 'info', options = {}) {
                 ${btnsHtml}
             </div>`;
 
+        // varian tinggi: header + footer tetap, konten scroll di dalam
+        if (options.tall) {
+            const box = overlay.querySelector('.uni-box');
+            if (box) box.classList.add('uni-tall');
+        }
+
         document.body.appendChild(overlay);
 
         // Animasi masuk + auto focus buat form

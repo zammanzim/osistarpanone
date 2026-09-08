@@ -6,6 +6,7 @@
     <title>Formulir — OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
 <meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
 <link rel="manifest" href="../manifest.webmanifest" />
 <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
 <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
@@ -685,6 +686,7 @@
           <h3><i class="fa-solid fa-gear"></i> Pengaturan</h3>
           <p class="sub">Berlaku saat form dipublikasikan.</p>
           <div class="set-row"><div>Status<small>Aktif = bisa diisi · Ditutup = responden ditolak</small></div><span style="margin-left: auto; display: flex; gap: 6px"><button class="btn btn-white btn-sm" id="btnStatusAktif">Aktif</button><button class="btn btn-white btn-sm" id="btnStatusTutup">Tutup</button></span></div>
+          <div class="set-row"><div>Siapa yang bisa isi<small>OSIS = wajib login · Publik = link /form tanpa login</small></div><select id="setAudience" style="margin-left: auto; border: 2px solid var(--ink); border-radius: 9px; padding: 6px 9px; font-family: inherit; font-size: 0.8rem; font-weight: 800"><option value="osis">OSIS saja</option><option value="publik">Publik</option></select></div>
           <div class="set-row"><div>Batas respons<small>0 = tanpa batas</small></div><input type="number" id="setBatas" min="0" max="100000" value="0" /></div>
           <div class="set-row"><div>Boleh isi lebih dari 1x<small>Responden yang sama boleh kirim berkali-kali</small></div><input type="checkbox" id="setMulti" checked /></div>
           <div class="set-row"><div>Acak urutan pertanyaan<small>Urutan diacak tiap responden buka</small></div><input type="checkbox" id="setAcak" /></div>
@@ -693,6 +695,11 @@
           <div class="share-box" id="shareBox" style="display: none">
             <input type="text" id="shareLink" readonly onclick="this.select()" />
             <button class="btn btn-red btn-sm" id="btnSalinLink"><i class="fa-solid fa-copy"></i> Salin Link</button>
+          </div>
+          <div class="set-row" id="slugRow" style="display: none">
+            <div>Link custom<small>.../formulir?id=evaluasi — huruf kecil, angka, dash (3–40). Kosongkan = pakai link ID.</small></div>
+            <input type="text" id="slugInput" placeholder="evaluasi" maxlength="40" autocomplete="off" style="text-transform: lowercase; width: 140px" />
+            <button class="btn btn-white btn-sm" id="btnSimpanSlug" style="margin-left: 8px; flex-shrink: 0">OK</button>
           </div>
         </div>
       </div>

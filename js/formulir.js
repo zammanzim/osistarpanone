@@ -32,14 +32,16 @@ const Formulir = {
 
     async init() {
         const params = new URLSearchParams(location.search);
+        const isiSlug = params.get("id");
         const isiId = params.get("isi");
         const u = OsisAuth.getUser && OsisAuth.getUser();
 
-        // mode isi (responden): boleh guest maupun osis, tapi harus login dulu
-        if (isiId) {
+        // mode isi (responden): ?id=slug custom atau ?isi=id angka.
+        // boleh guest maupun osis, tapi harus login dulu
+        if (isiSlug || isiId) {
             if (!u) { location.replace("../login"); return; }
             Formulir.bindIsi();
-            await Formulir.bukaIsi(isiId, false);
+            await Formulir.bukaIsi(isiSlug || isiId, false);
             return;
         }
 
@@ -140,6 +142,7 @@ const Formulir = {
                 <div class="meta">
                     <span><i class="fa-solid fa-list"></i> ${f.jml_pertanyaan || 0} pertanyaan</span>
                     <span><i class="fa-solid fa-inbox"></i> ${f.jml_respons || 0} respons</span>
+                    <span><i class="fa-solid fa-${(f.settings && f.settings.audience) === "publik" ? "globe" : "lock"}"></i> ${((f.settings && f.settings.audience) === "publik" ? "Publik" : "OSIS")}</span>
                 </div>
                 <div class="meta"><span><i class="fa-solid fa-clock"></i> ${Formulir.fmtWaktu(f.updated_at)}</span></div>
                 <div class="actions">
@@ -158,8 +161,30 @@ const Formulir = {
         } catch { return "-"; }
     },
 
+    audienceOf(id) {
+        if (Formulir.builder && String(Formulir.builder.id) === String(id)) {
+            return (Formulir.builder.settings && Formulir.builder.settings.audience) || "osis";
+        }
+        const f = (Formulir.cache || []).find(x => String(x.id) === String(id));
+        return (f && f.settings && f.settings.audience) || "osis";
+    },
+
     shareUrl(id) {
-        return location.href.split("?")[0] + "?isi=" + id;
+        const slug = Formulir.slugOf(id);
+        const q = slug ? "?id=" + encodeURIComponent(slug) : "?isi=" + id;
+        // form publik → halaman osis/form (tanpa login), selain itu link halaman OSIS ini
+        if (Formulir.audienceOf(id) === "publik") {
+            return location.href.split("?")[0].replace(/formulir$/, "form") + q;
+        }
+        return location.href.split("?")[0] + q;
+    },
+
+    slugOf(id) {
+        if (Formulir.builder && String(Formulir.builder.id) === String(id)) {
+            return (Formulir.builder.slug || "").trim();
+        }
+        const f = (Formulir.cache || []).find(x => String(x.id) === String(id));
+        return f ? ((f.slug || "").trim()) : "";
     },
 
     salinLink(id) {
@@ -192,7 +217,9 @@ const Formulir = {
         const item = Formulir.cache.find(f => String(f.id) === String(id));
         if (!item) return;
         if (item.status === "aktif") {
-            location.href = Formulir.shareUrl(id);
+            const url = Formulir.shareUrl(id);
+            if (Formulir.audienceOf(id) === "publik") window.open(url, "_blank");
+            else location.href = url;
             return;
         }
         // belum aktif → preview dari data tersimpan
@@ -213,6 +240,12 @@ const Formulir = {
         document.getElementById("btnSalinLink")?.addEventListener("click", () => {
             if (Formulir.builder && Formulir.builder.id) Formulir.salinLink(Formulir.builder.id);
         });
+        document.getElementById("setAudience")?.addEventListener("change", () => {
+            if (!Formulir.builder) return;
+            Formulir.builder.settings.audience = document.getElementById("setAudience").value;
+            Formulir.renderBuilderMeta();
+        });
+        document.getElementById("btnSimpanSlug")?.addEventListener("click", () => Formulir.simpanSlug());
         // grid tombol tambah tipe
         const grid = document.getElementById("addqGrid");
         if (grid) {
@@ -268,8 +301,8 @@ const Formulir = {
 
     baru() {
         Formulir.builder = {
-            id: null, judul: "", deskripsi: "", status: "draft",
-            settings: { batas_respons: 0, multi_isi: true, acak: false, pesan_sukses: "Terima kasih, respons kamu telah berhasil dikirim.", simpan_waktu: true },
+            id: null, judul: "", deskripsi: "", status: "draft", slug: "",
+            settings: { batas_respons: 0, multi_isi: true, acak: false, pesan_sukses: "Terima kasih, respons kamu telah berhasil dikirim.", simpan_waktu: true, audience: "osis" },
             questions: []
         };
         Formulir.renderBuilderMeta();
@@ -285,8 +318,8 @@ const Formulir = {
             if (!f) { showToast("Formulir tidak ditemukan", "error"); return; }
             const qs = await getPertanyaan(id);
             Formulir.builder = {
-                id: f.id, judul: f.judul || "", deskripsi: f.deskripsi || "", status: f.status || "draft",
-                settings: { batas_respons: 0, multi_isi: true, acak: false, pesan_sukses: "Terima kasih, respons kamu telah berhasil dikirim.", simpan_waktu: true, ...(f.settings || {}) },
+                id: f.id, judul: f.judul || "", deskripsi: f.deskripsi || "", status: f.status || "draft", slug: f.slug || "",
+                settings: { batas_respons: 0, multi_isi: true, acak: false, pesan_sukses: "Terima kasih, respons kamu telah berhasil dikirim.", simpan_waktu: true, audience: "osis", ...(f.settings || {}) },
                 questions: qs.map(q => ({
                     key: "db" + q.id, id: q.id, tipe: q.tipe, teks: q.teks || "",
                     opsi: Array.isArray(q.opsi) ? [...q.opsi] : [],
@@ -366,7 +399,8 @@ const Formulir = {
             multi_isi: document.getElementById("setMulti").checked,
             acak: document.getElementById("setAcak").checked,
             pesan_sukses: document.getElementById("setPesan").value,
-            simpan_waktu: document.getElementById("setWaktu").checked
+            simpan_waktu: document.getElementById("setWaktu").checked,
+            audience: document.getElementById("setAudience").value || "osis"
         };
         document.querySelectorAll("#builderList .q-card").forEach(card => {
             const q = Formulir.findQ(card.dataset.q);
@@ -394,6 +428,7 @@ const Formulir = {
         document.getElementById("setAcak").checked = !!s.acak;
         document.getElementById("setWaktu").checked = s.simpan_waktu !== false;
         document.getElementById("setPesan").value = s.pesan_sukses || "Terima kasih, respons kamu telah berhasil dikirim.";
+        document.getElementById("setAudience").value = s.audience === "publik" ? "publik" : "osis";
         const badge = document.getElementById("builderStatus");
         if (badge) {
             const lbl = { draft: "Draft", aktif: "Aktif", ditutup: "Ditutup" };
@@ -409,6 +444,16 @@ const Formulir = {
                 document.getElementById("shareLink").value = Formulir.shareUrl(b.id);
             } else {
                 share.style.display = "none";
+            }
+        }
+        const slugRow = document.getElementById("slugRow");
+        if (slugRow) {
+            if (b.id) {
+                slugRow.style.display = "";
+                const si = document.getElementById("slugInput");
+                if (si && document.activeElement !== si) si.value = b.slug || "";
+            } else {
+                slugRow.style.display = "none";
             }
         }
     },
@@ -543,6 +588,27 @@ const Formulir = {
         }
     },
 
+    async simpanSlug() {
+        const b = Formulir.builder;
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!b || !b.id || !u || u.mode !== "osis") return;
+        const slug = document.getElementById("slugInput").value.trim().toLowerCase();
+        try {
+            await setFormulirSlug(u.id, b.id, slug);
+            b.slug = slug;
+            const item = Formulir.cache.find(f => String(f.id) === String(b.id));
+            if (item) item.slug = slug;
+            Formulir.renderBuilderMeta();
+            showToast(slug ? `Link custom aktif: ?id=${slug}` : "Kembali ke link ID.", "success");
+        } catch (err) {
+            console.error(err);
+            const code = String(err.message || "");
+            if (code.includes("ERR_TAKEN")) showToast("Slug sudah dipakai form lain", "error");
+            else if (code.includes("ERR_INVALID")) showToast("3-40 karakter: huruf, angka, dash", "error");
+            else showToast("Gagal simpan link: " + err.message, "error");
+        }
+    },
+
     setStatusBuilder(st) {
         if (!Formulir.builder) return;
         Formulir.builder.status = st;
@@ -569,13 +635,15 @@ const Formulir = {
     bindIsi() {
         document.getElementById("btnIsiKembali")?.addEventListener("click", () => {
             const params = new URLSearchParams(location.search);
-            if (params.get("isi")) location.href = location.pathname.replace(/[^/]*$/, "") + "index";
+            if (params.get("isi") || params.get("id")) location.href = location.pathname.replace(/[^/]*$/, "") + "index";
             else Formulir.show(Formulir.builder ? "builder" : "daftar");
         });
         document.getElementById("btnKirimIsi")?.addEventListener("click", () => Formulir.kirimIsi());
         document.getElementById("isiBody")?.addEventListener("click", (e) => {
             const star = e.target.closest("[data-star]");
             if (star) {
+                // simpan dulu semua ketikan ke state, baru render ulang
+                Object.assign(Formulir.isi.answers, Formulir.bacaJawabanDOM());
                 Formulir.isi.answers[star.dataset.qkey] = parseInt(star.dataset.star, 10);
                 Formulir.renderIsiJawaban();
                 return;
@@ -590,7 +658,16 @@ const Formulir = {
             const f = e.target.files && e.target.files[0];
             e.target.value = "";
             if (f && Formulir.fileTarget) {
-                Formulir.isi.files[Formulir.fileTarget] = f;
+                const key = Formulir.fileTarget;
+                const old = (Formulir.isi.fileUrls || {})[key];
+                if (old) { try { URL.revokeObjectURL(old); } catch {} }
+                Formulir.isi.files[key] = f;
+                if (!Formulir.isi.fileUrls) Formulir.isi.fileUrls = {};
+                if ((f.type || "").startsWith("image/")) {
+                    Formulir.isi.fileUrls[key] = URL.createObjectURL(f);
+                } else {
+                    delete Formulir.isi.fileUrls[key];
+                }
                 Formulir.fileTarget = null;
                 Formulir.renderIsiJawaban();
             }
@@ -598,12 +675,13 @@ const Formulir = {
         document.getElementById("btnResponsKembali")?.addEventListener("click", () => Formulir.show("daftar"));
     },
 
-    async bukaIsi(formId, preview) {
+    async bukaIsi(formRef, preview) {
         try {
             const forms = await getFormulir();
-            const f = forms.find(x => String(x.id) === String(formId));
+            const ref = String(formRef || "").trim().toLowerCase();
+            const f = forms.find(x => String(x.id) === String(formRef) || String(x.slug || "").toLowerCase() === ref);
             if (!f) { showToast("Formulir tidak ditemukan", "error"); return; }
-            let qs = await getPertanyaan(formId);
+            let qs = await getPertanyaan(f.id);
             qs = qs.map((q, i) => ({ ...q, key: "q" + q.id + "_" + i }));
             if (f.settings && f.settings.acak) {
                 qs = [...qs].sort(() => Math.random() - 0.5);
@@ -700,7 +778,14 @@ const Formulir = {
         if (q.tipe === "file") {
             const c = q.config || {};
             const f = Formulir.isi.files[key];
-            const info = f ? `<div class="detail-text" style="margin-top:6px"><i class="fa-solid fa-file"></i> ${esc(f.name)} (${Formulir.fmtBytes(f.size)})</div>` : "";
+            let info = "";
+            if (f) {
+                const url = (Formulir.isi.fileUrls || {})[key];
+                const isImg = (f.type || "").startsWith("image/") && url;
+                info = `<div class="detail-text" style="margin-top:6px; display:flex; gap:10px; align-items:center">`
+                    + (isImg ? `<img src="${url}" alt="" style="width:72px; height:72px; object-fit:cover; border:2px solid var(--ink); border-radius:10px; flex-shrink:0">` : `<i class="fa-solid fa-file" style="font-size:1.4rem; color:var(--red)"></i>`)
+                    + `<div style="min-width:0"><div style="overflow-wrap:anywhere">${esc(f.name)}</div><small style="color:var(--gray)">${Formulir.fmtBytes(f.size)}</small></div></div>`;
+            }
             return `<button type="button" class="btn btn-white btn-sm" data-filebtn="${key}"><i class="fa-solid fa-upload"></i> ${f ? "Ganti file" : "Pilih file"}</button>
                 <div style="font-size:.7rem; color:var(--gray); font-weight:600; margin-top:4px">${esc(c.types || "Semua tipe")} · Maks ${esc(c.max_mb || 10)} MB</div>${info}`;
         }
@@ -712,6 +797,20 @@ const Formulir = {
         if (!b) return "—";
         if (b < 1048576) return (b / 1024).toFixed(0) + " KB";
         return (b / 1048576).toFixed(1) + " MB";
+    },
+
+    isGambar(nama) {
+        return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(String(nama || ""));
+    },
+
+    fileJawabanHtml(v) {
+        if (!v || typeof v !== "object" || !v.path) return "-";
+        const url = getFoto(v.path);
+        const label = escapeHtml(v.nama || "file");
+        if (Formulir.isGambar(v.nama || v.path)) {
+            return `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="" loading="lazy" style="max-width:100%; max-height:240px; width:auto; height:auto; display:block; border:2px solid var(--ink); border-radius:10px"></a><a href="${url}" target="_blank" rel="noopener" style="color:var(--red); font-size:.74rem; font-weight:700">${label}</a>`;
+        }
+        return `<a href="${url}" target="_blank" rel="noopener" style="color:var(--red)">${label}</a>`;
     },
 
     bacaJawabanDOM() {
@@ -837,6 +936,7 @@ const Formulir = {
             if (!f) return;
             const [qs, rs] = await Promise.all([getPertanyaan(id), getRespons(id)]);
             Formulir.responsCache = rs || [];
+            Formulir.responsView = { qs, rs: rs || [] };
             document.getElementById("responsJudul").textContent = f.judul || "Tanpa judul";
             const last = rs && rs[0] ? Formulir.fmtWaktu(rs[0].created_at) : "-";
             document.getElementById("responsMeta").textContent = `Total ${rs.length} respons · Terakhir: ${last} · Status: ${f.status}`;
@@ -890,7 +990,7 @@ const Formulir = {
                 }
             } else if (q.tipe === "file") {
                 const files = vals.filter(v => v && typeof v === "object" && v.path);
-                body = files.length ? files.slice(0, 10).map(v => `<div class="sum-bar"><div class="top"><span><a href="${getFoto(v.path)}" target="_blank" rel="noopener" style="color:var(--red)">${escapeHtml(v.nama || "file")}</a></span></div></div>`).join("")
+                body = files.length ? `<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px">` + files.slice(0, 9).map(v => `<div style="min-width:0">${Formulir.fileJawabanHtml(v)}</div>`).join("") + `</div>`
                     : `<div class="pesan-empty">Belum ada file.</div>`;
             } else {
                 body = vals.slice(0, 20).map(v => `<div class="detail-text" style="margin-bottom:6px">${escapeHtml(String(v))}</div>`).join("") || `<div class="pesan-empty">Belum ada jawaban.</div>`;
@@ -919,18 +1019,23 @@ const Formulir = {
                 <td style="white-space:nowrap">${Formulir.fmtWaktu(r.created_at)}</td>
                 ${qs.map(q => `<td>${short((r.jawaban || {})[String(q.id)])}</td>`).join("")}
                 <td><button class="q-icon-btn" onclick="Formulir.detailRespons(${i})" title="Detail"><i class="fa-solid fa-eye"></i></button></td>
-            </tr>
-            <tr id="respDetail${i}" style="display:none"><td colspan="${qs.length + 2}">${qs.map(q => {
-                const v = (r.jawaban || {})[String(q.id)];
-                let isi = short(v);
-                if (v && typeof v === "object" && v.path) isi = `<a href="${getFoto(v.path)}" target="_blank" rel="noopener" style="color:var(--red)">${escapeHtml(v.nama || "file")}</a>`;
-                return `<div style="margin-bottom:6px"><b>${escapeHtml(q.teks)}</b><br>${isi}</div>`;
-            }).join("")}</td></tr>`).join("")}</tbody></table>`;
+            </tr>`).join("")}</tbody></table>`;
     },
 
     detailRespons(i) {
-        const el = document.getElementById("respDetail" + i);
-        if (el) el.style.display = el.style.display === "none" ? "" : "none";
+        const view = Formulir.responsView;
+        if (!view || !view.rs[i]) return;
+        const r = view.rs[i];
+        const isi = view.qs.map(q => {
+            const v = (r.jawaban || {})[String(q.id)];
+            let val;
+            if (v === undefined || v === "" || v === null) val = "-";
+            else if (Array.isArray(v)) val = escapeHtml(v.join(", ") || "-");
+            else if (typeof v === "object") val = Formulir.fileJawabanHtml(v);
+            else val = escapeHtml(String(v));
+            return `<div style="margin-bottom:8px; text-align:left"><b>${escapeHtml(q.teks || "Tanpa pertanyaan")}</b><br>${val}</div>`;
+        }).join("");
+        showPopup(`<div style="overflow-wrap:anywhere; min-width:0; max-height:50vh; overflow-y:auto; text-align:left"><div style="font-size:.72rem; font-weight:800; color:var(--gray); margin-bottom:8px">${Formulir.fmtWaktu(r.created_at)}</div>${isi}</div>`, "info");
     }
 };
 

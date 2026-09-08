@@ -1866,6 +1866,8 @@ body.edit-mode .bento-meta .gal-del {
 }
 .uni-box {
   width: min(400px, 100%);
+  max-width: 100%;
+  overflow-wrap: anywhere;
   background: var(--white);
   border: 3px solid var(--ink);
   border-radius: var(--radius);
@@ -1875,8 +1877,40 @@ body.edit-mode .bento-meta .gal-del {
   transform: translateY(16px) scale(0.97);
   transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
 }
+.uni-box img {
+  max-width: 100%;
+}
 .uni-overlay.active .uni-box {
   transform: translateY(0) scale(1);
+}
+/* varian popup tinggi: header & footer nempel, konten scroll di dalam */
+.uni-box.uni-tall {
+  display: flex;
+  flex-direction: column;
+  width: min(440px, 100%);
+  max-height: min(620px, 86vh);
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+}
+.uni-box.uni-tall .uni-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  font-size: 1.15rem;
+  margin: 16px auto 4px;
+}
+.uni-box.uni-tall .uni-msg {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px 18px 12px;
+  font-size: 0.85rem;
+}
+.uni-box.uni-tall > .uni-btn {
+  flex-shrink: 0;
+  margin: 0 18px 16px;
 }
 .uni-icon {
   width: 64px;
@@ -3197,25 +3231,28 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   gap: 14px;
 }
 
-/* ---- Card: foto 4:5 tampil full + panel info solid ---- */
+/* ---- Card: judul | foto 4:5 full | deskripsi (tanpa trik display:contents) ---- */
 .sekbid-card {
-  overflow: hidden;
   display: flex;
-  align-items: stretch;
-  gap: 0;
+  flex-direction: column;
+  gap: 14px;
   padding: 0;
-  border: 3px solid var(--ink);
-  border-radius: 20px;
-  background: var(--ink);
-  box-shadow: var(--shadow-hard);
+  border: none;
+  background: transparent;
+}
+.sekbid-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 .sekbid-foto {
   position: relative;
-  flex: 0 0 240px;
+  width: 100%;
   aspect-ratio: 4 / 5;
   background: var(--paper-2);
   overflow: hidden;
-  border-right: 3px solid var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
 }
 .sekbid-img {
   display: block;
@@ -3257,21 +3294,15 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
 .sekbid-foto.sudah-muat .sekbid-foto-loading {
   display: none;
 }
-.sekbid-body {
-  flex: 1;
-  min-width: 0;
-  padding: 22px;
-  background: var(--ink);
-}
 .sekbid-no {
   display: block;
   font-size: 2rem;
   font-weight: 900;
   line-height: 1;
   letter-spacing: -0.02em;
-  color: #fff;
-  opacity: 0.95;
-  text-shadow: 2px 2px 0 rgba(15, 10, 11, 0.6);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .sekbid-label {
   display: inline-block;
@@ -3279,7 +3310,7 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   padding: 3px 11px;
   background: var(--red);
   color: #fff;
-  border: 2px solid #fff;
+  border: 2px solid var(--ink);
   border-radius: 999px;
   font-size: 0.6rem;
   font-weight: 900;
@@ -3294,36 +3325,31 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   line-height: 1.1;
   letter-spacing: -0.01em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--ink);
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 .sekbid-desc {
-  margin-top: 6px;
+  margin-top: 0;
   font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--gray);
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
 /* ---- Mobile khusus (bukan sekadar mengecilkan desktop) ---- */
-@media (max-width: 700px) {
+@media (max-width: 640px) {
   .sekbid-card {
     position: relative;
-    flex-direction: column;
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    overflow: visible;
+    gap: 12px;
   }
   .sekbid-foto {
-    flex: none;
     width: calc(100% + 44px);
     margin: 0 -22px;
-    border-right: none;
+    border: none;
+    border-radius: 0;
     -webkit-mask-image:
       linear-gradient(to bottom,
         transparent 0%, rgba(0, 0, 0, 0.35) 4%, rgba(0, 0, 0, 0.75) 7%, black 10%,
@@ -3341,12 +3367,14 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
         black 91%, rgba(0, 0, 0, 0.8) 94%, rgba(0, 0, 0, 0.4) 97%, transparent 100%);
     mask-composite: intersect;
   }
-  .sekbid-body {
+  .sekbid-desc {
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
     padding: 70px 22px 30px;
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.86);
     background: linear-gradient(
       to top,
       transparent 0%,
@@ -3371,9 +3399,6 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   .sekbid-nama {
     font-size: 1.1rem;
   }
-  .sekbid-desc {
-    font-size: 0.76rem;
-  }
 }
 
 /* ---- Desktop ---- */
@@ -3383,19 +3408,31 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   }
   .sekbid-card {
     flex-direction: row;
+    align-items: center;
+    gap: 26px;
+  }
+  .sekbid-title {
+    flex: 1;
+    align-items: flex-end;
+    text-align: right;
   }
   .sekbid-foto {
-    flex: 0 0 400px;
+    flex: 0 0 496px;
+    width: auto;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    -webkit-mask-image:
+      linear-gradient(to bottom, transparent 0, black 7%, black 93%, transparent 100%),
+      linear-gradient(to right, transparent 0, black 5%, black 95%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to bottom, transparent 0, black 7%, black 93%, transparent 100%),
+      linear-gradient(to right, transparent 0, black 5%, black 95%, transparent 100%);
+    mask-composite: intersect;
   }
-  .sekbid-list .sekbid-card:nth-child(even) {
-    flex-direction: row-reverse;
-  }
-  .sekbid-list .sekbid-card:nth-child(even) .sekbid-foto {
-    border-right: none;
-    border-left: 3px solid var(--ink);
-  }
-  .sekbid-body {
-    padding: 26px 28px;
+  .sekbid-desc {
+    flex: 1;
   }
   .sekbid-no {
     font-size: 2.4rem;
