@@ -3,6 +3,7 @@
 // Batas "hari" pake zona Asia/Jakarta, BUKAN UTC. Kalo UTC, hari ganti
 // jam 07:00 WIB -> kunjungan pagi kehitung dobel walau perangkat sama.
 // Popup dibagi 2 tab: Hari Ini & Total.
+// Header + chip tampilkan Hari Ini (bukan total).
 // =========================================================================
 
 const Visitor = {
@@ -51,10 +52,11 @@ const Visitor = {
                 .filter(r => Visitor.tanggalWib(r.last_seen) === tglHariIni)
                 .sort((a, b) => new Date(b.last_seen) - new Date(a.last_seen));
             Visitor.rowsSemua = [...rows].sort((a, b) => new Date(b.last_seen) - new Date(a.last_seen));
+            const hariIni = Visitor.rowsHari.length;
             const el = document.getElementById("headerVisitorCount");
-            if (el) el.textContent = total.toLocaleString("id-ID");
+            if (el) el.textContent = hariIni.toLocaleString("id-ID");
             const chip = document.getElementById("chipVisitor");
-            if (chip) chip.textContent = total.toLocaleString("id-ID");
+            if (chip) chip.textContent = hariIni.toLocaleString("id-ID");
             const t = document.getElementById("vstatTotal");
             if (t) t.textContent = total.toLocaleString("id-ID");
             const h = document.getElementById("vstatHari");
@@ -65,9 +67,22 @@ const Visitor = {
         };
 
         const cached = Cache.get("visitor");
+        const SELECT_BARU = "device_id, jumlah, name, user_key, label, tipe, user_agent, resolusi, masuk, last_seen";
+        const SELECT_LAMA = "device_id, jumlah, name, label, tipe, user_agent, resolusi, masuk, last_seen";
         if (cached) {
             apply(cached);
-            supa.from("visitor").select("device_id, jumlah, name, label, tipe, user_agent, resolusi, masuk, last_seen").then(({ data, error }) => {
+            supa.from("visitor").select(SELECT_BARU).then(({ data, error }) => {
+                // Fallback kalo kolom user_key belum ada di DB (migrasi belum di-run)
+                if (error && String(error.message || "").match(/user_key|column/i)) {
+                    supa.from("visitor").select(SELECT_LAMA).then(({ data: d2, error: e2 }) => {
+                        if (e2 || !d2) return;
+                        if (JSON.stringify(d2) !== JSON.stringify(cached)) {
+                            Cache.set("visitor", d2);
+                            apply(d2);
+                        }
+                    });
+                    return;
+                }
                 if (error || !data) return;
                 if (JSON.stringify(data) !== JSON.stringify(cached)) {
                     Cache.set("visitor", data);
@@ -78,9 +93,15 @@ const Visitor = {
         }
 
         try {
-            const { data, error } = await supa
+            let { data, error } = await supa
                 .from("visitor")
-                .select("device_id, jumlah, name, label, tipe, user_agent, resolusi, masuk, last_seen");
+                .select(SELECT_BARU);
+            // Fallback kolom lama
+            if (error && String(error.message || "").match(/user_key|column/i)) {
+                const fb = await supa.from("visitor").select(SELECT_LAMA);
+                data = fb.data;
+                error = fb.error;
+            }
             if (error) throw error;
             const rows = data || [];
             Cache.set("visitor", rows);

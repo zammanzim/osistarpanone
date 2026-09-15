@@ -25,6 +25,9 @@
 -- - name = nama pemilik kunjungan: kosong kalo anonim, nickname kalo
 --   login guest, nama anggota kalo login OSIS. Sekali terisi, kunjungan
 --   anonim berikutnya ga bakal ngehapus nama itu.
+-- - user_key = identitas login: 'osis:<id>' / 'guest:<nickname>' / '' (anonim).
+--   Kalo user SAMA login di device LAIN, baris lama di device lain DIHAPUS
+--   (timpa) dan jumlah-nya digabung ke device baru -> 1 user = 1 baris.
 -- - Batas "hari" pake Asia/Jakarta (WIB), BUKAN UTC. Kalo pake UTC,
 --   hari ganti jam 07:00 WIB -> kunjungan pagi kehitung dobel walau
 --   perangkatnya sama.
@@ -100,6 +103,10 @@ ALTER TABLE public.visitor ADD COLUMN IF NOT EXISTS label text NOT NULL DEFAULT 
 ALTER TABLE public.visitor ADD COLUMN IF NOT EXISTS tipe text NOT NULL DEFAULT '';
 ALTER TABLE public.visitor ADD COLUMN IF NOT EXISTS user_agent text NOT NULL DEFAULT '';
 ALTER TABLE public.visitor ADD COLUMN IF NOT EXISTS resolusi text NOT NULL DEFAULT '';
+-- Kunci pemilik login biar 1 user = 1 baris walau pindah device (timpa).
+-- osis:<id> buat anggota OSIS, guest:<nickname-lower> buat tamu, '' = anonim (tetap per device).
+ALTER TABLE public.visitor ADD COLUMN IF NOT EXISTS user_key text NOT NULL DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_visitor_user_key ON public.visitor (user_key) WHERE user_key <> '';
 
 ALTER TABLE public.visitor ENABLE ROW LEVEL SECURITY;
 
@@ -174,6 +181,7 @@ DROP FUNCTION IF EXISTS public.kirim_lagu_terbatas(text, text, text, text, integ
 DROP FUNCTION IF EXISTS public.tambah_visitor_unik(text);
 DROP FUNCTION IF EXISTS public.tambah_visitor_unik(text, text);
 DROP FUNCTION IF EXISTS public.tambah_visitor_unik(text, text, text, text, text);
+DROP FUNCTION IF EXISTS public.tambah_visitor_unik(text, text, text, text, text, text);
 
 -- Catat kunjungan unik per perangkat: jumlah nambah 1x per hari WIB.
 -- `masuk` = jam pertama online hari ini (reset tiap ganti hari WIB),
@@ -184,13 +192,17 @@ DROP FUNCTION IF EXISTS public.tambah_visitor_unik(text, text, text, text, text)
 -- p_ua       : user-agent mentah
 -- p_resolusi : resolusi layar (cth: 360x800)
 -- p_name     : nama pemilik (nickname guest / nama anggota OSIS, kosong = anonim)
+-- p_user_key : identitas login ('osis:<id>' / 'guest:<nick>' / '' anonim).
+--              Kalo user SAMA muncul di device LAIN, baris lama DITIMPA
+--              (dihapus, jumlah digabung) -> ga jadi dobel.
 CREATE OR REPLACE FUNCTION public.tambah_visitor_unik(
     p_key text,
     p_label text DEFAULT '',
     p_tipe text DEFAULT '',
     p_ua text DEFAULT '',
     p_resolusi text DEFAULT '',
-    p_name text DEFAULT ''
+    p_name text DEFAULT '',
+    p_user_key text DEFAULT ''
 )
 RETURNS bigint
 LANGUAGE plpgsql SECURITY DEFINER
@@ -198,49 +210,87 @@ AS $$
 DECLARE
     total bigint;
     hari_wib date := (now() AT TIME ZONE 'Asia/Jakarta')::date;
+    v_ukey text := lower(btrim(COALESCE(p_user_key, '')));
+    v_nama text := btrim(COALESCE(p_name, ''));
+    v_old_jumlah bigint := 0;
 BEGIN
     IF p_key IS NULL OR p_key = '' THEN
         RETURN 0;
     END IF;
 
-    INSERT INTO public.visitor (device_id, jumlah, name, label, tipe, user_agent, resolusi, masuk, last_seen)
+    -- 1 user = 1 baris: kalo login (ada user_key), hapus baris lain
+    -- milik user yang sama di device lain, gabung jumlah-nya (timpa).
+    -- Fallback buat data lama (user_key masih ''): samain by nama.
+    IF v_ukey <> '' THEN
+        SELECT COALESCE(SUM(jumlah), 0) INTO v_old_jumlah
+        FROM public.visitor
+        WHERE device_id <> p_key
+          AND (
+            lower(btrim(user_key)) = v_ukey
+            OR (
+              COALESCE(btrim(user_key), '') = ''
+              AND v_nama <> ''
+              AND lower(btrim(name)) = lower(v_nama)
+            )
+          );
+        DELETE FROM public.visitor
+        WHERE device_id <> p_key
+          AND (
+            lower(btrim(user_key)) = v_ukey
+            OR (
+              COALESCE(btrim(user_key), '') = ''
+              AND v_nama <> ''
+              AND lower(btrim(name)) = lower(v_nama)
+            )
+          );
+    END IF;
+
+    INSERT INTO public.visitor (device_id, jumlah, name, user_key, label, tipe, user_agent, resolusi, masuk, last_seen)
     VALUES (
-        p_key, 1,
-        COALESCE(NULLIF(p_name, ''), ''),
-        COALESCE(NULLIF(p_label, ''), 'Unknown'),
-        COALESCE(NULLIF(p_tipe, ''), ''),
-        COALESCE(NULLIF(p_ua, ''), ''),
-        COALESCE(NULLIF(p_resolusi, ''), ''),
+        p_key, 1 + v_old_jumlah,
+        v_nama,
+        v_ukey,
+        COALESCE(NULLIF(btrim(p_label), ''), 'Unknown'),
+        COALESCE(NULLIF(btrim(p_tipe), ''), ''),
+        COALESCE(NULLIF(btrim(p_ua), ''), ''),
+        COALESCE(NULLIF(btrim(p_resolusi), ''), ''),
         now(), now()
     )
     ON CONFLICT (device_id) DO UPDATE SET
         jumlah = CASE
             WHEN (visitor.last_seen AT TIME ZONE 'Asia/Jakarta')::date = hari_wib
-                THEN visitor.jumlah
-            ELSE visitor.jumlah + 1
+                THEN visitor.jumlah + v_old_jumlah
+            ELSE visitor.jumlah + 1 + v_old_jumlah
         END,
         -- Name sekali terisi ga bakal ketimpa kunjungan anonim
         name = CASE
-            WHEN COALESCE(NULLIF(p_name, ''), '') <> '' THEN p_name
+            WHEN v_nama <> '' THEN v_nama
             ELSE visitor.name
         END,
+        -- user_key ikut ketimpa kalo login, dipertahanin kalo anonim
+        user_key = CASE
+            WHEN v_ukey <> '' THEN v_ukey
+            ELSE visitor.user_key
+        END,
         label = CASE
-            WHEN COALESCE(NULLIF(p_label, ''), '') <> '' THEN p_label
+            WHEN COALESCE(NULLIF(btrim(p_label), ''), '') <> '' THEN btrim(p_label)
             ELSE visitor.label
         END,
         tipe = CASE
-            WHEN COALESCE(NULLIF(p_tipe, ''), '') <> '' THEN p_tipe
+            WHEN COALESCE(NULLIF(btrim(p_tipe), ''), '') <> '' THEN btrim(p_tipe)
             ELSE visitor.tipe
         END,
         user_agent = CASE
-            WHEN COALESCE(NULLIF(p_ua, ''), '') <> '' THEN p_ua
+            WHEN COALESCE(NULLIF(btrim(p_ua), ''), '') <> '' THEN btrim(p_ua)
             ELSE visitor.user_agent
         END,
         resolusi = CASE
-            WHEN COALESCE(NULLIF(p_resolusi, ''), '') <> '' THEN p_resolusi
+            WHEN COALESCE(NULLIF(btrim(p_resolusi), ''), '') <> '' THEN btrim(p_resolusi)
             ELSE visitor.resolusi
         END,
         masuk = CASE
+            -- pindah device (habis nimpa) = sesi baru -> masuk = now()
+            WHEN v_old_jumlah > 0 THEN now()
             WHEN (visitor.last_seen AT TIME ZONE 'Asia/Jakarta')::date = hari_wib
                 THEN visitor.masuk
             ELSE now()
@@ -250,6 +300,41 @@ BEGIN
     SELECT COALESCE(SUM(jumlah), 0) INTO total FROM public.visitor;
     RETURN total;
 END $$;
+
+-- Bersih-bersih dobel sisa data lama (JALANIN MANUAL SEKALI di SQL Editor,
+-- habis itu function baru otomatis nimpa jadi ga dobel lagi).
+-- 1) Gabung dobel per user_key (paling baru menang, jumlah digabung):
+--   WITH ranked AS (
+--     SELECT device_id,
+--            ROW_NUMBER() OVER (PARTITION BY lower(btrim(user_key)) ORDER BY last_seen DESC) AS rn,
+--            SUM(jumlah) OVER (PARTITION BY lower(btrim(user_key))) AS total
+--     FROM public.visitor WHERE COALESCE(btrim(user_key), '') <> ''
+--   )
+--   UPDATE public.visitor v SET jumlah = r.total
+--   FROM ranked r WHERE v.device_id = r.device_id AND r.rn = 1;
+--   WITH ranked AS (
+--     SELECT device_id,
+--            ROW_NUMBER() OVER (PARTITION BY lower(btrim(user_key)) ORDER BY last_seen DESC) AS rn
+--     FROM public.visitor WHERE COALESCE(btrim(user_key), '') <> ''
+--   )
+--   DELETE FROM public.visitor v USING ranked r
+--   WHERE v.device_id = r.device_id AND r.rn > 1;
+-- 2) Gabung dobel lama yang belum ada user_key tapi nama sama:
+--   WITH ranked AS (
+--     SELECT device_id,
+--            ROW_NUMBER() OVER (PARTITION BY lower(btrim(name)) ORDER BY last_seen DESC) AS rn,
+--            SUM(jumlah) OVER (PARTITION BY lower(btrim(name))) AS total
+--     FROM public.visitor WHERE btrim(name) <> '' AND COALESCE(btrim(user_key), '') = ''
+--   )
+--   UPDATE public.visitor v SET jumlah = r.total
+--   FROM ranked r WHERE v.device_id = r.device_id AND r.rn = 1;
+--   WITH ranked AS (
+--     SELECT device_id,
+--            ROW_NUMBER() OVER (PARTITION BY lower(btrim(name)) ORDER BY last_seen DESC) AS rn
+--     FROM public.visitor WHERE btrim(name) <> '' AND COALESCE(btrim(user_key), '') = ''
+--   )
+--   DELETE FROM public.visitor v USING ranked r
+--   WHERE v.device_id = r.device_id AND r.rn > 1;
 
 -- Hapus aspirasi milik sendiri, cuma bisa dalam 1 jam pertama
 CREATE OR REPLACE FUNCTION public.hapus_aspirasi_own(
@@ -338,14 +423,14 @@ END $$;
 -- ============ 5. GRANT FUNCTION (anon) ============
 REVOKE EXECUTE ON FUNCTION public.kirim_aspirasi_terbatas(text, text, text, text, boolean, integer) FROM public;
 REVOKE EXECUTE ON FUNCTION public.kirim_lagu_terbatas(text, text, text, text, text, integer) FROM public;
-REVOKE EXECUTE ON FUNCTION public.tambah_visitor_unik(text, text, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.tambah_visitor_unik(text, text, text, text, text, text, text) FROM public;
 REVOKE EXECUTE ON FUNCTION public.hapus_aspirasi_own(text, bigint) FROM public;
 REVOKE EXECUTE ON FUNCTION public.hapus_lagu_own(text, bigint) FROM public;
 REVOKE EXECUTE ON FUNCTION public.hapus_aspirasi_osis(bigint, bigint) FROM public;
 REVOKE EXECUTE ON FUNCTION public.hapus_lagu_osis(bigint, bigint) FROM public;
 GRANT EXECUTE ON FUNCTION public.kirim_aspirasi_terbatas(text, text, text, text, boolean, integer) TO anon;
 GRANT EXECUTE ON FUNCTION public.kirim_lagu_terbatas(text, text, text, text, text, integer) TO anon;
-GRANT EXECUTE ON FUNCTION public.tambah_visitor_unik(text, text, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.tambah_visitor_unik(text, text, text, text, text, text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_aspirasi_own(text, bigint) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_lagu_own(text, bigint) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_aspirasi_osis(bigint, bigint) TO anon;

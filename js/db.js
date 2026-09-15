@@ -129,6 +129,25 @@ function getVisitorName() {
     } catch { return ""; }
 }
 
+// Kunci identitas login buat kolom user_key di tabel visitor:
+// - login OSIS -> "osis:<id>" (stabil walau nama diganti)
+// - login guest -> "guest:<nickname-lower>" (nickname dianggap identitas)
+// - anonim -> "" (tetap dihitung per device, ga digabung)
+// Dipake server buat nimpa: 1 user = 1 baris walau pindah device.
+function getVisitorKey() {
+    try {
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser)
+            ? OsisAuth.getUser() : null;
+        if (!u) return "";
+        if (u.mode === "osis") {
+            const id = String(u.id ?? u.username ?? "").trim().toLowerCase();
+            return id ? "osis:" + id : "";
+        }
+        const nick = String(u.nickname || "").trim().toLowerCase();
+        return nick ? "guest:" + nick : "";
+    } catch { return ""; }
+}
+
 // =========================================================================
 // AUTH — akun OSIS dari tabel osis_users
 // =========================================================================
@@ -314,17 +333,35 @@ async function kirimRequestLagu(judul, penyanyi, pesan, nama) {
     if (data !== "OK") throw new Error(data);
 }
 
-// Catat kunjungan unik per perangkat (1x per hari WIB), return total kunjungan
+// Catat kunjungan unik per perangkat (1x per hari WIB), return total kunjungan.
+// Kalo login, kirim user_key juga biar server bisa nimpa: user sama di
+// device lain ga jadi dobel, disatuin ke device terbaru (jumlah digabung).
 async function catatVisitor() {
     const info = infoPerangkat();
-    const { data, error } = await supa.rpc("tambah_visitor_unik", {
+    const payload = {
         p_key: getDeviceId(),
         p_label: namaPerangkat(),
         p_tipe: info.tipe,
         p_ua: info.ua,
         p_resolusi: info.resolusi,
-        p_name: getVisitorName()
-    });
+        p_name: getVisitorName(),
+        p_user_key: getVisitorKey()
+    };
+    let { data, error } = await supa.rpc("tambah_visitor_unik", payload);
+    // Fallback: kalo function baru (7 param) belum di-run di Supabase,
+    // ulangi tanpa p_user_key biar kunjungan tetap kecatet.
+    if (error && String(error.message || "").match(/p_user_key|function|signature|argument/i)) {
+        const fb = await supa.rpc("tambah_visitor_unik", {
+            p_key: payload.p_key,
+            p_label: payload.p_label,
+            p_tipe: payload.p_tipe,
+            p_ua: payload.p_ua,
+            p_resolusi: payload.p_resolusi,
+            p_name: payload.p_name
+        });
+        data = fb.data;
+        error = fb.error;
+    }
     if (error) throw error;
     return data || 0;
 }
