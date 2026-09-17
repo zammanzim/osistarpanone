@@ -51,12 +51,18 @@ const Home = {
         const finalCaption = current ? (current.caption || "") : (caption || "");
         const canEditCaption = document.body.classList.contains("edit-mode") && (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
         const captionPill = `<span class="foto-caption-pill" ${canEditCaption ? 'contenteditable="true" spellcheck="false"' : ''}>${escapeHtml(finalCaption || "")}</span>`;
+        // Caption = floating overlay di atas foto (bukan area di bawah foto)
         const captionHtml = finalCaption || canEditCaption ? `<div class="foto-caption">${captionPill}</div>` : "";
-        const navHtml = gallery && gallery.length > 1 ? `
-                    <button class="foto-nav foto-nav-prev" type="button" onclick="Home.geserFotoPopup(-1)" title="Foto sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button class="foto-nav foto-nav-next" type="button" onclick="Home.geserFotoPopup(1)" title="Foto berikutnya"><i class="fa-solid fa-chevron-right"></i></button>` : "";
+        // Pindah foto via swipe (arrow dihapus biar tidak nutupin foto).
+        // Hint tampil sampai user menutupnya sekali via X.
+        const multi = !!(gallery && gallery.length > 1);
+        let hintOff = false;
+        try { hintOff = localStorage.getItem("fotoSwipeHintOff") === "1"; } catch (e) {}
+        const hintHtml = multi && !hintOff
+            ? `<div class="foto-hint" id="fotoSwipeHint"><i class="fa-solid fa-arrows-left-right"></i><span>Geser buat pindah foto</span><button type="button" id="fotoHintX" title="Tutup">&times;</button></div>`
+            : "";
         const modal = document.createElement("div");
-        modal.className = "struktur-modal";
+        modal.className = "struktur-modal foto-modal";
         modal.innerHTML = `
             <div class="struktur-modal-bg"></div>
             <div class="struktur-modal-box foto-only">
@@ -65,13 +71,33 @@ const Home = {
                     <button class="struktur-close" type="button">&times;</button>
                 </div>
                 <div class="foto-pop">
-                    ${navHtml}
-                    <img src="${src}" alt="${escapeHtml(finalJudul)}">
+                    ${hintHtml}
+                    <img src="${src}" alt="${escapeHtml(finalJudul)}" draggable="false">
+                    ${captionHtml}
                 </div>
-                ${captionHtml}
             </div>`;
         modal.querySelector(".struktur-modal-bg").addEventListener("click", () => Home.tutupModal());
         modal.querySelector(".struktur-close").addEventListener("click", () => Home.tutupModal());
+        modal.querySelector("#fotoHintX")?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            document.getElementById("fotoSwipeHint")?.remove();
+            try { localStorage.setItem("fotoSwipeHintOff", "1"); } catch (err) {}
+        });
+        // Swipe kanan-kiri untuk pindah foto (mouse & sentuh)
+        const pop = modal.querySelector(".foto-pop");
+        if (pop && multi) {
+            let sx = 0, sy = 0, track = false;
+            pop.addEventListener("pointerdown", (e) => {
+                if (e.target.closest(".foto-caption") || e.target.closest(".foto-hint") || e.target.closest('[contenteditable="true"]')) return;
+                track = true; sx = e.clientX; sy = e.clientY;
+            });
+            pop.addEventListener("pointerup", (e) => {
+                if (!track) return; track = false;
+                const dx = e.clientX - sx, dy = e.clientY - sy;
+                if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) Home.geserFotoPopup(dx < 0 ? 1 : -1);
+            });
+            pop.addEventListener("pointercancel", () => { track = false; });
+        }
         document.body.appendChild(modal);
         document.body.style.overflow = "hidden";
         if (Home.fotoPopup && typeof Home.fotoPopup.onChange === "function") {
@@ -81,7 +107,6 @@ const Home = {
 
     geserFotoPopup(arah) {
         if (!Home.fotoPopup || !Array.isArray(Home.fotoPopup.gallery) || Home.fotoPopup.gallery.length < 2) return;
-        if (!window.matchMedia("(min-width: 1024px)").matches) return;
         const modal = document.querySelector(".struktur-modal");
         if (!modal || !modal.querySelector(".foto-pop")) return;
         const total = Home.fotoPopup.gallery.length;
@@ -102,7 +127,7 @@ const Home = {
             captionEl.className = "foto-caption";
             captionEl.innerHTML = `<span class="foto-caption-pill" ${canEditCaption ? 'contenteditable="true" spellcheck="false"' : ''}></span>`;
             const pop = modal.querySelector(".foto-pop");
-            if (pop && pop.parentNode) pop.parentNode.appendChild(captionEl);
+            if (pop) pop.appendChild(captionEl);
         }
         const pill = captionEl ? captionEl.querySelector(".foto-caption-pill") : null;
         if (pill) {
@@ -274,16 +299,21 @@ const Home = {
         modal.className = tanpaAnimasi ? "struktur-modal no-anim" : "struktur-modal";
         // simpan tahun di dataset modal biar auto-save tau konteksnya
         modal.dataset.tahun = String(tahun);
+        // Ganti angkatan via swipe (arrow dihapus). Hint tampil sampai ditutup via X.
+        let hintAOff = false;
+        try { hintAOff = localStorage.getItem("angkatanSwipeHintOff") === "1"; } catch (e) {}
+        const hintAngkatan = !hintAOff
+            ? `<div class="foto-hint angkatan-hint" id="angkatanSwipeHint"><i class="fa-solid fa-arrows-left-right"></i><span>Geser buat ganti angkatan</span><button type="button" id="angkatanHintX" title="Tutup">&times;</button></div>`
+            : "";
         modal.innerHTML = `
             <div class="struktur-modal-bg"></div>
             <div class="struktur-modal-box">
+                ${hintAngkatan}
                 <div class="struktur-head">
                     <h4>${labelTahun(tahun)} (${tahun})</h4>
                     <button class="struktur-close" type="button">&times;</button>
                 </div>
                 <div class="struktur-modal-body">
-                    <button class="foto-nav foto-nav-prev struktur-nav" type="button" onclick="Home.geserStruktur(-1)" title="Angkatan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button class="foto-nav foto-nav-next struktur-nav" type="button" onclick="Home.geserStruktur(1)" title="Angkatan berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
                     <div class="struktur-foto">
                         <img src="${getFoto(foto)}" alt="Angkatan ${tahun}" loading="lazy"
                              onclick="Home.bukaFotoAngkatan(${tahun}, 'angkatan')"
@@ -326,6 +356,30 @@ const Home = {
 
         modal.querySelector(".struktur-modal-bg").addEventListener("click", () => Home.tutupModal());
         modal.querySelector(".struktur-close").addEventListener("click", () => Home.tutupModal());
+        modal.querySelector("#angkatanHintX")?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            document.getElementById("angkatanSwipeHint")?.remove();
+            try { localStorage.setItem("angkatanSwipeHintOff", "1"); } catch (err) {}
+        });
+        // Swipe kanan-kiri untuk ganti angkatan (mouse & sentuh)
+        const boxEl = modal.querySelector(".struktur-modal-box");
+        if (boxEl) {
+            let sx = 0, sy = 0, track = false;
+            boxEl.addEventListener("pointerdown", (e) => {
+                if (e.target.closest('[contenteditable="true"]') || e.target.closest("input, textarea, select, button, a") || e.target.closest(".foto-hint")) return;
+                track = true; sx = e.clientX; sy = e.clientY;
+            });
+            boxEl.addEventListener("pointerup", (e) => {
+                if (!track) return; track = false;
+                const dx = e.clientX - sx, dy = e.clientY - sy;
+                if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                    // Telan klik berikutnya biar foto tidak ikut kebuka habis swipe
+                    boxEl.addEventListener("click", (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
+                    Home.geserStruktur(dx < 0 ? 1 : -1);
+                }
+            });
+            boxEl.addEventListener("pointercancel", () => { track = false; });
+        }
         document.body.appendChild(modal);
         if (typeof isEdit !== "undefined" && isEdit && typeof SiteEdit !== "undefined" && SiteEdit.injectModalFotoButtons) {
             SiteEdit.injectModalFotoButtons(modal, tahun);
@@ -361,7 +415,6 @@ const Home = {
     },
 
     geserStruktur(arah) {
-        if (!window.matchMedia("(min-width: 1024px)").matches) return;
         const modal = document.querySelector(".struktur-modal[data-tahun]");
         if (!modal) return;
         const tahun = parseInt(modal.dataset.tahun, 10);

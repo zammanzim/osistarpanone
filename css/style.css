@@ -953,6 +953,10 @@ img {
   justify-content: center;
   padding: 18px;
 }
+/* Popup foto: margin atas-bawah dikecilin biar modal bisa lebih tinggi */
+.struktur-modal.foto-modal {
+  padding: 10px;
+}
 .struktur-modal-bg {
   position: absolute;
   inset: 0;
@@ -966,6 +970,8 @@ img {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  /* Swipe horizontal milik modal; scroll vertikal tetap boleh */
+  touch-action: pan-y;
   background: var(--white);
   border: 3px solid var(--ink);
   border-radius: var(--radius);
@@ -983,22 +989,40 @@ img {
   flex-shrink: 0;
 }
 .struktur-modal-box.foto-only {
-  width: min(720px, 100%);
-  max-height: 90vh;
+  /* Lebar ngikut foto (potrait = sempit, landscape = lebar), dibatasi viewport */
+  width: auto;
+  max-width: min(880px, calc(100vw - 20px));
+  max-height: 96vh;
+  max-height: 96dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 .foto-pop {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  flex: 0 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper-2);
+  /* Swipe horizontal milik popup; scroll vertikal browser tetap boleh */
+  touch-action: pan-y;
 }
 .foto-pop img {
+  /* Sizing natural + batas pasti dari viewport: seluruh foto selalu
+     terlihat, aspect ratio asli, tanpa crop, tanpa distort.
+     Cadangan 80px = header + sisa ruang (caption kini overlay,
+     tidak makan ruang vertikal). */
   display: block;
-  width: 100%;
+  width: auto;
   height: auto;
+  max-width: 100%;
+  max-height: calc(96vh - 80px);
+  max-height: calc(96dvh - 80px);
+  object-fit: contain;
   background: var(--paper-2);
 }
 .struktur-foto img {
@@ -1292,8 +1316,7 @@ img {
   font-weight: 600;
   margin-top: 2px;
 }
-.bento-meta + .bento-grid,
-.bento-meta + .gal-row {
+.bento-meta + .bento-grid {
   margin-top: 8px;
 }
 body.edit-mode .bento-meta {
@@ -2630,8 +2653,9 @@ body.edit-mode .bento-meta .gal-del {
 }
 
 /* ============================================================
-   GALERI — bento-block: judul -> subjudul -> deretan foto
-   horizontal (semua ukuran sama, bisa scroll samping)
+   GALERI — bento-block: judul -> subjudul -> foto pakai
+   .bento-grid (sama kayak dokumentasi kegiatan: HP 2 kolom,
+   desktop 4 kolom). Slot "+" ikut gaya thumbnail.
    ============================================================ */
 #galGrid .bento-meta {
   position: relative;
@@ -2656,17 +2680,9 @@ body.edit-mode .bento-meta .gal-del {
   display: inline-flex !important;
 }
 
-.gal-row {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 2px;
-}
-
-/* Thumbnail foto & slot tambah: ukuran/rasio/border/shadow sama */
-.gal-row .item,
-.up-slot {
-  flex: 0 0 clamp(150px, 42%, 260px);
+/* Slot tambah foto: samakan ukuran/rasio/border/shadow dgn .bento-grid .item */
+.bento-grid .up-slot {
+  width: 100%;
   aspect-ratio: 4 / 3;
   position: relative;
   border-radius: 14px;
@@ -2674,20 +2690,6 @@ body.edit-mode .bento-meta .gal-del {
   box-shadow: 2.5px 2.5px 0 var(--ink);
   background: var(--paper-2);
   overflow: hidden;
-}
-.gal-row .item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform 0.25s ease;
-}
-.gal-row .item:hover img {
-  transform: scale(1.05);
-}
-
-.gal-row .item {
-  cursor: zoom-in;
 }
 .up-slot {
   display: flex;
@@ -3031,16 +3033,21 @@ body.edit-mode { padding-bottom: 0; }
 }
 
 .foto-caption {
-  flex-shrink: 0;
-  padding: 10px 16px 14px;
-  background: transparent;
-  border: none;
+  /* Floating overlay: melayang di atas foto, tidak ikut flow layout,
+     tidak menambah tinggi modal */
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: max-content;
+  max-width: calc(100% - 24px);
   text-align: center;
   pointer-events: none;
 }
 .foto-caption-pill {
   display: inline-block;
-  max-width: 90%;
+  max-width: 100%;
   background: var(--white);
   color: var(--ink);
   border: 2.5px solid var(--ink);
@@ -3051,6 +3058,9 @@ body.edit-mode { padding-bottom: 0; }
   line-height: 1.4;
   box-shadow: 2.5px 2.5px 0 var(--ink);
   pointer-events: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .foto-caption-pill[contenteditable="true"] {
   cursor: text;
@@ -3063,46 +3073,50 @@ body.edit-mode { padding-bottom: 0; }
   content: "Caption...";
   opacity: 0.45;
 }
-.foto-nav {
-  display: none;
+/* Hint swipe di kanan atas foto (arrow dihapus, pindah via swipe) */
+.foto-hint {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 20px);
+  background: var(--white);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 5px 5px 5px 11px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.foto-hint i {
+  color: var(--red);
+}
+.foto-hint button {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 @media (min-width: 1024px) {
-  .foto-nav {
-    position: absolute;
-    top: 50%;
-    width: 42px;
-    height: 42px;
-    transform: translateY(-50%);
-    border: 2.5px solid var(--ink);
-    border-radius: 12px;
-    background: var(--white);
-    color: var(--ink);
-    box-shadow: 2.5px 2.5px 0 var(--ink);
-    cursor: pointer;
-    z-index: 5;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .foto-nav:hover {
-    color: var(--red);
-  }
-  .foto-nav:active {
-    transform: translateY(-50%) translate(1.5px, 1.5px);
-    box-shadow: 0 0 0 var(--ink);
-  }
-  .foto-nav-prev {
-    left: 12px;
-  }
-  .foto-nav-next {
-    right: 12px;
-  }
   .struktur-modal-body {
     position: relative;
   }
-  .struktur-nav {
-    top: 34%;
-  }
+}
+/* Hint swipe ganti angkatan: melayang kanan bawah modal (tidak ikut scroll) */
+.foto-hint.angkatan-hint {
+  top: auto;
+  bottom: 12px;
 }
 .prestasi-card { position: relative; }
 .bento-grid .item { position: relative; }
@@ -3448,5 +3462,387 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   .sekbid-desc {
     font-size: 0.88rem;
     max-width: 62ch;
+  }
+}
+
+/* ============================================================
+   MAKNA LOGO — logo anatomy / breakdown (home)
+   Mobile-first: diagram — logo di tengah sebagai focal point,
+   card mengelilingi logo dengan connector line + dot (CSS-only).
+   Desktop (>=1024px): logo di tengah, card kiri-kanan + connector.
+   ============================================================ */
+.logo-makna {
+  background: var(--white);
+  overflow-x: clip;
+}
+.logo-makna-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "perisai perisai"
+    "osis bintang"
+    "logo logo"
+    "padi kapas"
+    "obor obor"
+    "sekolah sekolah";
+  column-gap: 10px;
+  row-gap: 26px;
+  align-items: start;
+  justify-items: center;
+  max-width: 100%;
+}
+.logo-makna-logo {
+  grid-area: logo;
+  position: relative;
+  width: min(170px, 52vw);
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow-hard);
+  transform: rotate(1.5deg);
+}
+.logo-makna-logo img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.logo-makna-card {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  padding: 10px 11px;
+  box-shadow: 4px 4px 0 var(--ink);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+.logo-makna-card[data-area="perisai"] { grid-area: perisai; }
+.logo-makna-card[data-area="osis"] { grid-area: osis; }
+.logo-makna-card[data-area="bintang"] { grid-area: bintang; }
+.logo-makna-card[data-area="padi"] { grid-area: padi; }
+.logo-makna-card[data-area="kapas"] { grid-area: kapas; }
+.logo-makna-card[data-area="obor"] { grid-area: obor; }
+.logo-makna-card[data-area="sekolah"] { grid-area: sekolah; }
+/* card tengah (atas/bawah logo): compact, tidak full-width ala list */
+.logo-makna-card[data-area="perisai"],
+.logo-makna-card[data-area="obor"],
+.logo-makna-card[data-area="sekolah"] {
+  width: min(240px, 100%);
+}
+/* card samping logo: setengah kolom grid */
+.logo-makna-card[data-area="osis"],
+.logo-makna-card[data-area="bintang"],
+.logo-makna-card[data-area="padi"],
+.logo-makna-card[data-area="kapas"] {
+  width: 100%;
+}
+.logo-makna-card h4 {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+.logo-makna-card .lm-t-full,
+.logo-makna-card .lm-t-short {
+  font-size: 0.64rem;
+  font-weight: 500;
+  color: var(--gray);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+/* mobile: tampilkan teks pendek, desktop: teks penuh */
+.logo-makna-card .lm-t-full { display: none; }
+.logo-makna-card .lm-t-short { display: block; }
+.logo-makna-num {
+  flex-shrink: 0;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--red);
+  color: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  transform: rotate(-4deg);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.logo-makna-card:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+/* ---- Connector line mobile: garis tipis + dot di ujung logo ---- */
+/* card di ATAS logo: garis ke bawah */
+.logo-makna-card[data-area="perisai"]::after,
+.logo-makna-card[data-area="osis"]::after,
+.logo-makna-card[data-area="bintang"]::after {
+  content: "";
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 50%;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  background: var(--ink);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.logo-makna-card[data-area="perisai"]::before,
+.logo-makna-card[data-area="osis"]::before,
+.logo-makna-card[data-area="bintang"]::before {
+  content: "";
+  position: absolute;
+  top: calc(100% + 15px);
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid var(--ink);
+  pointer-events: none;
+}
+/* card di BAWAH logo: garis ke atas */
+.logo-makna-card[data-area="padi"]::after,
+.logo-makna-card[data-area="kapas"]::after,
+.logo-makna-card[data-area="obor"]::after,
+.logo-makna-card[data-area="sekolah"]::after {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  background: var(--ink);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.logo-makna-card[data-area="padi"]::before,
+.logo-makna-card[data-area="kapas"]::before,
+.logo-makna-card[data-area="obor"]::before,
+.logo-makna-card[data-area="sekolah"]::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 15px);
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid var(--ink);
+  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  .logo-makna-grid {
+    display: grid;
+    grid-template-columns: 1fr 330px 1fr;
+    grid-template-areas:
+      ". perisai ."
+      "osis logo bintang"
+      "padi logo kapas"
+      ". obor ."
+      ". sekolah .";
+    gap: 26px 52px;
+    align-items: center;
+    max-width: 1080px;
+    margin: 8px auto 0;
+  }
+  .logo-makna-logo {
+    grid-area: logo;
+    width: 100%;
+    max-width: 330px;
+    justify-self: center;
+    padding: 22px;
+    border-radius: 26px;
+    box-shadow: 6px 6px 0 var(--ink);
+    transform: rotate(2deg);
+    transition: transform 0.2s ease;
+  }
+  .logo-makna-logo:hover {
+    transform: rotate(0deg) scale(1.02);
+  }
+  .logo-makna-card {
+    gap: 12px;
+    padding: 13px 15px;
+    transition: transform 0.15s ease;
+  }
+  .logo-makna-card:hover {
+    transform: translateY(-3px);
+  }
+  .logo-makna-card:active {
+    transform: translateY(0);
+  }
+  .logo-makna-card[data-area="perisai"],
+  .logo-makna-card[data-area="obor"],
+  .logo-makna-card[data-area="sekolah"] {
+    max-width: 400px;
+    justify-self: center;
+    width: 100%;
+  }
+  .logo-makna-card h4 { font-size: 0.88rem; }
+  .logo-makna-card .lm-t-full,
+  .logo-makna-card .lm-t-short {
+    font-size: 0.79rem;
+    margin-top: 3px;
+  }
+  /* desktop: teks penuh, sembunyikan versi pendek */
+  .logo-makna-card .lm-t-full { display: block; }
+  .logo-makna-card .lm-t-short { display: none; }
+  .logo-makna-num {
+    min-width: 38px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 9px;
+    font-size: 0.72rem;
+  }
+  /* Connector horizontal card sisi kiri/kanan menuju logo + dot */
+  .logo-makna-card[data-area="osis"]::after,
+  .logo-makna-card[data-area="padi"]::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: -52px;
+    left: auto;
+    bottom: auto;
+    width: 52px;
+    height: auto;
+    margin: 0;
+    background: none;
+    border-top: 2.5px dashed rgba(26, 19, 20, 0.35);
+    opacity: 1;
+    pointer-events: none;
+  }
+  .logo-makna-card[data-area="bintang"]::after,
+  .logo-makna-card[data-area="kapas"]::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -52px;
+    right: auto;
+    bottom: auto;
+    width: 52px;
+    height: auto;
+    margin: 0;
+    background: none;
+    border-top: 2.5px dashed rgba(26, 19, 20, 0.35);
+    opacity: 1;
+    pointer-events: none;
+  }
+  .logo-makna-card[data-area="osis"]::before,
+  .logo-makna-card[data-area="padi"]::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: -52px;
+    left: auto;
+    bottom: auto;
+    width: 10px;
+    height: 10px;
+    margin: -5px -5px 0 0;
+    border-radius: 50%;
+    background: var(--red);
+    border: 2px solid var(--ink);
+    pointer-events: none;
+  }
+  .logo-makna-card[data-area="bintang"]::before,
+  .logo-makna-card[data-area="kapas"]::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -52px;
+    right: auto;
+    bottom: auto;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 2px solid var(--ink);
+    pointer-events: none;
+  }
+  /* Connector vertikal card tengah-atas/bawah + dot */
+  .logo-makna-card[data-area="perisai"]::after {
+    content: "";
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 50%;
+    width: 2.5px;
+    height: 12px;
+    margin-left: -1.25px;
+    background: rgba(26, 19, 20, 0.35);
+    border: none;
+    opacity: 1;
+    pointer-events: none;
+  }
+  .logo-makna-card[data-area="perisai"]::before {
+    content: "";
+    position: absolute;
+    top: calc(100% + 13px);
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 2px solid var(--ink);
+    pointer-events: none;
+  }
+  .logo-makna-card[data-area="obor"]::after,
+  .logo-makna-card[data-area="sekolah"]::after {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 1px);
+    top: auto;
+    left: 50%;
+    width: 2.5px;
+    height: 12px;
+    margin-left: -1.25px;
+    background: rgba(26, 19, 20, 0.35);
+    border: none;
+    opacity: 1;
+    pointer-events: none;
+  }
+  .logo-makna-card[data-area="obor"]::before,
+  .logo-makna-card[data-area="sekolah"]::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 13px);
+    top: auto;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 2px solid var(--ink);
+    pointer-events: none;
+  }
+  /* Hover: garis + dot lebih tegas */
+  .logo-makna-card[data-area="osis"]:hover::after,
+  .logo-makna-card[data-area="padi"]:hover::after,
+  .logo-makna-card[data-area="bintang"]:hover::after,
+  .logo-makna-card[data-area="kapas"]:hover::after {
+    border-top-color: var(--red);
+  }
+  .logo-makna-card[data-area="perisai"]:hover::after,
+  .logo-makna-card[data-area="obor"]:hover::after,
+  .logo-makna-card[data-area="sekolah"]:hover::after {
+    background: var(--red);
+  }
+  .logo-makna-card:hover::before {
+    background: var(--yellow);
   }
 }

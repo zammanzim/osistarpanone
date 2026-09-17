@@ -1,6 +1,6 @@
 // =========================================================================
-// GALERI — dokumentasi kegiatan: judul + subjudul + deretan foto
-// horizontal. Tambah kegiatan = draft block inline di urutan paling
+// GALERI — dokumentasi kegiatan: judul + subjudul + grid foto
+// (turun ke bawah). Tambah kegiatan = draft block inline di urutan paling
 // atas (editable), foto ditambah satu-satu lewat slot "+" di kanan.
 // Auto-save: foto pertama bikin baris DB, teks ke-save pas blur.
 // =========================================================================
@@ -272,7 +272,7 @@ const Galeri = {
                         </button>
                     </div>
                 </div>
-                <div class="gal-row">${fotoHtml}</div>
+                <div class="bento-grid">${fotoHtml}</div>
             </div>`;
     },
 
@@ -285,7 +285,7 @@ const Galeri = {
         fotos.forEach((path, idx) => {
             const isEdit = document.body.classList.contains("edit-mode") || document.getElementById("galGrid")?.classList.contains("mode-osis");
             fotoHtml += `
-                <div class="item" data-foto-idx="${idx}" onclick="Home.bukaFotoPopup(this.querySelector('img'), ${JSON.stringify(item.judul).replace(/"/g, "&quot;")}, ${JSON.stringify(item.deskripsi || "").replace(/"/g, "&quot;")})">
+                <div class="item" data-foto-idx="${idx}" onclick="Galeri.bukaPopup(${item.id}, ${idx})">
                     <img src="${getFoto(path)}" alt="${judul}" loading="lazy">
                     <button class="foto-del-btn" onclick="event.stopPropagation(); Galeri.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button>
                 </div>`;
@@ -300,8 +300,22 @@ const Galeri = {
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
-                <div class="gal-row">${fotoHtml}</div>
+                <div class="bento-grid">${fotoHtml}</div>
             </div>`;
+    },
+
+    // Popup foto + swipe antar foto dalam kegiatan yang sama
+    bukaPopup(id, fotoIdx) {
+        const item = Galeri.cache.find(g => String(g.id) === String(id));
+        if (!item || !Array.isArray(item.fotos)) return;
+        const gallery = item.fotos.map(path => ({
+            src: getFoto(path),
+            judul: item.judul || "Galeri",
+            caption: item.deskripsi || ""
+        })).filter(g => g.src);
+        if (!gallery.length) return;
+        const index = Math.max(0, Math.min(parseInt(fotoIdx, 10) || 0, gallery.length - 1));
+        Home.bukaFotoPopup(null, gallery[index].judul, gallery[index].caption, { gallery, index });
     },
 
     formatTanggal(t) {
