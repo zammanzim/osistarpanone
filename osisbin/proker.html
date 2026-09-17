@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Program Kerja — OSIS TARPAN ONE</title>
+    <title>Program Kerja â€” OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
 <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
@@ -237,7 +237,7 @@
         margin-top: 10px;
         flex-wrap: wrap;
       }
-      /* popup — pola agenda/notulensi */
+      /* popup â€” pola agenda/notulensi */
       .proker-form {
         position: fixed;
         inset: 0;
@@ -556,7 +556,7 @@
         color: var(--gray);
         white-space: nowrap;
       }
-      /* OSIS header menu — desktop pill, mobile titik tiga */
+      /* OSIS header menu â€” desktop pill, mobile titik tiga */
       .osis-nav {
         display: flex;
         align-items: center;
@@ -613,15 +613,15 @@
       }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../js/config.js"></script>
-    <script src="../js/db.js" defer></script>
-    <script src="../js/app.js" defer></script>
-    <script src="../js/toast.js" defer></script>
-    <script src="../js/show-popup.js" defer></script>
-    <script src="../js/osis-auth.js" defer></script>
-    <script src="../js/osis-sidebar.js" defer></script>
-    <script src="../js/proker.js" defer></script>
-  <script src="../js/pwa.js" defer></script>
+    <script src="../jsbin/config.js"></script>
+    <script src="../jsbin/db.js" defer></script>
+    <script src="../jsbin/app.js" defer></script>
+    <script src="../jsbin/toast.js" defer></script>
+    <script src="../jsbin/show-popup.js" defer></script>
+    <script src="../jsbin/osis-auth.js" defer></script>
+    <script src="../jsbin/osis-sidebar.js" defer></script>
+    <script src="../jsbin/proker.js" defer></script>
+  <script src="../jsbin/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -653,14 +653,14 @@
       <div class="periode-line"><i class="fa-solid fa-calendar-days"></i> <span id="periodeLabel">Program Kerja OSIS</span></div>
 
       <div class="stat-grid">
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-list-check"></i> Total</span><b id="statTotal">—</b><small>program kerja</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-hourglass-start"></i> Belum Mulai</span><b id="statBelum">—</b><small>rencana + belum dimulai</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span><b id="statJalan">—</b><small>sedang berjalan</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Selesai</span><b id="statSelesai">—</b><small>100% tuntas</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-list-check"></i> Total</span><b id="statTotal">â€”</b><small>program kerja</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-hourglass-start"></i> Belum Mulai</span><b id="statBelum">â€”</b><small>rencana + belum dimulai</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span><b id="statJalan">â€”</b><small>sedang berjalan</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Selesai</span><b id="statSelesai">â€”</b><small>100% tuntas</small></div>
       </div>
 
       <div class="overall-card">
-        <div class="top"><span id="overallLabel">Progress Program Kerja Periode Ini</span><b id="overallPct">—</b></div>
+        <div class="top"><span id="overallLabel">Progress Program Kerja Periode Ini</span><b id="overallPct">â€”</b></div>
         <div class="pk-bar"><span id="overallBar" style="width: 0%"></span></div>
       </div>
 
@@ -726,7 +726,7 @@
             <div class="proker-drop-inner" id="pkDropInner">
               <i class="fa-solid fa-cloud-arrow-up"></i>
               <span>Klik atau drag &amp; drop foto ke sini</span>
-              <small>JPG/PNG/WEBP, bisa banyak — otomatis kompres &lt;1MB</small>
+              <small>JPG/PNG/WEBP, bisa banyak â€” otomatis kompres &lt;1MB</small>
             </div>
           </div>
           <input type="file" id="pkDokInput" accept="image/*" multiple hidden />

@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dokumen OSIS — OSIS TARPAN ONE</title>
+    <title>Dokumen OSIS â€” OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
 <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
@@ -307,7 +307,7 @@
         margin-top: 8px;
         flex-wrap: wrap;
       }
-      /* popup — pola agenda */
+      /* popup â€” pola agenda */
       .dokumen-form {
         position: fixed;
         inset: 0;
@@ -447,7 +447,7 @@
         padding: 10px 12px;
         margin-top: 8px;
       }
-      /* OSIS header menu — desktop pill, mobile titik tiga */
+      /* OSIS header menu â€” desktop pill, mobile titik tiga */
       .osis-nav {
         display: flex;
         align-items: center;
@@ -504,15 +504,15 @@
       }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../js/config.js"></script>
-    <script src="../js/db.js" defer></script>
-    <script src="../js/app.js" defer></script>
-    <script src="../js/toast.js" defer></script>
-    <script src="../js/show-popup.js" defer></script>
-    <script src="../js/osis-auth.js" defer></script>
-    <script src="../js/osis-sidebar.js" defer></script>
-    <script src="../js/dokumen.js" defer></script>
-  <script src="../js/pwa.js" defer></script>
+    <script src="../jsbin/config.js"></script>
+    <script src="../jsbin/db.js" defer></script>
+    <script src="../jsbin/app.js" defer></script>
+    <script src="../jsbin/toast.js" defer></script>
+    <script src="../jsbin/show-popup.js" defer></script>
+    <script src="../jsbin/osis-auth.js" defer></script>
+    <script src="../jsbin/osis-sidebar.js" defer></script>
+    <script src="../jsbin/dokumen.js" defer></script>
+  <script src="../jsbin/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -542,10 +542,10 @@
       </div>
 
       <div class="stat-grid">
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-file"></i> Total File</span><b id="statTotal">—</b><small>semua dokumen</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-days"></i> Bulan Ini</span><b id="statBulan">—</b><small id="statBulanLbl">—</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-file-lines"></i> Proposal</span><b id="statProposal">—</b><small>kategori proposal</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-file-circle-check"></i> LPJ</span><b id="statLpj">—</b><small>kategori LPJ</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-file"></i> Total File</span><b id="statTotal">â€”</b><small>semua dokumen</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-days"></i> Bulan Ini</span><b id="statBulan">â€”</b><small id="statBulanLbl">â€”</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-file-lines"></i> Proposal</span><b id="statProposal">â€”</b><small>kategori proposal</small></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-file-circle-check"></i> LPJ</span><b id="statLpj">â€”</b><small>kategori LPJ</small></div>
       </div>
 
       <div class="terbaru-card">
@@ -556,11 +556,11 @@
       <div class="folder-grid" id="folderGrid"></div>
 
       <div class="filter-card">
-        <div class="field"><label>Cari nama dokumen</label><input type="text" id="filterQ" class="admin-input" placeholder="🔍 Cari nama dokumen..." /></div>
+        <div class="field"><label>Cari nama dokumen</label><input type="text" id="filterQ" class="admin-input" placeholder="ðŸ” Cari nama dokumen..." /></div>
         <div class="field"><label>Kategori</label><select id="filterKategori" class="admin-input"><option value="">Semua</option></select></div>
         <div class="field"><label>Tahun</label><select id="filterTahun" class="admin-input"><option value="">Semua</option></select></div>
         <div class="field"><label>Divisi</label><select id="filterDivisi" class="admin-input"><option value="">Semua</option></select></div>
-        <div class="field"><label>Urutkan</label><select id="filterSort" class="admin-input"><option value="baru">Terbaru</option><option value="lama">Terlama</option><option value="nama">Nama A–Z</option><option value="besar">Terbesar</option></select></div>
+        <div class="field"><label>Urutkan</label><select id="filterSort" class="admin-input"><option value="baru">Terbaru</option><option value="lama">Terlama</option><option value="nama">Nama Aâ€“Z</option><option value="besar">Terbesar</option></select></div>
         <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
       </div>
 

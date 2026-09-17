@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Task — OSIS TARPAN ONE</title>
+    <title>Task â€” OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
 <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
@@ -311,7 +311,7 @@
         text-align: center;
         padding: 12px 4px;
       }
-      /* popup — pola agenda */
+      /* popup â€” pola agenda */
       .task-form {
         position: fixed;
         inset: 0;
@@ -398,7 +398,7 @@
         background: var(--line);
         border-radius: 2px;
       }
-      /* OSIS header menu — desktop pill, mobile titik tiga */
+      /* OSIS header menu â€” desktop pill, mobile titik tiga */
       .osis-nav {
         display: flex;
         align-items: center;
@@ -455,15 +455,15 @@
       }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../js/config.js"></script>
-    <script src="../js/db.js" defer></script>
-    <script src="../js/app.js" defer></script>
-    <script src="../js/toast.js" defer></script>
-    <script src="../js/show-popup.js" defer></script>
-    <script src="../js/osis-auth.js" defer></script>
-    <script src="../js/osis-sidebar.js" defer></script>
-    <script src="../js/task.js" defer></script>
-  <script src="../js/pwa.js" defer></script>
+    <script src="../jsbin/config.js"></script>
+    <script src="../jsbin/db.js" defer></script>
+    <script src="../jsbin/app.js" defer></script>
+    <script src="../jsbin/toast.js" defer></script>
+    <script src="../jsbin/show-popup.js" defer></script>
+    <script src="../jsbin/osis-auth.js" defer></script>
+    <script src="../jsbin/osis-sidebar.js" defer></script>
+    <script src="../jsbin/task.js" defer></script>
+  <script src="../jsbin/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -493,15 +493,15 @@
       </div>
 
       <div class="stat-grid">
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-list"></i> Semua Task</span><b id="statTotal">—</b></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle"></i> Belum</span><b id="statTodo">—</b></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span><b id="statJalan">—</b></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Selesai</span><b id="statSelesai">—</b></div>
-        <div class="stat-card danger"><span class="lbl"><i class="fa-solid fa-triangle-exclamation"></i> Terlambat</span><b id="statTelat">—</b></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-list"></i> Semua Task</span><b id="statTotal">â€”</b></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle"></i> Belum</span><b id="statTodo">â€”</b></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span><b id="statJalan">â€”</b></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Selesai</span><b id="statSelesai">â€”</b></div>
+        <div class="stat-card danger"><span class="lbl"><i class="fa-solid fa-triangle-exclamation"></i> Terlambat</span><b id="statTelat">â€”</b></div>
       </div>
 
       <div class="filter-card">
-        <div class="field"><label>Cari task</label><input type="text" id="filterQ" class="admin-input" placeholder="🔍 Cari task..." /></div>
+        <div class="field"><label>Cari task</label><input type="text" id="filterQ" class="admin-input" placeholder="ðŸ” Cari task..." /></div>
         <div class="field"><label>PIC</label><select id="filterPic" class="admin-input"><option value="">Semua</option></select></div>
         <div class="field"><label>Divisi</label><select id="filterDivisi" class="admin-input"><option value="">Semua</option></select></div>
         <div class="field"><label>Priority</label><select id="filterPriority" class="admin-input"><option value="">Semua</option><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
@@ -538,8 +538,8 @@
           <div class="field"><label>Status</label><select id="taskStatus" class="admin-input"><option value="todo" selected>Todo</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Done</option></select></div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-          <div class="field"><label>Program Kerja terkait</label><select id="taskProker" class="admin-input"><option value="">— Tidak ada —</option></select></div>
-          <div class="field"><label>Agenda terkait</label><select id="taskAgenda" class="admin-input"><option value="">— Tidak ada —</option></select></div>
+          <div class="field"><label>Program Kerja terkait</label><select id="taskProker" class="admin-input"><option value="">â€” Tidak ada â€”</option></select></div>
+          <div class="field"><label>Agenda terkait</label><select id="taskAgenda" class="admin-input"><option value="">â€” Tidak ada â€”</option></select></div>
         </div>
         <div class="field"><label>Catatan</label><textarea id="taskCatatan" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Catatan tambahan..."></textarea></div>
         <div class="form-actions-row" style="margin-top: 12px">

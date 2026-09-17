@@ -1,5 +1,5 @@
-﻿// =========================================================================
-// DATA LAYER â€” SEMUA AKSES SUPABASE LEWAT FILE INI
+// =========================================================================
+// DATA LAYER — SEMUA AKSES SUPABASE LEWAT FILE INI
 // Urutan include: 1) CDN supabase-js  2) config.js  3) db.js
 // =========================================================================
 
@@ -13,7 +13,7 @@ function getFoto(pathFoto) {
 }
 
 // =========================================================================
-// CACHE â€” SWR (stale-while-revalidate) biar instant
+// CACHE — SWR (stale-while-revalidate) biar instant
 // Simpen hasil fetch di localStorage, tampilin cache dulu, revalidasi
 // di background. Key: osis_cache_<nama>
 // =========================================================================
@@ -43,9 +43,9 @@ const Cache = {
 };
 
 // =========================================================================
-// DEVICE ID â€” id unik per perangkat (buat limit harian & visitor)
+// DEVICE ID — id unik per perangkat (buat limit harian & visitor)
 // Disimpan dobel: localStorage + cookie (2 tahun). Kalo salah satunya
-// kehapus (clear data, dll), id lamanya masih kebaca â€” anti nambah
+// kehapus (clear data, dll), id lamanya masih kebaca — anti nambah
 // kunjungan palsu dari perangkat yang sama.
 // =========================================================================
 
@@ -91,7 +91,7 @@ function namaPerangkat() {
             : /OPR\//i.test(ua) ? "Opera"
             : /Chrome/i.test(ua) ? "Chrome"
             : /Firefox/i.test(ua) ? "Firefox" : "";
-        return br ? "Windows Â· " + br : "Windows";
+        return br ? "Windows · " + br : "Windows";
     }
     if (/Macintosh|Mac OS X/i.test(ua)) return "Mac";
     if (/Linux/i.test(ua)) return "Linux";
@@ -149,7 +149,7 @@ function getVisitorKey() {
 }
 
 // =========================================================================
-// AUTH â€” akun OSIS dari tabel osis_users
+// AUTH — akun OSIS dari tabel osis_users
 // =========================================================================
 
 // Ambil akun OSIS by username (password dicompare di client, pola e-learniz)
@@ -164,7 +164,7 @@ async function getOsisUser(username) {
         if (error) throw error;
         return data || null;
     } catch (err) {
-        // kolom foto/bio belum ada â€” pakai kolom lama
+        // kolom foto/bio belum ada — pakai kolom lama
         if (!String(err.message || "").match(/foto|bio|column/i)) throw err;
         const { data, error } = await supa
             .from("osis_users")
@@ -198,7 +198,7 @@ async function getOsisUserById(id) {
     }
 }
 
-// Update profil OSIS (nama + bio + foto PP) â€” validasi akun di server
+// Update profil OSIS (nama + bio + foto PP) — validasi akun di server
 async function updateOsisProfil(userId, nama, bio, foto) {
     const { data, error } = await supa.rpc("update_osis_profil", {
         p_user_id: userId, p_nama: nama, p_bio: bio, p_foto: foto
@@ -207,7 +207,7 @@ async function updateOsisProfil(userId, nama, bio, foto) {
     if (data !== "OK") throw new Error(data);
 }
 
-// Ganti username OSIS (harus unik) â€” return OK atau throw ERR_TAKEN/ERR_INVALID
+// Ganti username OSIS (harus unik) — return OK atau throw ERR_TAKEN/ERR_INVALID
 async function gantiOsisUsername(userId, username) {
     const { data, error } = await supa.rpc("ganti_osis_username", {
         p_user_id: userId, p_username: username
@@ -216,7 +216,7 @@ async function gantiOsisUsername(userId, username) {
     if (data !== "OK") throw new Error(data);
 }
 
-// Ganti password OSIS (verifikasi lama di server) â€” throw ERR_WRONG/ERR_INVALID
+// Ganti password OSIS (verifikasi lama di server) — throw ERR_WRONG/ERR_INVALID
 async function gantiOsisPassword(userId, oldPw, newPw) {
     const { data, error } = await supa.rpc("ganti_osis_password", {
         p_user_id: userId, p_old: oldPw, p_new: newPw
@@ -270,7 +270,7 @@ async function getWebFoto() {
     return data;
 }
 
-// Kirim aspirasi siswa â€” lewat RPC biar bisa dilimit per device per hari
+// Kirim aspirasi siswa — lewat RPC biar bisa dilimit per device per hari
 async function kirimAspirasi(nama, kelas, isi, isPrivate = false) {
     const { data, error } = await supa.rpc("kirim_aspirasi_terbatas", {
         p_device_id: getDeviceId(),
@@ -320,7 +320,7 @@ async function cekStatusAspirasi() {
     }
 }
 
-// Kirim request lagu (radio jam istirahat) â€” lewat RPC biar bisa dilimit
+// Kirim request lagu (radio jam istirahat) — lewat RPC biar bisa dilimit
 async function kirimRequestLagu(judul, penyanyi, pesan, nama) {
     const { data, error } = await supa.rpc("kirim_lagu_terbatas", {
         p_device_id: getDeviceId(),
@@ -406,7 +406,7 @@ async function hapusLaguOsis(userId, id) {
 }
 
 // =========================================================================
-// PRESTASI â€” home (DB-driven, multi-foto, display_order)
+// PRESTASI — home (DB-driven, multi-foto, display_order)
 // =========================================================================
 async function getPrestasi() {
     const { data, error } = await supa
@@ -445,7 +445,7 @@ async function hapusPrestasi(userId, id) {
 }
 
 // =========================================================================
-// KEGIATAN HOME â€” DB-driven (judul, deskripsi, badge, fotos jsonb, order)
+// KEGIATAN HOME — DB-driven (judul, deskripsi, badge, fotos jsonb, order)
 // =========================================================================
 async function getKegiatan() {
     const { data, error } = await supa
@@ -484,7 +484,7 @@ async function hapusKegiatan(userId, id) {
 }
 
 // =========================================================================
-// NOTULENSI RAPAT â€” DB-driven (halaman osis/notulensi)
+// NOTULENSI RAPAT — DB-driven (halaman osis/notulensi)
 // =========================================================================
 async function getNotulensi() {
     const { data, error } = await supa
@@ -528,7 +528,7 @@ async function hapusNotulensi(userId, id) {
 }
 
 // =========================================================================
-// PROGRAM KERJA â€” DB-driven (halaman osis/proker)
+// PROGRAM KERJA — DB-driven (halaman osis/proker)
 // =========================================================================
 async function getProker() {
     const { data, error } = await supa
@@ -574,7 +574,7 @@ async function hapusProker(userId, id) {
 }
 
 // =========================================================================
-// DOKUMEN OSIS â€” DB-driven (halaman osis/dokumen)
+// DOKUMEN OSIS — DB-driven (halaman osis/dokumen)
 // =========================================================================
 async function getDokumen() {
     const { data, error } = await supa
@@ -615,7 +615,7 @@ async function hapusDokumen(userId, id) {
 }
 
 // =========================================================================
-// TASK â€” DB-driven (halaman osis/task, kanban)
+// TASK — DB-driven (halaman osis/task, kanban)
 // =========================================================================
 async function getTask() {
     const { data, error } = await supa
@@ -665,7 +665,7 @@ async function hapusTask(userId, id) {
 }
 
 // =========================================================================
-// KEUANGAN â€” DB-driven (halaman osis/keuangan, kas + saldo awal)
+// KEUANGAN — DB-driven (halaman osis/keuangan, kas + saldo awal)
 // =========================================================================
 async function getKas() {
     const { data, error } = await supa
@@ -721,141 +721,7 @@ async function setSaldoAwal(userId, periode, nominal) {
 }
 
 // =========================================================================
-// ABSENSI PENGURUS - izin/sakit/alpha + hadir per tanggal (halaman osis/absensi)
-// Nama diketik manual (hadir memakai nama dari tabel anggota). Tulis via RPC
-// (cek osis_users + UNIQUE tanggal+lower(nama) anti dobel/bentrok).
-// =========================================================================
-async function getAbsensi() {
-    try {
-        const { data, error } = await supa
-            .from("osis_absensi")
-            .select("id, tanggal, nama, status, alasan, kegiatan, created_by, created_at, updated_at")
-            .order("tanggal", { ascending: false })
-            .order("created_at", { ascending: false });
-        if (error) throw error;
-        return data || [];
-    } catch (err) {
-        // kolom kegiatan belum ada (migrasi belum di-run) — pakai kolom lama
-        if (!String(err.message || "").match(/kegiatan|column/i)) throw err;
-        const { data, error } = await supa
-            .from("osis_absensi")
-            .select("id, tanggal, nama, status, alasan, created_by, created_at, updated_at")
-            .order("tanggal", { ascending: false })
-            .order("created_at", { ascending: false });
-        if (error) throw error;
-        return (data || []).map(r => ({ ...r, kegiatan: "" }));
-    }
-}
-async function buatAbsensi(userId, f) {
-    const payload = {
-        p_user_id: userId, p_tanggal: f.tanggal, p_nama: f.nama,
-        p_status: f.status, p_alasan: f.alasan, p_kegiatan: f.kegiatan || ""
-    };
-    let { data, error } = await supa.rpc("buat_absensi", payload);
-    // Fallback: function 6-param belum di-run di Supabase — ulangi tanpa p_kegiatan
-    if (error && String(error.message || "").match(/p_kegiatan|function|signature|argument/i)) {
-        const fb = await supa.rpc("buat_absensi", {
-            p_user_id: payload.p_user_id, p_tanggal: payload.p_tanggal, p_nama: payload.p_nama,
-            p_status: payload.p_status, p_alasan: payload.p_alasan
-        });
-        data = fb.data;
-        error = fb.error;
-    }
-    if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
-    Cache.del("absensi");
-    return data;
-}
-async function updateAbsensi(userId, id, f) {
-    const payload = {
-        p_user_id: userId, p_id: id, p_tanggal: f.tanggal, p_nama: f.nama,
-        p_status: f.status, p_alasan: f.alasan, p_kegiatan: f.kegiatan || ""
-    };
-    let { data, error } = await supa.rpc("update_absensi", payload);
-    if (error && String(error.message || "").match(/p_kegiatan|function|signature|argument/i)) {
-        const fb = await supa.rpc("update_absensi", {
-            p_user_id: payload.p_user_id, p_id: payload.p_id, p_tanggal: payload.p_tanggal,
-            p_nama: payload.p_nama, p_status: payload.p_status, p_alasan: payload.p_alasan
-        });
-        data = fb.data;
-        error = fb.error;
-    }
-    if (error) throw error;
-    if (data !== "OK") throw new Error(data);
-    Cache.del("absensi");
-}
-async function hapusAbsensi(userId, id) {
-    const { data, error } = await supa.rpc("hapus_absensi", {
-        p_user_id: userId, p_id: id
-    });
-    if (error) throw error;
-    if (data !== "OK") throw new Error(data);
-    Cache.del("absensi");
-}
-
-// =========================================================================
-// TABUNGAN PENGURUS - setoran per orang (halaman osis/tabungan)
-// Tampil satu tabel per orang + running total per orang (dihitung client).
-// =========================================================================
-async function getTabungan() {
-    try {
-        const { data, error } = await supa
-            .from("osis_tabungan")
-            .select("id, nama, tanggal, nominal, jenis, cek, created_by, created_at, updated_at")
-            .order("tanggal", { ascending: false })
-            .order("created_at", { ascending: false });
-        if (error) throw error;
-        return data || [];
-    } catch (err) {
-        // kolom jenis belum ada (migrasi belum di-run) — pakai kolom lama
-        if (!String(err.message || "").match(/jenis|column/i)) throw err;
-        const { data, error } = await supa
-            .from("osis_tabungan")
-            .select("id, nama, tanggal, nominal, cek, created_by, created_at, updated_at")
-            .order("tanggal", { ascending: false })
-            .order("created_at", { ascending: false });
-        if (error) throw error;
-        return (data || []).map(r => ({ ...r, jenis: "masuk" }));
-    }
-}
-async function buatTabungan(userId, f) {
-    const { data, error } = await supa.rpc("buat_tabungan", {
-        p_user_id: userId, p_nama: f.nama, p_tanggal: f.tanggal, p_nominal: f.nominal,
-        p_jenis: f.jenis === "keluar" ? "keluar" : "masuk"
-    });
-    if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
-    Cache.del("tabungan");
-    return data;
-}
-async function updateTabungan(userId, id, f) {
-    const { data, error } = await supa.rpc("update_tabungan", {
-        p_user_id: userId, p_id: id, p_nama: f.nama, p_tanggal: f.tanggal, p_nominal: f.nominal,
-        p_jenis: f.jenis === "keluar" ? "keluar" : "masuk"
-    });
-    if (error) throw error;
-    if (data !== "OK") throw new Error(data);
-    Cache.del("tabungan");
-}
-async function toggleTabunganCek(userId, id, cek) {
-    const { data, error } = await supa.rpc("toggle_tabungan_cek", {
-        p_user_id: userId, p_id: id, p_cek: !!cek
-    });
-    if (error) throw error;
-    if (data !== "OK") throw new Error(data);
-    Cache.del("tabungan");
-}
-async function hapusTabungan(userId, id) {
-    const { data, error } = await supa.rpc("hapus_tabungan", {
-        p_user_id: userId, p_id: id
-    });
-    if (error) throw error;
-    if (data !== "OK") throw new Error(data);
-    Cache.del("tabungan");
-}
-
-// =========================================================================
-// EVALUASI â€” DB-driven (halaman osis/evaluasi)
+// EVALUASI — DB-driven (halaman osis/evaluasi)
 // =========================================================================
 async function getEvaluasi() {
     const { data, error } = await supa
@@ -903,7 +769,7 @@ async function hapusEvaluasi(userId, id) {
 }
 
 // =========================================================================
-// FORMULIR â€” DB-driven form builder (halaman osis/formulir)
+// FORMULIR — DB-driven form builder (halaman osis/formulir)
 // =========================================================================
 async function getFormulir() {
     try {
@@ -978,7 +844,7 @@ async function kirimRespons(formId, jawaban, userId) {
 }
 
 // =========================================================================
-// AGENDA PER SEKBID â€” DB-driven (judul, deskripsi, tanggal, lokasi, status, fotos)
+// AGENDA PER SEKBID — DB-driven (judul, deskripsi, tanggal, lokasi, status, fotos)
 // =========================================================================
 async function getAgendaBySekbid(sekbidId) {
     const { data, error } = await supa
@@ -1032,7 +898,7 @@ async function hapusAgenda(userId, id) {
 }
 
 // =========================================================================
-// GALLERY â€” dokumentasi kegiatan (judul + foto, khusus akun OSIS)
+// GALLERY — dokumentasi kegiatan (judul + foto, khusus akun OSIS)
 // =========================================================================
 
 // Ambil semua kegiatan (terbaru di atas)
@@ -1108,7 +974,7 @@ async function hapusGallery(userId, id) {
 }
 
 // =========================================================================
-// SITE CONTENT â€” teks editable (hero/visi/misi/pembina/dll)
+// SITE CONTENT — teks editable (hero/visi/misi/pembina/dll)
 // =========================================================================
 
 async function getSiteContent() {
@@ -1131,7 +997,7 @@ async function saveSiteText(userId, kunci, nilai) {
 }
 
 // =========================================================================
-// ADMIN â€” CRUD & STORAGE
+// ADMIN — CRUD & STORAGE
 // =========================================================================
 
 async function getSemuaPengaturan() {
@@ -1287,7 +1153,7 @@ async function uploadFotoStorage(file, path) {
     if (file && file.type && file.type.startsWith("image/")) {
         try { toUpload = await compressImage(file); } catch (e) { console.warn("compress gagal, pakai asli:", e); }
     }
-    // kalau path masih .png tapi file jadi jpeg, biarin aja â€” storage ga ngecek ekstensi
+    // kalau path masih .png tapi file jadi jpeg, biarin aja — storage ga ngecek ekstensi
     const { error } = await supa.storage
         .from(STORAGE_BUCKET)
         .upload(path, toUpload, { upsert: true, cacheControl: "3600" });

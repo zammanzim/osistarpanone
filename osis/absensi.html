@@ -1,0 +1,502 @@
+﻿<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Absensi Pengurus — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+<meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+<link rel="manifest" href="../manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .absensi-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .absensi-head {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .absensi-head .ico {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .absensi-head h1 {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .absensi-head p {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+      .stat-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 10px 8px;
+        box-shadow: 3px 3px 0 var(--ink);
+        min-width: 0;
+      }
+      .stat-card .lbl {
+        font-size: 0.6rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--gray);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        line-height: 1.3;
+        text-align: center;
+      }
+      @media (max-width: 480px) {
+        .stat-card {
+          padding: 8px 6px;
+        }
+        .stat-card .lbl {
+          font-size: 0.56rem;
+        }
+        .stat-card .lbl i {
+          display: none;
+        }
+      }
+      .stat-card b {
+        display: block;
+        font-size: 1.05rem;
+        font-weight: 900;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+        text-align: center;
+      }
+      .stat-card .stat-suffix {
+        font-size: 0.72em;
+        font-weight: 700;
+      }
+      @media (max-width: 720px) {
+        .stat-card .stat-suffix {
+          display: none;
+        }
+      }
+      .stat-card.izin b { color: #8a6d00; }
+      .stat-card.sakit b { color: #146314; }
+      .stat-card.alpha b { color: var(--red-dark); }
+      .rekap-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px 16px;
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .rekap-card h3 {
+        font-size: 0.82rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .rekap-card h3 i { color: var(--red); }
+      .bulan-sep {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--ink);
+        color: #fff;
+        border: 3px solid var(--ink);
+        border-radius: 14px;
+        padding: 10px 14px;
+        box-shadow: 3px 3px 0 var(--red);
+        font-size: 0.85rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 2px 0 12px;
+      }
+      .bulan-sep:first-child { margin-top: 0; }
+      .bulan-sep i { color: var(--yellow); }
+      .bulan-sep .cnt {
+        margin-left: auto;
+        font-size: 0.66rem;
+        font-weight: 900;
+        background: var(--yellow);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 3px 10px;
+        white-space: nowrap;
+      }
+      .rekap-row {
+        margin-bottom: 10px;
+      }
+      .rekap-row:last-child { margin-bottom: 0; }
+      .rekap-row .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.82rem;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+      .rekap-row .top small { color: var(--gray); font-weight: 700; }
+      .filter-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (min-width: 900px) {
+        .filter-card {
+          grid-template-columns: 2fr 1fr 1fr auto;
+          align-items: end;
+        }
+      }
+      .filter-card .field { margin-bottom: 0; }
+      .jenis {
+        font-size: 0.64rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        padding: 3px 9px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+        white-space: nowrap;
+      }
+      .jenis.izin { background: var(--yellow); color: var(--ink); }
+      .jenis.sakit { background: #d6f5d6; color: #146314; }
+      .jenis.alpha { background: #ffe9e9; color: var(--red-dark); }
+      .jenis.total { background: var(--paper-2); color: var(--ink); }
+      .kas-scroll { overflow-x: auto; }
+      table.kas-tabel {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+        min-width: 560px;
+      }
+      table.kas-tabel th {
+        text-align: left;
+        font-size: 0.64rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray);
+        padding: 8px;
+        border-bottom: 2.5px solid var(--ink);
+        white-space: nowrap;
+      }
+      table.kas-tabel td {
+        padding: 9px 8px;
+        border-bottom: 1.5px dashed var(--line);
+        vertical-align: middle;
+      }
+      table.kas-tabel tbody tr:hover td {
+        background: var(--paper);
+      }
+      .kas-form {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 10, 11, 0.78);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 210;
+        padding: 18px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.22s ease,
+          visibility 0.22s ease;
+      }
+      .kas-form.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      .kas-form-inner {
+        width: min(560px, 100%);
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.96) translateY(10px);
+        transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+      }
+      .kas-form.open .kas-form-inner {
+        transform: scale(1) translateY(0);
+      }
+      /* ABSEN LANGSUNG — ikut gaya modal Tambah Ketidakhadiran */
+      .absen-progress {
+        background: var(--ink);
+        color: #fff;
+        border: 3px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px 14px;
+        text-align: center;
+        box-shadow: 3px 3px 0 var(--red);
+      }
+      .absen-progress .keg {
+        font-size: 0.8rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        overflow-wrap: anywhere;
+      }
+      .absen-progress .tgl {
+        font-size: 0.72rem;
+        font-weight: 600;
+        opacity: 0.75;
+        margin-top: 2px;
+      }
+      .absen-progress b {
+        display: block;
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: var(--yellow);
+        margin: 4px 0 8px;
+      }
+      .absen-progress .track {
+        height: 12px;
+        border: 2px solid #fff;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+        overflow: hidden;
+      }
+      .absen-progress .track > span {
+        display: block;
+        height: 100%;
+        background: var(--yellow);
+        border-radius: 999px;
+        transition: width 0.2s ease;
+      }
+      .absen-sec {
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--gray);
+        margin: 12px 0 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .absen-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 230px;
+        overflow-y: auto;
+        padding: 2px;
+      }
+      .absen-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        text-align: left;
+        padding: 9px 12px;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        background: var(--white);
+        font-family: inherit;
+        font-size: 0.84rem;
+        font-weight: 800;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .absen-item:hover {
+        background: var(--paper);
+      }
+      .absen-item.active {
+        background: var(--yellow);
+        box-shadow: 2px 2px 0 var(--ink);
+      }
+      .absen-item .dot {
+        width: 22px;
+        height: 22px;
+        border: 2px solid var(--ink);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 0.68rem;
+        flex-shrink: 0;
+        background: #fff;
+      }
+      .absen-item.done {
+        background: #d6f5d6;
+        color: #146314;
+        cursor: default;
+      }
+      .absen-item.done .dot {
+        background: #146314;
+        border-color: #146314;
+        color: #fff;
+      }
+      .absen-item.blocked {
+        background: var(--paper-2);
+        color: var(--gray);
+        cursor: not-allowed;
+      }
+      .absen-item small {
+        margin-left: auto;
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        flex-shrink: 0;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-sidebar.js" defer></script>
+    <script src="../js/form-persist.js" defer></script>
+    <script src="../js/absensi.js" defer></script>
+  <script src="../js/pwa.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>ABSENSI</h2>
+          <p>Pengurus OSIS</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="absensi-wrap">
+      <div class="absensi-head">
+        <div class="ico"><i class="fa-solid fa-clipboard-user"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>ABSENSI PENGURUS</h1>
+          <p>Catat pengurus yang tidak hadir: izin, sakit, atau alpha.</p>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <button class="btn btn-red" id="btnTambahAbsensi"><i class="fa-solid fa-plus"></i> Tambah Data</button>
+          <button class="btn btn-white" id="btnAbsenLangsung"><i class="fa-solid fa-bolt"></i> Absen Langsung</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card izin"><span class="lbl"><i class="fa-solid fa-envelope-open-text"></i> Izin</span><b id="statIzin">-</b></div>
+        <div class="stat-card sakit"><span class="lbl"><i class="fa-solid fa-briefcase-medical"></i> Sakit</span><b id="statSakit">-</b></div>
+        <div class="stat-card alpha"><span class="lbl"><i class="fa-solid fa-user-xmark"></i> Alpha</span><b id="statAlpha">-</b></div>
+        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-users-slash"></i> Total Tidak Hadir</span><b id="statTotal">-</b></div>
+      </div>
+
+      <div class="filter-card">
+        <div class="field"><label>Cari pengurus</label><input type="text" id="filterQ" class="admin-input" placeholder="Ketik nama / kegiatan..." /></div>
+        <div class="field"><label>Tanggal</label><input type="date" id="filterTanggal" class="admin-input" /></div>
+        <div class="field"><label>Status</label><select id="filterStatus" class="admin-input"><option value="">Semua</option><option value="izin">Izin</option><option value="sakit">Sakit</option><option value="alpha">Alpha</option></select></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
+      </div>
+
+      <div id="absensiWrap"><div class="rekap-card"><div class="loading-block"><div class="spinner"></div>Memuat absensi...</div></div></div>
+    </div>
+
+    <!-- POPUP FORM: tambah banyak pengurus sekaligus / edit sehari -->
+    <div class="kas-form" id="absensiForm">
+      <div class="kas-form-inner">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-clipboard-user" style="color: var(--red)"></i> <span id="absensiFormTitle">Tambah Ketidakhadiran</span></span>
+          <button class="icon-btn" onclick="Absensi.tutupForm()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="field"><label>Tanggal</label><input type="date" id="absTanggal" class="admin-input" /></div>
+        <div class="field"><label>Nama kegiatan</label><input type="text" id="absKegiatan" class="admin-input" placeholder="cth: Kumpulan rutin" maxlength="120" /></div>
+        <div id="absensiRows" style="margin-top:10px"></div>
+        <button class="btn btn-white btn-sm" id="btnTambahBaris"><i class="fa-solid fa-plus"></i> Tambah pengurus</button>
+        <div class="form-actions-row" style="margin-top: 12px">
+          <button class="btn btn-white" id="btnBatalAbsensi">Batal</button>
+          <button class="btn btn-red" id="btnSimpanAbsensi"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP ABSEN LANGSUNG: tandai hadir cepat per anggota -->
+    <div class="kas-form" id="absenLangsung">
+      <div class="kas-form-inner">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-bolt" style="color: var(--red)"></i> <span>Absen Langsung</span></span>
+          <button class="icon-btn" onclick="Absensi.tutupLangsung()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="absen-progress" style="margin-bottom: 10px">
+          <div class="keg" id="langsungKegLbl">Kumpulan rutin</div>
+          <div class="tgl" id="langsungTglLbl">-</div>
+          <b id="langsungProgress">0 / 0 HADIR</b>
+          <div class="track"><span id="langsungBar" style="width: 0%"></span></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field"><label>Tanggal</label><input type="date" id="langsungTanggal" class="admin-input" /></div>
+          <div class="field"><label>Nama kegiatan</label><input type="text" id="langsungKegiatan" class="admin-input" placeholder="cth: Kumpulan rutin" maxlength="120" /></div>
+        </div>
+        <div class="field" style="margin-top: 10px"><label>Cari pengurus</label><input type="text" id="langsungSearch" class="admin-input" placeholder="Ketik nama... (↑↓ + Enter)" autocomplete="off" /></div>
+        <div class="absen-sec"><i class="fa-regular fa-circle"></i> Belum hadir (<span id="langsungBelumCount">0</span>)</div>
+        <div class="absen-list" id="langsungBelum"></div>
+        <div class="absen-sec"><i class="fa-solid fa-circle-check" style="color: #146314"></i> Sudah hadir (<span id="langsungSudahCount">0</span>)</div>
+        <div class="absen-list" id="langsungSudah" style="max-height: 140px"></div>
+        <div class="absen-sec"><i class="fa-solid fa-user-xmark"></i> Izin / Sakit / Alpha (<span id="langsungIzinCount">0</span>)</div>
+        <div class="absen-list" id="langsungIzin" style="max-height: 120px"></div>
+        <div class="form-actions-row" style="margin-top: 14px">
+          <button class="btn btn-white" id="btnBatalLangsung">Batal</button>
+          <button class="btn btn-red" id="btnSelesaiLangsung"><i class="fa-solid fa-check"></i> Selesai</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

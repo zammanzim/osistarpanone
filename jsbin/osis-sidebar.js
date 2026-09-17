@@ -1,18 +1,23 @@
-﻿// =========================================================================
-// OSIS SIDEBAR â€” drawer kiri pengganti pil nav di header (folder /osis/*)
+// =========================================================================
+// OSIS SIDEBAR — drawer kiri pengganti pil nav di header (folder /osis/*)
 // Disuntik otomatis: tombol hamburger + backdrop + drawer. Satu file untuk
 // semua halaman OSIS, jadi nambah halaman baru tidak perlu utak-atik header.
 // Tambah menu baru: tinggal tambah 1 entri di OsisSidebar.MENU.
 // =========================================================================
 
 const OsisSidebar = {
-    // Tambah menu baru kalau halaman baru udah dibikin:
-    // tinggal tambah 1 baris ["nama-file-tanpa-html", "Judul", "fa-icon"].
-    // cth: ["agenda", "Agenda", "fa-solid fa-calendar-days"],
     MENU: [
-        ["absensi", "Absensi", "fa-solid fa-clipboard-user"],
-        ["tabungan", "Tabungan", "fa-solid fa-piggy-bank"],
-        ["keuangan", "Keuangan", "fa-solid fa-wallet"]
+        ["index", "Dashboard", "fa-solid fa-grip"],
+        ["agenda", "Agenda", "fa-solid fa-calendar-days"],
+        ["profil", "Profil", "fa-solid fa-user"],
+        ["anggota", "Anggota", "fa-solid fa-users"],
+        ["notulensi", "Notulensi", "fa-solid fa-clipboard-list"],
+        ["proker", "Proker", "fa-solid fa-list-check"],
+        ["dokumen", "Dokumen", "fa-solid fa-folder-open"],
+        ["task", "Task", "fa-solid fa-clipboard-check"],
+        ["keuangan", "Keuangan", "fa-solid fa-wallet"],
+        ["evaluasi", "Evaluasi", "fa-solid fa-star-half-stroke"],
+        ["formulir", "Formulir", "fa-solid fa-clipboard-question"]
     ],
 
     toggle() {

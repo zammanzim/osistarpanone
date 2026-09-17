@@ -38,7 +38,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   min-height: 100vh;
-  padding-bottom: 120px;
+  padding-bottom: 0;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -2134,7 +2134,7 @@ body.edit-mode .bento-meta .gal-del {
    ============================================================ */
 @media (min-width: 1024px) {
   body {
-    padding-bottom: 140px;
+    padding-bottom: 0;
   }
 
   .top-nav {
@@ -2844,6 +2844,11 @@ body.edit-mode .vm-card.visi [data-edit-key]:focus {
   background: var(--red) !important;
   color: #fff !important;
 }
+/* version di footer gelap: jangan jadi putih pas focus / outline */
+body.edit-mode .site-footer-motto:focus {
+  background: rgba(255,255,255,.14) !important;
+  color: #fff !important;
+}
 
 /* foto editable — tombol kamera kecil */
 .photo-edit-btn {
@@ -2904,7 +2909,7 @@ body.edit-mode .edit-add-btn { display: block; }
 body.edit-mode .edit-del-btn { display: inline-flex; }
 
 /* biar edit area ga ketutup bottom nav */
-body.edit-mode { padding-bottom: 180px; }
+body.edit-mode { padding-bottom: 0; }
 /* edit-mode: slot tambah foto kegiatan di home */
 .up-slot-kegiatan i { font-size: 1.4rem; color: var(--red); }
 /* ============================================================

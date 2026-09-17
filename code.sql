@@ -1,5 +1,5 @@
--- ============================================================
--- WEB OSIS TARPAN ONE — SCHEMA LENGKAP (RUN SEMUA SEKALI)
+﻿-- ============================================================
+-- WEB OSIS TARPAN ONE â€” SCHEMA LENGKAP (RUN SEMUA SEKALI)
 -- Jalankan SEMUA di Supabase SQL Editor (project OSIS).
 -- Project pake localStorage custom auth (BUKAN Supabase Auth),
 -- jadi RLS cuma anon key, bukan auth.role() = 'authenticated'.
@@ -19,6 +19,7 @@
 -- 9. Web foto + storage   (web/ & angkatan/ buat foto editable)
 -- 10. Prestasi & Kegiatan home (DB-driven, fotos jsonb, display_order)
 -- 11. Agenda per Sekbid (rencana, folder osis/agenda)
+-- 12. Absensi pengurus (izin/sakit/alpha per tanggal, folder osis/absensi)
 --
 -- NOTE VISITOR:
 -- - device_id = id perangkat MURNI (ga pernah berubah jadi key akun).
@@ -117,16 +118,16 @@ CREATE POLICY "visitor_public_select" ON public.visitor
 
 -- ============ 4. FUNCTION LIMIT + INSERT (SECURITY DEFINER) ============
 -- SECURITY DEFINER: jalan sebagai pemilik tabel, bypass RLS, jadi
--- limit HARUS lewat function ini — ga bisa bypass dari client.
+-- limit HARUS lewat function ini â€” ga bisa bypass dari client.
 
--- Kirim aspirasi: maks 3 per device per hari, support private
+-- Kirim aspirasi: maks 1 per device per hari, support private
 CREATE OR REPLACE FUNCTION public.kirim_aspirasi_terbatas(
     p_device_id text,
     p_nama text,
     p_kelas text,
     p_isi text,
     p_is_private boolean DEFAULT false,
-    p_batas_harian integer DEFAULT 3
+    p_batas_harian integer DEFAULT 1
 ) RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
@@ -148,14 +149,14 @@ END $$;
 
 DROP FUNCTION IF EXISTS public.kirim_aspirasi_terbatas(text, text, text, text, integer);
 
--- Kirim request lagu: maks 5 per device per hari
+-- Kirim request lagu: maks 1 per device per hari
 CREATE OR REPLACE FUNCTION public.kirim_lagu_terbatas(
     p_device_id text,
     p_judul text,
     p_penyanyi text,
     p_pesan text,
     p_nama text,
-    p_batas_harian integer DEFAULT 5
+    p_batas_harian integer DEFAULT 1
 ) RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
@@ -438,7 +439,7 @@ GRANT EXECUTE ON FUNCTION public.hapus_lagu_osis(bigint, bigint) TO anon;
 
 -- ============ 6. TABEL GALLERY (dokumentasi kegiatan) ============
 -- Satu baris = satu kegiatan. `fotos` = jsonb array path foto di bucket.
--- Cuma akun OSIS (id ada di osis_users) boleh nambah/hapus �
+-- Cuma akun OSIS (id ada di osis_users) boleh nambah/hapus ï¿½
 -- divalidasi di function, bukan di client.
 CREATE TABLE IF NOT EXISTS public.gallery (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -612,7 +613,7 @@ GRANT EXECUTE ON FUNCTION public.galeri_update_meta(bigint, bigint, text, text) 
 GRANT EXECUTE ON FUNCTION public.galeri_update_fotos(bigint, bigint, jsonb) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_gallery(bigint, bigint) TO anon;
 
--- ============ 7. STORAGE � FOLDER GALLERY DI BUCKET osis-foto ============
+-- ============ 7. STORAGE ï¿½ FOLDER GALLERY DI BUCKET osis-foto ============
 -- Bucket osis-foto pake policy per folder. Folder gallery/ harus
 -- diizinin khusus biar upload & hapus foto galeri bisa dari client.
 DROP POLICY IF EXISTS "osis_foto_gallery_select" ON storage.objects;
@@ -630,7 +631,7 @@ CREATE POLICY "osis_foto_gallery_delete" ON storage.objects
     FOR DELETE TO anon
     USING (bucket_id = 'osis-foto' AND (storage.foldername(name))[1] = 'gallery');
 
--- ============ 8. SITE CONTENT � TEKS EDITABLE (HERO/VISI/MISI/PEMBINA/DLL) ============
+-- ============ 8. SITE CONTENT ï¿½ TEKS EDITABLE (HERO/VISI/MISI/PEMBINA/DLL) ============
 -- Satu baris per kunci (cth: hero_badge, visi_text, misi_1_title ...).
 -- Cuma akun OSIS boleh nulis, baca bebas.
 CREATE TABLE IF NOT EXISTS public.site_content (
@@ -687,7 +688,7 @@ GRANT EXECUTE ON FUNCTION public.save_site_text(bigint, text, text) TO anon;
 -- ============ 9. WEB_FOTO + STORAGE WEB/ANGKATAN (buat foto editable) ============
 -- Foto prestasi/kegiatan/hero/pembina pake tabel web_foto + bucket osis-foto/web/
 -- dan foto angkatan pake bucket angkatan/. Kasih policy biar anon (OSIS
--- client) bisa upsert � validasi OSIS Tetep di client (SiteEdit cek mode).
+-- client) bisa upsert ï¿½ validasi OSIS Tetep di client (SiteEdit cek mode).
 CREATE TABLE IF NOT EXISTS public.web_foto (
     kunci text PRIMARY KEY,
     path text NOT NULL DEFAULT '',
@@ -767,7 +768,7 @@ DROP POLICY IF EXISTS "kegiatan_public_select" ON public.kegiatan;
 CREATE POLICY "kegiatan_public_select" ON public.kegiatan FOR SELECT USING (true);
 DROP POLICY IF EXISTS "kegiatan_public_insert" ON public.kegiatan;
 
--- RPCs � SECURITY DEFINER, cek osis_users
+-- RPCs ï¿½ SECURITY DEFINER, cek osis_users
 CREATE OR REPLACE FUNCTION public.buat_prestasi(p_user_id bigint, p_tag text, p_caption text, p_fotos jsonb, p_display_order integer DEFAULT 99)
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE nid bigint;
@@ -1063,7 +1064,7 @@ CREATE POLICY "osis_foto_profil_delete" ON storage.objects FOR DELETE TO anon US
 -- ============ 13. DATA ANGGOTA & KEPENGURUSAN (halaman osis/anggota) ============
 -- Tabel pimpinan/anggota/sekbid dibuat di luar file ini (project lama).
 -- Tambahan: foto per anggota. Tulis langsung via anon (ikut pola lama di
--- js/db.js: simpanPimpinan/tambahAnggota/updateSekbid � bukan RPC).
+-- js/db.js: simpanPimpinan/tambahAnggota/updateSekbid ï¿½ bukan RPC).
 ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS foto text NOT NULL DEFAULT '';
 
 -- Storage anggota/ (foto per anggota) di bucket osis-foto
@@ -1082,7 +1083,7 @@ CREATE POLICY "osis_foto_sekbid_insert" ON storage.objects FOR INSERT TO anon WI
 DROP POLICY IF EXISTS "osis_foto_sekbid_delete" ON storage.objects;
 CREATE POLICY "osis_foto_sekbid_delete" ON storage.objects FOR DELETE TO anon USING (bucket_id='osis-foto' AND (storage.foldername(name))[1]='sekbid');
 
--- Storage pimpinan/ (ketua/wakil � selama ini upload tanpa policy khusus)
+-- Storage pimpinan/ (ketua/wakil ï¿½ selama ini upload tanpa policy khusus)
 DROP POLICY IF EXISTS "osis_foto_pimpinan_select" ON storage.objects;
 CREATE POLICY "osis_foto_pimpinan_select" ON storage.objects FOR SELECT TO anon USING (bucket_id='osis-foto' AND (storage.foldername(name))[1]='pimpinan');
 DROP POLICY IF EXISTS "osis_foto_pimpinan_insert" ON storage.objects;
@@ -1173,7 +1174,7 @@ BEGIN
 END $$;
 
 -- Grants dibungkus guard biar aman di-run terpisah/ulang: kalau function-nya
--- belum ada (CREATE di atas belum ke-run), tidak error 42883 � tapi itu tanda
+-- belum ada (CREATE di atas belum ke-run), tidak error 42883 ï¿½ tapi itu tanda
 -- kamu harus run CREATE FUNCTION-nya dulu, kalau tidak RPC dari web gagal.
 DO $$
 BEGIN
@@ -1181,19 +1182,19 @@ BEGIN
         EXECUTE 'REVOKE EXECUTE ON FUNCTION public.buat_notulensi(bigint, text, date, text, text, text, text, text, text, text, text, text, text, jsonb, jsonb, text) FROM PUBLIC';
         EXECUTE 'GRANT EXECUTE ON FUNCTION public.buat_notulensi(bigint, text, date, text, text, text, text, text, text, text, text, text, text, jsonb, jsonb, text) TO anon';
     ELSE
-        RAISE NOTICE 'SKIP grant: public.buat_notulensi belum ada � run CREATE FUNCTION-nya dulu';
+        RAISE NOTICE 'SKIP grant: public.buat_notulensi belum ada ï¿½ run CREATE FUNCTION-nya dulu';
     END IF;
     IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = 'update_notulensi') THEN
         EXECUTE 'REVOKE EXECUTE ON FUNCTION public.update_notulensi(bigint, bigint, text, date, text, text, text, text, text, text, text, text, text, text, jsonb, jsonb, text) FROM PUBLIC';
         EXECUTE 'GRANT EXECUTE ON FUNCTION public.update_notulensi(bigint, bigint, text, date, text, text, text, text, text, text, text, text, text, jsonb, jsonb, text) TO anon';
     ELSE
-        RAISE NOTICE 'SKIP grant: public.update_notulensi belum ada � run CREATE FUNCTION-nya dulu';
+        RAISE NOTICE 'SKIP grant: public.update_notulensi belum ada ï¿½ run CREATE FUNCTION-nya dulu';
     END IF;
     IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = 'hapus_notulensi') THEN
         EXECUTE 'REVOKE EXECUTE ON FUNCTION public.hapus_notulensi(bigint, bigint) FROM PUBLIC';
         EXECUTE 'GRANT EXECUTE ON FUNCTION public.hapus_notulensi(bigint, bigint) TO anon';
     ELSE
-        RAISE NOTICE 'SKIP grant: public.hapus_notulensi belum ada � run CREATE FUNCTION-nya dulu';
+        RAISE NOTICE 'SKIP grant: public.hapus_notulensi belum ada ï¿½ run CREATE FUNCTION-nya dulu';
     END IF;
 END $$;
 
@@ -1304,19 +1305,19 @@ BEGIN
         EXECUTE 'REVOKE EXECUTE ON FUNCTION public.buat_proker(bigint, text, text, text, text, integer, date, date, text, text, text, integer, text, jsonb, jsonb, text, text, text, text, jsonb) FROM PUBLIC';
         EXECUTE 'GRANT EXECUTE ON FUNCTION public.buat_proker(bigint, text, text, text, text, integer, date, date, text, text, text, integer, text, jsonb, jsonb, text, text, text, text, jsonb) TO anon';
     ELSE
-        RAISE NOTICE 'SKIP grant: public.buat_proker belum ada � run CREATE FUNCTION-nya dulu';
+        RAISE NOTICE 'SKIP grant: public.buat_proker belum ada ï¿½ run CREATE FUNCTION-nya dulu';
     END IF;
     IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = 'update_proker') THEN
         EXECUTE 'REVOKE EXECUTE ON FUNCTION public.update_proker(bigint, bigint, text, text, text, text, integer, date, date, text, text, text, integer, text, jsonb, jsonb, text, text, text, text, jsonb) FROM PUBLIC';
         EXECUTE 'GRANT EXECUTE ON FUNCTION public.update_proker(bigint, bigint, text, text, text, text, integer, date, date, text, text, text, integer, text, jsonb, jsonb, text, text, text, text, jsonb) TO anon';
     ELSE
-        RAISE NOTICE 'SKIP grant: public.update_proker belum ada � run CREATE FUNCTION-nya dulu';
+        RAISE NOTICE 'SKIP grant: public.update_proker belum ada ï¿½ run CREATE FUNCTION-nya dulu';
     END IF;
     IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = 'hapus_proker') THEN
         EXECUTE 'REVOKE EXECUTE ON FUNCTION public.hapus_proker(bigint, bigint) FROM PUBLIC';
         EXECUTE 'GRANT EXECUTE ON FUNCTION public.hapus_proker(bigint, bigint) TO anon';
     ELSE
-        RAISE NOTICE 'SKIP grant: public.hapus_proker belum ada � run CREATE FUNCTION-nya dulu';
+        RAISE NOTICE 'SKIP grant: public.hapus_proker belum ada ï¿½ run CREATE FUNCTION-nya dulu';
     END IF;
 END $$;
 
@@ -1328,14 +1329,14 @@ CREATE POLICY "osis_foto_proker_insert" ON storage.objects FOR INSERT TO anon WI
 DROP POLICY IF EXISTS "osis_foto_proker_delete" ON storage.objects;
 CREATE POLICY "osis_foto_proker_delete" ON storage.objects FOR DELETE TO anon USING (bucket_id='osis-foto' AND (storage.foldername(name))[1]='proker');
 
--- Seed dummy (cuma kalau tabel masih kosong � buat uji tampilan)
+-- Seed dummy (cuma kalau tabel masih kosong ï¿½ buat uji tampilan)
 INSERT INTO public.proker (nama, deskripsi, divisi, pj, periode, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, agenda_ids, tugas, evaluasi_hasil, evaluasi_kendala, evaluasi_solusi, evaluasi_lanjut, dokumentasi)
 SELECT * FROM (VALUES
     ('Class Meeting', 'Ajang kompetisi antar kelas: futsal, voli, e-sport, dan pentas seni penutup.', 'Olahraga', 'Rizky Pratama', 2026, '2026-09-01'::date, '2026-09-12'::date, 'Lapangan & Aula', 'Seluruh siswa', 'berjalan', 70, 'Koordinasi dengan kesiswaan untuk izin lapangan.',
      '[]'::jsonb,
      '[{"tugas":"Booking lapangan","pic":"Rizky","deadline":"2026-08-28","status":"selesai"},{"tugas":"Technical meeting perwakilan kelas","pic":"Sinta","deadline":"2026-09-02","status":"selesai"},{"tugas":"Siapkan hadiah & sertifikat","pic":"Dewi","deadline":"2026-09-10","status":"belum"}]'::jsonb,
      '', '', '', '', '[]'::jsonb),
-    ('PESAK � Pentas Seni Antar Kelas', 'Pentas seni tahunan tiap kelas menampilkan kabaret, band, dan tari.', 'Seni', 'Sinta Maharani', 2026, '2026-10-20'::date, '2026-10-22'::date, 'Aula Sekolah', '500 penonton', 'belum_dimulai', 25, 'Audisi tiap kelas dulu sebelum gladi.',
+    ('PESAK ï¿½ Pentas Seni Antar Kelas', 'Pentas seni tahunan tiap kelas menampilkan kabaret, band, dan tari.', 'Seni', 'Sinta Maharani', 2026, '2026-10-20'::date, '2026-10-22'::date, 'Aula Sekolah', '500 penonton', 'belum_dimulai', 25, 'Audisi tiap kelas dulu sebelum gladi.',
      '[]'::jsonb,
      '[{"tugas":"Edarkan juknis ke tiap kelas","pic":"Sinta","deadline":"2026-09-15","status":"belum"}]'::jsonb,
      '', '', '', '', '[]'::jsonb),
@@ -1350,7 +1351,7 @@ SELECT * FROM (VALUES
 
 -- ============ 16. DOKUMEN OSIS (halaman osis/dokumen) ============
 -- Satu baris = satu file arsip. File fisik di bucket osis-foto folder
--- dokumen/ (PDF/DOCX/XLSX/PPTX/ZIP/gambar/dll — upload apa adanya, cuma
+-- dokumen/ (PDF/DOCX/XLSX/PPTX/ZIP/gambar/dll â€” upload apa adanya, cuma
 -- gambar yang dikompres). Kategori: proposal/lpj/surat/sk/notulensi/
 -- administrasi/laporan/lainnya.
 CREATE TABLE IF NOT EXISTS public.osis_dokumen (
@@ -1525,7 +1526,7 @@ BEGIN
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
 
--- Lepas relasi (set NULL) — dipakai saat proker/agenda sumber dihapus
+-- Lepas relasi (set NULL) â€” dipakai saat proker/agenda sumber dihapus
 CREATE OR REPLACE FUNCTION public.lepas_task(p_user_id bigint, p_id bigint, p_field text)
 RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
@@ -1563,7 +1564,7 @@ GRANT EXECUTE ON FUNCTION public.pindah_task(bigint, bigint, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.lepas_task(bigint, bigint, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_task(bigint, bigint) TO anon;
 
--- Seed dummy (cuma kalau tabel masih kosong — kanban langsung hidup).
+-- Seed dummy (cuma kalau tabel masih kosong â€” kanban langsung hidup).
 -- Relasi proker/agenda dikosongkan (hubungkan manual via Edit).
 INSERT INTO public.osis_task (judul, deskripsi, pic, divisi, priority, deadline, status, proker_id, agenda_id, catatan)
 SELECT * FROM (VALUES
@@ -1576,7 +1577,7 @@ SELECT * FROM (VALUES
     ('Booking aula PESAK', 'Sudah DP, tinggal ambil kuitansi.', 'Sinta', 'Seni', 'urgent', '2026-08-28'::date, 'in_progress', NULL::bigint, NULL::bigint, ''),
     ('Buat daftar peserta rapat', 'Absensi + konsumsi 30 orang.', 'Citra', 'Umum', 'low', '2026-09-03'::date, 'done', NULL::bigint, NULL::bigint, ''),
     ('Cetak dokumen rapat', 'Notulensi + lampiran, 5 rangkap.', 'Citra', 'Umum', 'medium', '2026-08-30'::date, 'done', NULL::bigint, NULL::bigint, ''),
-    ('Siapkan perlengkapan kemah', 'Tenda, P3K, HT — cek gudang.', 'Andi', 'BPH', 'high', '2026-07-09'::date, 'done', NULL::bigint, NULL::bigint, '')
+    ('Siapkan perlengkapan kemah', 'Tenda, P3K, HT â€” cek gudang.', 'Andi', 'BPH', 'high', '2026-07-09'::date, 'done', NULL::bigint, NULL::bigint, '')
 ) AS v(judul, deskripsi, pic, divisi, priority, deadline, status, proker_id, agenda_id, catatan)
 WHERE NOT EXISTS (SELECT 1 FROM public.osis_task);
 
@@ -1702,7 +1703,7 @@ ON CONFLICT (periode) DO NOTHING;
 INSERT INTO public.osis_kas (jenis, tanggal, keterangan, kategori, nominal, divisi, pic, proker_id, agenda_id, catatan, bukti_path)
 SELECT * FROM (VALUES
     ('masuk', '2026-09-01'::date, 'Dana kas OSIS September', 'Kas', 500000, 'BPH', 'Andi', NULL::bigint, NULL::bigint, '', ''),
-    ('masuk', '2026-09-02'::date, 'Sponsor Class Meeting — Toko Berkah', 'Sponsorship', 1000000, 'Olahraga', 'Rizky', NULL::bigint, NULL::bigint, '', ''),
+    ('masuk', '2026-09-02'::date, 'Sponsor Class Meeting â€” Toko Berkah', 'Sponsorship', 1000000, 'Olahraga', 'Rizky', NULL::bigint, NULL::bigint, '', ''),
     ('keluar', '2026-09-03'::date, 'Cetak proposal & RAB', 'Administrasi', 75000, 'Olahraga', 'Rizky', NULL::bigint, NULL::bigint, '', ''),
     ('keluar', '2026-09-04'::date, 'Konsumsi rapat pengurus', 'Konsumsi', 120000, 'BPH', 'Sinta', NULL::bigint, NULL::bigint, '30 orang', ''),
     ('masuk', '2026-09-05'::date, 'Donasi alumni', 'Donasi', 750000, 'BPH', 'Andi', NULL::bigint, NULL::bigint, '', ''),
@@ -2075,3 +2076,221 @@ SELECT * FROM (VALUES
      '', 'Jadwal bentrok dengan ujian.', '', '', '', '', '[]'::jsonb, '[]'::jsonb)
 ) AS v(nama_kegiatan, agenda_id, proker_id, tgl_kegiatan, divisi, pj, status, rating_total, r_persiapan, r_pelaksanaan, r_koordinasi, r_waktu, r_anggaran, baik, kendala, penyebab, solusi, perbaiki, rekomendasi, dokumentasi, tugas)
 WHERE NOT EXISTS (SELECT 1 FROM public.osis_evaluasi);
+
+-- ============ 14. ABSENSI PENGURUS (halaman osis/absensi) ============
+-- Mencatat ketidakhadiran (izin/sakit/alpha) + kehadiran (hadir) per tanggal.
+-- Nama pengurus DIKETIK MANUAL (bukan FK ke tabel anggota); daftar anggota
+-- (tabel anggota) hanya dipakai sebagai sumber saran di modal Absen Langsung.
+-- 1 nama = maks 1 record per tanggal (UNIQUE tanggal+lower(nama)) sehingga
+-- satu anggota tidak bisa hadir 2x dan tidak bisa hadir + izin bentrok.
+CREATE TABLE IF NOT EXISTS public.osis_absensi (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tanggal date NOT NULL,
+    nama text NOT NULL DEFAULT '',
+    status text NOT NULL DEFAULT 'izin' CHECK (status IN ('izin','sakit','alpha')),
+    alasan text NOT NULL DEFAULT '',
+    created_by bigint NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+-- MIGRASI dari versi dropdown: buang FK + kolom pengurus_id kalau masih ada.
+ALTER TABLE public.osis_absensi DROP CONSTRAINT IF EXISTS osis_absensi_pengurus_id_fkey;
+ALTER TABLE public.osis_absensi DROP COLUMN IF EXISTS pengurus_id;
+ALTER TABLE public.osis_absensi ADD COLUMN IF NOT EXISTS nama text NOT NULL DEFAULT '';
+-- Nama kegiatan per tanggal (cth: Kumpulan rutin). Satu nilai per hari,
+-- disimpan di tiap baris hari itu, tampil di bawah tanggal.
+ALTER TABLE public.osis_absensi ADD COLUMN IF NOT EXISTS kegiatan text NOT NULL DEFAULT '';
+-- Absen Langsung butuh status 'hadir' di tabel yang sama (tanpa tabel baru).
+-- CHECK lama (izin/sakit/alpha) dilonggarkan; nama constraint bawaan postgres:
+-- osis_absensi_status_check (drop keduanya biar aman di DB lama/baru).
+ALTER TABLE public.osis_absensi DROP CONSTRAINT IF EXISTS osis_absensi_status_check;
+ALTER TABLE public.osis_absensi DROP CONSTRAINT IF EXISTS osis_absensi_status_check1;
+ALTER TABLE public.osis_absensi ADD CONSTRAINT osis_absensi_status_check
+    CHECK (status IN ('izin','sakit','alpha','hadir'));
+DROP INDEX IF EXISTS public.idx_absensi_unik;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_absensi_unik ON public.osis_absensi (tanggal, (lower(nama)));
+CREATE INDEX IF NOT EXISTS idx_absensi_tanggal ON public.osis_absensi (tanggal DESC);
+ALTER TABLE public.osis_absensi ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "absensi_public_select" ON public.osis_absensi;
+CREATE POLICY "absensi_public_select" ON public.osis_absensi FOR SELECT USING (true);
+DROP POLICY IF EXISTS "absensi_public_insert" ON public.osis_absensi;
+-- Tulis cuma lewat RPC SECURITY DEFINER di bawah (cek osis_users).
+
+DROP FUNCTION IF EXISTS public.buat_absensi(bigint, date, bigint, text, text);
+DROP FUNCTION IF EXISTS public.update_absensi(bigint, bigint, date, bigint, text, text);
+DROP FUNCTION IF EXISTS public.buat_absensi(bigint, date, text, text, text);
+DROP FUNCTION IF EXISTS public.update_absensi(bigint, bigint, date, text, text, text);
+CREATE OR REPLACE FUNCTION public.buat_absensi(
+    p_user_id bigint, p_tanggal date, p_nama text, p_status text, p_alasan text,
+    p_kegiatan text DEFAULT ''
+)
+RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE nid bigint;
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF p_tanggal IS NULL THEN RETURN -3; END IF;
+    p_nama := left(btrim(COALESCE(p_nama,'')), 80);
+    IF p_nama = '' THEN RETURN -4; END IF;
+    IF COALESCE(btrim(p_status),'') NOT IN ('izin','sakit','alpha','hadir') THEN RETURN -2; END IF;
+    BEGIN
+        INSERT INTO public.osis_absensi (tanggal, nama, status, alasan, kegiatan, created_by)
+        VALUES (p_tanggal, p_nama, btrim(p_status), left(COALESCE(p_alasan,''),500), left(btrim(COALESCE(p_kegiatan,'')),120), p_user_id)
+        RETURNING id INTO nid;
+        RETURN nid;
+    EXCEPTION WHEN unique_violation THEN
+        RETURN -5;
+    END;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.update_absensi(
+    p_user_id bigint, p_id bigint, p_tanggal date, p_nama text, p_status text, p_alasan text,
+    p_kegiatan text DEFAULT ''
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF p_tanggal IS NULL THEN RETURN 'ERR_NO_TANGGAL'; END IF;
+    p_nama := left(btrim(COALESCE(p_nama,'')), 80);
+    IF p_nama = '' THEN RETURN 'ERR_NO_NAMA'; END IF;
+    IF COALESCE(btrim(p_status),'') NOT IN ('izin','sakit','alpha','hadir') THEN RETURN 'ERR_STATUS'; END IF;
+    BEGIN
+        UPDATE public.osis_absensi SET tanggal=p_tanggal, nama=p_nama,
+            status=btrim(p_status), alasan=left(COALESCE(p_alasan,alasan),500),
+            kegiatan=left(btrim(COALESCE(p_kegiatan,kegiatan,'')),120), updated_at=now() WHERE id=p_id;
+    EXCEPTION WHEN unique_violation THEN
+        RETURN 'ERR_DUPLIKAT';
+    END;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+CREATE OR REPLACE FUNCTION public.hapus_absensi(p_user_id bigint, p_id bigint)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    DELETE FROM public.osis_absensi WHERE id=p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+REVOKE EXECUTE ON FUNCTION public.hapus_absensi(bigint, bigint) FROM public;
+REVOKE EXECUTE ON FUNCTION public.buat_absensi(bigint, date, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.update_absensi(bigint, bigint, date, text, text, text, text) FROM public;
+GRANT EXECUTE ON FUNCTION public.hapus_absensi(bigint, bigint) TO anon;
+GRANT EXECUTE ON FUNCTION public.buat_absensi(bigint, date, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_absensi(bigint, bigint, date, text, text, text, text) TO anon;
+
+-- ============ 15. TABUNGAN PENGURUS (halaman osis/tabungan) ============
+-- Satu baris = satu setoran. Tampil dikelompokkan per orang (satu tabel
+-- per orang), kolom: No | Tanggal | Nominal | Total Semua (running total
+-- per orang, dihitung di client) | Ceklis (boolean, toggle verifikasi).
+CREATE TABLE IF NOT EXISTS public.osis_tabungan (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nama text NOT NULL DEFAULT '',
+    tanggal date NOT NULL,
+    nominal bigint NOT NULL CHECK (nominal > 0),
+    jenis text NOT NULL DEFAULT 'masuk' CHECK (jenis IN ('masuk','keluar')),
+    cek boolean NOT NULL DEFAULT false,
+    created_by bigint NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+-- Migrasi kalau section 15 sempat di-run sebelum kolom jenis ada.
+ALTER TABLE public.osis_tabungan ADD COLUMN IF NOT EXISTS jenis text NOT NULL DEFAULT 'masuk';
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'osis_tabungan_jenis_check') THEN
+        ALTER TABLE public.osis_tabungan ADD CONSTRAINT osis_tabungan_jenis_check CHECK (jenis IN ('masuk','keluar'));
+    END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_tabungan_nama ON public.osis_tabungan ((lower(nama)));
+CREATE INDEX IF NOT EXISTS idx_tabungan_tanggal ON public.osis_tabungan (tanggal DESC);
+ALTER TABLE public.osis_tabungan ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "tabungan_public_select" ON public.osis_tabungan;
+CREATE POLICY "tabungan_public_select" ON public.osis_tabungan FOR SELECT USING (true);
+DROP POLICY IF EXISTS "tabungan_public_insert" ON public.osis_tabungan;
+-- Tulis cuma lewat RPC SECURITY DEFINER di bawah (cek osis_users).
+
+-- Hapus signature lama (tanpa p_jenis) biar ga nyangkut overload.
+DROP FUNCTION IF EXISTS public.buat_tabungan(bigint, text, date, bigint);
+DROP FUNCTION IF EXISTS public.update_tabungan(bigint, bigint, text, date, bigint);
+
+-- Tambah setoran/penarikan, BALIKIN ID barunya (>0). Kode error negatif:
+-- -1 bukan akun OSIS, -3 tanggal kosong, -4 nama kosong, -6 nominal <= 0.
+-- p_jenis: 'masuk' (setoran, +) / 'keluar' (penarikan, -).
+CREATE OR REPLACE FUNCTION public.buat_tabungan(
+    p_user_id bigint, p_nama text, p_tanggal date, p_nominal bigint,
+    p_jenis text DEFAULT 'masuk'
+)
+RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE nid bigint;
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF p_tanggal IS NULL THEN RETURN -3; END IF;
+    p_nama := left(btrim(COALESCE(p_nama,'')), 80);
+    IF p_nama = '' THEN RETURN -4; END IF;
+    IF COALESCE(p_nominal, 0) <= 0 THEN RETURN -6; END IF;
+    p_jenis := COALESCE(NULLIF(btrim(p_jenis),''), 'masuk');
+    IF p_jenis NOT IN ('masuk','keluar') THEN p_jenis := 'masuk'; END IF;
+    INSERT INTO public.osis_tabungan (nama, tanggal, nominal, jenis, created_by)
+    VALUES (p_nama, p_tanggal, p_nominal, p_jenis, p_user_id)
+    RETURNING id INTO nid;
+    RETURN nid;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.update_tabungan(
+    p_user_id bigint, p_id bigint, p_nama text, p_tanggal date, p_nominal bigint,
+    p_jenis text DEFAULT 'masuk'
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF p_tanggal IS NULL THEN RETURN 'ERR_NO_TANGGAL'; END IF;
+    p_nama := left(btrim(COALESCE(p_nama,'')), 80);
+    IF p_nama = '' THEN RETURN 'ERR_NO_NAMA'; END IF;
+    IF COALESCE(p_nominal, 0) <= 0 THEN RETURN 'ERR_NOMINAL'; END IF;
+    p_jenis := COALESCE(NULLIF(btrim(p_jenis),''), 'masuk');
+    IF p_jenis NOT IN ('masuk','keluar') THEN p_jenis := 'masuk'; END IF;
+    UPDATE public.osis_tabungan SET nama=p_nama, tanggal=p_tanggal,
+        nominal=p_nominal, jenis=p_jenis, updated_at=now() WHERE id=p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+-- Toggle ceklis satu setoran (verifikasi). p_cek = true/false.
+CREATE OR REPLACE FUNCTION public.toggle_tabungan_cek(
+    p_user_id bigint, p_id bigint, p_cek boolean
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    UPDATE public.osis_tabungan SET cek=COALESCE(p_cek, NOT cek), updated_at=now() WHERE id=p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+CREATE OR REPLACE FUNCTION public.hapus_tabungan(p_user_id bigint, p_id bigint)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    DELETE FROM public.osis_tabungan WHERE id=p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+REVOKE EXECUTE ON FUNCTION public.buat_tabungan(bigint, text, date, bigint, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.update_tabungan(bigint, bigint, text, date, bigint, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.toggle_tabungan_cek(bigint, bigint, boolean) FROM public;
+REVOKE EXECUTE ON FUNCTION public.hapus_tabungan(bigint, bigint) FROM public;
+GRANT EXECUTE ON FUNCTION public.buat_tabungan(bigint, text, date, bigint, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_tabungan(bigint, bigint, text, date, bigint, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.toggle_tabungan_cek(bigint, bigint, boolean) TO anon;
+GRANT EXECUTE ON FUNCTION public.hapus_tabungan(bigint, bigint) TO anon;

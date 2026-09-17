@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Keuangan OSIS TARPAN ONE</title>
+    <title>Keuangan â€” OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
@@ -110,6 +110,16 @@
       .saldo-hero .rumus .keluar {
         color: #ff9d9d;
         font-weight: 800;
+      }
+      .saldo-hero .rumus button {
+        background: transparent;
+        border: none;
+        color: var(--yellow);
+        font-family: inherit;
+        font-size: 0.72rem;
+        font-weight: 800;
+        cursor: pointer;
+        text-decoration: underline;
       }
       .stat-grid {
         display: grid;
@@ -282,7 +292,7 @@
       .nominal.keluar {
         color: var(--red-dark);
       }
-      /* popup  pola agenda */
+      /* popup â€” pola agenda */
       .kas-form {
         position: fixed;
         inset: 0;
@@ -433,7 +443,7 @@
         object-fit: contain;
         background: #fff;
       }
-      /* OSIS header menu  desktop pill, mobile titik tiga */
+      /* OSIS header menu â€” desktop pill, mobile titik tiga */
       .osis-nav {
         display: flex;
         align-items: center;
@@ -507,16 +517,15 @@
       }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../js/config.js"></script>
-    <script src="../js/db.js" defer></script>
-    <script src="../js/app.js" defer></script>
-    <script src="../js/toast.js" defer></script>
-    <script src="../js/show-popup.js" defer></script>
-    <script src="../js/osis-auth.js" defer></script>
-    <script src="../js/osis-sidebar.js" defer></script>
-    <script src="../js/form-persist.js" defer></script>
-    <script src="../js/keuangan.js" defer></script>
-    <script src="../js/pwa.js" defer></script>
+    <script src="../jsbin/config.js"></script>
+    <script src="../jsbin/db.js" defer></script>
+    <script src="../jsbin/app.js" defer></script>
+    <script src="../jsbin/toast.js" defer></script>
+    <script src="../jsbin/show-popup.js" defer></script>
+    <script src="../jsbin/osis-auth.js" defer></script>
+    <script src="../jsbin/osis-sidebar.js" defer></script>
+    <script src="../jsbin/keuangan.js" defer></script>
+    <script src="../jsbin/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -553,10 +562,16 @@
         <span class="lbl"
           >Saldo Saat Ini <span id="saldoPeriodeLbl"></span
         ></span>
-        <b id="saldoAkhir"></b>
+        <b id="saldoAkhir">â€”</b>
         <div class="rumus">
-          <span class="masuk" id="rumusMasuk">+ </span>
-          <span class="keluar" id="rumusKeluar">- </span>
+          <span
+            >Saldo Awal <span id="saldoAwalVal">â€”</span>
+            <button id="btnSaldoAwal" title="Ubah saldo awal">
+              [ubah]
+            </button></span
+          >
+          <span class="masuk" id="rumusMasuk">+ â€”</span>
+          <span class="keluar" id="rumusKeluar">- â€”</span>
         </div>
       </div>
 
@@ -564,21 +579,21 @@
         <div class="stat-card masuk">
           <span class="lbl"
             ><i class="fa-solid fa-arrow-trend-up"></i> Pemasukan</span
-          ><b id="statMasuk"></b>
+          ><b id="statMasuk">â€”</b>
         </div>
         <div class="stat-card keluar">
           <span class="lbl"
             ><i class="fa-solid fa-arrow-trend-down"></i> Pengeluaran</span
-          ><b id="statKeluar"></b>
+          ><b id="statKeluar">â€”</b>
         </div>
         <div class="stat-card">
           <span class="lbl"><i class="fa-solid fa-list"></i> Transaksi</span
-          ><b id="statCount"></b>
+          ><b id="statCount">â€”</b>
         </div>
         <div class="stat-card">
           <span class="lbl"
             ><i class="fa-solid fa-scale-balanced"></i> Selisih</span
-          ><b id="statSelisih"></b>
+          ><b id="statSelisih">â€”</b>
         </div>
       </div>
 
@@ -781,13 +796,13 @@
           <div class="field">
             <label>Program Kerja</label
             ><select id="kasProker" class="admin-input">
-              <option value="">Tidak ada</option>
+              <option value="">â€” Tidak ada â€”</option>
             </select>
           </div>
           <div class="field">
             <label>Agenda</label
             ><select id="kasAgenda" class="admin-input">
-              <option value="">Tidak ada</option>
+              <option value="">â€” Tidak ada â€”</option>
             </select>
           </div>
         </div>
@@ -806,7 +821,7 @@
             <div class="kas-drop-inner" id="kasDropInner">
               <i class="fa-solid fa-receipt"></i>
               <span>Klik atau drop foto nota ke sini</span>
-              <small>JPG/PNG otomatis kompres &lt;1MB</small>
+              <small>JPG/PNG â€” otomatis kompres &lt;1MB</small>
             </div>
           </div>
           <input type="file" id="kasBukti" accept="image/*" hidden />

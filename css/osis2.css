@@ -1,0 +1,76 @@
+﻿/* =========================================================================
+   OSIS2 - CSS ADMIN SHARED (pengganti <style> inline per halaman)
+   Dipakai semua halaman di osis2/ via: <link rel="stylesheet" href="../css/osis2.css">
+   Tetap butuh ../css/style.css dulu (design system: var(--ink/red/yellow)).
+   Diambil dari pola bersama osis/*.html biar visual tetap sama, tapi rapi.
+   Style khusus per halaman (dash-*, agenda-*, kas-*, dsb) taruh di file
+   halaman masing-masing, JANGAN di sini.
+   ========================================================================= */
+
+.osis-wrap {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.osis-hero {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 4px 4px 0 var(--ink);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.osis-hero h1 { font-size: 1.25rem; font-weight: 900; line-height: 1.1; }
+.osis-hero p { font-size: 0.82rem; color: var(--gray); font-weight: 600; margin-top: 4px; }
+.osis-hero .osis-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+.osis-avatar {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  border: 3px solid var(--ink);
+  background: var(--yellow);
+  display: grid; place-items: center;
+  font-size: 1.4rem; font-weight: 900;
+  box-shadow: 2px 2px 0 var(--ink);
+  flex-shrink: 0; overflow: hidden;
+}
+.osis-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.osis-clock { text-align: right; flex-shrink: 0; }
+.osis-clock b { display: block; font-size: 0.86rem; font-weight: 900; }
+.osis-clock .jam {
+  font-size: 1.3rem; font-weight: 900; color: var(--red);
+  font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; justify-content: flex-end; gap: 5px;
+}
+.osis-clock .jam small { font-size: 0.64rem; font-weight: 800; color: var(--gray); }
+
+.osis-badge {
+  font-size: 0.68rem; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  padding: 4px 10px; border-radius: 999px;
+}
+.osis-badge.red { background: var(--red); color: #fff; }
+
+/* ---- Helper umum admin (dipakai hampir semua halaman) ---- */
+.osis-panel {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 var(--ink);
+  min-width: 0;
+}
+.osis-empty { font-size: 0.8rem; font-weight: 600; color: var(--gray); padding: 10px 2px; }
+.osis-page-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.osis-page-head h2 { font-size: 1.1rem; font-weight: 900; }
+.osis-page-head .spacer { flex: 1; }

@@ -1,0 +1,85 @@
+﻿<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- GANTI: judul per halaman. Contoh: OSIS - Dashboard | Agenda | Anggota ... -->
+    <title>OSIS - [Nama Halaman]</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <!-- CSS shared admin (pengganti duplikat <style> inline di osis/*.html) -->
+    <link rel="stylesheet" href="../css/osis2.css" />
+    <meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <!-- STYLE KHUSUS HALAMAN: taruh di sini kalau ada.
+         Jangan copy .osis-wrap/.osis-hero/dsb, sudah ada di osis2.css.
+    <style>
+      /* ... */
+    </style>
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-sidebar.js" defer></script>
+    <script src="../js/form-persist.js" defer></script>
+    <!-- GANTI: script modul halaman ini. Contoh: dashboard.js / agenda.js / task.js -->
+    <!-- <script src="../js/NAMA-MODUL.js" defer></script> -->
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <!-- GANTI: H2 + P per halaman kalau perlu -->
+          <h2>OSIS</h2>
+          <p>Halaman Khusus</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm" style="display: inline-flex"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="osis-wrap">
+      <!-- Hero standar (opsional, hapus kalau halaman tidak butuh) -->
+      <div class="osis-hero">
+        <div class="osis-avatar">O</div>
+        <div style="flex: 1; min-width: 180px">
+          <!-- GANTI: judul + subjudul halaman -->
+          <h1>[Judul Halaman]</h1>
+          <p>[Deskripsi singkat halaman]</p>
+          <div class="osis-meta"></div>
+        </div>
+      </div>
+
+      <!-- ================= ISI HALAMAN MULAI DI SINI ================= -->
+      <div class="osis-panel">
+        <div class="osis-empty">Konten halaman baru.</div>
+      </div>
+      <!-- ================= ISI HALAMAN SELESAI ================= -->
+    </div>
+
+    <script src="../js/pwa.js" defer></script>
+  </body>
+</html>
