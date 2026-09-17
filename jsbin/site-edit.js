@@ -116,6 +116,15 @@ const SiteEdit = {
         if (typeof Prestasi !== "undefined" && Prestasi.cekLogin) Prestasi.cekLogin();
         if (typeof Kegiatan !== "undefined" && Kegiatan.cekLogin) Kegiatan.cekLogin();
         if (typeof Galeri !== "undefined" && Galeri.cekLogin) Galeri.cekLogin();
+        // Aspirasi & lagu: tombol edit/hapus admin cuma tampil pas edit mode,
+        // jadi daftarnya harus di-render ulang tiap toggle.
+        if (typeof Aspirasi !== "undefined" && Aspirasi.muatPesan) Aspirasi.muatPesan();
+        if (typeof Lagu !== "undefined" && Lagu.muatDaftar) Lagu.muatDaftar();
+        // Keluar edit mode di tengah sesi edit form → batalkan biar form balik normal
+        if (!SiteEdit.active) {
+            if (typeof Aspirasi !== "undefined" && Aspirasi.editingId) Aspirasi.batalEdit();
+            if (typeof Lagu !== "undefined" && Lagu.editingId) Lagu.batalEdit();
+        }
     },
 
     // Save pas selesai ngetik (blur)

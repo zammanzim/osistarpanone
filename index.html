@@ -720,7 +720,7 @@
 
         <div class="aspirasi-grid">
           <div class="form-card">
-            <div class="form-head">Formulir Suara Tarpan</div>
+            <div class="form-head" id="headFormAspirasi">Formulir Suara Tarpan</div>
 
             <div class="field">
               <label>Nama Lengkap</label>
@@ -773,6 +773,14 @@
                 onclick="Aspirasi.kirim()"
               >
                 <i class="fa-solid fa-paper-plane"></i> Kirim Suara Tarpan
+              </button>
+              <button
+                class="btn btn-white"
+                id="btnBatalEditAspirasi"
+                onclick="Aspirasi.batalEdit()"
+                style="display: none"
+              >
+                <i class="fa-solid fa-xmark"></i> Batal
               </button>
             </div>
           </div>
@@ -895,7 +903,7 @@
 
         <div class="kontak-grid">
           <div class="form-card">
-            <div class="form-head">Form Request Lagu</div>
+            <div class="form-head" id="headFormLagu">Form Request Lagu</div>
 
             <div class="field">
               <label>Judul Lagu</label>
@@ -938,6 +946,14 @@
                 onclick="Lagu.kirim()"
               >
                 <i class="fa-solid fa-music"></i> Kirim Request Lagu
+              </button>
+              <button
+                class="btn btn-white"
+                id="btnBatalEditLagu"
+                onclick="Lagu.batalEdit()"
+                style="display: none"
+              >
+                <i class="fa-solid fa-xmark"></i> Batal
               </button>
             </div>
           </div>

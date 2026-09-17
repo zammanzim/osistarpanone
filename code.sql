@@ -421,6 +421,128 @@ BEGIN
     RETURN 'ERR_NOT_FOUND';
 END $$;
 
+-- Edit aspirasi milik sendiri (nama/kelas/isi), cuma bisa dalam 1 jam pertama
+CREATE OR REPLACE FUNCTION public.edit_aspirasi_own(
+    p_device_id text,
+    p_id bigint,
+    p_nama text,
+    p_kelas text,
+    p_isi text
+) RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_device_id IS NULL OR p_device_id = '' THEN
+        RETURN 'ERR_NO_DEVICE';
+    END IF;
+    IF p_isi IS NULL OR btrim(p_isi) = '' THEN
+        RETURN 'ERR_EMPTY';
+    END IF;
+    UPDATE public.aspirasi
+    SET nama = p_nama, kelas = p_kelas, isi = p_isi
+    WHERE id = p_id
+      AND device_id = p_device_id
+      AND created_at > now() - interval '1 hour';
+    IF FOUND THEN
+        RETURN 'OK';
+    END IF;
+    PERFORM 1 FROM public.aspirasi WHERE id = p_id;
+    IF FOUND THEN
+        RETURN 'ERR_EXPIRED';
+    END IF;
+    RETURN 'ERR_FORBIDDEN';
+END $$;
+
+-- Edit request lagu milik sendiri, cuma bisa dalam 1 jam pertama
+CREATE OR REPLACE FUNCTION public.edit_lagu_own(
+    p_device_id text,
+    p_id bigint,
+    p_judul text,
+    p_penyanyi text,
+    p_pesan text,
+    p_nama text
+) RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_device_id IS NULL OR p_device_id = '' THEN
+        RETURN 'ERR_NO_DEVICE';
+    END IF;
+    IF p_judul IS NULL OR btrim(p_judul) = '' THEN
+        RETURN 'ERR_EMPTY';
+    END IF;
+    IF p_penyanyi IS NULL OR btrim(p_penyanyi) = '' THEN
+        RETURN 'ERR_EMPTY';
+    END IF;
+    UPDATE public.lagu_requests
+    SET judul = p_judul, penyanyi = p_penyanyi, pesan = p_pesan, nama = p_nama
+    WHERE id = p_id
+      AND device_id = p_device_id
+      AND created_at > now() - interval '1 hour';
+    IF FOUND THEN
+        RETURN 'OK';
+    END IF;
+    PERFORM 1 FROM public.lagu_requests WHERE id = p_id;
+    IF FOUND THEN
+        RETURN 'ERR_EXPIRED';
+    END IF;
+    RETURN 'ERR_FORBIDDEN';
+END $$;
+
+-- Edit aspirasi oleh OSIS (boleh ubah punya siapa aja, validasi id OSIS)
+CREATE OR REPLACE FUNCTION public.edit_aspirasi_osis(
+    p_user_id bigint,
+    p_id bigint,
+    p_nama text,
+    p_kelas text,
+    p_isi text
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+        RETURN 'ERR_NO_AUTH';
+    END IF;
+    IF p_isi IS NULL OR btrim(p_isi) = '' THEN
+        RETURN 'ERR_EMPTY';
+    END IF;
+    UPDATE public.aspirasi
+    SET nama = p_nama, kelas = p_kelas, isi = p_isi
+    WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
+-- Edit request lagu oleh OSIS (boleh ubah punya siapa aja)
+CREATE OR REPLACE FUNCTION public.edit_lagu_osis(
+    p_user_id bigint,
+    p_id bigint,
+    p_judul text,
+    p_penyanyi text,
+    p_pesan text,
+    p_nama text
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+        RETURN 'ERR_NO_AUTH';
+    END IF;
+    IF p_judul IS NULL OR btrim(p_judul) = '' THEN
+        RETURN 'ERR_EMPTY';
+    END IF;
+    IF p_penyanyi IS NULL OR btrim(p_penyanyi) = '' THEN
+        RETURN 'ERR_EMPTY';
+    END IF;
+    UPDATE public.lagu_requests
+    SET judul = p_judul, penyanyi = p_penyanyi, pesan = p_pesan, nama = p_nama
+    WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
 -- ============ 5. GRANT FUNCTION (anon) ============
 REVOKE EXECUTE ON FUNCTION public.kirim_aspirasi_terbatas(text, text, text, text, boolean, integer) FROM public;
 REVOKE EXECUTE ON FUNCTION public.kirim_lagu_terbatas(text, text, text, text, text, integer) FROM public;
@@ -429,6 +551,10 @@ REVOKE EXECUTE ON FUNCTION public.hapus_aspirasi_own(text, bigint) FROM public;
 REVOKE EXECUTE ON FUNCTION public.hapus_lagu_own(text, bigint) FROM public;
 REVOKE EXECUTE ON FUNCTION public.hapus_aspirasi_osis(bigint, bigint) FROM public;
 REVOKE EXECUTE ON FUNCTION public.hapus_lagu_osis(bigint, bigint) FROM public;
+REVOKE EXECUTE ON FUNCTION public.edit_aspirasi_own(text, bigint, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.edit_lagu_own(text, bigint, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.edit_aspirasi_osis(bigint, bigint, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.edit_lagu_osis(bigint, bigint, text, text, text, text) FROM public;
 GRANT EXECUTE ON FUNCTION public.kirim_aspirasi_terbatas(text, text, text, text, boolean, integer) TO anon;
 GRANT EXECUTE ON FUNCTION public.kirim_lagu_terbatas(text, text, text, text, text, integer) TO anon;
 GRANT EXECUTE ON FUNCTION public.tambah_visitor_unik(text, text, text, text, text, text, text) TO anon;
@@ -436,6 +562,10 @@ GRANT EXECUTE ON FUNCTION public.hapus_aspirasi_own(text, bigint) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_lagu_own(text, bigint) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_aspirasi_osis(bigint, bigint) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_lagu_osis(bigint, bigint) TO anon;
+GRANT EXECUTE ON FUNCTION public.edit_aspirasi_own(text, bigint, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.edit_lagu_own(text, bigint, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.edit_aspirasi_osis(bigint, bigint, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.edit_lagu_osis(bigint, bigint, text, text, text, text) TO anon;
 
 -- ============ 6. TABEL GALLERY (dokumentasi kegiatan) ============
 -- Satu baris = satu kegiatan. `fotos` = jsonb array path foto di bucket.

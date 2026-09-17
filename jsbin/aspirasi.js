@@ -5,6 +5,8 @@
 const Aspirasi = {
     status: "BUKA",
     terinisialisasi: false,
+    cache: [],
+    editingId: null,
 
     async init() {
         if (Aspirasi.terinisialisasi) return;
@@ -22,6 +24,7 @@ const Aspirasi = {
         const render = (data) => {
             const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
             const visible = isOsis ? data : (data || []).filter(p => !p.is_private);
+            Aspirasi.cache = visible || [];
             const jum = document.getElementById("jumPesan");
             if (jum) jum.textContent = visible.length;
             if (!visible || visible.length === 0) {
@@ -49,7 +52,10 @@ const Aspirasi = {
                 const sep = `<div class="pesan-date-sep"><span>${g.display}</span><span class="pesan-date-line"></span></div>`;
                 const items = g.items.map(p => {
                     const own = p.device_id === deviceId && new Date(p.created_at).getTime() > batasHapus;
-                    const canHapus = own || isOsis;
+                    // Admin (OSIS): tombol edit/hapus cuma muncul pas edit mode aktif.
+                    // Pengunjung biasa: tetap seperti dulu (pesan sendiri <1 jam).
+                    const editMode = document.body.classList.contains("edit-mode");
+                    const canKelola = isOsis ? editMode : own;
                     const lock = p.is_private ? `<span title="Private — hanya OSIS" style="color:var(--red);font-size:0.7rem"><i class="fa-solid fa-lock"></i> Private</span>` : "";
                     return `
                 <div class="pesan-item" style="${p.is_private ? "border-style:dashed" : ""}">
@@ -58,7 +64,8 @@ const Aspirasi = {
                         <span class="pesan-kelas">${escapeHtml(p.kelas || "-")}</span>
                         ${lock}
                         <span class="pesan-waktu">${Aspirasi.formatWaktu(p.created_at)}</span>
-                        ${canHapus ? `<button class="hapus-btn" onclick="Aspirasi.hapus(${p.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus pesanku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
+                        ${canKelola ? `<button class="hapus-btn" onclick="Aspirasi.edit(${p.id})" title="${isOsis ? "Edit (OSIS)" : "Edit pesanku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
+                        ${canKelola ? `<button class="hapus-btn" onclick="Aspirasi.hapus(${p.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus pesanku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
                     </div>
                     <p class="pesan-isi">${escapeHtml(p.isi)}</p>
                 </div>`;
@@ -115,6 +122,12 @@ const Aspirasi = {
 
     async kirim() {
         if (Aspirasi.status === "TUTUP") return;
+
+        // Mode edit: tombol kirim berubah jadi simpan perubahan
+        if (Aspirasi.editingId) {
+            await Aspirasi.simpanEdit();
+            return;
+        }
 
         const nama = document.getElementById("namaSiswa").value.trim();
         const kelas = document.getElementById("kelasSiswa").value.trim();
@@ -178,6 +191,111 @@ const Aspirasi = {
             } else {
                 showPopup("Gagal hapus. Cek koneksi lalu coba lagi.", "error");
             }
+        }
+    },
+
+    // ============ EDIT PESAN (pakai form utama di atas, bukan popup) ============
+    // Tombol edit tampil & hilang mengikuti tombol hapus (milik sendiri <1 jam / OSIS).
+    edit(id) {
+        if (Aspirasi.status === "TUTUP") {
+            showToast("Maaf, kotak aspirasi sedang ditutup sementara.", "error");
+            return;
+        }
+        const item = (Aspirasi.cache || []).find(p => String(p.id) === String(id));
+        if (!item) {
+            showToast("Pesan tidak ketemu, muat ulang halamannya dulu.", "error");
+            return;
+        }
+        Aspirasi.editingId = id;
+        document.getElementById("namaSiswa").value = item.nama || "";
+        document.getElementById("kelasSiswa").value = item.kelas || "";
+        document.getElementById("isiAspirasi").value = item.isi || "";
+        // Status private tidak ikut diubah, jadi kunci biar jelas
+        const cb = document.getElementById("isPrivateAspirasi");
+        if (cb) { cb.checked = !!item.is_private; cb.disabled = true; }
+        const btn = document.getElementById("btnKirimAspirasi");
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan';
+        const batal = document.getElementById("btnBatalEditAspirasi");
+        if (batal) batal.style.display = "";
+        const head = document.getElementById("headFormAspirasi");
+        if (head) head.textContent = "Edit Aspirasi";
+        if (head && head.scrollIntoView) head.scrollIntoView({ behavior: "smooth", block: "center" });
+        const isi = document.getElementById("isiAspirasi");
+        if (isi) isi.focus();
+    },
+
+    batalEdit() {
+        Aspirasi.editingId = null;
+        const nama = document.getElementById("namaSiswa"); if (nama) nama.value = "";
+        const kelas = document.getElementById("kelasSiswa"); if (kelas) kelas.value = "";
+        const isi = document.getElementById("isiAspirasi"); if (isi) isi.value = "";
+        const cb = document.getElementById("isPrivateAspirasi"); if (cb) { cb.checked = false; cb.disabled = false; }
+        const btn = document.getElementById("btnKirimAspirasi");
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Suara Tarpan';
+        const batal = document.getElementById("btnBatalEditAspirasi");
+        if (batal) batal.style.display = "none";
+        const head = document.getElementById("headFormAspirasi");
+        if (head) head.textContent = "Formulir Suara Tarpan";
+    },
+
+    async simpanEdit() {
+        const id = Aspirasi.editingId;
+        if (!id) return;
+        const nama = document.getElementById("namaSiswa").value.trim() || "Anonim";
+        const kelas = document.getElementById("kelasSiswa").value.trim() || "-";
+        const isi = document.getElementById("isiAspirasi").value.trim();
+        const btn = document.getElementById("btnKirimAspirasi");
+        if (!isi) {
+            showToast("Isi aspirasi jangan dikosongkan!", "error");
+            return;
+        }
+        const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+        try {
+            if (isOsis) {
+                const u = OsisAuth.getUser();
+                await editAspirasiOsis(u.id, id, nama, kelas, isi);
+            } else {
+                await editAspirasiSendiri(id, nama, kelas, isi);
+            }
+            showToast("Aspirasi berhasil diubah", "success");
+            Aspirasi.batalEdit();
+            Cache.del("aspirasi");
+            Aspirasi.muatPesan();
+            const list = document.getElementById("daftarPesan");
+            if (list && list.scrollIntoView) list.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (err) {
+            console.error(err);
+            if (err.message === "ERR_EXPIRED") {
+                showPopup("Pesan udah lebih dari 1 jam, udah ga bisa diubah.", "error");
+                Aspirasi.batalEdit();
+                Cache.del("aspirasi");
+                Aspirasi.muatPesan();
+            } else if (err.message === "ERR_FORBIDDEN") {
+                showPopup("Ini bukan pesan kamu!", "error");
+                Aspirasi.batalEdit();
+                Cache.del("aspirasi");
+                Aspirasi.muatPesan();
+            } else if (err.message === "ERR_NOT_FOUND") {
+                showPopup("Pesan ini sudah tidak ada.", "error");
+                Aspirasi.batalEdit();
+                Cache.del("aspirasi");
+                Aspirasi.muatPesan();
+            } else if (err.message === "ERR_NO_AUTH") {
+                showPopup("Cuma OSIS yang bisa ubah pesan ini.", "error");
+            } else if (err.message === "ERR_EMPTY") {
+                showToast("Isi aspirasi jangan dikosongkan!", "error");
+            } else if (String(err.message || "").match(/schema cache|does not exist|not found/i)) {
+                showPopup("Fungsi edit belum dipasang di database. Jalankan dulu SQL terbaru (code.sql) di Supabase.", "error");
+            } else {
+                showPopup("Gagal menyimpan. Cek koneksi lalu coba lagi.", "error");
+            }
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = Aspirasi.editingId
+                ? '<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan'
+                : '<i class="fa-solid fa-paper-plane"></i> Kirim Suara Tarpan';
         }
     },
 };

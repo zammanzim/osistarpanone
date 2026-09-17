@@ -16,14 +16,27 @@ const Home = {
         document.addEventListener("keydown", (e) => {
             const active = document.activeElement;
             if (active && (active.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName))) return;
+            // Kunci milik modal teratas: kalau uniPopup / form lain terbuka, mereka yang urus
+            if (document.getElementById("uniOverlay") || (window.ModalNav && ModalNav.adaYangTerbuka())) return;
             if (e.key === "Escape") Home.tutupModal();
             if (e.key === "ArrowLeft") Home.geserModalAktif(-1);
             if (e.key === "ArrowRight") Home.geserModalAktif(1);
         });
-        window.addEventListener("popstate", () => {
+        window.addEventListener("popstate", (e) => {
+            if (e && e.__modalKonsumsi) return;
+            if ((window.__abaikanBack | 0) > 0) {
+                window.__abaikanBack--;
+                if (e) e.__modalKonsumsi = true;
+                return;
+            }
             if (Home.selfBack) {
                 Home.selfBack = false;
                 return;
+            }
+            // Back milik modal teratas: kalau uniPopup / form lain di atas, mereka yang urus
+            if (window.__topModal) {
+                const t = window.__topModal();
+                if (t && t.sys !== "home") return;
             }
             if (document.querySelector(".struktur-modal")) Home.tutupModal(true);
         });
@@ -57,6 +70,7 @@ const Home = {
                     <button class="foto-nav foto-nav-next" type="button" onclick="Home.geserFotoPopup(1)" title="Foto berikutnya"><i class="fa-solid fa-chevron-right"></i></button>` : "";
         const modal = document.createElement("div");
         modal.className = "struktur-modal";
+        try { modal.dataset.seq = String((window.__seqModal = (window.__seqModal || 0) + 1)); } catch (e) {}
         modal.innerHTML = `
             <div class="struktur-modal-bg"></div>
             <div class="struktur-modal-box foto-only">
@@ -272,6 +286,7 @@ const Home = {
 
         const modal = document.createElement("div");
         modal.className = tanpaAnimasi ? "struktur-modal no-anim" : "struktur-modal";
+        try { modal.dataset.seq = String((window.__seqModal = (window.__seqModal || 0) + 1)); } catch (e) {}
         // simpan tahun di dataset modal biar auto-save tau konteksnya
         modal.dataset.tahun = String(tahun);
         modal.innerHTML = `

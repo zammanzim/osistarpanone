@@ -405,6 +405,58 @@ async function hapusLaguOsis(userId, id) {
     if (data !== "OK") throw new Error(data);
 }
 
+// Edit aspirasi milik sendiri (device_id + 1 jam dicek di server)
+async function editAspirasiSendiri(id, nama, kelas, isi) {
+    const { data, error } = await supa.rpc("edit_aspirasi_own", {
+        p_device_id: getDeviceId(),
+        p_id: id,
+        p_nama: nama,
+        p_kelas: kelas,
+        p_isi: isi
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+}
+
+// Edit request lagu milik sendiri (device_id + 1 jam dicek di server)
+async function editLaguSendiri(id, judul, penyanyi, pesan, nama) {
+    const { data, error } = await supa.rpc("edit_lagu_own", {
+        p_device_id: getDeviceId(),
+        p_id: id,
+        p_judul: judul,
+        p_penyanyi: penyanyi,
+        p_pesan: pesan,
+        p_nama: nama
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+}
+
+// Edit aspirasi/lagu oleh OSIS (boleh ubah punya siapa aja)
+async function editAspirasiOsis(userId, id, nama, kelas, isi) {
+    const { data, error } = await supa.rpc("edit_aspirasi_osis", {
+        p_user_id: userId,
+        p_id: id,
+        p_nama: nama,
+        p_kelas: kelas,
+        p_isi: isi
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+}
+async function editLaguOsis(userId, id, judul, penyanyi, pesan, nama) {
+    const { data, error } = await supa.rpc("edit_lagu_osis", {
+        p_user_id: userId,
+        p_id: id,
+        p_judul: judul,
+        p_penyanyi: penyanyi,
+        p_pesan: pesan,
+        p_nama: nama
+    });
+    if (error) throw error;
+    if (data !== "OK") throw new Error(data);
+}
+
 // =========================================================================
 // PRESTASI — home (DB-driven, multi-foto, display_order)
 // =========================================================================
