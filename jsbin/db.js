@@ -901,7 +901,7 @@ async function kirimRespons(formId, jawaban, userId) {
 async function getAgendaBySekbid(sekbidId) {
     const { data, error } = await supa
         .from("sekbid_agenda")
-        .select("id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, created_at")
+        .select("id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, created_at")
         .eq("sekbid_id", sekbidId)
         .order("display_order", { ascending: true })
         .order("tanggal", { ascending: false })
@@ -912,15 +912,15 @@ async function getAgendaBySekbid(sekbidId) {
 async function getAllAgenda() {
     const { data, error } = await supa
         .from("sekbid_agenda")
-        .select("id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, created_at")
+        .select("id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, created_at")
         .order("tanggal", { ascending: false })
         .order("display_order", { ascending: true });
     if (error) throw error;
     return data || [];
 }
-async function buatAgenda(userId, sekbidId, judul, deskripsi, tanggal, lokasi, status, fotos, order = 99) {
+async function buatAgenda(userId, sekbidId, judul, deskripsi, tanggal, lokasi, status, fotos, order = 99, pelaksana = "") {
     const { data, error } = await supa.rpc("buat_agenda", {
-        p_user_id: userId, p_sekbid_id: sekbidId, p_judul: judul, p_deskripsi: deskripsi, p_tanggal: tanggal, p_lokasi: lokasi, p_status: status, p_fotos: fotos, p_display_order: order
+        p_user_id: userId, p_sekbid_id: sekbidId, p_judul: judul, p_deskripsi: deskripsi, p_tanggal: tanggal, p_lokasi: lokasi, p_status: status, p_fotos: fotos, p_display_order: order, p_pelaksana: pelaksana || ""
     });
     if (error) throw error;
     if (data <= 0) throw new Error(String(data));
@@ -928,9 +928,9 @@ async function buatAgenda(userId, sekbidId, judul, deskripsi, tanggal, lokasi, s
     Cache.del("agenda_all");
     return data;
 }
-async function updateAgenda(userId, id, judul, deskripsi, tanggal, lokasi, status, fotos, order) {
+async function updateAgenda(userId, id, judul, deskripsi, tanggal, lokasi, status, fotos, order, pelaksana = "") {
     const { data, error } = await supa.rpc("update_agenda", {
-        p_user_id: userId, p_id: id, p_judul: judul, p_deskripsi: deskripsi, p_tanggal: tanggal, p_lokasi: lokasi, p_status: status, p_fotos: fotos, p_display_order: order
+        p_user_id: userId, p_id: id, p_judul: judul, p_deskripsi: deskripsi, p_tanggal: tanggal, p_lokasi: lokasi, p_status: status, p_fotos: fotos, p_display_order: order, p_pelaksana: pelaksana || ""
     });
     if (error) throw error;
     if (data !== "OK") throw new Error(data);

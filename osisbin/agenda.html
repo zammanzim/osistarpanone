@@ -39,6 +39,186 @@
         flex: 1;
         min-width: 160px;
       }
+      /* Statistik + tab tipe + filter status */
+      .agenda-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .astat {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+        padding: 10px 8px;
+        text-align: center;
+      }
+      .astat b {
+        display: block;
+        font-size: 1.35rem;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .astat span {
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--gray);
+      }
+      .astat.total b { color: var(--ink); }
+      .astat.bulan b { color: #b8860b; }
+      .astat.sekbid b { color: var(--red); }
+      .astat.orang b { color: #1c7a1c; }
+      @media (max-width: 480px) {
+        .agenda-stats { grid-template-columns: repeat(2, 1fr); }
+      }
+      .agenda-tabs-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .agenda-tabs {
+        display: inline-flex;
+        background: var(--paper-2);
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        padding: 4px;
+        gap: 4px;
+      }
+      .atab {
+        border: none;
+        background: transparent;
+        border-radius: 999px;
+        padding: 8px 16px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--gray);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: inherit;
+      }
+      .atab.active {
+        background: var(--red);
+        color: #fff;
+        box-shadow: 2px 2px 0 var(--ink);
+      }
+      /* Grup per sekbid / per orang */
+      .agenda-grup {
+        margin-bottom: 18px;
+      }
+      .agenda-grup-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      .agenda-grup-head h3 {
+        font-size: 1rem;
+        font-weight: 900;
+      }
+      .agenda-grup-count {
+        background: var(--red);
+        color: #fff;
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 2px 10px;
+        box-shadow: 2px 2px 0 var(--ink);
+      }
+      .pelaksana-chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .pchip {
+        background: var(--paper-2);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 3px 10px;
+      }
+      .pchip b { color: var(--red); }
+      /* Podium per orang */
+      .podium {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .podium-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+        padding: 12px 8px;
+        text-align: center;
+        position: relative;
+      }
+      .podium-card.juara1 {
+        background: #fff7d6;
+        border-color: var(--ink);
+        transform: scale(1.04);
+      }
+      .podium-medal {
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+      .podium-card b {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 900;
+        margin-top: 6px;
+        overflow-wrap: anywhere;
+      }
+      .podium-card span {
+        font-size: 0.66rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+      .podium-card .podium-total {
+        display: inline-block;
+        margin-top: 6px;
+        background: var(--ink);
+        color: #fff;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 2px 10px;
+      }
+      @media (max-width: 480px) {
+        .podium-card b { font-size: 0.72rem; }
+      }
+      .agenda-pelaksana {
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: var(--ink);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 2px 0 6px;
+      }
+      .agenda-pelaksana i { color: var(--red); }
+      .agenda-sekbid-tag {
+        display: inline-block;
+        background: var(--paper-2);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        font-size: 0.64rem;
+        font-weight: 800;
+        padding: 2px 10px;
+        margin-bottom: 6px;
+      }
       .agenda-form {
         position: fixed;
         inset: 0;
@@ -159,25 +339,6 @@
         flex-wrap: wrap;
         margin: 4px 0 8px;
       }
-      .agenda-status {
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-size: 0.68rem;
-        font-weight: 800;
-        border: 1.5px solid var(--ink);
-      }
-      .agenda-status.rencana {
-        background: var(--yellow);
-      }
-      .agenda-status.proses {
-        background: #ffd6a5;
-      }
-      .agenda-status.selesai {
-        background: #d6f5d6;
-      }
-      .agenda-status.batal {
-        background: #ffe9e9;
-      }
       .agenda-fotos {
         display: flex;
         gap: 8px;
@@ -287,7 +448,7 @@
         <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
         <div class="brand-text">
           <h2>AGENDA</h2>
-          <p>Kelola per Sekbid</p>
+          <p>Per Sekbid &amp; Per Orang</p>
         </div>
       </a>
       
@@ -301,15 +462,30 @@
     </header>
 
     <div class="agenda-admin-wrap">
+      <!-- Statistik ringkas -->
+      <div class="agenda-stats" id="agendaStats"></div>
+
+      <!-- Tipe tampilan: per sekbid / per orang -->
+      <div class="agenda-tabs-row">
+        <div class="agenda-tabs" id="agendaTabs">
+          <button type="button" class="atab active" data-atab="sekbid">
+            <i class="fa-solid fa-folder-open"></i> Per Sekbid
+          </button>
+          <button type="button" class="atab" data-atab="orang">
+            <i class="fa-solid fa-user"></i> Per Orang
+          </button>
+        </div>
+        <button class="btn btn-red" id="btnTambahAgenda">
+          <i class="fa-solid fa-plus"></i> Tambah Agenda
+        </button>
+      </div>
+
       <div class="agenda-toolbar">
         <select
           id="pilihSekbid"
           class="admin-input"
           style="max-width: 280px"
         ></select>
-        <button class="btn btn-red" id="btnTambahAgenda">
-          <i class="fa-solid fa-plus"></i> Tambah Agenda
-        </button>
       </div>
 
       <div class="agenda-form" id="agendaForm">
@@ -341,6 +517,10 @@
             >
               <i class="fa-solid fa-xmark"></i>
             </button>
+          </div>
+          <div class="field">
+            <label>Sekbid</label
+            ><select id="agendaSekbid" class="admin-input"></select>
           </div>
           <div class="field">
             <label>Judul</label
@@ -378,27 +558,29 @@
               />
             </div>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-            <div class="field">
-              <label>Status</label
-              ><select id="agendaStatus" class="admin-input">
-                <option value="rencana">Rencana</option>
-                <option value="proses">Proses</option>
-                <option value="selesai" selected>Selesai</option>
-                <option value="batal">Batal</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Urutan</label
-              ><input
-                type="number"
-                id="agendaOrder"
-                class="admin-input"
-                value="99"
-                min="1"
-                max="999"
-              />
-            </div>
+          <div class="field">
+            <label>Urutan</label
+            ><input
+              type="number"
+              id="agendaOrder"
+              class="admin-input"
+              value="99"
+              min="1"
+              max="999"
+            />
+          </div>
+          <div class="field">
+            <label>Pelaksana (per orang)</label
+            ><input
+              type="text"
+              id="agendaPelaksana"
+              class="admin-input"
+              placeholder="Nama yang ngerjain — cth: Nizam"
+              maxlength="60"
+              list="pelaksanaList"
+              autocomplete="off"
+            />
+            <datalist id="pelaksanaList"></datalist>
           </div>
           <div class="field">
             <label>Foto (opsional, bisa banyak)</label>

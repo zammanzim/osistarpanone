@@ -656,14 +656,6 @@
               sini.
             </p>
           </div>
-          <button
-            class="btn btn-red"
-            id="btnBukaUpload"
-            onclick="Galeri.buatDraft()"
-            style="display: none"
-          >
-            <i class="fa-solid fa-plus"></i> Tambah
-          </button>
         </div>
 
         <!-- Editor inline (cuma muncul kalo login sbg OSIS, klik tombol +) -->
@@ -680,6 +672,17 @@
           style="display: none"
         />
       </div>
+      <!-- FAB tambah galeri (cuma OSIS): di dalam view biar ikut sembunyi pas pindah halaman -->
+      <button
+        class="gal-fab"
+        id="btnBukaUpload"
+        onclick="Galeri.buatDraft()"
+        style="display: none"
+        title="Tambah galeri"
+        aria-label="Tambah galeri"
+      >
+        <i class="fa-solid fa-plus"></i>
+      </button>
     </section>
 
     <!-- ============================================================

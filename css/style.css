@@ -1286,6 +1286,42 @@ img {
 }
 
 /* ============================================================
+   GALERI — FAB tambah (pojok kanan bawah, di atas bottom-nav)
+   ============================================================ */
+.gal-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 96px;
+  z-index: 95;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  font-size: 1.35rem;
+  color: #fff;
+  background: var(--red);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.gal-fab:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.gal-fab:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+@media (min-width: 1024px) {
+  .gal-fab {
+    right: 28px;
+    bottom: 104px;
+  }
+}
+
+/* ============================================================
    KEGIATAN (BENTO)
    ============================================================ */
 .kegiatan {
