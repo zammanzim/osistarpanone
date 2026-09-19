@@ -70,6 +70,8 @@ const Login = {
         if (pw !== user.password) return Login.tampilError("Password salah, coba lagi!");
 
         OsisAuth.loginOsis(user);
+        // Muat hak kendali sebelum masuk (biar tombol aksi langsung benar)
+        try { await OsisAuth.refreshAkses(); } catch {}
         location.replace(Login.back);
     },
 

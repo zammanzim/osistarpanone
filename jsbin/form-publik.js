@@ -218,6 +218,42 @@ const FormPublik = {
             }
         }
 
+        const __specPub = () => {
+            const files = [];
+            const jab = Object.assign({}, jawaban);
+            FormPublik.questions.forEach(q => {
+                if (q.tipe !== "file" || !FormPublik.files[q.key]) return;
+                const fl = FormPublik.files[q.key];
+                files.push({ slot: q.key, file: fl, name: fl.name, type: fl.type });
+                jab[q.key] = { nama: fl.name, ukuran: fl.size || 0 };
+            });
+            const keyKeId = {};
+            FormPublik.questions.forEach(q => { keyKeId[q.key] = q.id || q.key; });
+            const multi = f.settings ? f.settings.multi_isi !== false : true;
+            return { modul: "formrespons", op: "create",
+                label: "Respons: " + String(f.judul || "formulir").slice(0, 42),
+                payload: { formId: f.id, jawaban: jab, keyKeId, userId: null,
+                    flagKey: !multi ? ("form_isi_" + f.id) : "" },
+                files, cacheKeys: ["formulir"] };
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            const multi0 = f.settings ? f.settings.multi_isi !== false : true;
+            if (!multi0) {
+                try {
+                    if (localStorage.getItem("form_isi_" + f.id)) {
+                        showToast("Kamu sudah mengisi form ini (1x saja).", "error");
+                        return;
+                    }
+                } catch {}
+            }
+            try { await Outbox.enqueue(__specPub()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(() => {
+                document.getElementById("pubBody").innerHTML = `<div class="fcard" style="text-align:center; padding:30px 18px"><div style="font-size:2.4rem"><i class="fa-solid fa-cloud-arrow-up"></i></div><h3 style="font-size:1rem; font-weight:900; margin-top:8px">Masuk antrean!</h3><p style="font-size:.84rem; color:var(--gray); font-weight:600">Kamu offline. Jawaban tersimpan di HP dan terkirim otomatis saat online.</p></div>`;
+                const b0 = document.getElementById("btnPubKirim"); if (b0) b0.style.display = "none";
+            });
+            return;
+        }
+
         const btn = document.getElementById("btnPubKirim");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...'; }
         try {
@@ -252,6 +288,13 @@ const FormPublik = {
             if (btn) btn.style.display = "none";
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specPub())) {
+                Outbox.sesudahAntre(() => {
+                    document.getElementById("pubBody").innerHTML = `<div class="fcard" style="text-align:center; padding:30px 18px"><div style="font-size:2.4rem"><i class="fa-solid fa-cloud-arrow-up"></i></div><h3 style="font-size:1rem; font-weight:900; margin-top:8px">Masuk antrean!</h3><p style="font-size:.84rem; color:var(--gray); font-weight:600">Koneksi putus. Jawaban tersimpan di HP dan terkirim otomatis saat online.</p></div>`;
+                    const b0 = document.getElementById("btnPubKirim"); if (b0) b0.style.display = "none";
+                });
+                return;
+            }
             const code = String(err.message || "");
             if (code.includes("-2")) FormPublik.gagal("Formulir sudah ditutup.");
             else if (code.includes("-3")) FormPublik.gagal("Kuota respons sudah penuh.");

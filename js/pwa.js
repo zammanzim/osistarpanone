@@ -15,8 +15,9 @@
   function daftarSW() {
     if (!("serviceWorker" in navigator)) return;
     if (!/^https?:$/.test(location.protocol)) return; // file:// tidak dukung SW
-    var diOsis = location.pathname.replace(/\\/g, "/").indexOf("/osis/") !== -1;
-    var swUrl = diOsis ? "../sw.js" : "sw.js";
+    var pathBersih = location.pathname.replace(/\\/g, "/");
+    var diSub = /(^|\/)(osis|osisbin)\//.test(pathBersih);
+    var swUrl = diSub ? "../sw.js" : "sw.js";
 
     navigator.serviceWorker
       .register(swUrl)
@@ -104,10 +105,33 @@
     else document.addEventListener("DOMContentLoaded", fn);
   }
 
+  // ---- 3) Outbox offline — muat sibling js/outbox.js (1 file untuk js+jsbin) ----
+  function muatOutbox() {
+    try {
+      if (document.querySelector('script[data-outbox]')) return;
+      var dalamSub = location.pathname.split("/").filter(Boolean).length > 1;
+      var s = document.createElement("script");
+      s.src = (dalamSub ? "../" : "") + "js/outbox.js";
+      s.setAttribute("data-outbox", "1");
+      document.head.appendChild(s);
+    } catch (e) {}
+  }
+
+  // Pesan dari SW (Background Sync) — teruskan ke Outbox bila sudah termuat.
+  try {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", function (e) {
+        if (e && e.data === "OUTBOX_SYNC" && typeof Outbox !== "undefined")
+          Outbox.processQueue({ silent: true });
+      });
+    }
+  } catch (e) {}
+
   onReady(function () {
     daftarSW();
     buatTombol();
     hintIOS();
+    muatOutbox();
   });
 
   window.addEventListener("beforeinstallprompt", function (e) {

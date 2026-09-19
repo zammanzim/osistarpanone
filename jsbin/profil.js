@@ -176,6 +176,26 @@ const Profil = {
         const nama = document.getElementById("profilNama").value.trim();
         const bio = document.getElementById("profilBio").value.trim();
         if (!nama) { showToast("Nama wajib diisi", "error"); return; }
+        const __specProf = () => {
+            const pf = Profil.pendingFile;
+            return { modul: "profil", op: "update",
+                label: "Profil: " + String(nama).slice(0, 42),
+                payload: { nama, bio, fotoExist: Profil.fotoPath || "",
+                    fotoDihapus: !!Profil.fotoDihapus },
+                files: pf ? [{ slot: "foto", file: pf, name: pf.name, type: pf.type }] : [],
+                cacheKeys: [] };
+        };
+        const __sesudahAntreProf = () => {
+            Profil.pendingFile = null;
+            Profil.fotoDihapus = false;
+            Profil._revokePendingUrl();
+            Profil.renderFoto();
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__specProf()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntreProf);
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanProfil");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -207,6 +227,10 @@ const Profil = {
             showToast("Profil diperbarui!", "success");
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specProf())) {
+                Outbox.sesudahAntre(__sesudahAntreProf);
+                return;
+            }
             showToast(Profil._pesanError(err, {
                 "ERR_NO_NAMA": "Nama wajib diisi",
                 "ERR_NO_AUTH": "Sesi habis, login ulang ya"

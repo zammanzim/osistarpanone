@@ -557,6 +557,21 @@ const Evaluasi = {
         const f = Evaluasi.kumpulkanForm();
         const id = document.getElementById("evId").value ? parseInt(document.getElementById("evId").value, 10) : null;
         if (!f.nama_kegiatan) { showToast("Nama kegiatan wajib diisi", "error"); return; }
+        const __spec = () => {
+            const { dokumentasi, ...rest } = f;
+            return { modul: "evaluasi", op: id ? "update" : "create",
+                label: "Evaluasi: " + String(f.nama_kegiatan).slice(0, 42),
+                payload: { id: id || null, f: rest, existing: [...(Evaluasi.existingDok || [])] },
+                files: (Evaluasi.pendingFiles || []).filter(fl => fl.type && fl.type.startsWith("image/"))
+                    .map((fl, i) => ({ slot: "dok" + i, file: fl, name: fl.name, type: fl.type })),
+                cacheKeys: ["evaluasi"] };
+        };
+        const __sesudahAntre = () => { Evaluasi.tutupForm(); };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanEvaluasi");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -584,6 +599,10 @@ const Evaluasi = {
             await Evaluasi.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Evaluasi'; }

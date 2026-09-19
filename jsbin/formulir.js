@@ -533,6 +533,17 @@ const Formulir = {
         if (!u || u.mode !== "osis") return null;
         const data = Formulir.kumpulkanBuilder();
         if (!data.judul.trim()) { showToast("Judul formulir wajib diisi", "error"); return null; }
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try {
+                await Outbox.enqueue({ modul: "formbuilder", op: data.id ? "update" : "create",
+                    label: "Formulir: " + String(data.judul).slice(0, 42),
+                    payload: { id: data.id ?? null, judul: data.judul, deskripsi: data.deskripsi,
+                        status: data.status, settings: data.settings, pertanyaan: data.questions },
+                    files: [], cacheKeys: ["formulir"] });
+            } catch (e) { showToast(e.message, "error"); return null; }
+            Outbox.toastAntre();
+            return data.id ?? null;
+        }
         try {
             const id = await simpanFormulir(u.id, data.id, data.judul, data.deskripsi, data.status, data.settings, data.questions);
             Formulir.builder.id = id;
@@ -881,6 +892,45 @@ const Formulir = {
             return;
         }
 
+        const __specIsi = () => {
+            const files = [];
+            const jab = Object.assign({}, jawaban);
+            isi.questions.forEach(q => {
+                if (q.tipe !== "file" || !isi.files[q.key]) return;
+                const fl = isi.files[q.key];
+                files.push({ slot: q.key, file: fl, name: fl.name, type: fl.type });
+                jab[q.key] = { nama: fl.name, ukuran: fl.size || 0 };
+            });
+            const keyKeId = {};
+            isi.questions.forEach(q => { keyKeId[q.key] = q.id || q.key; });
+            const multi = isi.form.settings ? isi.form.settings.multi_isi !== false : true;
+            return { modul: "formrespons", op: "create",
+                label: "Respons: " + String(isi.form.judul || "formulir").slice(0, 42),
+                payload: { formId: isi.form.id, jawaban: jab, keyKeId,
+                    userId: (u && u.mode === "osis") ? u.id : null,
+                    flagKey: !multi ? ("form_isi_" + isi.form.id) : "" },
+                files, cacheKeys: ["formulir"] };
+        };
+        const __sesudahAntreIsi = () => {
+            const pesan = (isi.form.settings && isi.form.settings.pesan_sukses) || "Terima kasih, respons kamu telah berhasil dikirim.";
+            document.getElementById("isiBody").innerHTML = `<div class="fcard" style="text-align:center; padding:30px 18px"><div style="font-size:2.4rem"><i class="fa-solid fa-cloud-arrow-up"></i></div><h3 style="justify-content:center; margin-top:8px">Masuk antrean!</h3><p class="sub">Kamu offline. ${escapeHtml(pesan)}<br><small style="color:var(--gray)">Terkirim otomatis saat online.</small></p></div>`;
+            const b0 = document.getElementById("btnKirimIsi"); if (b0) b0.style.display = "none";
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            const multi0 = isi.form.settings ? isi.form.settings.multi_isi !== false : true;
+            if (!multi0) {
+                try {
+                    if (localStorage.getItem("form_isi_" + isi.form.id)) {
+                        showToast("Kamu sudah mengisi form ini (1x saja).", "error");
+                        return;
+                    }
+                } catch {}
+            }
+            try { await Outbox.enqueue(__specIsi()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntreIsi);
+            return;
+        }
+
         const btn = document.getElementById("btnKirimIsi");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...'; }
         try {
@@ -920,6 +970,10 @@ const Formulir = {
             if (btn) btn.style.display = "none";
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specIsi())) {
+                Outbox.sesudahAntre(__sesudahAntreIsi);
+                return;
+            }
             const code = String(err.message || "");
             if (code.includes("-2")) showPopup("Formulir sudah ditutup.", "error");
             else if (code.includes("-3")) showPopup("Kuota respons sudah penuh.", "error");

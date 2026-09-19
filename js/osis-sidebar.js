@@ -1,58 +1,75 @@
 ﻿// =========================================================================
-// OSIS SIDEBAR â€” drawer kiri pengganti pil nav di header (folder /osis/*)
+// OSIS SIDEBAR - drawer kiri pengganti pil nav di header (folder /osis/*)
 // Disuntik otomatis: tombol hamburger + backdrop + drawer. Satu file untuk
 // semua halaman OSIS, jadi nambah halaman baru tidak perlu utak-atik header.
 // Tambah menu baru: tinggal tambah 1 entri di OsisSidebar.MENU.
 // =========================================================================
 
 const OsisSidebar = {
-    // Tambah menu baru kalau halaman baru udah dibikin:
-    // tinggal tambah 1 baris ["nama-file-tanpa-html", "Judul", "fa-icon"].
-    // cth: ["agenda", "Agenda", "fa-solid fa-calendar-days"],
-    MENU: [
-        ["absensi", "Absensi", "fa-solid fa-clipboard-user"],
-        ["tabungan", "Tabungan", "fa-solid fa-piggy-bank"],
-        ["keuangan", "Keuangan", "fa-solid fa-wallet"]
-    ],
+  // Tambah menu baru kalau halaman baru udah dibikin:
+  // tinggal tambah 1 baris ["nama-file-tanpa-html", "Judul", "fa-icon"].
+  // cth: ["agenda", "Agenda", "fa-solid fa-calendar-days"],
+  MENU: [
+    ["index", "Dashboard", "fa-solid fa-grip"],
+    ["absensi", "Absensi", "fa-solid fa-clipboard-user"],
+    ["tabungan", "Tabungan", "fa-solid fa-piggy-bank"],
+    ["keuangan", "Keuangan", "fa-solid fa-wallet"],
+    ["agenda", "Agenda", "fa-solid fa-calendar-days"],
+    ["dokumen", "Dokumen", "fa-solid fa-folder-open"],
+    ["akses", "Akses", "fa-solid fa-key", "super"],
+  ],
 
-    toggle() {
-        const sb = document.getElementById("osisSidebar");
-        if (!sb) return;
-        sb.classList.contains("open") ? OsisSidebar.close() : OsisSidebar.open();
-    },
+  // Entri bertanda "super" (mis. Akses) cuma tampil untuk super_admin.
+  menuTampil() {
+    const superUser =
+      typeof OsisAuth !== "undefined" && OsisAuth.isSuper && OsisAuth.isSuper();
+    return OsisSidebar.MENU.filter((m) => !m[3] || (m[3] === "super" && superUser));
+  },
 
-    open() {
-        document.getElementById("osisSidebar")?.classList.add("open");
-        document.getElementById("osisSidebarBg")?.classList.add("open");
-        document.body.style.overflow = "hidden";
-    },
+  toggle() {
+    const sb = document.getElementById("osisSidebar");
+    if (!sb) return;
+    sb.classList.contains("open") ? OsisSidebar.close() : OsisSidebar.open();
+  },
 
-    close() {
-        document.getElementById("osisSidebar")?.classList.remove("open");
-        document.getElementById("osisSidebarBg")?.classList.remove("open");
-        // balikin scroll kecuali ada popup form yang masih kebuka
-        if (!document.querySelector(".agenda-form.open, .notulensi-form.open, .proker-form.open, .dokumen-form.open, .task-form.open, .kas-form.open, .evaluasi-form.open, .angg-popup.open")) {
-            document.body.style.overflow = "";
-        }
-    },
+  open() {
+    document.getElementById("osisSidebar")?.classList.add("open");
+    document.getElementById("osisSidebarBg")?.classList.add("open");
+    document.body.style.overflow = "hidden";
+  },
 
-    halamanAktif() {
-        const seg = (location.pathname.split("/").pop() || "index").toLowerCase().replace(/\.html?$/, "");
-        return seg || "index";
-    },
+  close() {
+    document.getElementById("osisSidebar")?.classList.remove("open");
+    document.getElementById("osisSidebarBg")?.classList.remove("open");
+    // balikin scroll kecuali ada popup form yang masih kebuka
+    if (
+      !document.querySelector(
+        ".agenda-form.open, .notulensi-form.open, .proker-form.open, .dokumen-form.open, .task-form.open, .kas-form.open, .evaluasi-form.open, .angg-popup.open",
+      )
+    ) {
+      document.body.style.overflow = "";
+    }
+  },
 
-    pasang() {
-        if (document.getElementById("osisSidebar")) return;
+  halamanAktif() {
+    const seg = (location.pathname.split("/").pop() || "index")
+      .toLowerCase()
+      .replace(/\.html?$/, "");
+    return seg || "index";
+  },
 
-        // buang sisa pil nav / titik-tiga lama kalau masih ada di markup
-        document.getElementById("osisNav")?.remove();
-        document.getElementById("osisMoreWrap")?.remove();
+  pasang() {
+    if (document.getElementById("osisSidebar")) return;
 
-        // CSS drawer (sekali, ikut design system)
-        if (!document.getElementById("osisSidebarStyle")) {
-            const st = document.createElement("style");
-            st.id = "osisSidebarStyle";
-            st.textContent = `
+    // buang sisa pil nav / titik-tiga lama kalau masih ada di markup
+    document.getElementById("osisNav")?.remove();
+    document.getElementById("osisMoreWrap")?.remove();
+
+    // CSS drawer (sekali, ikut design system)
+    if (!document.getElementById("osisSidebarStyle")) {
+      const st = document.createElement("style");
+      st.id = "osisSidebarStyle";
+      st.textContent = `
                 #osisSideBtn { flex-shrink: 0; }
                 .osis-sidebar-bg { position: fixed; inset: 0; background: rgba(15,10,11,.55); z-index: 290; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility .2s ease; }
                 .osis-sidebar-bg.open { opacity: 1; visibility: visible; pointer-events: auto; }
@@ -78,65 +95,90 @@ const OsisSidebar = {
                     body.osis-side-static #osisSideClose { display: none; }
                 }
             `;
-            document.head.appendChild(st);
-        }
+      document.head.appendChild(st);
+    }
 
-        // tombol hamburger di kiri header
-        const header = document.querySelector("header.top-nav");
-        if (header && !document.getElementById("osisSideBtn")) {
-            const btn = document.createElement("button");
-            btn.className = "icon-btn";
-            btn.id = "osisSideBtn";
-            btn.title = "Menu OSIS";
-            btn.innerHTML = '<i class="fa-solid fa-bars"></i>';
-            btn.addEventListener("click", () => OsisSidebar.toggle());
-            header.prepend(btn);
-        }
+    // tombol hamburger di kiri header
+    const header = document.querySelector("header.top-nav");
+    if (header && !document.getElementById("osisSideBtn")) {
+      const btn = document.createElement("button");
+      btn.className = "icon-btn";
+      btn.id = "osisSideBtn";
+      btn.title = "Menu OSIS";
+      btn.innerHTML = '<i class="fa-solid fa-bars"></i>';
+      btn.addEventListener("click", () => OsisSidebar.toggle());
+      header.prepend(btn);
+    }
 
-        // backdrop + drawer
-        const cur = OsisSidebar.halamanAktif();
-        const bg = document.createElement("div");
-        bg.className = "osis-sidebar-bg";
-        bg.id = "osisSidebarBg";
-        bg.addEventListener("click", () => OsisSidebar.close());
-        const sb = document.createElement("aside");
-        sb.className = "osis-sidebar";
-        sb.id = "osisSidebar";
-        sb.setAttribute("aria-label", "Menu OSIS");
-        sb.innerHTML = `
+    // backdrop + drawer
+    const cur = OsisSidebar.halamanAktif();
+    const bg = document.createElement("div");
+    bg.className = "osis-sidebar-bg";
+    bg.id = "osisSidebarBg";
+    bg.addEventListener("click", () => OsisSidebar.close());
+    const sb = document.createElement("aside");
+    sb.className = "osis-sidebar";
+    sb.id = "osisSidebar";
+    sb.setAttribute("aria-label", "Menu OSIS");
+    sb.innerHTML = `
             <div class="osis-sidebar-head">
                 <div class="t"><h2>MENU OSIS</h2><p>Halaman Khusus</p></div>
                 <button class="icon-btn" id="osisSideClose" title="Tutup" style="width:34px; height:34px; flex-shrink:0"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <nav>${OsisSidebar.MENU.map(m => `
-                <a href="${m[0]}" class="osis-sidebar-link ${cur === m[0] ? "active" : ""}"><span class="sic"><i class="${m[2]}"></i></span>${m[1]}</a>`).join("")}
-            </nav>
+            <nav id="osisSideNav"></nav>
             <div class="osis-sidebar-foot">
                 <a href="../index#/" class="osis-sidebar-link"><span class="sic"><i class="fa-solid fa-house"></i></span>Beranda Website</a>
             </div>`;
-        document.body.appendChild(bg);
-        document.body.appendChild(sb);
-        sb.querySelector("#osisSideClose").addEventListener("click", () => OsisSidebar.close());
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") OsisSidebar.close();
-        });
-        // desktop: sidebar selalu nempel, mobile: drawer
-        OsisSidebar.terapkanMode();
-        window.addEventListener("resize", () => OsisSidebar.terapkanMode());
-    },
-
-    terapkanMode() {
-        const desktop = window.innerWidth >= 900;
-        document.body.classList.toggle("osis-side-static", desktop);
-        if (desktop) {
-            // matikan state drawer (tanpa utak-atik scroll popup)
-            document.getElementById("osisSidebar")?.classList.remove("open");
-            document.getElementById("osisSidebarBg")?.classList.remove("open");
-            if (!document.querySelector(".agenda-form.open, .notulensi-form.open, .proker-form.open, .dokumen-form.open, .task-form.open, .kas-form.open, .evaluasi-form.open, .angg-popup.open")) {
-                document.body.style.overflow = "";
-            }
-        }
+    document.body.appendChild(bg);
+    document.body.appendChild(sb);
+    OsisSidebar.renderMenu();
+    sb.querySelector("#osisSideClose").addEventListener("click", () =>
+      OsisSidebar.close(),
+    );
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") OsisSidebar.close();
+    });
+    // Hak akses bisa datang belakangan (refresh async) — gambar ulang menu
+    // biar entri khusus super (Akses) muncul tepat waktu.
+    if (typeof OsisAuth !== "undefined" && OsisAuth.refreshAkses) {
+      OsisAuth.refreshAkses()
+        .then(() => OsisSidebar.renderMenu())
+        .catch(() => {});
     }
+    // desktop: sidebar selalu nempel, mobile: drawer
+    OsisSidebar.terapkanMode();
+    window.addEventListener("resize", () => OsisSidebar.terapkanMode());
+  },
+
+  // Isi ulang daftar menu (dipanggil pasang + tiap refresh hak akses)
+  renderMenu() {
+    const nav = document.getElementById("osisSideNav");
+    if (!nav) return;
+    const cur = OsisSidebar.halamanAktif();
+    nav.innerHTML = OsisSidebar.menuTampil()
+      .map(
+        (m) => `
+                <a href="${m[0]}" class="osis-sidebar-link ${cur === m[0] ? "active" : ""}"><span class="sic"><i class="${m[2]}"></i></span>${m[1]}</a>`,
+      )
+      .join("");
+  },
+
+  terapkanMode() {
+    const desktop = window.innerWidth >= 900;
+    document.body.classList.toggle("osis-side-static", desktop);
+    if (desktop) {
+      // matikan state drawer (tanpa utak-atik scroll popup)
+      document.getElementById("osisSidebar")?.classList.remove("open");
+      document.getElementById("osisSidebarBg")?.classList.remove("open");
+      if (
+        !document.querySelector(
+          ".agenda-form.open, .notulensi-form.open, .proker-form.open, .dokumen-form.open, .task-form.open, .kas-form.open, .evaluasi-form.open, .angg-popup.open",
+        )
+      ) {
+        document.body.style.overflow = "";
+      }
+    }
+  },
 };
 
 document.addEventListener("DOMContentLoaded", () => OsisSidebar.pasang());

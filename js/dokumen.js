@@ -33,6 +33,9 @@ const Dokumen = {
             location.replace("../login");
             return;
         }
+        // Segarkan hak kendali (biar perubahan akses langsung berlaku)
+        try { await OsisAuth.refreshAkses(); } catch {}
+        Dokumen.terapkanAkses();
 
         // opsi kategori (form + filter)
         const katOpts = Dokumen.KATEGORI.filter(k => k[0] !== "semua")
@@ -108,6 +111,15 @@ const Dokumen = {
         });
 
         await Dokumen.muat();
+    },
+
+    // Sembunyikan tombol aksi kalau tidak punya kendali atas halaman ini
+    terapkanAkses() {
+        const boleh = OsisAuth.bisa("dokumen");
+        ["btnUploadDokumen", "btnEditDariDetail", "btnHapusDariDetail"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = boleh ? "" : "none";
+        });
     },
 
     // ============ HELPERS ============
@@ -250,14 +262,15 @@ const Dokumen = {
         // list
         const listEl = document.getElementById("dokumenList");
         if (!listEl) return;
+        const boleh = OsisAuth.bisa("dokumen");
         const data = Dokumen.dataTampil();
         if (!all.length) {
-            listEl.innerHTML = `<div class="pesan-empty" style="background:var(--white); border:2.5px dashed var(--ink); border-radius:14px; padding:28px 16px; text-align:center"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-folder-open" style="color:var(--red)"></i></div><b>Belum ada dokumen</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Dokumen pada arsip ini akan muncul di sini.</p><button class="btn btn-red btn-sm" onclick="Dokumen.bukaForm()"><i class="fa-solid fa-plus"></i> Upload Dokumen</button></div>`;
+            listEl.innerHTML = `<div class="pesan-empty" style="background:var(--white); border:2.5px dashed var(--ink); border-radius:14px; padding:28px 16px; text-align:center"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-folder-open" style="color:var(--red)"></i></div><b>Belum ada dokumen</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Dokumen pada arsip ini akan muncul di sini.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Dokumen.bukaForm()"><i class="fa-solid fa-plus"></i> Upload Dokumen</button>` : ""}</div>`;
             return;
         }
         if (!data.length) {
             const kat = Dokumen.filter.kategori && Dokumen.filter.kategori !== "semua" ? ` pada kategori <b>${escapeHtml(Dokumen.katLabel(Dokumen.filter.kategori))}</b>` : "";
-            listEl.innerHTML = `<div class="pesan-empty" style="background:var(--white); border:2.5px dashed var(--ink); border-radius:14px; padding:28px 16px; text-align:center"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-folder-open" style="color:var(--red)"></i></div><b>Belum ada dokumen</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Dokumen${kat} akan muncul di sini. <a href="#" onclick="event.preventDefault(); Dokumen.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></p><button class="btn btn-red btn-sm" onclick="Dokumen.bukaForm()"><i class="fa-solid fa-plus"></i> Upload Dokumen</button></div>`;
+            listEl.innerHTML = `<div class="pesan-empty" style="background:var(--white); border:2.5px dashed var(--ink); border-radius:14px; padding:28px 16px; text-align:center"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-folder-open" style="color:var(--red)"></i></div><b>Belum ada dokumen</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Dokumen${kat} akan muncul di sini. <a href="#" onclick="event.preventDefault(); Dokumen.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Dokumen.bukaForm()"><i class="fa-solid fa-plus"></i> Upload Dokumen</button>` : ""}</div>`;
             return;
         }
         listEl.innerHTML = data.map(d => {
@@ -274,8 +287,8 @@ const Dokumen = {
                         <div class="dok-actions">
                             <button class="btn btn-white btn-sm" onclick="Dokumen.detail(${d.id})"><i class="fa-solid fa-eye"></i> Buka</button>
                             <button class="btn btn-white btn-sm" onclick="Dokumen.download(${d.id})"><i class="fa-solid fa-download"></i> Download</button>
-                            <button class="btn btn-white btn-sm" onclick="Dokumen.edit(${d.id})"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn btn-red btn-sm" onclick="Dokumen.hapus(${d.id})"><i class="fa-solid fa-trash-can"></i></button>
+                            ${boleh ? `<button class="btn btn-white btn-sm" onclick="Dokumen.edit(${d.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-red btn-sm" onclick="Dokumen.hapus(${d.id})"><i class="fa-solid fa-trash-can"></i></button>` : ""}
                         </div>
                     </div>
                 </div>`;
@@ -311,6 +324,7 @@ const Dokumen = {
 
     // ============ FORM ============
     bukaForm() {
+        if (!OsisAuth.butuh("dokumen")) return;
         Dokumen.editingId = null;
         Dokumen.stagedFile = null;
         Dokumen.existingPath = "";
@@ -331,6 +345,7 @@ const Dokumen = {
     edit(id) {
         const item = Dokumen.cache.find(d => String(d.id) === String(id));
         if (!item) return;
+        if (!OsisAuth.butuh("dokumen")) return;
         Dokumen.editingId = id;
         Dokumen.stagedFile = null;
         Dokumen.existingPath = item.file_path || "";
@@ -412,6 +427,7 @@ const Dokumen = {
     async simpan() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
+        if (!OsisAuth.butuh("dokumen")) return;
         const nama = document.getElementById("dokNama").value.trim();
         const kategori = document.getElementById("dokKategori").value || "lainnya";
         let tahun = parseInt(document.getElementById("dokTahun").value, 10);
@@ -421,6 +437,28 @@ const Dokumen = {
         const id = document.getElementById("dokId").value ? parseInt(document.getElementById("dokId").value, 10) : null;
         if (!nama) { showToast("Nama dokumen wajib diisi", "error"); return; }
         if (!id && !Dokumen.stagedFile) { showToast("Pilih file dulu", "error"); return; }
+        const cur0 = id ? Dokumen.cache.find(d => String(d.id) === String(id)) : null;
+        const __spec = () => {
+            const fl = Dokumen.stagedFile;
+            return { modul: "dokumen", op: id ? "update" : "create",
+                label: "Dokumen: " + String(nama).slice(0, 42),
+                payload: { id: id || null,
+                    f: { nama, kategori, tahun, divisi, deskripsi,
+                        file_path: cur0 ? (cur0.file_path || "") : "",
+                        file_type: cur0 ? Dokumen.extOf(cur0) : "",
+                        mime: cur0 ? (cur0.mime || "") : "",
+                        ukuran_bytes: cur0 ? (parseInt(cur0.ukuran_bytes, 10) || 0) : 0,
+                        pengunggah: (typeof OsisAuth.displayName === "function" ? OsisAuth.displayName(u) : (u.nama || u.username || "")) || "" },
+                    existingPath: cur0 ? (cur0.file_path || "") : "" },
+                files: fl ? [{ slot: "file", file: fl, name: fl.name, type: fl.type }] : [],
+                cacheKeys: ["dokumen"] };
+        };
+        const __sesudahAntre = () => { Dokumen.tutupForm(); };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanDokumen");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -463,6 +501,10 @@ const Dokumen = {
             await Dokumen.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }
@@ -472,6 +514,7 @@ const Dokumen = {
     async hapus(id, dariDetail) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("dokumen")) return;
         const item = Dokumen.cache.find(d => String(d.id) === String(id));
         const yakin = await showPopup(`Hapus dokumen "${item ? item.nama : ""}"? Dokumen ini akan dihapus dan tidak dapat dikembalikan.`, "confirm");
         if (!yakin) return;

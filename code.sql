@@ -1,5 +1,5 @@
 ﻿-- ============================================================
--- WEB OSIS TARPAN ONE â€” SCHEMA LENGKAP (RUN SEMUA SEKALI)
+-- WEB OSIS TARPAN ONE - SCHEMA LENGKAP (RUN SEMUA SEKALI)
 -- Jalankan SEMUA di Supabase SQL Editor (project OSIS).
 -- Project pake localStorage custom auth (BUKAN Supabase Auth),
 -- jadi RLS cuma anon key, bukan auth.role() = 'authenticated'.
@@ -118,7 +118,7 @@ CREATE POLICY "visitor_public_select" ON public.visitor
 
 -- ============ 4. FUNCTION LIMIT + INSERT (SECURITY DEFINER) ============
 -- SECURITY DEFINER: jalan sebagai pemilik tabel, bypass RLS, jadi
--- limit HARUS lewat function ini â€” ga bisa bypass dari client.
+-- limit HARUS lewat function ini - ga bisa bypass dari client.
 
 -- Kirim aspirasi: maks 1 per device per hari, support private
 CREATE OR REPLACE FUNCTION public.kirim_aspirasi_terbatas(
@@ -396,7 +396,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'aspirasi') THEN
         RETURN 'ERR_NO_AUTH';
     END IF;
     DELETE FROM public.aspirasi WHERE id = p_id;
@@ -413,7 +413,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'lagu') THEN
         RETURN 'ERR_NO_AUTH';
     END IF;
     DELETE FROM public.lagu_requests WHERE id = p_id;
@@ -501,7 +501,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'aspirasi') THEN
         RETURN 'ERR_NO_AUTH';
     END IF;
     IF p_isi IS NULL OR btrim(p_isi) = '' THEN
@@ -527,7 +527,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'lagu') THEN
         RETURN 'ERR_NO_AUTH';
     END IF;
     IF p_judul IS NULL OR btrim(p_judul) = '' THEN
@@ -608,8 +608,7 @@ AS $$
 DECLARE
     new_id bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS
-        (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'galeri') THEN
         RETURN -1;
     END IF;
     p_judul := COALESCE(NULLIF(btrim(p_judul), ''), '');
@@ -642,8 +641,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS
-        (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'galeri') THEN
         RETURN 'ERR_NO_AUTH';
     END IF;
     IF p_path IS NULL OR btrim(p_path) = '' THEN
@@ -672,8 +670,7 @@ AS $$
 DECLARE
     judul_akhir text;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS
-        (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'galeri') THEN
         RETURN 'ERR_NO_AUTH';
     END IF;
     judul_akhir := COALESCE(NULLIF(btrim(p_judul), ''), 'Tanpa Judul');
@@ -698,8 +695,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS
-        (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'galeri') THEN
         RETURN 'ERR_NO_AUTH';
     END IF;
     IF p_fotos IS NULL OR jsonb_typeof(p_fotos) <> 'array' THEN
@@ -721,8 +717,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS
-        (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'galeri') THEN
         RETURN 'ERR_NO_AUTH';
     END IF;
     DELETE FROM public.gallery WHERE id = p_id;
@@ -789,8 +784,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS
-        (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
+    IF NOT public.osis_bisa(p_user_id, 'site') THEN
         RETURN 'ERR_NO_AUTH';
     END IF;
     p_key := COALESCE(NULLIF(btrim(p_key), ''), '');
@@ -903,7 +897,7 @@ CREATE OR REPLACE FUNCTION public.buat_prestasi(p_user_id bigint, p_tag text, p_
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'prestasi') THEN RETURN -1; END IF;
     p_tag := left(COALESCE(NULLIF(btrim(p_tag),''), 'Tanpa Tag'), 40);
     p_caption := left(COALESCE(p_caption,''), 200);
     IF p_fotos IS NULL OR jsonb_typeof(p_fotos) <> 'array' THEN p_fotos := '[]'::jsonb; END IF;
@@ -914,14 +908,14 @@ END $$;
 CREATE OR REPLACE FUNCTION public.update_prestasi(p_user_id bigint, p_id bigint, p_tag text, p_caption text, p_fotos jsonb, p_display_order integer)
 RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'prestasi') THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.prestasi SET tag=left(COALESCE(NULLIF(btrim(p_tag),tag),tag),40), caption=left(COALESCE(p_caption,caption),200), fotos=COALESCE(p_fotos,fotos), display_order=COALESCE(p_display_order,display_order) WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
 CREATE OR REPLACE FUNCTION public.hapus_prestasi(p_user_id bigint, p_id bigint)
 RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'prestasi') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.prestasi WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -930,7 +924,7 @@ CREATE OR REPLACE FUNCTION public.buat_kegiatan(p_user_id bigint, p_judul text, 
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'kegiatan') THEN RETURN -1; END IF;
     p_judul := left(COALESCE(NULLIF(btrim(p_judul),''), 'Tanpa Judul'), 80);
     p_deskripsi := left(COALESCE(p_deskripsi,''), 200);
     p_badge := left(COALESCE(NULLIF(btrim(p_badge),''), ''), 12);
@@ -942,14 +936,14 @@ END $$;
 CREATE OR REPLACE FUNCTION public.update_kegiatan(p_user_id bigint, p_id bigint, p_judul text, p_deskripsi text, p_badge text, p_fotos jsonb, p_display_order integer)
 RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'kegiatan') THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.kegiatan SET judul=left(COALESCE(NULLIF(btrim(p_judul),judul),judul),80), deskripsi=left(COALESCE(p_deskripsi,deskripsi),200), badge=left(COALESCE(p_badge,badge),12), fotos=COALESCE(p_fotos,fotos), display_order=COALESCE(p_display_order,display_order) WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
 CREATE OR REPLACE FUNCTION public.hapus_kegiatan(p_user_id bigint, p_id bigint)
 RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'kegiatan') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.kegiatan WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -1030,7 +1024,7 @@ CREATE OR REPLACE FUNCTION public.buat_agenda(p_user_id bigint, p_sekbid_id bigi
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa_agenda(p_user_id, p_sekbid_id) THEN RETURN -1; END IF;
     IF p_sekbid_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.sekbid WHERE id=p_sekbid_id) THEN RETURN -2; END IF;
     p_judul := left(COALESCE(NULLIF(btrim(p_judul),''),'Tanpa Judul'), 80);
     p_deskripsi := left(COALESCE(p_deskripsi,''), 500);
@@ -1043,17 +1037,17 @@ BEGIN
     VALUES (p_sekbid_id, p_judul, p_deskripsi, p_tanggal, p_lokasi, p_status, p_fotos, COALESCE(p_display_order,99), p_user_id, p_pelaksana) RETURNING id INTO nid;
     RETURN nid;
 END $$;
-CREATE OR REPLACE FUNCTION public.update_agenda(p_user_id bigint, p_id bigint, p_judul text, p_deskripsi text, p_tanggal date, p_lokasi text, p_status text, p_fotos jsonb, p_display_order integer, p_pelaksana text DEFAULT '')
+CREATE OR REPLACE FUNCTION public.update_agenda(p_user_id bigint, p_id bigint, p_judul text, p_deskripsi text, p_tanggal date, p_lokasi text, p_status text, p_fotos jsonb, p_display_order integer, p_pelaksana text DEFAULT NULL)
 RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa_agenda(p_user_id, (SELECT sekbid_id FROM public.sekbid_agenda WHERE id = p_id)) THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.sekbid_agenda SET judul=left(COALESCE(NULLIF(btrim(p_judul),judul),judul),80), deskripsi=left(COALESCE(p_deskripsi,deskripsi),500), tanggal=COALESCE(p_tanggal,tanggal), lokasi=left(COALESCE(p_lokasi,lokasi),80), status=COALESCE(NULLIF(btrim(p_status),status),status), fotos=COALESCE(p_fotos,fotos), display_order=COALESCE(p_display_order,display_order), pelaksana=left(COALESCE(p_pelaksana,pelaksana),60) WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
 CREATE OR REPLACE FUNCTION public.hapus_agenda(p_user_id bigint, p_id bigint)
 RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa_agenda(p_user_id, (SELECT sekbid_id FROM public.sekbid_agenda WHERE id = p_id)) THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.sekbid_agenda WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -1095,6 +1089,341 @@ CREATE TABLE IF NOT EXISTS public.osis_users (
 );
 ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS foto text NOT NULL DEFAULT '';
 ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS bio text NOT NULL DEFAULT '';
+    -- Sekbid pemilik user (khusus aturan agenda: cuma bisa kelola agenda sekbid sendiri).
+    -- NULL = belum ditetapkan = tidak bisa kelola agenda. Diisi via halaman akses / SQL.
+    ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS sekbid_id bigint REFERENCES public.sekbid(id) ON DELETE SET NULL;
+
+    -- ============ AKSES PER HALAMAN (kendali tulis, bukan larangan buka) ============
+    -- Lihat tetap bebas (login OSIS). Yang dikunci: tambah/edit/hapus/simpan.
+    -- Penentu: super (username) -> mapping eksplisit -> mapping jabatan.
+
+    -- Mapping eksplisit orang -> halaman. halaman='*' = semua halaman.
+    CREATE TABLE IF NOT EXISTS public.osis_akses (
+        user_id bigint NOT NULL REFERENCES public.osis_users(id) ON DELETE CASCADE,
+        halaman text NOT NULL,
+        PRIMARY KEY (user_id, halaman)
+    );
+    ALTER TABLE public.osis_akses ENABLE ROW LEVEL SECURITY;
+    -- Tanpa policy anon: cuma diakses lewat function SECURITY DEFINER di bawah.
+
+    -- Mapping jabatan -> daftar halaman. jabatan = lowercase-trim.
+    -- Baris 'sekbid' = fallback untuk jabatan apapun yang mengandung kata "sekbid".
+    CREATE TABLE IF NOT EXISTS public.jabatan_akses (
+        jabatan text PRIMARY KEY,
+        halaman text[] NOT NULL DEFAULT '{}'
+    );
+    ALTER TABLE public.jabatan_akses ENABLE ROW LEVEL SECURITY;
+
+    -- Normalisasi jabatan biar "  Bendahara " = "bendahara" = "BENDAHARA".
+    CREATE OR REPLACE FUNCTION public.osis_norm_jabatan(p_jabatan text)
+    RETURNS text LANGUAGE sql IMMUTABLE AS $$
+        SELECT regexp_replace(lower(COALESCE(btrim(p_jabatan), '')), '\s+', ' ', 'g');
+    $$;
+
+    -- Cek hak via jabatan (dipakai osis_bisa + aturan agenda).
+    CREATE OR REPLACE FUNCTION public.osis_hak_jabatan(p_jabatan text, p_halaman text)
+    RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
+        SELECT EXISTS (
+            SELECT 1 FROM public.jabatan_akses j
+            WHERE (j.jabatan = public.osis_norm_jabatan(p_jabatan)
+                OR (j.jabatan = 'sekbid' AND public.osis_norm_jabatan(p_jabatan) LIKE '%sekbid%'))
+            AND p_halaman = ANY (j.halaman)
+        );
+    $$;
+
+    -- Cek utama: super -> mapping eksplisit -> mapping jabatan.
+    -- Khusus 'agenda': HANYA super + mapping eksplisit (hak sekbid dinilai
+    -- terpisah via osis_bisa_agenda karena terikat sekbid masing-masing).
+    CREATE OR REPLACE FUNCTION public.osis_bisa(p_user_id bigint, p_halaman text)
+    RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
+    DECLARE v_username text; v_jabatan text;
+    BEGIN
+        IF p_user_id IS NULL OR p_halaman IS NULL OR btrim(p_halaman) = '' THEN
+            RETURN false;
+        END IF;
+        SELECT username, jabatan INTO v_username, v_jabatan
+        FROM public.osis_users WHERE id = p_user_id;
+        IF NOT FOUND THEN RETURN false; END IF;
+        IF lower(v_username) IN ('mizammm', 'bintangsandirofiansyah') THEN RETURN true; END IF;
+        IF EXISTS (SELECT 1 FROM public.osis_akses
+                WHERE user_id = p_user_id AND halaman IN (p_halaman, '*')) THEN
+            RETURN true;
+        END IF;
+        IF p_halaman <> 'agenda'
+        AND public.osis_hak_jabatan(v_jabatan, p_halaman) THEN
+            RETURN true;
+        END IF;
+        RETURN false;
+    END $$;
+
+-- Aturan agenda: semua orang OSIS boleh isi, TAPI hanya sekbid miliknya
+-- (osis_users.sekbid_id). Pengendali global (super/mapping eksplisit) bebas
+-- semua sekbid. Tanpa sekbid_id = tidak bisa apa-apa (fail closed).
+CREATE OR REPLACE FUNCTION public.osis_bisa_agenda(p_user_id bigint, p_sekbid_id bigint)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
+DECLARE v_sekbid bigint;
+BEGIN
+    IF public.osis_bisa(p_user_id, 'agenda') THEN RETURN true; END IF;
+    SELECT sekbid_id INTO v_sekbid
+    FROM public.osis_users WHERE id = p_user_id;
+    IF NOT FOUND THEN RETURN false; END IF;
+    IF v_sekbid IS NULL OR p_sekbid_id IS NULL THEN RETURN false; END IF;
+    RETURN v_sekbid IS NOT DISTINCT FROM p_sekbid_id;
+END $$;
+
+    -- Daftar hak user (buat client sweeping tombol). Super ikut ditandai.
+    CREATE OR REPLACE FUNCTION public.akses_saya(p_user_id bigint)
+    RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
+    DECLARE v_username text; v_jabatan text; v_sekbid bigint; v_super boolean;
+        v_hal text[]; v_jab text[];
+    BEGIN
+        SELECT username, jabatan, sekbid_id INTO v_username, v_jabatan, v_sekbid
+        FROM public.osis_users WHERE id = p_user_id;
+        IF NOT FOUND THEN
+            RETURN jsonb_build_object('halaman', '[]'::jsonb, 'sekbid_id', NULL, 'sekbid_nama', NULL, 'super', false);
+        END IF;
+        v_super := lower(v_username) IN ('mizammm', 'bintangsandirofiansyah');
+        SELECT COALESCE(array_agg(DISTINCT halaman), '{}') INTO v_hal
+        FROM public.osis_akses WHERE user_id = p_user_id;
+        SELECT COALESCE(array_agg(DISTINCT h), '{}') INTO v_jab
+        FROM public.jabatan_akses j, unnest(j.halaman) AS h
+        WHERE j.jabatan = public.osis_norm_jabatan(v_jabatan)
+        OR (j.jabatan = 'sekbid' AND public.osis_norm_jabatan(v_jabatan) LIKE '%sekbid%');
+        RETURN jsonb_build_object(
+            'halaman', (SELECT COALESCE(jsonb_agg(DISTINCT x), '[]'::jsonb) FROM unnest(v_hal || v_jab) AS x),
+            'sekbid_id', v_sekbid,
+            'sekbid_nama', (SELECT nama FROM public.sekbid WHERE id = v_sekbid),
+            'super', v_super
+        );
+    END $$;
+
+    -- Bagi/cabut akses (HANYA super). Ganti total mapping target + opsional sekbid.
+    CREATE OR REPLACE FUNCTION public.set_akses(
+        p_admin bigint, p_target bigint, p_halaman text[],
+        p_sekbid_id bigint DEFAULT NULL, p_ubah_sekbid boolean DEFAULT false
+    )
+    RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+    DECLARE v_admin text;
+    BEGIN
+        SELECT username INTO v_admin FROM public.osis_users WHERE id = p_admin;
+        IF NOT FOUND OR lower(v_admin) NOT IN ('mizammm', 'bintangsandirofiansyah') THEN
+            RETURN 'ERR_NO_AUTH';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id = p_target) THEN
+            RETURN 'ERR_NOT_FOUND';
+        END IF;
+        DELETE FROM public.osis_akses WHERE user_id = p_target;
+        IF p_halaman IS NOT NULL THEN
+            INSERT INTO public.osis_akses (user_id, halaman)
+            SELECT DISTINCT p_target, btrim(h) FROM unnest(p_halaman) AS h
+            WHERE btrim(h) <> ''
+            ON CONFLICT DO NOTHING;
+        END IF;
+        IF p_ubah_sekbid THEN
+            UPDATE public.osis_users SET sekbid_id = p_sekbid_id WHERE id = p_target;
+        END IF;
+        RETURN 'OK';
+    END $$;
+
+    REVOKE EXECUTE ON FUNCTION public.osis_norm_jabatan(text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.osis_hak_jabatan(text, text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.osis_bisa(bigint, text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.osis_bisa_agenda(bigint, bigint) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.akses_saya(bigint) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.set_akses(bigint, bigint, text[], bigint, boolean) FROM public;
+    GRANT EXECUTE ON FUNCTION public.osis_norm_jabatan(text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.osis_hak_jabatan(text, text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.osis_bisa(bigint, text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.osis_bisa_agenda(bigint, bigint) TO anon;
+    GRANT EXECUTE ON FUNCTION public.akses_saya(bigint) TO anon;
+    GRANT EXECUTE ON FUNCTION public.set_akses(bigint, bigint, text[], bigint, boolean) TO anon;
+
+    -- Matriks semua user + haknya (HANYA super). Password tidak ikut.
+    CREATE OR REPLACE FUNCTION public.akses_matriks(p_admin bigint)
+    RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
+    DECLARE v_admin text;
+    BEGIN
+        SELECT username INTO v_admin FROM public.osis_users WHERE id = p_admin;
+        IF NOT FOUND OR lower(v_admin) NOT IN ('mizammm', 'bintangsandirofiansyah') THEN
+            RETURN jsonb_build_object('error', 'ERR_NO_AUTH');
+        END IF;
+        RETURN (SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb) FROM (
+            SELECT u.id, u.username, u.nama, u.jabatan, u.sekbid_id,
+                (SELECT s.nama FROM public.sekbid s WHERE s.id = u.sekbid_id) AS sekbid_nama,
+                COALESCE((SELECT jsonb_agg(a.halaman ORDER BY a.halaman)
+                        FROM public.osis_akses a WHERE a.user_id = u.id), '[]'::jsonb) AS halaman
+            FROM public.osis_users u ORDER BY u.nama
+        ) t);
+    END $$;
+    REVOKE EXECUTE ON FUNCTION public.akses_matriks(bigint) FROM public;
+    GRANT EXECUTE ON FUNCTION public.akses_matriks(bigint) TO anon;
+
+    -- Seed mapping jabatan bawaan (aman di-run ulang: upsert per jabatan).
+    INSERT INTO public.jabatan_akses (jabatan, halaman) VALUES
+        ('bendahara', ARRAY['keuangan', 'tabungan']),
+        ('sekretaris', ARRAY['absensi', 'notulensi', 'dokumen', 'evaluasi', 'formulir', 'anggota']),
+        ('sekbid', ARRAY['proker', 'task', 'galeri', 'prestasi', 'kegiatan'])
+    ON CONFLICT (jabatan) DO UPDATE SET halaman = EXCLUDED.halaman;
+
+    -- ============ RPC PENGGANTI TULIS-LANGSUNG (anggota/sekbid/pimpinan/web_foto) ============
+    -- Tabel-tabel ini tadinya ditulis langsung dari client. Supaya kendali per
+    -- halaman bisa ditegakkan di server, semua tulis dialihkan lewat RPC di bawah
+    -- (client lama yang masih tulis langsung akan DITOLAK setelah penguncian di bawah).
+
+    CREATE OR REPLACE FUNCTION public.tambah_anggota(
+        p_user_id bigint, p_tahun integer, p_nama text, p_jabatan text,
+        p_urutan integer DEFAULT 99, p_foto text DEFAULT ''
+    ) RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
+    DECLARE nid bigint;
+    BEGIN
+        IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN -1; END IF;
+        INSERT INTO public.anggota (tahun, nama, jabatan, urutan, foto)
+        VALUES (p_tahun, left(COALESCE(NULLIF(btrim(p_nama),''),'Tanpa Nama'),80),
+                left(COALESCE(p_jabatan,''),80), COALESCE(p_urutan,99), left(COALESCE(p_foto,''),300))
+        RETURNING id INTO nid;
+        RETURN nid;
+    END $$;
+    CREATE OR REPLACE FUNCTION public.update_anggota(
+        p_user_id bigint, p_id bigint, p_nama text, p_jabatan text, p_urutan integer,
+        p_foto text DEFAULT ''
+    ) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+    BEGIN
+        IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+        UPDATE public.anggota SET nama = left(COALESCE(NULLIF(btrim(p_nama),''),nama),80),
+            jabatan = left(COALESCE(NULLIF(btrim(p_jabatan),''),jabatan),80),
+            urutan = COALESCE(p_urutan,urutan),
+            foto = left(COALESCE(NULLIF(p_foto,''),foto),300) WHERE id = p_id;
+        IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+    END $$;
+    CREATE OR REPLACE FUNCTION public.hapus_anggota(p_user_id bigint, p_id bigint)
+    RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+    BEGIN
+        IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+        DELETE FROM public.anggota WHERE id = p_id;
+        IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+    END $$;
+
+    CREATE OR REPLACE FUNCTION public.tambah_sekbid(
+        p_user_id bigint, p_nama text, p_kategori text, p_icon text,
+        p_deskripsi text, p_urutan integer DEFAULT 99, p_foto text DEFAULT ''
+    ) RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
+    DECLARE nid bigint;
+    BEGIN
+        IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN -1; END IF;
+        INSERT INTO public.sekbid (nama, kategori, icon, deskripsi, urutan, foto)
+        VALUES (left(COALESCE(NULLIF(btrim(p_nama),''),'Tanpa Nama'),80), left(COALESCE(p_kategori,'SEKBID'),20),
+                left(COALESCE(p_icon,''),80), left(COALESCE(p_deskripsi,''),500),
+                COALESCE(p_urutan,99), left(COALESCE(p_foto,''),300))
+        RETURNING id INTO nid;
+        RETURN nid;
+    END $$;
+    CREATE OR REPLACE FUNCTION public.update_sekbid(
+        p_user_id bigint, p_id bigint, p_nama text, p_kategori text, p_icon text,
+        p_deskripsi text, p_urutan integer, p_foto text
+    ) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+    BEGIN
+        IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+        UPDATE public.sekbid SET nama = left(COALESCE(NULLIF(btrim(p_nama),''),nama),80),
+            kategori = left(COALESCE(NULLIF(btrim(p_kategori),''),kategori),20),
+            icon = left(COALESCE(NULLIF(p_icon,''),icon),80),
+            deskripsi = left(COALESCE(p_deskripsi,deskripsi),500),
+            urutan = COALESCE(p_urutan,urutan),
+            foto = left(COALESCE(NULLIF(p_foto,''),foto),300) WHERE id = p_id;
+        IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+    END $$;
+    CREATE OR REPLACE FUNCTION public.hapus_sekbid(p_user_id bigint, p_id bigint)
+    RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+    BEGIN
+        IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+        DELETE FROM public.sekbid WHERE id = p_id;
+        IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+    END $$;
+
+    CREATE OR REPLACE FUNCTION public.simpan_pimpinan(
+        p_user_id bigint, p_tahun integer, p_ketua_nama text, p_wakil_nama text,
+        p_ketua_foto text, p_wakil_foto text, p_foto_angkatan text
+    ) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+    BEGIN
+        IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+        INSERT INTO public.pimpinan (tahun, ketua_nama, wakil_nama, ketua_foto, wakil_foto, foto_angkatan)
+        VALUES (p_tahun, left(COALESCE(p_ketua_nama,''),80), left(COALESCE(p_wakil_nama,''),80),
+                left(COALESCE(p_ketua_foto,''),300), left(COALESCE(p_wakil_foto,''),300),
+                left(COALESCE(p_foto_angkatan,''),300))
+        ON CONFLICT (tahun) DO UPDATE SET ketua_nama = EXCLUDED.ketua_nama,
+            wakil_nama = EXCLUDED.wakil_nama, ketua_foto = EXCLUDED.ketua_foto,
+            wakil_foto = EXCLUDED.wakil_foto, foto_angkatan = EXCLUDED.foto_angkatan;
+        RETURN 'OK';
+    END $$;
+    CREATE OR REPLACE FUNCTION public.hapus_pimpinan(p_user_id bigint, p_tahun integer)
+    RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+    BEGIN
+        IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+        DELETE FROM public.pimpinan WHERE tahun = p_tahun;
+        IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+    END $$;
+
+    CREATE OR REPLACE FUNCTION public.simpan_web_foto(
+        p_user_id bigint, p_kunci text, p_path text
+    ) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+    BEGIN
+        IF NOT public.osis_bisa(p_user_id, 'site') THEN RETURN 'ERR_NO_AUTH'; END IF;
+        p_kunci := COALESCE(NULLIF(btrim(p_kunci), ''), '');
+        IF p_kunci = '' THEN RETURN 'ERR_NO_KEY'; END IF;
+        INSERT INTO public.web_foto (kunci, path, updated_at)
+        VALUES (p_kunci, left(COALESCE(p_path,''),300), now())
+        ON CONFLICT (kunci) DO UPDATE SET path = EXCLUDED.path, updated_at = now();
+        RETURN 'OK';
+    END $$;
+
+    REVOKE EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.hapus_anggota(bigint, bigint) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.tambah_sekbid(bigint, text, text, text, text, integer, text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.update_sekbid(bigint, bigint, text, text, text, text, integer, text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.hapus_sekbid(bigint, bigint) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.simpan_pimpinan(bigint, integer, text, text, text, text, text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.hapus_pimpinan(bigint, integer) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.simpan_web_foto(bigint, text, text) FROM public;
+    GRANT EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.hapus_anggota(bigint, bigint) TO anon;
+    GRANT EXECUTE ON FUNCTION public.tambah_sekbid(bigint, text, text, text, text, integer, text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.update_sekbid(bigint, bigint, text, text, text, text, integer, text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.hapus_sekbid(bigint, bigint) TO anon;
+    GRANT EXECUTE ON FUNCTION public.simpan_pimpinan(bigint, integer, text, text, text, text, text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.hapus_pimpinan(bigint, integer) TO anon;
+    GRANT EXECUTE ON FUNCTION public.simpan_web_foto(bigint, text, text) TO anon;
+
+    -- ============ PENGUNCIAN TULIS-LANGSUNG ============
+    -- Baca publik tetap jalan (SELECT). Tulis langsung dari client DITOLAK di
+    -- level tabel; satu-satunya jalan tulis = RPC SECURITY DEFINER di atas
+    -- (yang sudah menilai hak per halaman). Idempoten, aman di-run ulang.
+    ALTER TABLE public.anggota ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.sekbid ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.pimpinan ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "anggota_public_select" ON public.anggota;
+    CREATE POLICY "anggota_public_select" ON public.anggota FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "sekbid_public_select" ON public.sekbid;
+    CREATE POLICY "sekbid_public_select" ON public.sekbid FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "pimpinan_public_select" ON public.pimpinan;
+    CREATE POLICY "pimpinan_public_select" ON public.pimpinan FOR SELECT USING (true);
+    REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.anggota FROM anon, authenticated, public;
+    REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.sekbid FROM anon, authenticated, public;
+    REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.pimpinan FROM anon, authenticated, public;
+    GRANT SELECT ON public.anggota TO anon, authenticated;
+    GRANT SELECT ON public.sekbid TO anon, authenticated;
+    GRANT SELECT ON public.pimpinan TO anon, authenticated;
+    -- web_foto & site_content: cabut policy tulis publik (baca tetap).
+    DROP POLICY IF EXISTS "web_foto_public_insert" ON public.web_foto;
+    DROP POLICY IF EXISTS "web_foto_public_update" ON public.web_foto;
+    DROP POLICY IF EXISTS "web_foto_public_delete" ON public.web_foto;
+    DROP POLICY IF EXISTS "site_content_public_insert" ON public.site_content;
+    DROP POLICY IF EXISTS "site_content_public_update" ON public.site_content;
+    DROP POLICY IF EXISTS "site_content_public_delete" ON public.site_content;
+    REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.web_foto FROM anon, authenticated, public;
+    REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.site_content FROM anon, authenticated, public;
+    GRANT SELECT ON public.web_foto TO anon, authenticated;
+    GRANT SELECT ON public.site_content TO anon, authenticated;
 
 -- Update nama + bio + foto PP (khusus pemilik akun, p_user_id = id sendiri)
 CREATE OR REPLACE FUNCTION public.update_osis_profil(
@@ -1269,7 +1598,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'notulensi') THEN RETURN -1; END IF;
     p_judul := left(COALESCE(NULLIF(btrim(p_judul),''),'Tanpa Judul'), 120);
     IF p_tindak_lanjut IS NULL OR jsonb_typeof(p_tindak_lanjut) <> 'array' THEN p_tindak_lanjut := '[]'::jsonb; END IF;
     IF p_lampiran IS NULL OR jsonb_typeof(p_lampiran) <> 'array' THEN p_lampiran := '[]'::jsonb; END IF;
@@ -1289,7 +1618,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'notulensi') THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.rapat_notulensi SET judul=left(COALESCE(NULLIF(btrim(p_judul),judul),judul),120),
         tanggal=COALESCE(p_tanggal,tanggal), waktu_mulai=left(COALESCE(p_waktu_mulai,waktu_mulai),5), waktu_selesai=left(COALESCE(p_waktu_selesai,waktu_selesai),5),
         lokasi=left(COALESCE(p_lokasi,lokasi),80), divisi=left(COALESCE(p_divisi,divisi),80), pimpinan=left(COALESCE(p_pimpinan,pimpinan),80),
@@ -1305,7 +1634,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'notulensi') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.rapat_notulensi WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -1391,7 +1720,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'proker') THEN RETURN -1; END IF;
     p_nama := left(COALESCE(NULLIF(btrim(p_nama),''),'Tanpa Nama'), 120);
     IF p_agenda_ids IS NULL OR jsonb_typeof(p_agenda_ids) <> 'array' THEN p_agenda_ids := '[]'::jsonb; END IF;
     IF p_tugas IS NULL OR jsonb_typeof(p_tugas) <> 'array' THEN p_tugas := '[]'::jsonb; END IF;
@@ -1413,7 +1742,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'proker') THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.proker SET nama=left(COALESCE(NULLIF(btrim(p_nama),nama),nama),120), deskripsi=left(COALESCE(p_deskripsi,deskripsi),1000),
         divisi=left(COALESCE(p_divisi,divisi),80), pj=left(COALESCE(p_pj,pj),80), periode=COALESCE(p_periode,periode),
         tgl_mulai=COALESCE(p_tgl_mulai,tgl_mulai), tgl_selesai=COALESCE(p_tgl_selesai,tgl_selesai),
@@ -1431,7 +1760,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'proker') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.proker WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -1488,7 +1817,7 @@ SELECT * FROM (VALUES
 
 -- ============ 16. DOKUMEN OSIS (halaman osis/dokumen) ============
 -- Satu baris = satu file arsip. File fisik di bucket osis-foto folder
--- dokumen/ (PDF/DOCX/XLSX/PPTX/ZIP/gambar/dll â€” upload apa adanya, cuma
+-- dokumen/ (PDF/DOCX/XLSX/PPTX/ZIP/gambar/dll - upload apa adanya, cuma
 -- gambar yang dikompres). Kategori: proposal/lpj/surat/sk/notulensi/
 -- administrasi/laporan/lainnya.
 CREATE TABLE IF NOT EXISTS public.osis_dokumen (
@@ -1522,7 +1851,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'dokumen') THEN RETURN -1; END IF;
     p_nama := left(COALESCE(NULLIF(btrim(p_nama),''),'Tanpa Nama'), 160);
     INSERT INTO public.osis_dokumen (nama, kategori, tahun, divisi, deskripsi, file_path, file_type, mime, ukuran_bytes, pengunggah, created_by)
     VALUES (p_nama, COALESCE(NULLIF(btrim(p_kategori),''),'lainnya'), COALESCE(p_tahun,2026), left(COALESCE(p_divisi,''),80), left(COALESCE(p_deskripsi,''),1000), left(COALESCE(p_file_path,''),300), left(COALESCE(p_file_type,''),10), left(COALESCE(p_mime,''),100), GREATEST(0,COALESCE(p_ukuran_bytes,0)), left(COALESCE(p_pengunggah,''),80), p_user_id)
@@ -1539,7 +1868,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'dokumen') THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.osis_dokumen SET nama=left(COALESCE(NULLIF(btrim(p_nama),nama),nama),160), kategori=COALESCE(NULLIF(btrim(p_kategori),kategori),kategori),
         tahun=COALESCE(p_tahun,tahun), divisi=left(COALESCE(p_divisi,divisi),80), deskripsi=left(COALESCE(p_deskripsi,deskripsi),1000),
         file_path=left(COALESCE(p_file_path,file_path),300), file_type=left(COALESCE(p_file_type,file_type),10), mime=left(COALESCE(p_mime,mime),100),
@@ -1552,7 +1881,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'dokumen') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.osis_dokumen WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -1625,7 +1954,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'task') THEN RETURN -1; END IF;
     p_judul := left(COALESCE(NULLIF(btrim(p_judul),''),'Tanpa Judul'), 160);
     INSERT INTO public.osis_task (judul, deskripsi, pic, divisi, priority, deadline, status, proker_id, agenda_id, catatan, created_by)
     VALUES (p_judul, left(COALESCE(p_deskripsi,''),2000), left(COALESCE(p_pic,''),80), left(COALESCE(p_divisi,''),80), COALESCE(NULLIF(btrim(p_priority),''),'medium'), p_deadline, COALESCE(NULLIF(btrim(p_status),''),'todo'), p_proker_id, p_agenda_id, left(COALESCE(p_catatan,''),2000), p_user_id)
@@ -1642,7 +1971,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'task') THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.osis_task SET judul=left(COALESCE(NULLIF(btrim(p_judul),judul),judul),160), deskripsi=left(COALESCE(p_deskripsi,deskripsi),2000),
         pic=left(COALESCE(p_pic,pic),80), divisi=left(COALESCE(p_divisi,divisi),80), priority=COALESCE(NULLIF(btrim(p_priority),priority),priority),
         deadline=COALESCE(p_deadline,deadline), status=COALESCE(NULLIF(btrim(p_status),status),status),
@@ -1657,19 +1986,19 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'task') THEN RETURN 'ERR_NO_AUTH'; END IF;
     IF COALESCE(btrim(p_status),'') NOT IN ('todo','in_progress','review','done') THEN RETURN 'ERR_INVALID'; END IF;
     UPDATE public.osis_task SET status=p_status, updated_at=now() WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
 
--- Lepas relasi (set NULL) â€” dipakai saat proker/agenda sumber dihapus
+-- Lepas relasi (set NULL) - dipakai saat proker/agenda sumber dihapus
 CREATE OR REPLACE FUNCTION public.lepas_task(p_user_id bigint, p_id bigint, p_field text)
 RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'task') THEN RETURN 'ERR_NO_AUTH'; END IF;
     IF p_field = 'proker' THEN
         UPDATE public.osis_task SET proker_id=NULL, updated_at=now() WHERE id=p_id;
     ELSIF p_field = 'agenda' THEN
@@ -1685,7 +2014,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'task') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.osis_task WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -1701,7 +2030,7 @@ GRANT EXECUTE ON FUNCTION public.pindah_task(bigint, bigint, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.lepas_task(bigint, bigint, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_task(bigint, bigint) TO anon;
 
--- Seed dummy (cuma kalau tabel masih kosong â€” kanban langsung hidup).
+-- Seed dummy (cuma kalau tabel masih kosong - kanban langsung hidup).
 -- Relasi proker/agenda dikosongkan (hubungkan manual via Edit).
 INSERT INTO public.osis_task (judul, deskripsi, pic, divisi, priority, deadline, status, proker_id, agenda_id, catatan)
 SELECT * FROM (VALUES
@@ -1714,7 +2043,7 @@ SELECT * FROM (VALUES
     ('Booking aula PESAK', 'Sudah DP, tinggal ambil kuitansi.', 'Sinta', 'Seni', 'urgent', '2026-08-28'::date, 'in_progress', NULL::bigint, NULL::bigint, ''),
     ('Buat daftar peserta rapat', 'Absensi + konsumsi 30 orang.', 'Citra', 'Umum', 'low', '2026-09-03'::date, 'done', NULL::bigint, NULL::bigint, ''),
     ('Cetak dokumen rapat', 'Notulensi + lampiran, 5 rangkap.', 'Citra', 'Umum', 'medium', '2026-08-30'::date, 'done', NULL::bigint, NULL::bigint, ''),
-    ('Siapkan perlengkapan kemah', 'Tenda, P3K, HT â€” cek gudang.', 'Andi', 'BPH', 'high', '2026-07-09'::date, 'done', NULL::bigint, NULL::bigint, '')
+    ('Siapkan perlengkapan kemah', 'Tenda, P3K, HT - cek gudang.', 'Andi', 'BPH', 'high', '2026-07-09'::date, 'done', NULL::bigint, NULL::bigint, '')
 ) AS v(judul, deskripsi, pic, divisi, priority, deadline, status, proker_id, agenda_id, catatan)
 WHERE NOT EXISTS (SELECT 1 FROM public.osis_task);
 
@@ -1766,7 +2095,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'keuangan') THEN RETURN -1; END IF;
     IF COALESCE(btrim(p_jenis),'') NOT IN ('masuk','keluar') THEN RETURN -2; END IF;
     IF COALESCE(p_nominal,0) <= 0 THEN RETURN -3; END IF;
     p_keterangan := left(COALESCE(NULLIF(btrim(p_keterangan),''),'Tanpa Keterangan'), 160);
@@ -1785,7 +2114,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'keuangan') THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.osis_kas SET jenis=COALESCE(NULLIF(btrim(p_jenis),jenis),jenis), tanggal=COALESCE(p_tanggal,tanggal),
         keterangan=left(COALESCE(NULLIF(btrim(p_keterangan),keterangan),keterangan),160), kategori=left(COALESCE(NULLIF(btrim(p_kategori),kategori),kategori),40),
         nominal=COALESCE(p_nominal,nominal), divisi=left(COALESCE(p_divisi,divisi),80), pic=left(COALESCE(p_pic,pic),80),
@@ -1799,7 +2128,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'keuangan') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.osis_kas WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -1810,7 +2139,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'keuangan') THEN RETURN 'ERR_NO_AUTH'; END IF;
     INSERT INTO public.osis_saldo_awal (periode, nominal, updated_by, updated_at)
     VALUES (COALESCE(p_periode,2026), GREATEST(0,COALESCE(p_nominal,0)), p_user_id, now())
     ON CONFLICT (periode) DO UPDATE SET nominal=EXCLUDED.nominal, updated_by=EXCLUDED.updated_by, updated_at=now();
@@ -1840,7 +2169,7 @@ ON CONFLICT (periode) DO NOTHING;
 INSERT INTO public.osis_kas (jenis, tanggal, keterangan, kategori, nominal, divisi, pic, proker_id, agenda_id, catatan, bukti_path)
 SELECT * FROM (VALUES
     ('masuk', '2026-09-01'::date, 'Dana kas OSIS September', 'Kas', 500000, 'BPH', 'Andi', NULL::bigint, NULL::bigint, '', ''),
-    ('masuk', '2026-09-02'::date, 'Sponsor Class Meeting â€” Toko Berkah', 'Sponsorship', 1000000, 'Olahraga', 'Rizky', NULL::bigint, NULL::bigint, '', ''),
+    ('masuk', '2026-09-02'::date, 'Sponsor Class Meeting - Toko Berkah', 'Sponsorship', 1000000, 'Olahraga', 'Rizky', NULL::bigint, NULL::bigint, '', ''),
     ('keluar', '2026-09-03'::date, 'Cetak proposal & RAB', 'Administrasi', 75000, 'Olahraga', 'Rizky', NULL::bigint, NULL::bigint, '', ''),
     ('keluar', '2026-09-04'::date, 'Konsumsi rapat pengurus', 'Konsumsi', 120000, 'BPH', 'Sinta', NULL::bigint, NULL::bigint, '30 orang', ''),
     ('masuk', '2026-09-05'::date, 'Donasi alumni', 'Donasi', 750000, 'BPH', 'Andi', NULL::bigint, NULL::bigint, '', ''),
@@ -1903,7 +2232,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'evaluasi') THEN RETURN -1; END IF;
     p_nama_kegiatan := left(COALESCE(NULLIF(btrim(p_nama_kegiatan),''),'Tanpa Nama'), 160);
     IF p_dokumentasi IS NULL OR jsonb_typeof(p_dokumentasi) <> 'array' THEN p_dokumentasi := '[]'::jsonb; END IF;
     IF p_tugas IS NULL OR jsonb_typeof(p_tugas) <> 'array' THEN p_tugas := '[]'::jsonb; END IF;
@@ -1924,7 +2253,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'evaluasi') THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.osis_evaluasi SET nama_kegiatan=left(COALESCE(NULLIF(btrim(p_nama_kegiatan),nama_kegiatan),nama_kegiatan),160),
         agenda_id=COALESCE(p_agenda_id,agenda_id), proker_id=COALESCE(p_proker_id,proker_id), tgl_kegiatan=COALESCE(p_tgl_kegiatan,tgl_kegiatan),
         divisi=left(COALESCE(p_divisi,divisi),80), pj=left(COALESCE(p_pj,pj),80), status=COALESCE(NULLIF(btrim(p_status),status),status),
@@ -1942,7 +2271,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'evaluasi') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.osis_evaluasi WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -2008,7 +2337,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'formulir') THEN RETURN 'ERR_NO_AUTH'; END IF;
     p_slug := lower(COALESCE(NULLIF(btrim(p_slug),''),''));
     IF p_slug <> '' AND (char_length(p_slug) < 3 OR char_length(p_slug) > 40 OR p_slug !~ '^[a-z0-9-]+$') THEN
         RETURN 'ERR_INVALID';
@@ -2045,7 +2374,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE fid bigint; q jsonb;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'formulir') THEN RETURN -1; END IF;
     IF COALESCE(btrim(p_status),'') NOT IN ('draft','aktif','ditutup') THEN p_status := 'draft'; END IF;
     IF p_settings IS NULL OR jsonb_typeof(p_settings) <> 'object' THEN p_settings := '{}'::jsonb; END IF;
     IF p_pertanyaan IS NULL OR jsonb_typeof(p_pertanyaan) <> 'array' THEN p_pertanyaan := '[]'::jsonb; END IF;
@@ -2078,7 +2407,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'formulir') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.osis_respons WHERE form_id=p_id;
     DELETE FROM public.osis_pertanyaan WHERE form_id=p_id;
     DELETE FROM public.osis_formulir WHERE id=p_id;
@@ -2266,7 +2595,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'absensi') THEN RETURN -1; END IF;
     IF p_tanggal IS NULL THEN RETURN -3; END IF;
     p_nama := left(btrim(COALESCE(p_nama,'')), 80);
     IF p_nama = '' THEN RETURN -4; END IF;
@@ -2289,7 +2618,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'absensi') THEN RETURN 'ERR_NO_AUTH'; END IF;
     IF p_tanggal IS NULL THEN RETURN 'ERR_NO_TANGGAL'; END IF;
     p_nama := left(btrim(COALESCE(p_nama,'')), 80);
     IF p_nama = '' THEN RETURN 'ERR_NO_NAMA'; END IF;
@@ -2309,7 +2638,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'absensi') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.osis_absensi WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -2367,7 +2696,7 @@ LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE nid bigint;
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN -1; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'tabungan') THEN RETURN -1; END IF;
     IF p_tanggal IS NULL THEN RETURN -3; END IF;
     p_nama := left(btrim(COALESCE(p_nama,'')), 80);
     IF p_nama = '' THEN RETURN -4; END IF;
@@ -2388,7 +2717,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'tabungan') THEN RETURN 'ERR_NO_AUTH'; END IF;
     IF p_tanggal IS NULL THEN RETURN 'ERR_NO_TANGGAL'; END IF;
     p_nama := left(btrim(COALESCE(p_nama,'')), 80);
     IF p_nama = '' THEN RETURN 'ERR_NO_NAMA'; END IF;
@@ -2408,7 +2737,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'tabungan') THEN RETURN 'ERR_NO_AUTH'; END IF;
     UPDATE public.osis_tabungan SET cek=COALESCE(p_cek, NOT cek), updated_at=now() WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;
@@ -2418,7 +2747,7 @@ RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 BEGIN
-    IF p_user_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id=p_user_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF NOT public.osis_bisa(p_user_id, 'tabungan') THEN RETURN 'ERR_NO_AUTH'; END IF;
     DELETE FROM public.osis_tabungan WHERE id=p_id;
     IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
 END $$;

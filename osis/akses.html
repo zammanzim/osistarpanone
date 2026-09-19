@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Akses — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .akses-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .akses-head {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .akses-head .ico {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .akses-head h1 {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .akses-head p {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .aks-card {
+        margin-bottom: 12px;
+      }
+      .aks-sub {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--gray);
+        margin: 2px 0 4px 2px;
+      }
+      .aks-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-top: 8px;
+      }
+      @media (max-width: 560px) {
+        .aks-grid { grid-template-columns: repeat(2, 1fr); }
+      }
+      .aks-check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        padding: 7px 10px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        cursor: pointer;
+        background: var(--white);
+      }
+      .aks-check.on {
+        background: #d6f5d6;
+      }
+      .aks-check input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--red);
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-sidebar.js" defer></script>
+    <script src="../js/form-persist.js" defer></script>
+    <script src="../js/akses.js" defer></script>
+    <script src="../js/pwa.js" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>AKSES</h2>
+          <p>Kendali Per Halaman</p>
+        </div>
+      </a>
+
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="akses-wrap">
+      <div class="akses-head">
+        <div class="ico"><i class="fa-solid fa-key"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>AKSES</h1>
+          <p>
+            Khusus super admin. Centang halaman yang boleh dikendalikan tiap
+            orang + tentukan sekbid pemiliknya (khusus aturan agenda).
+          </p>
+        </div>
+      </div>
+
+      <div id="aksesWrap">
+        <div class="loading-block">
+          <div class="spinner"></div>
+          Memuat data akses...
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

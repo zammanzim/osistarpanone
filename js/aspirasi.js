@@ -11,6 +11,9 @@ const Aspirasi = {
     async init() {
         if (Aspirasi.terinisialisasi) return;
         Aspirasi.terinisialisasi = true;
+        if (typeof OsisAuth.refreshAkses === "function") {
+            try { await OsisAuth.refreshAkses(); } catch {}
+        }
         Aspirasi.status = await cekStatusAspirasi();
         if (Aspirasi.status === "TUTUP") Aspirasi.kunciFormulir();
         Aspirasi.muatPesan();
@@ -52,10 +55,13 @@ const Aspirasi = {
                 const sep = `<div class="pesan-date-sep"><span>${g.display}</span><span class="pesan-date-line"></span></div>`;
                 const items = g.items.map(p => {
                     const own = p.device_id === deviceId && new Date(p.created_at).getTime() > batasHapus;
-                    // Admin (OSIS): tombol edit/hapus cuma muncul pas edit mode aktif.
+                    // Admin (OSIS): tombol edit/hapus cuma muncul pas edit mode aktif
+                    // DAN punya kendali halaman aspirasi.
                     // Pengunjung biasa: tetap seperti dulu (pesan sendiri <1 jam).
                     const editMode = document.body.classList.contains("edit-mode");
-                    const canKelola = isOsis ? editMode : own;
+                    const canKelola = isOsis
+                        ? (editMode && OsisAuth.bisa && OsisAuth.bisa("aspirasi"))
+                        : own;
                     const lock = p.is_private ? `<span title="Private — hanya OSIS" style="color:var(--red);font-size:0.7rem"><i class="fa-solid fa-lock"></i> Private</span>` : "";
                     return `
                 <div class="pesan-item" style="${p.is_private ? "border-style:dashed" : ""}">
@@ -140,6 +146,23 @@ const Aspirasi = {
             return;
         }
 
+        // Offline -> masuk antrean, terkirim otomatis saat online.
+        const __spec = () => ({ modul: "aspirasi", op: "create",
+            label: "Aspirasi: " + isi.slice(0, 42),
+            payload: { nama: nama || "Anonim", kelas: kelas || "-", isi, is_private: isPrivate },
+            files: [], cacheKeys: ["aspirasi"] });
+        const __sesudahAntre = () => {
+            document.getElementById("namaSiswa").value = "";
+            document.getElementById("kelasSiswa").value = "";
+            document.getElementById("isiAspirasi").value = "";
+            const cb = document.getElementById("isPrivateAspirasi"); if (cb) cb.checked = false;
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...';
 
@@ -154,6 +177,10 @@ const Aspirasi = {
             Aspirasi.muatPesan();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             if (err.message === "ERR_LIMIT") {
                 showPopup("Hanya bisa masukin 1x/hari, dateng besok lagi yaa. Kalo mau ganti tinggal hapus aja pesanmu.", "error");
             } else {
@@ -172,6 +199,7 @@ const Aspirasi = {
         const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
         try {
             if (isOsis) {
+                if (!OsisAuth.butuh("aspirasi")) return;
                 const u = OsisAuth.getUser();
                 await hapusAspirasiOsis(u.id, id);
             } else {
@@ -252,8 +280,19 @@ const Aspirasi = {
         const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+        const __specEdit = () => ({ modul: "aspirasi", op: "update",
+            label: "Ubah aspirasi: " + isi.slice(0, 42),
+            payload: { id, nama, kelas, isi }, files: [], cacheKeys: ["aspirasi"] });
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__specEdit()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(() => Aspirasi.batalEdit());
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Suara Tarpan';
+            return;
+        }
         try {
             if (isOsis) {
+                if (!OsisAuth.butuh("aspirasi")) return;
                 const u = OsisAuth.getUser();
                 await editAspirasiOsis(u.id, id, nama, kelas, isi);
             } else {
@@ -267,6 +306,10 @@ const Aspirasi = {
             if (list && list.scrollIntoView) list.scrollIntoView({ behavior: "smooth", block: "start" });
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specEdit())) {
+                Outbox.sesudahAntre(() => Aspirasi.batalEdit());
+                return;
+            }
             if (err.message === "ERR_EXPIRED") {
                 showPopup("Pesan udah lebih dari 1 jam, udah ga bisa diubah.", "error");
                 Aspirasi.batalEdit();

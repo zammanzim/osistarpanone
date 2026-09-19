@@ -20,6 +20,9 @@ const Tabungan = {
             location.replace("../login");
             return;
         }
+        // Segarkan hak kendali (biar perubahan akses langsung berlaku)
+        try { await OsisAuth.refreshAkses(); } catch {}
+        Tabungan.terapkanAkses();
 
         document.getElementById("btnTambahTabungan")?.addEventListener("click", () => Tabungan.bukaForm());
         document.getElementById("btnResetFilter")?.addEventListener("click", () => Tabungan.resetFilter());
@@ -204,8 +207,9 @@ const Tabungan = {
 
         const wrap = document.getElementById("tabunganWrap");
         if (!wrap) return;
+        const boleh = OsisAuth.bisa("tabungan");
         if (!(Tabungan.cache || []).length) {
-            wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-piggy-bank" style="color:var(--red)"></i></div><b>Belum ada data tabungan</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Catat setoran tabungan per pengurus.</p><button class="btn btn-red btn-sm" onclick="Tabungan.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah Data</button></div>`;
+            wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-piggy-bank" style="color:var(--red)"></i></div><b>Belum ada data tabungan</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Catat setoran tabungan per pengurus.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Tabungan.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah Data</button>` : ""}</div>`;
             return;
         }
         const grups = Tabungan.grupPerOrang(data);
@@ -217,22 +221,24 @@ const Tabungan = {
             const sudahSemua = g.rows.length > 0 && g.rows.every(r => !!r.cek);
             return `<div class="rekap-card" style="margin-bottom:12px">
                 <h3><i class="fa-solid fa-piggy-bank"></i> Tabungan — ${escapeHtml(g.nama)} <span class="jenis total" style="margin-left:auto">${Tabungan.rp(g.total)}${sudahSemua ? " ✓" : ""}</span></h3>
-                <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Tanggal</th><th>Nominal</th><th>Total Semua</th><th>Ceklis</th><th style="text-align:right">Aksi</th></tr></thead><tbody>
+                <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Tanggal</th><th>Nominal</th><th>Total Semua</th><th>Ceklis</th>${boleh ? `<th style="text-align:right">Aksi</th>` : ""}</tr></thead><tbody>
                 ${g.rows.map((r, i) => `<tr data-tab-row="${r.id}">
                     <td>${i + 1}</td>
                     <td>${escapeHtml(Tabungan.fmtTanggalPendek(r.tanggal))}</td>
                     <td><span class="jenis ${Tabungan.isKeluar(r) ? "keluar" : "masuk"}">${Tabungan.isKeluar(r) ? "−" : "+"} ${Tabungan.rp(r.nominal)}</span></td>
                     <td class="num">${Tabungan.rp(r._total)}</td>
-                    <td><button type="button" class="cek-btn ${r.cek ? "on" : ""}" data-tab-toggle="${r.id}" title="${r.cek ? "Sudah diceklis — klik untuk batalkan" : "Belum diceklis — klik untuk tandai"}"><i class="fa-solid ${r.cek ? "fa-check" : "fa-minus"}"></i></button></td>
-                    <td><div class="row-act">
+                    <td>${boleh
+                        ? `<button type="button" class="cek-btn ${r.cek ? "on" : ""}" data-tab-toggle="${r.id}" title="${r.cek ? "Sudah diceklis — klik untuk batalkan" : "Belum diceklis — klik untuk tandai"}"><i class="fa-solid ${r.cek ? "fa-check" : "fa-minus"}"></i></button>`
+                        : `<span class="cek-btn ${r.cek ? "on" : ""}" style="cursor:default"><i class="fa-solid ${r.cek ? "fa-check" : "fa-minus"}"></i></span>`}</td>
+                    ${boleh ? `<td><div class="row-act">
                         <button type="button" class="icon-btn" data-tab-edit="${r.id}" title="Edit" style="width:30px; height:30px; font-size:0.75rem; border-width:2px"><i class="fa-solid fa-pen"></i></button>
                         <button type="button" class="icon-btn" data-tab-del="${r.id}" title="Hapus" style="width:30px; height:30px; font-size:0.75rem; background:var(--red); color:#fff; border-width:2px"><i class="fa-solid fa-trash-can"></i></button>
-                    </div></td>
+                    </div></td>` : ""}
                 </tr>`).join("")}
                 </tbody></table></div>
-                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
+                ${boleh ? `<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
                     <button class="btn btn-white btn-sm" data-tab-tambah="${encodeURIComponent(g.nama)}"><i class="fa-solid fa-plus"></i> Tambah Setoran</button>
-                </div>
+                </div>` : ""}
             </div>`;
         }).join("");
     },
@@ -255,10 +261,20 @@ const Tabungan = {
         dl.innerHTML = namaSet.map(n => `<option value="${escapeHtml(n)}">`).join("");
     },
 
+    // Sembunyikan tombol aksi kalau tidak punya kendali atas halaman ini
+    terapkanAkses() {
+        const boleh = OsisAuth.bisa("tabungan");
+        ["btnTambahTabungan", "btnEditDariDetail", "btnHapusDariDetail"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = boleh ? "" : "none";
+        });
+    },
+
     // ============ FORM ============
     bukaForm(prefillNama) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("tabungan")) return;
         Tabungan.editingId = null;
         document.getElementById("tabId").value = "";
         document.getElementById("tabFormTitle").textContent = "Tambah Setoran";
@@ -290,6 +306,7 @@ const Tabungan = {
     editRow(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("tabungan")) return;
         const item = (Tabungan.cache || []).find(r => String(r.id) === String(id));
         if (!item) return;
         Tabungan.editingId = id;
@@ -313,6 +330,7 @@ const Tabungan = {
     async simpan() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("tabungan")) return;
         const nama = (document.getElementById("tabNama").value || "").trim();
         const tanggal = document.getElementById("tabTanggal").value || "";
         const nominal = parseInt(document.getElementById("tabNominal").value, 10);
@@ -321,6 +339,19 @@ const Tabungan = {
         if (!tanggal) { showToast("Tanggal wajib diisi.", "error"); return; }
         if (!nominal || nominal <= 0) { showToast("Nominal harus lebih dari 0.", "error"); return; }
         const id = Tabungan.editingId || (document.getElementById("tabId").value ? parseInt(document.getElementById("tabId").value, 10) : null);
+        const __spec = () => ({ modul: "tabungan", op: id ? "update" : "create",
+            label: (jenis === "keluar" ? "Penarikan " : "Setoran ") + nama,
+            payload: { id: id || null, nama, tanggal, nominal, jenis },
+            files: [], cacheKeys: ["tabungan"] });
+        const __sesudahAntre = () => {
+            if (typeof FormPersist !== "undefined") FormPersist.clear("tabForm");
+            Tabungan.tutupForm();
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
         const btn = document.getElementById("btnSimpanTabungan");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         try {
@@ -336,6 +367,10 @@ const Tabungan = {
             Tabungan.segarkan();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: " + Tabungan.pesanDb(err.message), "error");
             Tabungan.segarkan();
         } finally {
@@ -346,6 +381,7 @@ const Tabungan = {
     async toggleCek(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("tabungan")) return;
         const item = (Tabungan.cache || []).find(r => String(r.id) === String(id));
         if (!item) return;
         try {
@@ -362,6 +398,7 @@ const Tabungan = {
     async hapusRow(id, dariDetail) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("tabungan")) return;
         const item = (Tabungan.cache || []).find(r => String(r.id) === String(id));
         if (!item) return;
         const yakin = await showPopup(`Hapus ${Tabungan.isKeluar(item) ? "penarikan" : "setoran"} ${item.nama} (${Tabungan.fmtTanggalPendek(item.tanggal)}, ${Tabungan.rp(item.nominal)})?`, "confirm");

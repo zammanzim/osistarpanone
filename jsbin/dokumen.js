@@ -421,6 +421,28 @@ const Dokumen = {
         const id = document.getElementById("dokId").value ? parseInt(document.getElementById("dokId").value, 10) : null;
         if (!nama) { showToast("Nama dokumen wajib diisi", "error"); return; }
         if (!id && !Dokumen.stagedFile) { showToast("Pilih file dulu", "error"); return; }
+        const cur0 = id ? Dokumen.cache.find(d => String(d.id) === String(id)) : null;
+        const __spec = () => {
+            const fl = Dokumen.stagedFile;
+            return { modul: "dokumen", op: id ? "update" : "create",
+                label: "Dokumen: " + String(nama).slice(0, 42),
+                payload: { id: id || null,
+                    f: { nama, kategori, tahun, divisi, deskripsi,
+                        file_path: cur0 ? (cur0.file_path || "") : "",
+                        file_type: cur0 ? Dokumen.extOf(cur0) : "",
+                        mime: cur0 ? (cur0.mime || "") : "",
+                        ukuran_bytes: cur0 ? (parseInt(cur0.ukuran_bytes, 10) || 0) : 0,
+                        pengunggah: (typeof OsisAuth.displayName === "function" ? OsisAuth.displayName(u) : (u.nama || u.username || "")) || "" },
+                    existingPath: cur0 ? (cur0.file_path || "") : "" },
+                files: fl ? [{ slot: "file", file: fl, name: fl.name, type: fl.type }] : [],
+                cacheKeys: ["dokumen"] };
+        };
+        const __sesudahAntre = () => { Dokumen.tutupForm(); };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanDokumen");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -463,6 +485,10 @@ const Dokumen = {
             await Dokumen.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }

@@ -5,10 +5,60 @@
 
 const OsisAuth = {
     KEY: "osis_user",
+    AKSES_KEY: "osis_akses",
 
     getUser() {
         try { return JSON.parse(localStorage.getItem(OsisAuth.KEY) || "null"); }
         catch { return null; }
+    },
+
+    // Cache hak kendali per halaman {halaman:[], sekbid_id, sekbid_nama, super}.
+    // null = belum dimuat -> dianggap TIDAK BOLEH kendali (fail closed).
+    getAkses() {
+        try { return JSON.parse(localStorage.getItem(OsisAuth.AKSES_KEY) || "null"); }
+        catch { return null; }
+    },
+
+    async refreshAkses() {
+        const u = OsisAuth.getUser();
+        if (!u || u.mode !== "osis" || !u.id || typeof aksesSaya !== "function") {
+            try { localStorage.removeItem(OsisAuth.AKSES_KEY); } catch {}
+            return null;
+        }
+        try {
+            const a = await aksesSaya(u.id);
+            try { localStorage.setItem(OsisAuth.AKSES_KEY, JSON.stringify(a || null)); } catch {}
+            return a;
+        } catch (err) {
+            console.error("Gagal muat hak akses:", err);
+            return OsisAuth.getAkses();
+        }
+    },
+
+    // Punya kendali atas halaman? super/'*' -> semua true.
+    bisa(halaman) {
+        const u = OsisAuth.getUser();
+        if (!u || u.mode !== "osis") return false;
+        const a = OsisAuth.getAkses();
+        if (!a) return false;
+        if (a.super) return true;
+        const list = Array.isArray(a.halaman) ? a.halaman : [];
+        return list.includes(halaman) || list.includes("*");
+    },
+
+    isSuper() {
+        const u = OsisAuth.getUser();
+        const a = OsisAuth.getAkses();
+        return !!(u && u.mode === "osis" && a && a.super);
+    },
+
+    // Guard aksi tulis: false + toast kalau tidak boleh.
+    butuh(halaman, pesan) {
+        if (OsisAuth.bisa(halaman)) return true;
+        if (typeof showToast === "function") {
+            showToast(pesan || "Kamu tidak punya kendali atas halaman ini.", "error");
+        }
+        return false;
     },
 
     // Cek user itu guest (mode "guest" baru, "tamu" = sisa sesi lama)
@@ -34,6 +84,7 @@ const OsisAuth = {
 
     logout() {
         localStorage.removeItem(OsisAuth.KEY);
+        try { localStorage.removeItem(OsisAuth.AKSES_KEY); } catch {}
     },
 
     async confirmLogout() {
@@ -54,6 +105,11 @@ const OsisAuth = {
     renderHeader() {
         const area = document.getElementById("areaAuth");
         if (!area) return;
+        // Hangatkan cache hak kendali tiap buka halaman (fire-and-forget)
+        try {
+            const u0 = OsisAuth.getUser();
+            if (u0 && u0.mode === "osis") OsisAuth.refreshAkses().catch(() => {});
+        } catch {}
         const user = OsisAuth.getUser();
 
         if (!user) {

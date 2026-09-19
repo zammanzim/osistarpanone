@@ -3,17 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Program Kerja â€” OSIS TARPAN ONE</title>
+    <title>Program Kerja - OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
-<meta name="theme-color" content="#e11d2e" />
+    <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
-<link rel="manifest" href="../manifest.webmanifest" />
-<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
-<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -147,7 +155,11 @@
       .pk-bar > span {
         display: block;
         height: 100%;
-        background: repeating-linear-gradient(-45deg, var(--red) 0 10px, var(--red-dark) 10px 20px);
+        background: repeating-linear-gradient(
+          -45deg,
+          var(--red) 0 10px,
+          var(--red-dark) 10px 20px
+        );
         border-radius: 999px;
         transition: width 0.3s ease;
       }
@@ -237,7 +249,7 @@
         margin-top: 10px;
         flex-wrap: wrap;
       }
-      /* popup â€” pola agenda/notulensi */
+      /* popup - pola agenda/notulensi */
       .proker-form {
         position: fixed;
         inset: 0;
@@ -556,7 +568,7 @@
         color: var(--gray);
         white-space: nowrap;
       }
-      /* OSIS header menu â€” desktop pill, mobile titik tiga */
+      /* OSIS header menu - desktop pill, mobile titik tiga */
       .osis-nav {
         display: flex;
         align-items: center;
@@ -621,7 +633,7 @@
     <script src="../jsbin/osis-auth.js" defer></script>
     <script src="../jsbin/osis-sidebar.js" defer></script>
     <script src="../jsbin/proker.js" defer></script>
-  <script src="../jsbin/pwa.js" defer></script>
+    <script src="../jsbin/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -632,10 +644,12 @@
           <p>Program Kerja OSIS</p>
         </div>
       </a>
-      
+
       <div class="top-nav-extra">
-        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
-        
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+
         <div id="areaAuth"></div>
       </div>
     </header>
@@ -647,86 +661,315 @@
           <h1>PROGRAM KERJA</h1>
           <p>Kelola dan pantau seluruh program kerja OSIS dalam satu tempat.</p>
         </div>
-        <button class="btn btn-red" id="btnTambahProker"><i class="fa-solid fa-plus"></i> Tambah Program Kerja</button>
+        <button class="btn btn-red" id="btnTambahProker">
+          <i class="fa-solid fa-plus"></i> Tambah Program Kerja
+        </button>
       </div>
 
-      <div class="periode-line"><i class="fa-solid fa-calendar-days"></i> <span id="periodeLabel">Program Kerja OSIS</span></div>
+      <div class="periode-line">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span id="periodeLabel">Program Kerja OSIS</span>
+      </div>
 
       <div class="stat-grid">
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-list-check"></i> Total</span><b id="statTotal">â€”</b><small>program kerja</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-hourglass-start"></i> Belum Mulai</span><b id="statBelum">â€”</b><small>rencana + belum dimulai</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span><b id="statJalan">â€”</b><small>sedang berjalan</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Selesai</span><b id="statSelesai">â€”</b><small>100% tuntas</small></div>
+        <div class="stat-card">
+          <span class="lbl"><i class="fa-solid fa-list-check"></i> Total</span
+          ><b id="statTotal">-</b><small>program kerja</small>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"
+            ><i class="fa-solid fa-hourglass-start"></i> Belum Mulai</span
+          ><b id="statBelum">-</b><small>rencana + belum dimulai</small>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span
+          ><b id="statJalan">-</b><small>sedang berjalan</small>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"
+            ><i class="fa-solid fa-circle-check"></i> Selesai</span
+          ><b id="statSelesai">-</b><small>100% tuntas</small>
+        </div>
       </div>
 
       <div class="overall-card">
-        <div class="top"><span id="overallLabel">Progress Program Kerja Periode Ini</span><b id="overallPct">â€”</b></div>
-        <div class="pk-bar"><span id="overallBar" style="width: 0%"></span></div>
+        <div class="top">
+          <span id="overallLabel">Progress Program Kerja Periode Ini</span
+          ><b id="overallPct">-</b>
+        </div>
+        <div class="pk-bar">
+          <span id="overallBar" style="width: 0%"></span>
+        </div>
       </div>
 
       <div class="filter-card">
-        <div class="field"><label>Cari nama proker</label><input type="text" id="filterQ" class="admin-input" placeholder="cth: class meeting" /></div>
-        <div class="field"><label>Divisi</label><select id="filterDivisi" class="admin-input"><option value="">Semua divisi</option></select></div>
-        <div class="field"><label>Status</label><select id="filterStatus" class="admin-input"><option value="">Semua status</option><option value="rencana">Rencana</option><option value="belum_dimulai">Belum Dimulai</option><option value="berjalan">Sedang Berjalan</option><option value="selesai">Selesai</option><option value="ditunda">Ditunda</option><option value="batal">Dibatalkan</option></select></div>
-        <div class="field"><label>Periode</label><select id="filterPeriode" class="admin-input"><option value="">Semua periode</option></select></div>
-        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
+        <div class="field">
+          <label>Cari nama proker</label
+          ><input
+            type="text"
+            id="filterQ"
+            class="admin-input"
+            placeholder="cth: class meeting"
+          />
+        </div>
+        <div class="field">
+          <label>Divisi</label
+          ><select id="filterDivisi" class="admin-input">
+            <option value="">Semua divisi</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label
+          ><select id="filterStatus" class="admin-input">
+            <option value="">Semua status</option>
+            <option value="rencana">Rencana</option>
+            <option value="belum_dimulai">Belum Dimulai</option>
+            <option value="berjalan">Sedang Berjalan</option>
+            <option value="selesai">Selesai</option>
+            <option value="ditunda">Ditunda</option>
+            <option value="batal">Dibatalkan</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Periode</label
+          ><select id="filterPeriode" class="admin-input">
+            <option value="">Semua periode</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label
+          ><button
+            class="btn btn-white btn-sm"
+            id="btnResetFilter"
+            title="Reset filter"
+          >
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
       </div>
 
-      <div id="prokerList"><div class="loading-block"><div class="spinner"></div>Memuat program kerja...</div></div>
+      <div id="prokerList">
+        <div class="loading-block">
+          <div class="spinner"></div>
+          Memuat program kerja...
+        </div>
+      </div>
     </div>
 
     <!-- POPUP FORM -->
     <div class="proker-form" id="prokerForm">
       <div class="proker-form-inner">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
-          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-list-check" style="color: var(--red)"></i> <span id="prokerFormTitle">Tambah Program Kerja</span></span>
-          <button class="icon-btn" onclick="Proker.tutupForm()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+          "
+        >
+          <span
+            style="
+              font-weight: 900;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+            ><i class="fa-solid fa-list-check" style="color: var(--red)"></i>
+            <span id="prokerFormTitle">Tambah Program Kerja</span></span
+          >
+          <button
+            class="icon-btn"
+            onclick="Proker.tutupForm()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <div class="field"><label>Nama program kerja</label><input type="text" id="pkNama" class="admin-input" placeholder="cth: Class Meeting" maxlength="120" /></div>
-        <div class="field"><label>Deskripsi singkat</label><textarea id="pkDeskripsi" class="admin-input admin-textarea" placeholder="Gambaran program..." rows="3" maxlength="1000"></textarea></div>
+        <div class="field">
+          <label>Nama program kerja</label
+          ><input
+            type="text"
+            id="pkNama"
+            class="admin-input"
+            placeholder="cth: Class Meeting"
+            maxlength="120"
+          />
+        </div>
+        <div class="field">
+          <label>Deskripsi singkat</label
+          ><textarea
+            id="pkDeskripsi"
+            class="admin-input admin-textarea"
+            placeholder="Gambaran program..."
+            rows="3"
+            maxlength="1000"
+          ></textarea>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-          <div class="field"><label>Divisi</label><select id="pkDivisi" class="admin-input"></select></div>
-          <div class="field"><label>Ketua / PJ</label><input type="text" id="pkPj" class="admin-input" placeholder="Nama penanggung jawab" maxlength="80" /></div>
+          <div class="field">
+            <label>Divisi</label
+            ><select id="pkDivisi" class="admin-input"></select>
+          </div>
+          <div class="field">
+            <label>Ketua / PJ</label
+            ><input
+              type="text"
+              id="pkPj"
+              class="admin-input"
+              placeholder="Nama penanggung jawab"
+              maxlength="80"
+            />
+          </div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px">
-          <div class="field"><label>Periode (tahun)</label><input type="number" id="pkPeriode" class="admin-input" value="2026" min="2000" max="2100" /></div>
-          <div class="field"><label>Tgl mulai</label><input type="date" id="pkTglMulai" class="admin-input" /></div>
-          <div class="field"><label>Tgl selesai</label><input type="date" id="pkTglSelesai" class="admin-input" /></div>
+        <div
+          style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px"
+        >
+          <div class="field">
+            <label>Periode (tahun)</label
+            ><input
+              type="number"
+              id="pkPeriode"
+              class="admin-input"
+              value="2026"
+              min="2000"
+              max="2100"
+            />
+          </div>
+          <div class="field">
+            <label>Tgl mulai</label
+            ><input type="date" id="pkTglMulai" class="admin-input" />
+          </div>
+          <div class="field">
+            <label>Tgl selesai</label
+            ><input type="date" id="pkTglSelesai" class="admin-input" />
+          </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-          <div class="field"><label>Lokasi</label><input type="text" id="pkLokasi" class="admin-input" placeholder="Aula / Lapangan" maxlength="80" /></div>
-          <div class="field"><label>Target peserta</label><input type="text" id="pkTargetPeserta" class="admin-input" placeholder="cth: 500 siswa" maxlength="80" /></div>
+          <div class="field">
+            <label>Lokasi</label
+            ><input
+              type="text"
+              id="pkLokasi"
+              class="admin-input"
+              placeholder="Aula / Lapangan"
+              maxlength="80"
+            />
+          </div>
+          <div class="field">
+            <label>Target peserta</label
+            ><input
+              type="text"
+              id="pkTargetPeserta"
+              class="admin-input"
+              placeholder="cth: 500 siswa"
+              maxlength="80"
+            />
+          </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-          <div class="field"><label>Status</label><select id="pkStatus" class="admin-input"><option value="rencana" selected>Rencana</option><option value="belum_dimulai">Belum Dimulai</option><option value="berjalan">Sedang Berjalan</option><option value="selesai">Selesai</option><option value="ditunda">Ditunda</option><option value="batal">Dibatalkan</option></select></div>
-          <div class="field"><label>Progress</label>
+          <div class="field">
+            <label>Status</label
+            ><select id="pkStatus" class="admin-input">
+              <option value="rencana" selected>Rencana</option>
+              <option value="belum_dimulai">Belum Dimulai</option>
+              <option value="berjalan">Sedang Berjalan</option>
+              <option value="selesai">Selesai</option>
+              <option value="ditunda">Ditunda</option>
+              <option value="batal">Dibatalkan</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Progress</label>
             <div class="pk-progress-edit">
-              <input type="range" id="pkProgress" min="0" max="100" step="5" value="0" />
+              <input
+                type="range"
+                id="pkProgress"
+                min="0"
+                max="100"
+                step="5"
+                value="0"
+              />
               <b id="pkProgressVal">0%</b>
             </div>
             <div class="pk-fase" id="pkProgressFase">Belum Dimulai</div>
           </div>
         </div>
-        <div class="field"><label>Agenda terkait (induk dari agenda)</label>
-          <div class="pk-agenda-list" id="pkAgendaList"><div class="pesan-empty">Memuat agenda...</div></div>
+        <div class="field">
+          <label>Agenda terkait (induk dari agenda)</label>
+          <div class="pk-agenda-list" id="pkAgendaList">
+            <div class="pesan-empty">Memuat agenda...</div>
+          </div>
         </div>
-        <div class="field"><label>Tugas / tindak lanjut</label>
+        <div class="field">
+          <label>Tugas / tindak lanjut</label>
           <div id="pkTlList"></div>
-          <button type="button" class="btn btn-white btn-sm" id="btnTambahTl"><i class="fa-solid fa-plus"></i> Tambah tugas</button>
+          <button type="button" class="btn btn-white btn-sm" id="btnTambahTl">
+            <i class="fa-solid fa-plus"></i> Tambah tugas
+          </button>
         </div>
-        <div class="field"><label>Hasil kegiatan</label><textarea id="pkEvHasil" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Hasil yang dicapai..."></textarea></div>
+        <div class="field">
+          <label>Hasil kegiatan</label
+          ><textarea
+            id="pkEvHasil"
+            class="admin-input admin-textarea"
+            rows="2"
+            maxlength="2000"
+            placeholder="Hasil yang dicapai..."
+          ></textarea>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-          <div class="field"><label>Kendala</label><textarea id="pkEvKendala" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Kendala..."></textarea></div>
-          <div class="field"><label>Solusi</label><textarea id="pkEvSolusi" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Solusi..."></textarea></div>
+          <div class="field">
+            <label>Kendala</label
+            ><textarea
+              id="pkEvKendala"
+              class="admin-input admin-textarea"
+              rows="2"
+              maxlength="2000"
+              placeholder="Kendala..."
+            ></textarea>
+          </div>
+          <div class="field">
+            <label>Solusi</label
+            ><textarea
+              id="pkEvSolusi"
+              class="admin-input admin-textarea"
+              rows="2"
+              maxlength="2000"
+              placeholder="Solusi..."
+            ></textarea>
+          </div>
         </div>
-        <div class="field"><label>Catatan periode berikutnya</label><textarea id="pkEvLanjut" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Catatan untuk periode berikutnya..."></textarea></div>
-        <div class="field"><label>Catatan umum</label><textarea id="pkCatatan" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Catatan tambahan..."></textarea></div>
-        <div class="field"><label>Dokumentasi (opsional)</label>
+        <div class="field">
+          <label>Catatan periode berikutnya</label
+          ><textarea
+            id="pkEvLanjut"
+            class="admin-input admin-textarea"
+            rows="2"
+            maxlength="2000"
+            placeholder="Catatan untuk periode berikutnya..."
+          ></textarea>
+        </div>
+        <div class="field">
+          <label>Catatan umum</label
+          ><textarea
+            id="pkCatatan"
+            class="admin-input admin-textarea"
+            rows="2"
+            maxlength="2000"
+            placeholder="Catatan tambahan..."
+          ></textarea>
+        </div>
+        <div class="field">
+          <label>Dokumentasi (opsional)</label>
           <div id="pkDrop" class="proker-drop">
             <div class="proker-drop-inner" id="pkDropInner">
               <i class="fa-solid fa-cloud-arrow-up"></i>
               <span>Klik atau drag &amp; drop foto ke sini</span>
-              <small>JPG/PNG/WEBP, bisa banyak â€” otomatis kompres &lt;1MB</small>
+              <small
+                >JPG/PNG/WEBP, bisa banyak - otomatis kompres &lt;1MB</small
+              >
             </div>
           </div>
           <input type="file" id="pkDokInput" accept="image/*" multiple hidden />
@@ -734,7 +977,9 @@
         <div id="pkPreview" class="proker-fotos" style="display: none"></div>
         <div class="form-actions-row" style="margin-top: 12px">
           <button class="btn btn-white" id="btnBatalProker">Batal</button>
-          <button class="btn btn-red" id="btnSimpanProker"><i class="fa-solid fa-floppy-disk"></i> Simpan Program Kerja</button>
+          <button class="btn btn-red" id="btnSimpanProker">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Program Kerja
+          </button>
         </div>
         <input type="hidden" id="pkId" />
       </div>
@@ -743,14 +988,42 @@
     <!-- POPUP DETAIL -->
     <div class="proker-form" id="prokerDetail">
       <div class="proker-form-inner" style="width: min(680px, 100%)">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
-          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-file-lines" style="color: var(--red)"></i> Detail Program Kerja</span>
-          <button class="icon-btn" onclick="Proker.tutupDetail()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+          "
+        >
+          <span
+            style="
+              font-weight: 900;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+            ><i class="fa-solid fa-file-lines" style="color: var(--red)"></i>
+            Detail Program Kerja</span
+          >
+          <button
+            class="icon-btn"
+            onclick="Proker.tutupDetail()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
         <div id="prokerDetailBody"></div>
         <div class="form-actions-row" style="margin-top: 14px">
-          <button class="btn btn-white btn-sm" onclick="Proker.tutupDetail()">Tutup</button>
-          <button class="btn btn-white btn-sm" id="btnEditDariDetail"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn btn-white btn-sm" onclick="Proker.tutupDetail()">
+            Tutup
+          </button>
+          <button class="btn btn-white btn-sm" id="btnEditDariDetail">
+            <i class="fa-solid fa-pen"></i> Edit
+          </button>
         </div>
       </div>
     </div>

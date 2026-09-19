@@ -3,17 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Evaluasi â€” OSIS TARPAN ONE</title>
+    <title>Evaluasi - OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
-<meta name="theme-color" content="#e11d2e" />
+    <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
-<link rel="manifest" href="../manifest.webmanifest" />
-<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
-<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -229,7 +237,7 @@
       .stars-show .off {
         color: var(--line);
       }
-      /* popup â€” pola agenda */
+      /* popup - pola agenda */
       .evaluasi-form {
         position: fixed;
         inset: 0;
@@ -509,7 +517,7 @@
         border-radius: 10px;
         padding: 6px 12px;
       }
-      /* OSIS header menu â€” desktop pill, mobile titik tiga */
+      /* OSIS header menu - desktop pill, mobile titik tiga */
       .osis-nav {
         display: flex;
         align-items: center;
@@ -560,7 +568,10 @@
         color: #fff;
       }
       @media (min-width: 900px) {
-        .osis-nav { flex-wrap: wrap; row-gap: 6px; }
+        .osis-nav {
+          flex-wrap: wrap;
+          row-gap: 6px;
+        }
       }
       @media (max-width: 640px) {
         .osis-nav {
@@ -588,7 +599,7 @@
     <script src="../jsbin/osis-auth.js" defer></script>
     <script src="../jsbin/osis-sidebar.js" defer></script>
     <script src="../jsbin/evaluasi.js" defer></script>
-  <script src="../jsbin/pwa.js" defer></script>
+    <script src="../jsbin/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -599,10 +610,12 @@
           <p>Hasil Kegiatan</p>
         </div>
       </a>
-      
+
       <div class="top-nav-extra">
-        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
-        
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+
         <div id="areaAuth"></div>
       </div>
     </header>
@@ -612,73 +625,269 @@
         <div class="ico"><i class="fa-solid fa-star-half-stroke"></i></div>
         <div style="flex: 1; min-width: 180px">
           <h1>EVALUASI</h1>
-          <p>Catat hasil, kendala, dan pembelajaran dari setiap kegiatan OSIS.</p>
+          <p>
+            Catat hasil, kendala, dan pembelajaran dari setiap kegiatan OSIS.
+          </p>
         </div>
-        <button class="btn btn-red" id="btnBuatEvaluasi"><i class="fa-solid fa-plus"></i> Buat Evaluasi</button>
+        <button class="btn btn-red" id="btnBuatEvaluasi">
+          <i class="fa-solid fa-plus"></i> Buat Evaluasi
+        </button>
       </div>
 
       <div class="stat-grid">
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-star"></i> Total Evaluasi</span><b id="statTotal">â€”</b></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-days"></i> Bulan Ini</span><b id="statBulan">â€”</b><small id="statBulanLbl">â€”</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Kegiatan Selesai</span><b id="statKegiatan">â€”</b><small>agenda selesai</small></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-triangle-exclamation"></i> Belum Dievaluasi</span><b id="statBelum">â€”</b></div>
+        <div class="stat-card">
+          <span class="lbl"
+            ><i class="fa-solid fa-star"></i> Total Evaluasi</span
+          ><b id="statTotal">-</b>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"
+            ><i class="fa-solid fa-calendar-days"></i> Bulan Ini</span
+          ><b id="statBulan">-</b><small id="statBulanLbl">-</small>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"
+            ><i class="fa-solid fa-circle-check"></i> Kegiatan Selesai</span
+          ><b id="statKegiatan">-</b><small>agenda selesai</small>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"
+            ><i class="fa-solid fa-triangle-exclamation"></i> Belum
+            Dievaluasi</span
+          ><b id="statBelum">-</b>
+        </div>
       </div>
 
       <div class="filter-card">
-        <div class="field"><label>Cari kegiatan</label><input type="text" id="filterQ" class="admin-input" placeholder="ðŸ” Cari kegiatan..." /></div>
-        <div class="field"><label>Divisi</label><select id="filterDivisi" class="admin-input"><option value="">Semua</option></select></div>
-        <div class="field"><label>Proker</label><select id="filterProker" class="admin-input"><option value="">Semua</option></select></div>
-        <div class="field"><label>Status</label><select id="filterStatus" class="admin-input"><option value="">Semua</option><option value="belum">Belum Dievaluasi</option><option value="draft">Draft</option><option value="selesai">Selesai</option></select></div>
-        <div class="field"><label>Periode</label><select id="filterPeriode" class="admin-input"><option value="">Semua</option></select></div>
-        <div class="field"><label>Urutkan</label><select id="filterSort" class="admin-input"><option value="baru">Terbaru</option><option value="lama">Terlama</option><option value="rating_tinggi">Rating tertinggi</option><option value="rating_rendah">Rating terendah</option></select></div>
-        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
+        <div class="field">
+          <label>Cari kegiatan</label
+          ><input
+            type="text"
+            id="filterQ"
+            class="admin-input"
+            placeholder="ðŸ” Cari kegiatan..."
+          />
+        </div>
+        <div class="field">
+          <label>Divisi</label
+          ><select id="filterDivisi" class="admin-input">
+            <option value="">Semua</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Proker</label
+          ><select id="filterProker" class="admin-input">
+            <option value="">Semua</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label
+          ><select id="filterStatus" class="admin-input">
+            <option value="">Semua</option>
+            <option value="belum">Belum Dievaluasi</option>
+            <option value="draft">Draft</option>
+            <option value="selesai">Selesai</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Periode</label
+          ><select id="filterPeriode" class="admin-input">
+            <option value="">Semua</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Urutkan</label
+          ><select id="filterSort" class="admin-input">
+            <option value="baru">Terbaru</option>
+            <option value="lama">Terlama</option>
+            <option value="rating_tinggi">Rating tertinggi</option>
+            <option value="rating_rendah">Rating terendah</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label
+          ><button
+            class="btn btn-white btn-sm"
+            id="btnResetFilter"
+            title="Reset filter"
+          >
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
       </div>
 
-      <div id="evaluasiList"><div class="loading-block"><div class="spinner"></div>Memuat evaluasi...</div></div>
+      <div id="evaluasiList">
+        <div class="loading-block">
+          <div class="spinner"></div>
+          Memuat evaluasi...
+        </div>
+      </div>
     </div>
 
     <!-- POPUP FORM -->
     <div class="evaluasi-form" id="evaluasiForm">
       <div class="evaluasi-form-inner">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
-          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-star-half-stroke" style="color: var(--red)"></i> <span id="evaluasiFormTitle">Buat Evaluasi</span></span>
-          <button class="icon-btn" onclick="Evaluasi.tutupForm()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+          "
+        >
+          <span
+            style="
+              font-weight: 900;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+            ><i
+              class="fa-solid fa-star-half-stroke"
+              style="color: var(--red)"
+            ></i>
+            <span id="evaluasiFormTitle">Buat Evaluasi</span></span
+          >
+          <button
+            class="icon-btn"
+            onclick="Evaluasi.tutupForm()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
 
         <div class="form-sec">Informasi Kegiatan</div>
-        <div class="field"><label>Pilih kegiatan / agenda</label><select id="evAgenda" class="admin-input"><option value="">â€” Ketik manual â€”</option></select></div>
-        <div class="field"><label>Nama kegiatan</label><input type="text" id="evNama" class="admin-input" placeholder="cth: Pelaksanaan Class Meeting" maxlength="160" /></div>
-        <div class="field"><label>Program kerja terkait</label><select id="evProker" class="admin-input"><option value="">â€” Tidak ada â€”</option></select></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px">
-          <div class="field"><label>Tanggal kegiatan</label><input type="date" id="evTanggal" class="admin-input" /></div>
-          <div class="field"><label>Divisi</label><select id="evDivisi" class="admin-input"></select></div>
-          <div class="field"><label>PJ</label><input type="text" id="evPj" class="admin-input" placeholder="Nama PJ" maxlength="80" /></div>
+        <div class="field">
+          <label>Pilih kegiatan / agenda</label
+          ><select id="evAgenda" class="admin-input">
+            <option value="">- Ketik manual -</option>
+          </select>
         </div>
-        <div class="field"><label>Status evaluasi</label><select id="evStatus" class="admin-input"><option value="draft" selected>Draft</option><option value="selesai">Selesai</option><option value="belum">Belum Dievaluasi</option></select></div>
+        <div class="field">
+          <label>Nama kegiatan</label
+          ><input
+            type="text"
+            id="evNama"
+            class="admin-input"
+            placeholder="cth: Pelaksanaan Class Meeting"
+            maxlength="160"
+          />
+        </div>
+        <div class="field">
+          <label>Program kerja terkait</label
+          ><select id="evProker" class="admin-input">
+            <option value="">- Tidak ada -</option>
+          </select>
+        </div>
+        <div
+          style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px"
+        >
+          <div class="field">
+            <label>Tanggal kegiatan</label
+            ><input type="date" id="evTanggal" class="admin-input" />
+          </div>
+          <div class="field">
+            <label>Divisi</label
+            ><select id="evDivisi" class="admin-input"></select>
+          </div>
+          <div class="field">
+            <label>PJ</label
+            ><input
+              type="text"
+              id="evPj"
+              class="admin-input"
+              placeholder="Nama PJ"
+              maxlength="80"
+            />
+          </div>
+        </div>
+        <div class="field">
+          <label>Status evaluasi</label
+          ><select id="evStatus" class="admin-input">
+            <option value="draft" selected>Draft</option>
+            <option value="selesai">Selesai</option>
+            <option value="belum">Belum Dievaluasi</option>
+          </select>
+        </div>
 
-        <div class="form-sec">Penilaian (1â€“5)</div>
-        <div class="field"><label>Rating keseluruhan</label><div class="stars big" id="rateTotal"></div></div>
+        <div class="form-sec">Penilaian (1-5)</div>
+        <div class="field">
+          <label>Rating keseluruhan</label>
+          <div class="stars big" id="rateTotal"></div>
+        </div>
         <div id="rateAspek"></div>
 
         <div class="form-sec">Hasil Evaluasi</div>
-        <div class="field"><label>Hal yang berjalan baik</label><textarea id="evBaik" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-          <div class="field"><label>Kendala</label><textarea id="evKendala" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
-          <div class="field"><label>Penyebab</label><textarea id="evPenyebab" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
+        <div class="field">
+          <label>Hal yang berjalan baik</label
+          ><textarea
+            id="evBaik"
+            class="admin-input admin-textarea"
+            rows="3"
+            maxlength="3000"
+          ></textarea>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-          <div class="field"><label>Solusi</label><textarea id="evSolusi" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
-          <div class="field"><label>Perlu diperbaiki</label><textarea id="evPerbaiki" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
+          <div class="field">
+            <label>Kendala</label
+            ><textarea
+              id="evKendala"
+              class="admin-input admin-textarea"
+              rows="3"
+              maxlength="3000"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label>Penyebab</label
+            ><textarea
+              id="evPenyebab"
+              class="admin-input admin-textarea"
+              rows="3"
+              maxlength="3000"
+            ></textarea>
+          </div>
         </div>
-        <div class="field"><label>Rekomendasi berikutnya</label><textarea id="evRekomendasi" class="admin-input admin-textarea" rows="3" maxlength="3000"></textarea></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field">
+            <label>Solusi</label
+            ><textarea
+              id="evSolusi"
+              class="admin-input admin-textarea"
+              rows="3"
+              maxlength="3000"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label>Perlu diperbaiki</label
+            ><textarea
+              id="evPerbaiki"
+              class="admin-input admin-textarea"
+              rows="3"
+              maxlength="3000"
+            ></textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label>Rekomendasi berikutnya</label
+          ><textarea
+            id="evRekomendasi"
+            class="admin-input admin-textarea"
+            rows="3"
+            maxlength="3000"
+          ></textarea>
+        </div>
 
         <div class="form-sec">Dokumentasi</div>
-        <div class="field"><label>Foto (opsional)</label>
+        <div class="field">
+          <label>Foto (opsional)</label>
           <div id="evDrop" class="evaluasi-drop">
             <div class="evaluasi-drop-inner" id="evDropInner">
               <i class="fa-solid fa-cloud-arrow-up"></i>
               <span>Klik atau drag &amp; drop foto ke sini</span>
-              <small>JPG/PNG â€” otomatis kompres &lt;1MB</small>
+              <small>JPG/PNG - otomatis kompres &lt;1MB</small>
             </div>
           </div>
           <input type="file" id="evDokInput" accept="image/*" multiple hidden />
@@ -686,14 +895,19 @@
         <div id="evPreview" class="evaluasi-fotos" style="display: none"></div>
 
         <div class="form-sec">Tindak Lanjut</div>
-        <div class="field"><label>Tugas / perbaikan</label>
+        <div class="field">
+          <label>Tugas / perbaikan</label>
           <div id="evTlList"></div>
-          <button type="button" class="btn btn-white btn-sm" id="btnTambahTl"><i class="fa-solid fa-plus"></i> Tambah tugas</button>
+          <button type="button" class="btn btn-white btn-sm" id="btnTambahTl">
+            <i class="fa-solid fa-plus"></i> Tambah tugas
+          </button>
         </div>
 
         <div class="form-actions-row" style="margin-top: 12px">
           <button class="btn btn-white" id="btnBatalEvaluasi">Batal</button>
-          <button class="btn btn-red" id="btnSimpanEvaluasi"><i class="fa-solid fa-floppy-disk"></i> Simpan Evaluasi</button>
+          <button class="btn btn-red" id="btnSimpanEvaluasi">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Evaluasi
+          </button>
         </div>
         <input type="hidden" id="evId" />
       </div>
@@ -702,16 +916,48 @@
     <!-- POPUP DETAIL -->
     <div class="evaluasi-form" id="evaluasiDetail">
       <div class="evaluasi-form-inner" style="width: min(680px, 100%)">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
-          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-file-lines" style="color: var(--red)"></i> Detail Evaluasi</span>
-          <button class="icon-btn" onclick="Evaluasi.tutupDetail()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+          "
+        >
+          <span
+            style="
+              font-weight: 900;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+            ><i class="fa-solid fa-file-lines" style="color: var(--red)"></i>
+            Detail Evaluasi</span
+          >
+          <button
+            class="icon-btn"
+            onclick="Evaluasi.tutupDetail()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
         <div id="evDetailBody"></div>
         <div class="form-actions-row" style="margin-top: 14px">
-          <button class="btn btn-white btn-sm" onclick="Evaluasi.tutupDetail()">Tutup</button>
-          <button class="btn btn-white btn-sm" id="btnEditDariDetail"><i class="fa-solid fa-pen"></i> Edit</button>
-          <button class="btn btn-white btn-sm" id="btnCetakDetail"><i class="fa-solid fa-print"></i> Cetak</button>
-          <button class="btn btn-red btn-sm" id="btnHapusDariDetail"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+          <button class="btn btn-white btn-sm" onclick="Evaluasi.tutupDetail()">
+            Tutup
+          </button>
+          <button class="btn btn-white btn-sm" id="btnEditDariDetail">
+            <i class="fa-solid fa-pen"></i> Edit
+          </button>
+          <button class="btn btn-white btn-sm" id="btnCetakDetail">
+            <i class="fa-solid fa-print"></i> Cetak
+          </button>
+          <button class="btn btn-red btn-sm" id="btnHapusDariDetail">
+            <i class="fa-solid fa-trash-can"></i> Hapus
+          </button>
         </div>
       </div>
     </div>

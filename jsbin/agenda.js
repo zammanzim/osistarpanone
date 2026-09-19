@@ -514,6 +514,28 @@ const AgendaAdmin = {
 
         if (!judul) { showToast("Judul wajib diisi", "error"); return; }
         if (!sekbidId) { showToast("Pilih sekbid dulu", "error"); return; }
+        const __spec = () => ({ modul: "agenda", op: id ? "update" : "create",
+            label: "Agenda: " + String(judul).slice(0, 42),
+            payload: { id: id || null, sekbid_id: sekbidId, judul, deskripsi, tanggal, lokasi,
+                status, pelaksana, order, fotosExisting: [...(AgendaAdmin.existingFotos || [])] },
+            files: (AgendaAdmin.pendingFiles || []).filter(fl => fl.type && fl.type.startsWith("image/"))
+                .map((fl, i) => ({ slot: "foto" + i, file: fl, name: fl.name, type: fl.type })),
+            cacheKeys: ["agenda_all", "agenda_*"] });
+        const __sesudahAntre = () => {
+            AgendaAdmin.tutupForm();
+            AgendaAdmin.pendingFiles = [];
+            AgendaAdmin.existingFotos = [];
+            AgendaAdmin._revokePreviewUrls();
+            const fi = document.getElementById("agendaFotos");
+            if (fi) fi.value = "";
+            const pv = document.getElementById("agendaPreview");
+            if (pv) { pv.innerHTML = ""; pv.style.display = "none"; }
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanAgenda");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -551,6 +573,10 @@ const AgendaAdmin = {
             await AgendaAdmin.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }

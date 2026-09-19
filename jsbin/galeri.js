@@ -128,6 +128,18 @@ const Galeri = {
             return;
         }
 
+        const __spec = () => ({ modul: "galeri", op: "create",
+            label: "Galeri: " + String(judul).slice(0, 42),
+            payload: { judul, deskripsi: Galeri.draft.deskripsi || "" },
+            files: files.map((fl, i) => ({ slot: "foto" + i, file: fl, name: fl.name, type: fl.type })),
+            cacheKeys: ["gallery"] });
+        const __sesudahAntre = () => { Galeri.draft = null; Galeri.render(); };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
+
         const btn = document.querySelector(".gal-save");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
 
@@ -149,6 +161,10 @@ const Galeri = {
             await Galeri.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             if (String(err.message).includes("-1") || err.message === "ERR_NO_AUTH") {
                 showPopup("Cuma akun OSIS yang bisa nambah galeri.", "error");
             } else {

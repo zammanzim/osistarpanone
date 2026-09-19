@@ -545,6 +545,17 @@ const Keuangan = {
         if (!f.tanggal) { showToast("Tanggal wajib diisi", "error"); return; }
         if (!f.keterangan) { showToast("Keterangan wajib diisi", "error"); return; }
         if (!f.nominal || f.nominal <= 0) { showToast("Nominal harus lebih dari 0", "error"); return; }
+        const __spec = () => ({ modul: "keuangan", op: id ? "update" : "create",
+            label: (f.jenis === "keluar" ? "Kas keluar: " : "Kas masuk: ") + String(f.keterangan || "").slice(0, 40),
+            payload: { id: id || null, f, existingBukti: Keuangan.existingBukti || "" },
+            files: Keuangan.stagedFile ? [{ slot: "bukti", file: Keuangan.stagedFile, name: Keuangan.stagedFile.name, type: Keuangan.stagedFile.type }] : [],
+            cacheKeys: ["kas"] });
+        const __sesudahAntre = () => { Keuangan.tutupForm(); };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanKas");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -571,6 +582,10 @@ const Keuangan = {
             await Keuangan.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }

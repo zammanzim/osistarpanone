@@ -338,6 +338,20 @@ const Anggota = {
         if (!Number.isFinite(urutan) || urutan < 1) urutan = 99;
         const id = document.getElementById("anggotaPopupId").value || null;
         if (!nama) { showToast("Nama wajib diisi", "error"); return; }
+        const __specAgg = () => {
+            const pf = Anggota.aggForm.pendingFile;
+            return { modul: "anggota", op: id ? "update" : "create",
+                label: "Anggota: " + String(nama).slice(0, 42),
+                payload: { id: id || null, tahun: Anggota.tahun, nama, jabatan, urutan,
+                    fotoExist: Anggota.aggForm.fotoPath || "" },
+                files: pf ? [{ slot: "foto", file: pf, name: pf.name, type: pf.type }] : [],
+                cacheKeys: ["anggota"] };
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__specAgg()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(() => Anggota.tutupPopupAnggota());
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanAnggotaPopup");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -368,21 +382,7 @@ const Anggota = {
                 }
                 showToast("Anggota diperbarui!", "success");
             } else {
-                try {
-                    const { error } = await supa.from("anggota").insert({ tahun: Anggota.tahun, nama, jabatan, urutan, foto });
-                    if (error) throw error;
-                } catch (e) {
-                    if (!foto || !colFotoMissing(e)) throw e;
-                    const { error } = await supa.from("anggota").insert({ tahun: Anggota.tahun, nama, jabatan, urutan });
-                    if (error) throw error;
-                    showToast("Ditambah tanpa foto (run migrasi blok 13 dulu)", "info");
-                    Anggota.tutupPopupAnggota();
-                    const fresh0 = await getAnggota();
-                    Anggota.anggotaCache = fresh0 || [];
-                    Anggota.renderAnggota();
-                    return;
-                }
-                Cache.del("anggota");
+                await tambahAnggota({ tahun: Anggota.tahun, nama, jabatan, urutan, foto });
                 showToast("Anggota ditambah!", "success");
             }
             Anggota.tutupPopupAnggota();
@@ -391,6 +391,10 @@ const Anggota = {
             Anggota.renderAnggota();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specAgg())) {
+                Outbox.sesudahAntre(() => Anggota.tutupPopupAnggota());
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }
@@ -476,6 +480,24 @@ const Anggota = {
         const ketuaNama = document.getElementById("pimpKetuaNama").value.trim();
         const wakilNama = document.getElementById("pimpWakilNama").value.trim();
         const lama = Anggota.pimpTahun() || {};
+        const __specPimp = () => {
+            const files = [];
+            ["ketua_foto", "wakil_foto", "foto_angkatan"].forEach(s => {
+                const fl = Anggota.pfFiles[s];
+                if (fl) files.push({ slot: s, file: fl, name: fl.name, type: fl.type });
+            });
+            return { modul: "pimpinan", op: "update",
+                label: "Pengurus " + Anggota.tahun,
+                payload: { tahun: Anggota.tahun, ketua_nama: ketuaNama, wakil_nama: wakilNama,
+                    existing: { ketua_foto: lama.ketua_foto || "", wakil_foto: lama.wakil_foto || "",
+                        foto_angkatan: lama.foto_angkatan || "" } },
+                files, cacheKeys: ["pimpinan"] };
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__specPimp()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre();
+            return;
+        }
         const btn = document.getElementById("btnSimpanPimpinan");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         try {
@@ -513,6 +535,10 @@ const Anggota = {
             Anggota.renderPengurus();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specPimp())) {
+                Outbox.sesudahAntre();
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Pengurus'; }
@@ -611,6 +637,20 @@ const Anggota = {
         if (!Number.isFinite(urutan) || urutan < 1) urutan = 99;
         const id = document.getElementById("sekbidPopupId").value || null;
         if (!nama) { showToast("Nama wajib diisi", "error"); return; }
+        const __specSek = () => {
+            const pf = Anggota.sekForm.pendingFile;
+            return { modul: "sekbid", op: id ? "update" : "create",
+                label: "Sekbid: " + String(nama).slice(0, 42),
+                payload: { id: id || null, nama, kategori, icon, deskripsi, urutan,
+                    fotoExist: Anggota.sekForm.fotoPath || "" },
+                files: pf ? [{ slot: "foto", file: pf, name: pf.name, type: pf.type }] : [],
+                cacheKeys: ["sekbid"] };
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__specSek()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(() => Anggota.tutupPopupSekbid());
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanSekbidPopup");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -637,6 +677,10 @@ const Anggota = {
             Anggota.renderSekbid();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specSek())) {
+                Outbox.sesudahAntre(() => Anggota.tutupPopupSekbid());
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }

@@ -6,7 +6,7 @@
 // =========================================================================
 
 const AgendaAdmin = {
-    sekbidId: null, // null = semua sekbid (filter)
+    filterSekbid: null, // sekbid yang sedang ditampilkan (satu aja, bisa diganti)
     tab: "sekbid", // "sekbid" | "orang"
     editingId: null,
     cache: [],
@@ -21,17 +21,21 @@ const AgendaAdmin = {
             location.replace("../login");
             return;
         }
-        // isi dropdown sekbid (filter) + dropdown sekbid di form
+        // Segarkan hak kendali (biar perubahan akses langsung berlaku)
+        try { await OsisAuth.refreshAkses(); } catch {}
+        // Muat daftar sekbid + pasang filter (satu sekbid aja, bisa diganti).
+        // Default: sekbid sendiri; yang belum diset fallback ke ketua/BPH.
         try {
             const list = await getSekbid();
             AgendaAdmin.sekbidList = list || [];
             const sel = document.getElementById("pilihSekbid");
             if (sel) {
-                sel.innerHTML = `<option value="">Semua Sekbid</option>` + AgendaAdmin.sekbidList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)} (${s.kategori})</option>`).join("");
-                sel.value = "";
+                sel.innerHTML = AgendaAdmin.sekbidList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)} (${s.kategori})</option>`).join("");
+                sel.value = String(AgendaAdmin.defaultFilter() || "");
+                AgendaAdmin.filterSekbid = sel.value ? parseInt(sel.value, 10) : null;
                 sel.addEventListener("change", () => {
                     const v = sel.value;
-                    AgendaAdmin.sekbidId = v ? parseInt(v, 10) : null;
+                    AgendaAdmin.filterSekbid = v ? parseInt(v, 10) : null;
                     AgendaAdmin.render();
                 });
             }
@@ -94,6 +98,53 @@ const AgendaAdmin = {
         }
 
         AgendaAdmin.muat();
+        AgendaAdmin.terapkanAkses();
+    },
+
+    // Pengendali agenda global (super / mapping eksplisit 'agenda').
+    bisaGlobal() {
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        const a = (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) ? OsisAuth.getAkses() : null;
+        if (!u || u.mode !== "osis" || !a) return false;
+        if (a.super) return true;
+        const list = Array.isArray(a.halaman) ? a.halaman : [];
+        return list.includes("agenda") || list.includes("*");
+    },
+
+    // Boleh kendali agenda sekbid ini? (cermin aturan server osis_bisa_agenda)
+    bisaKendali(sekbidId) {
+        if (AgendaAdmin.bisaGlobal()) return true;
+        const a = (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) ? OsisAuth.getAkses() : null;
+        if (!a || !a.sekbid_id || !sekbidId) return false;
+        return String(a.sekbid_id) === String(sekbidId);
+    },
+
+    // Sekbid milik user yang login (null = belum diset / global).
+    sekbidSaya() {
+        const a = (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) ? OsisAuth.getAkses() : null;
+        if (!a || !a.sekbid_id) return null;
+        return parseInt(a.sekbid_id, 10) || null;
+    },
+
+    // Default filter: sekbid sendiri; yang belum diset fallback ke ketua/BPH.
+    defaultFilter() {
+        const saya = AgendaAdmin.sekbidSaya();
+        if (saya) return saya;
+        const list = AgendaAdmin.sekbidList || [];
+        const ketua = list.find(s => /ketua/i.test(s.nama || "") || /bph/i.test(s.kategori || ""));
+        if (ketua) return ketua.id;
+        return list[0] ? list[0].id : null;
+    },
+
+    // Tombol tambah tampil kalau bisa isi: global ATAU punya sekbid sendiri.
+    // Filter boleh diganti siapa aja (cuma tampilan); isi tetap ikut sekbid masing-masing.
+    terapkanAkses() {
+        const bolehIsi = AgendaAdmin.bisaGlobal() || !!AgendaAdmin.sekbidSaya();
+        const btn = document.getElementById("btnTambahAgenda");
+        if (btn) btn.style.display = bolehIsi ? "" : "none";
+        const sel = document.getElementById("pilihSekbid");
+        if (sel && AgendaAdmin.filterSekbid) sel.value = String(AgendaAdmin.filterSekbid);
+        AgendaAdmin.render();
     },
 
     async muat() {
@@ -102,7 +153,6 @@ const AgendaAdmin = {
         try {
             const data = await getAllAgenda();
             AgendaAdmin.cache = data || [];
-            AgendaAdmin.refreshDatalist();
             AgendaAdmin.render();
         } catch (err) {
             console.error(err);
@@ -117,30 +167,61 @@ const AgendaAdmin = {
         AgendaAdmin.render();
     },
 
-    // Opsi sekbid di dalam form (terpisah dari filter toolbar)
+    // Dropdown sekbid di form CUMA untuk pengendali global (super/mapping).
+    // User biasa tidak memilih: otomatis sekbid miliknya (field disembunyikan).
     isiOpsiSekbidForm(terpilih) {
         const sel = document.getElementById("agendaSekbid");
         if (!sel) return;
+        const global = AgendaAdmin.bisaGlobal();
+        const saya = AgendaAdmin.sekbidSaya();
+        const field = sel.closest ? sel.closest(".field") : null;
+        if (field) field.style.display = global ? "" : "none";
+        sel.disabled = !global;
+        if (!global && saya) {
+            sel.innerHTML = `<option value="${saya}">${escapeHtml(AgendaAdmin.namaSekbid(saya))}</option>`;
+            sel.value = String(saya);
+            return;
+        }
         const list = AgendaAdmin.sekbidList || [];
         sel.innerHTML = list.map(s => `<option value="${s.id}">${escapeHtml(s.nama)} (${s.kategori})</option>`).join("");
         if (terpilih) sel.value = String(terpilih);
-        else if (AgendaAdmin.sekbidId) sel.value = String(AgendaAdmin.sekbidId);
+        else if (AgendaAdmin.filterSekbid) sel.value = String(AgendaAdmin.filterSekbid);
         else if (list[0]) sel.value = String(list[0].id);
     },
 
-    // Saran nama pelaksana: dari anggota + nama yang pernah dipakai
-    async refreshDatalist() {
-        try {
-            const agg = await getAnggota().catch(() => []);
-            const setNama = new Set();
-            (agg || []).forEach(a => { if (a.nama) setNama.add(String(a.nama).trim()); });
-            (AgendaAdmin.cache || []).forEach(a => {
-                const p = String(a.pelaksana || "").trim();
-                if (p) setNama.add(p);
-            });
-            const dl = document.getElementById("pelaksanaList");
-            if (dl) dl.innerHTML = [...setNama].sort().map(n => `<option value="${escapeHtml(n)}">`).join("");
-        } catch {}
+    // Opsi pelaksana: "Saya sendiri" (nama user login) atau
+    // "Seluruh anggota sekbid" (kerja bareng satu sekbid).
+    // Bukan teks bebas biar tidak typo / nama ganda.
+    isiOpsiPelaksana(terpilih) {
+        const sel = document.getElementById("agendaPelaksana");
+        if (!sel) return null;
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        const saya = (((typeof OsisAuth !== "undefined" && typeof OsisAuth.displayName === "function") ? OsisAuth.displayName(u) : "") || (u && (u.nama || u.username)) || "").trim() || "Saya";
+        // Sekbid acuan label: global = pilihan form, sisanya milik sendiri
+        let sidTarget = null;
+        if (AgendaAdmin.bisaGlobal()) {
+            const v = document.getElementById("agendaSekbid")?.value;
+            sidTarget = v ? parseInt(v, 10) : null;
+        } else {
+            sidTarget = AgendaAdmin.sekbidSaya();
+        }
+        const namaSek = sidTarget ? AgendaAdmin.namaSekbid(sidTarget) : "";
+        const semua = namaSek ? `Sekbid ${namaSek}` : "Seluruh anggota sekbid";
+        sel.innerHTML =
+            `<option value="${escapeHtml(saya)}">Saya sendiri — ${escapeHtml(saya)}</option>` +
+            `<option value="${escapeHtml(semua)}">Seluruh anggota${namaSek ? " — " + escapeHtml(namaSek) : ""}</option>`;
+        if (terpilih && terpilih !== saya && terpilih !== semua) {
+            // Data lama (teks bebas): tampilkan apa adanya biar tidak hilang
+            const op = document.createElement("option");
+            op.value = terpilih;
+            op.textContent = terpilih;
+            sel.appendChild(op);
+            sel.value = terpilih;
+        } else {
+            // Default: seluruh anggota sekbid
+            sel.value = terpilih || semua;
+        }
+        return { saya, semua };
     },
 
     namaSekbid(id) {
@@ -192,10 +273,10 @@ const AgendaAdmin = {
                     <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(a.lokasi || "-")}</span>
                 </div>
                 ${fotosHtml}
-                <div class="agenda-actions">
+                ${AgendaAdmin.bisaKendali(a.sekbid_id) ? `<div class="agenda-actions">
                     <button class="btn btn-white btn-sm" onclick="AgendaAdmin.edit(${a.id})"><i class="fa-solid fa-pen"></i> Edit</button>
                     <button class="btn btn-red btn-sm" onclick="AgendaAdmin.hapus(${a.id})"><i class="fa-solid fa-trash-can"></i> Hapus</button>
-                </div>
+                </div>` : ""}
             </div>`;
     },
 
@@ -203,9 +284,9 @@ const AgendaAdmin = {
         const listEl = document.getElementById("agendaList");
         if (!listEl) return;
         const semua = AgendaAdmin.cache || [];
-        // Filter sekbid (toolbar)
-        const basis = AgendaAdmin.sekbidId
-            ? semua.filter(a => String(a.sekbid_id) === String(AgendaAdmin.sekbidId))
+        // Tampil satu sekbid aja sesuai filter (bisa diganti siapa aja).
+        const basis = AgendaAdmin.filterSekbid
+            ? semua.filter(a => String(a.sekbid_id) === String(AgendaAdmin.filterSekbid))
             : semua;
         // Statistik: total, bulan ini, sekbid aktif, orang terlibat
         const now = new Date();
@@ -236,8 +317,8 @@ const AgendaAdmin = {
     renderSekbid(tampil, isEditing) {
         const urut = AgendaAdmin.urutkan(tampil);
         let grupSekbid = AgendaAdmin.sekbidList || [];
-        if (AgendaAdmin.sekbidId) {
-            grupSekbid = grupSekbid.filter(s => String(s.id) === String(AgendaAdmin.sekbidId));
+        if (AgendaAdmin.filterSekbid) {
+            grupSekbid = grupSekbid.filter(s => String(s.id) === String(AgendaAdmin.filterSekbid));
         }
         // Sekbid yang punya agenda tapi tidak ada di list (misal sudah dihapus) tetap tampil
         const idDikenal = new Set(grupSekbid.map(s => String(s.id)));
@@ -337,20 +418,36 @@ const AgendaAdmin = {
     },
 
     bukaForm() {
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!u || u.mode !== "osis") return;
         AgendaAdmin.editingId = null;
         AgendaAdmin.pendingFiles = [];
         AgendaAdmin.existingFotos = [];
         AgendaAdmin._revokePreviewUrls();
         document.getElementById("agendaId").value = "";
         AgendaAdmin.isiOpsiSekbidForm(null);
+        // Sekbid tujuan: global = pilihan form, sisanya otomatis sekbid sendiri.
+        // TIDAK ada dropdown pilih sekbid buat user biasa (field disembunyikan).
+        const sidAwal = AgendaAdmin.bisaGlobal()
+            ? (document.getElementById("agendaSekbid")?.value || null)
+            : AgendaAdmin.sekbidSaya();
+        if (!AgendaAdmin.bisaKendali(sidAwal)) {
+            if (typeof showToast === "function") showToast("Akunmu belum diset sekbid — hubungi admin.", "error");
+            return;
+        }
         document.getElementById("agendaJudul").value = "";
         document.getElementById("agendaDeskripsi").value = "";
-        document.getElementById("agendaTanggal").value = "";
+        // Tanggal otomatis hari ini (lokal, bukan UTC biar tidak mundur sehari)
+        const _t = new Date();
+        document.getElementById("agendaTanggal").value =
+            `${_t.getFullYear()}-${String(_t.getMonth() + 1).padStart(2, "0")}-${String(_t.getDate()).padStart(2, "0")}`;
         document.getElementById("agendaLokasi").value = "";
-        document.getElementById("agendaPelaksana").value = "";
+        AgendaAdmin.isiOpsiPelaksana(null);
         // otomatis ngambil urutan paling latest (latest di atas) — min display_order - 1 kayak prestasi
-        // (dihitung dalam sekbid yang dipilih di form)
-        const sidForm = document.getElementById("agendaSekbid")?.value;
+        // (dihitung dalam sekbid tujuan)
+        const sidForm = AgendaAdmin.bisaGlobal()
+            ? (document.getElementById("agendaSekbid")?.value || null)
+            : AgendaAdmin.sekbidSaya();
         let nextOrder = 1;
         const list = (AgendaAdmin.cache || []).filter(a => !sidForm || String(a.sekbid_id) === String(sidForm));
         if (list.length > 0) {
@@ -373,6 +470,10 @@ const AgendaAdmin = {
     edit(id) {
         const item = AgendaAdmin.cache.find(a => String(a.id) === String(id));
         if (!item) return;
+        if (!AgendaAdmin.bisaKendali(item.sekbid_id)) {
+            if (typeof showToast === "function") showToast("Kamu tidak punya kendali atas sekbid ini.", "error");
+            return;
+        }
         AgendaAdmin.editingId = id;
         AgendaAdmin.pendingFiles = [];
         AgendaAdmin._revokePreviewUrls();
@@ -385,7 +486,7 @@ const AgendaAdmin = {
         document.getElementById("agendaDeskripsi").value = item.deskripsi || "";
         document.getElementById("agendaTanggal").value = item.tanggal || "";
         document.getElementById("agendaLokasi").value = item.lokasi || "";
-        document.getElementById("agendaPelaksana").value = item.pelaksana || "";
+        AgendaAdmin.isiOpsiPelaksana(item.pelaksana || "");
         document.getElementById("agendaOrder").value = item.display_order || 99;
         const ft = document.getElementById("agendaFormTitle");
         if (ft) ft.textContent = "Edit Agenda";
@@ -494,8 +595,19 @@ const AgendaAdmin = {
     async simpan() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
-        const sekbidForm = document.getElementById("agendaSekbid")?.value;
-        const sekbidId = sekbidForm ? parseInt(sekbidForm, 10) : null;
+        // Sekbid tujuan: global = pilihan form (boleh pindah saat edit),
+        // sisanya OTOMATIS sekbid sendiri. User biasa tidak memilih apa-apa.
+        const id = document.getElementById("agendaId").value ? parseInt(document.getElementById("agendaId").value, 10) : null;
+        let sekbidId = null;
+        const itemEdit = id ? AgendaAdmin.cache.find(a => String(a.id) === String(id)) : null;
+        if (AgendaAdmin.bisaGlobal()) {
+            const v = document.getElementById("agendaSekbid")?.value;
+            sekbidId = v ? parseInt(v, 10) : (itemEdit ? parseInt(itemEdit.sekbid_id, 10) : null);
+        } else if (id) {
+            sekbidId = itemEdit ? parseInt(itemEdit.sekbid_id, 10) : null;
+        } else {
+            sekbidId = AgendaAdmin.sekbidSaya();
+        }
         const judul = document.getElementById("agendaJudul").value.trim();
         const deskripsi = document.getElementById("agendaDeskripsi").value.trim();
         const tanggal = document.getElementById("agendaTanggal").value || null;
@@ -504,7 +616,6 @@ const AgendaAdmin = {
         const status = "selesai";
         const pelaksana = document.getElementById("agendaPelaksana")?.value.trim() || "";
         let order = parseInt(document.getElementById("agendaOrder").value, 10);
-        const id = document.getElementById("agendaId").value ? parseInt(document.getElementById("agendaId").value, 10) : null;
         if (!Number.isFinite(order)) {
             if (!id) {
                 const list = (AgendaAdmin.cache || []).filter(a => !sekbidId || String(a.sekbid_id) === String(sekbidId));
@@ -513,7 +624,35 @@ const AgendaAdmin = {
         }
 
         if (!judul) { showToast("Judul wajib diisi", "error"); return; }
-        if (!sekbidId) { showToast("Pilih sekbid dulu", "error"); return; }
+        if (!pelaksana) { showToast("Pilih pelaksana dulu", "error"); return; }
+        if (!sekbidId) { showToast("Akunmu belum diset sekbid — hubungi admin.", "error"); return; }
+        if (!AgendaAdmin.bisaKendali(sekbidId)) {
+            showToast("Kamu tidak punya kendali atas sekbid ini.", "error");
+            return;
+        }
+
+        const __spec = () => ({ modul: "agenda", op: id ? "update" : "create",
+            label: "Agenda: " + String(judul).slice(0, 42),
+            payload: { id: id || null, sekbid_id: sekbidId, judul, deskripsi, tanggal, lokasi,
+                status, pelaksana, order, fotosExisting: [...(AgendaAdmin.existingFotos || [])] },
+            files: (AgendaAdmin.pendingFiles || []).filter(fl => fl.type && fl.type.startsWith("image/"))
+                .map((fl, i) => ({ slot: "foto" + i, file: fl, name: fl.name, type: fl.type })),
+            cacheKeys: ["agenda_all", "agenda_*"] });
+        const __sesudahAntre = () => {
+            AgendaAdmin.tutupForm();
+            AgendaAdmin.pendingFiles = [];
+            AgendaAdmin.existingFotos = [];
+            AgendaAdmin._revokePreviewUrls();
+            const fi = document.getElementById("agendaFotos");
+            if (fi) fi.value = "";
+            const pv = document.getElementById("agendaPreview");
+            if (pv) { pv.innerHTML = ""; pv.style.display = "none"; }
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanAgenda");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -551,6 +690,10 @@ const AgendaAdmin = {
             await AgendaAdmin.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }
@@ -560,6 +703,11 @@ const AgendaAdmin = {
     async hapus(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        const item0 = AgendaAdmin.cache.find(a => String(a.id) === String(id));
+        if (item0 && !AgendaAdmin.bisaKendali(item0.sekbid_id)) {
+            showPopup("Kamu tidak punya kendali atas sekbid ini.", "error");
+            return;
+        }
         const yakin = await showPopup("Hapus agenda ini? Fotonya ikut terhapus.", "confirm");
         if (!yakin) return;
         try {

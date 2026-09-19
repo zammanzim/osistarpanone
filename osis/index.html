@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
@@ -125,7 +125,6 @@
         background: var(--red);
         color: #fff;
       }
-
       .dash-stats {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -176,7 +175,6 @@
       .dash-stat.danger {
         background: #ffe9e9;
       }
-
       .dash-cols {
         display: grid;
         grid-template-columns: 1fr;
@@ -363,15 +361,97 @@
         color: var(--gray);
         padding: 10px 2px;
       }
+      /* Menu cepat + hak kendali */
+      .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .menu-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      .menu-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 14px 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s;
+      }
+      .menu-card:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .menu-card:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+      }
+      .menu-card .mi {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 2.5px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+      }
+      .menu-card b {
+        display: block;
+        font-size: 0.86rem;
+        font-weight: 900;
+      }
+      .menu-card small {
+        font-size: 0.66rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+      .hak-chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      .hak-chip {
+        font-size: 0.68rem;
+        font-weight: 800;
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        padding: 3px 10px;
+        background: #d6f5d6;
+      }
+      .hak-chip.super {
+        background: var(--ink);
+        color: #fff;
+      }
+      .hak-note {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--gray);
+        margin-top: 8px;
+      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../jsbin/config.js"></script>
-    <script src="../jsbin/db.js" defer></script>
-    <script src="../jsbin/app.js" defer></script>
-    <script src="../jsbin/toast.js" defer></script>
-    <script src="../jsbin/show-popup.js" defer></script>
-    <script src="../jsbin/osis-auth.js" defer></script>
-    <script src="../jsbin/osis-sidebar.js" defer></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-sidebar.js" defer></script>
+    <script src="../js/form-persist.js" defer></script>
+    <script src="../js/dashboard.js" defer></script>
+    <script src="../js/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -382,7 +462,6 @@
           <p>Dashboard Khusus</p>
         </div>
       </a>
-      <!-- Menu khusus OSIS: desktop tampil pill, mobile masuk titik tiga -->
 
       <div class="top-nav-extra">
         <a
@@ -410,6 +489,40 @@
         </div>
       </div>
 
+      <div class="dash-panel">
+        <h3><i class="fa-solid fa-key"></i> Hak Kendali Saya</h3>
+        <div class="hak-chips" id="hakChips">
+          <span class="hak-note">Memuat hak akses...</span>
+        </div>
+        <div class="hak-note" id="hakSekbid"></div>
+      </div>
+
+      <div class="dash-panel">
+        <h3><i class="fa-solid fa-grip"></i> Menu Halaman</h3>
+        <div class="menu-grid">
+          <a class="menu-card" href="absensi">
+            <span class="mi"><i class="fa-solid fa-clipboard-user"></i></span>
+            <span><b>Absensi</b><small>Kehadiran pengurus</small></span>
+          </a>
+          <a class="menu-card" href="tabungan">
+            <span class="mi"><i class="fa-solid fa-piggy-bank"></i></span>
+            <span><b>Tabungan</b><small>Setoran pengurus</small></span>
+          </a>
+          <a class="menu-card" href="keuangan">
+            <span class="mi"><i class="fa-solid fa-wallet"></i></span>
+            <span><b>Keuangan</b><small>Kas OSIS</small></span>
+          </a>
+          <a class="menu-card" href="agenda">
+            <span class="mi"><i class="fa-solid fa-calendar-days"></i></span>
+            <span><b>Agenda</b><small>Per sekbid &amp; orang</small></span>
+          </a>
+          <a class="menu-card" href="akses" id="menuAksesCard" style="display: none">
+            <span class="mi"><i class="fa-solid fa-key"></i></span>
+            <span><b>Akses</b><small>Bagi kendali halaman</small></span>
+          </a>
+        </div>
+      </div>
+
       <div class="dash-stats">
         <a href="agenda" class="dash-stat"
           ><span class="lbl"
@@ -417,23 +530,23 @@
           ><b id="statAgenda">-</b
           ><small id="statAgendaSub">memuat...</small></a
         >
-        <a href="proker" class="dash-stat"
+        <div class="dash-stat"
           ><span class="lbl"
             ><i class="fa-solid fa-list-check"></i> Proker Aktif</span
           ><b id="statProker">-</b
-          ><small id="statProkerSub">memuat...</small></a
+          ><small id="statProkerSub">memuat...</small></div
         >
-        <a href="task" class="dash-stat"
+        <div class="dash-stat"
           ><span class="lbl"
             ><i class="fa-solid fa-clipboard-check"></i> Task Belum
             Selesai</span
-          ><b id="statTask">-</b><small id="statTaskSub">memuat...</small></a
+          ><b id="statTask">-</b><small id="statTaskSub">memuat...</small></div
         >
-        <a href="notulensi" class="dash-stat"
+        <div class="dash-stat"
           ><span class="lbl"
             ><i class="fa-solid fa-clipboard-list"></i> Rapat Terbaru</span
           ><b id="statRapat" style="font-size: 1.05rem">-</b
-          ><small id="statRapatSub">memuat...</small></a
+          ><small id="statRapatSub">memuat...</small></div
         >
       </div>
 
@@ -450,7 +563,6 @@
         <div class="dash-panel">
           <h3>
             <i class="fa-solid fa-triangle-exclamation"></i> Butuh Perhatian
-            <a class="go" href="task">Lihat semua →</a>
           </h3>
           <div id="taskPerhatian">
             <div class="dash-empty">Memuat task...</div>
@@ -462,7 +574,6 @@
         <div class="dash-panel">
           <h3>
             <i class="fa-solid fa-list-check"></i> Proker Berjalan
-            <a class="go" href="proker">Lihat semua →</a>
           </h3>
           <div id="prokerJalan">
             <div class="dash-empty">Memuat proker...</div>
@@ -471,23 +582,18 @@
         <div class="dash-panel">
           <h3>
             <i class="fa-solid fa-folder-open"></i> Dokumen Terbaru
-            <a class="go" href="dokumen">Lihat semua →</a>
           </h3>
           <div id="dokBaru">
             <div class="dash-empty">Memuat dokumen...</div>
           </div>
         </div>
-      </div>
-
-      <div class="dash-panel full">
-        <h3><i class="fa-solid fa-clock-rotate-left"></i> Aktivitas Terbaru</h3>
-        <div id="aktivitasList">
-          <div class="dash-empty">Memuat aktivitas...</div>
+        <div class="dash-panel full">
+          <h3><i class="fa-solid fa-clock-rotate-left"></i> Aktivitas Terbaru</h3>
+          <div id="aktivitasList">
+            <div class="dash-empty">Memuat aktivitas...</div>
+          </div>
         </div>
       </div>
     </div>
-
-    <script src="../jsbin/dashboard.js" defer></script>
-    <script src="../jsbin/pwa.js" defer></script>
   </body>
 </html>

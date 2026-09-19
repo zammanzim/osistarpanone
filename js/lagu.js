@@ -10,6 +10,9 @@ const Lagu = {
     async init() {
         if (Lagu.terinisialisasi) return;
         Lagu.terinisialisasi = true;
+        if (typeof OsisAuth.refreshAkses === "function") {
+            try { await OsisAuth.refreshAkses(); } catch {}
+        }
         Lagu.muatDaftar();
     },
 
@@ -46,10 +49,13 @@ const Lagu = {
                 const sep = `<div class="pesan-date-sep"><span>${g.display}</span><span class="pesan-date-line"></span></div>`;
                 const items = g.items.map(l => {
                     const own = l.device_id === deviceId && new Date(l.created_at).getTime() > batasHapus;
-                    // Admin (OSIS): tombol edit/hapus cuma muncul pas edit mode aktif.
+                    // Admin (OSIS): tombol edit/hapus cuma muncul pas edit mode aktif
+                    // DAN punya kendali halaman lagu.
                     // Pengunjung biasa: tetap seperti dulu (request sendiri <1 jam).
                     const editMode = document.body.classList.contains("edit-mode");
-                    const canKelola = isOsis ? editMode : own;
+                    const canKelola = isOsis
+                        ? (editMode && OsisAuth.bisa && OsisAuth.bisa("lagu"))
+                        : own;
                     return `
                 <div class="lagu-item">
                     <div class="lagu-cover"><div class="lagu-kaset"><i class="fa-solid fa-music"></i></div></div>
@@ -116,6 +122,22 @@ const Lagu = {
             return;
         }
 
+        const __spec = () => ({ modul: "lagu", op: "create",
+            label: "Lagu: " + judul.slice(0, 42),
+            payload: { judul, penyanyi, pesan: kata, nama: nama || "Anonim" },
+            files: [], cacheKeys: ["lagu"] });
+        const __sesudahAntre = () => {
+            document.getElementById("judulLagu").value = "";
+            document.getElementById("penyanyiLagu").value = "";
+            document.getElementById("kataLagu").value = "";
+            document.getElementById("namaPengirim").value = "";
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...';
 
@@ -130,6 +152,10 @@ const Lagu = {
             Lagu.muatDaftar();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             if (err.message === "ERR_LIMIT") {
                 showPopup("Hanya bisa masukin 1x/hari, dateng besok lagi yaa. Kalo mau ganti tinggal hapus aja musikmu.", "error");
             } else {
@@ -148,6 +174,7 @@ const Lagu = {
         const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
         try {
             if (isOsis) {
+                if (!OsisAuth.butuh("lagu")) return;
                 const u = OsisAuth.getUser();
                 await hapusLaguOsis(u.id, id);
             } else {
@@ -223,8 +250,19 @@ const Lagu = {
         const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+        const __specEdit = () => ({ modul: "lagu", op: "update",
+            label: "Ubah lagu: " + judul.slice(0, 42),
+            payload: { id, judul, penyanyi, pesan, nama }, files: [], cacheKeys: ["lagu"] });
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__specEdit()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(() => Lagu.batalEdit());
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-music"></i> Kirim Request Lagu';
+            return;
+        }
         try {
             if (isOsis) {
+                if (!OsisAuth.butuh("lagu")) return;
                 const u = OsisAuth.getUser();
                 await editLaguOsis(u.id, id, judul, penyanyi, pesan, nama);
             } else {
@@ -238,6 +276,10 @@ const Lagu = {
             if (list && list.scrollIntoView) list.scrollIntoView({ behavior: "smooth", block: "start" });
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specEdit())) {
+                Outbox.sesudahAntre(() => Lagu.batalEdit());
+                return;
+            }
             if (err.message === "ERR_EXPIRED") {
                 showPopup("Request udah lebih dari 1 jam, udah ga bisa diubah.", "error");
                 Lagu.batalEdit();

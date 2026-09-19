@@ -3,17 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Anggota & Pengurus â€” OSIS TARPAN ONE</title>
+    <title>Anggota & Pengurus - OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
-<meta name="theme-color" content="#e11d2e" />
+    <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
-<link rel="manifest" href="../manifest.webmanifest" />
-<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
-<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -222,7 +230,7 @@
         background: var(--ink);
         border-radius: 2px;
       }
-      /* popup tambah/edit â€” pola agenda */
+      /* popup tambah/edit - pola agenda */
       .angg-popup {
         position: fixed;
         inset: 0;
@@ -360,7 +368,7 @@
         font-size: 1.2rem;
         color: var(--red);
       }
-      /* OSIS header menu â€” desktop pill, mobile titik tiga */
+      /* OSIS header menu - desktop pill, mobile titik tiga */
       .osis-nav {
         display: flex;
         align-items: center;
@@ -425,7 +433,7 @@
     <script src="../jsbin/osis-auth.js" defer></script>
     <script src="../jsbin/osis-sidebar.js" defer></script>
     <script src="../jsbin/anggota.js" defer></script>
-  <script src="../jsbin/pwa.js" defer></script>
+    <script src="../jsbin/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -436,19 +444,23 @@
           <p>Data &amp; Pengurus</p>
         </div>
       </a>
-      
+
       <div class="top-nav-extra">
         <a href="../index#/" class="btn btn-white btn-sm"
           ><i class="fa-solid fa-house"></i> Beranda</a
         >
-        
+
         <div id="areaAuth"></div>
       </div>
     </header>
 
     <div class="anggota-wrap">
       <div class="anggota-toolbar">
-        <select id="pilihTahun" class="admin-input" title="Periode tahun"></select>
+        <select
+          id="pilihTahun"
+          class="admin-input"
+          title="Periode tahun"
+        ></select>
         <button class="btn btn-white btn-sm" id="btnTambahTahun">
           <i class="fa-solid fa-plus"></i> Periode
         </button>
@@ -468,34 +480,99 @@
 
       <!-- ANGGOTA -->
       <div class="anggota-card" id="panelAnggota">
-        <h3><i class="fa-solid fa-users"></i> Anggota <span id="anggotaCount"></span></h3>
+        <h3>
+          <i class="fa-solid fa-users"></i> Anggota
+          <span id="anggotaCount"></span>
+        </h3>
         <p class="sub">Klik kartu + buat tambah, ikon pen buat edit.</p>
-        <div id="anggotaTable"><div class="loading-block"><div class="spinner"></div>Memuat anggota...</div></div>
+        <div id="anggotaTable">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat anggota...
+          </div>
+        </div>
       </div>
 
       <!-- POPUP ANGGOTA -->
       <div class="angg-popup" id="anggotaPopup">
         <div class="angg-popup-inner">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
-            <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-user" style="color: var(--red)"></i> <span id="anggotaPopupTitle">Tambah Anggota</span></span>
-            <button class="icon-btn" onclick="Anggota.tutupPopupAnggota()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 14px;
+            "
+          >
+            <span
+              style="
+                font-weight: 900;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 1rem;
+              "
+              ><i class="fa-solid fa-user" style="color: var(--red)"></i>
+              <span id="anggotaPopupTitle">Tambah Anggota</span></span
+            >
+            <button
+              class="icon-btn"
+              onclick="Anggota.tutupPopupAnggota()"
+              title="Tutup"
+              style="width: 34px; height: 34px; flex-shrink: 0"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
-          <div class="field"><label>Foto (opsional)</label>
+          <div class="field">
+            <label>Foto (opsional)</label>
             <div id="anggotaDrop" class="angg-drop">
               <div class="angg-drop-inner" id="anggotaDropInner">
                 <i class="fa-solid fa-cloud-arrow-up"></i>
                 <span>Klik atau drop foto ke sini</span>
-                <small>JPG/PNG/WEBP â€” otomatis kompres &lt;1MB</small>
+                <small>JPG/PNG/WEBP - otomatis kompres &lt;1MB</small>
               </div>
             </div>
             <input type="file" id="anggotaPopupFile" accept="image/*" hidden />
           </div>
-          <div class="field"><label>Nama</label><input type="text" id="anggotaNama" class="admin-input" placeholder="Nama lengkap" maxlength="80" /></div>
-          <div class="field"><label>Jabatan</label><input type="text" id="anggotaJabatan" class="admin-input" placeholder="cth: Ketua Sekbid 1" maxlength="80" /></div>
-          <div class="field"><label>Urutan</label><input type="number" id="anggotaUrutan" class="admin-input" value="99" min="1" max="999" /></div>
+          <div class="field">
+            <label>Nama</label
+            ><input
+              type="text"
+              id="anggotaNama"
+              class="admin-input"
+              placeholder="Nama lengkap"
+              maxlength="80"
+            />
+          </div>
+          <div class="field">
+            <label>Jabatan</label
+            ><input
+              type="text"
+              id="anggotaJabatan"
+              class="admin-input"
+              placeholder="cth: Ketua Sekbid 1"
+              maxlength="80"
+            />
+          </div>
+          <div class="field">
+            <label>Urutan</label
+            ><input
+              type="number"
+              id="anggotaUrutan"
+              class="admin-input"
+              value="99"
+              min="1"
+              max="999"
+            />
+          </div>
           <div class="form-actions-row" style="margin-top: 12px">
-            <button class="btn btn-white" onclick="Anggota.tutupPopupAnggota()">Batal</button>
-            <button class="btn btn-red" id="btnSimpanAnggotaPopup"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+            <button class="btn btn-white" onclick="Anggota.tutupPopupAnggota()">
+              Batal
+            </button>
+            <button class="btn btn-red" id="btnSimpanAnggotaPopup">
+              <i class="fa-solid fa-floppy-disk"></i> Simpan
+            </button>
           </div>
           <input type="hidden" id="anggotaPopupId" />
         </div>
@@ -503,56 +580,171 @@
 
       <!-- PENGURUS -->
       <div class="anggota-card" id="panelPengurus" style="display: none">
-        <h3><i class="fa-solid fa-crown"></i> Pengurus Periode <span id="pengurusTahun"></span></h3>
-        <p class="sub">Ketua &amp; wakil + foto. Klik kotak foto atau drop foto ke sana, lalu Simpan.</p>
+        <h3>
+          <i class="fa-solid fa-crown"></i> Pengurus Periode
+          <span id="pengurusTahun"></span>
+        </h3>
+        <p class="sub">
+          Ketua &amp; wakil + foto. Klik kotak foto atau drop foto ke sana, lalu
+          Simpan.
+        </p>
         <div class="pengurus-grid">
-          <div class="field"><label>Ketua</label><input type="text" id="pimpKetuaNama" class="admin-input" placeholder="Nama ketua" maxlength="80"></div>
-          <div class="field"><label>Wakil</label><input type="text" id="pimpWakilNama" class="admin-input" placeholder="Nama wakil" maxlength="80"></div>
+          <div class="field">
+            <label>Ketua</label
+            ><input
+              type="text"
+              id="pimpKetuaNama"
+              class="admin-input"
+              placeholder="Nama ketua"
+              maxlength="80"
+            />
+          </div>
+          <div class="field">
+            <label>Wakil</label
+            ><input
+              type="text"
+              id="pimpWakilNama"
+              class="admin-input"
+              placeholder="Nama wakil"
+              maxlength="80"
+            />
+          </div>
         </div>
         <div class="pengurus-foto-row">
-          <div class="pf-box" id="pfKetua" title="Foto ketua"><i class="fa-solid fa-camera"></i><span>Ketua</span></div>
-          <div class="pf-box" id="pfWakil" title="Foto wakil"><i class="fa-solid fa-camera"></i><span>Wakil</span></div>
-          <div class="pf-box" id="pfAngkatan" title="Foto angkatan"><i class="fa-solid fa-camera"></i><span>Angkatan</span></div>
+          <div class="pf-box" id="pfKetua" title="Foto ketua">
+            <i class="fa-solid fa-camera"></i><span>Ketua</span>
+          </div>
+          <div class="pf-box" id="pfWakil" title="Foto wakil">
+            <i class="fa-solid fa-camera"></i><span>Wakil</span>
+          </div>
+          <div class="pf-box" id="pfAngkatan" title="Foto angkatan">
+            <i class="fa-solid fa-camera"></i><span>Angkatan</span>
+          </div>
         </div>
         <div class="form-actions-row">
-          <button class="btn btn-red" id="btnSimpanPimpinan"><i class="fa-solid fa-floppy-disk"></i> Simpan Pengurus</button>
+          <button class="btn btn-red" id="btnSimpanPimpinan">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Pengurus
+          </button>
         </div>
       </div>
 
       <!-- SEKBID -->
       <div class="anggota-card" id="panelSekbid" style="display: none">
-        <h3><i class="fa-solid fa-layer-group"></i> Sekbid &amp; BPH <span id="sekbidCount"></span></h3>
-        <p class="sub">Klik kartu + buat tambah, ikon pen buat edit. Hati-hati hapus sekbid yang sudah punya agenda.</p>
-        <div id="sekbidTable"><div class="loading-block"><div class="spinner"></div>Memuat sekbid...</div></div>
+        <h3>
+          <i class="fa-solid fa-layer-group"></i> Sekbid &amp; BPH
+          <span id="sekbidCount"></span>
+        </h3>
+        <p class="sub">
+          Klik kartu + buat tambah, ikon pen buat edit. Hati-hati hapus sekbid
+          yang sudah punya agenda.
+        </p>
+        <div id="sekbidTable">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat sekbid...
+          </div>
+        </div>
       </div>
 
       <!-- POPUP SEKBID -->
       <div class="angg-popup" id="sekbidPopup">
         <div class="angg-popup-inner">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
-            <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-layer-group" style="color: var(--red)"></i> <span id="sekbidPopupTitle">Tambah Sekbid</span></span>
-            <button class="icon-btn" onclick="Anggota.tutupPopupSekbid()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 14px;
+            "
+          >
+            <span
+              style="
+                font-weight: 900;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 1rem;
+              "
+              ><i class="fa-solid fa-layer-group" style="color: var(--red)"></i>
+              <span id="sekbidPopupTitle">Tambah Sekbid</span></span
+            >
+            <button
+              class="icon-btn"
+              onclick="Anggota.tutupPopupSekbid()"
+              title="Tutup"
+              style="width: 34px; height: 34px; flex-shrink: 0"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
-          <div class="field"><label>Foto (opsional)</label>
+          <div class="field">
+            <label>Foto (opsional)</label>
             <div id="sekbidDrop" class="angg-drop">
               <div class="angg-drop-inner" id="sekbidDropInner">
                 <i class="fa-solid fa-cloud-arrow-up"></i>
                 <span>Klik atau drop foto ke sini</span>
-                <small>JPG/PNG/WEBP â€” otomatis kompres &lt;1MB</small>
+                <small>JPG/PNG/WEBP - otomatis kompres &lt;1MB</small>
               </div>
             </div>
             <input type="file" id="sekbidPopupFile" accept="image/*" hidden />
           </div>
-          <div class="field"><label>Nama</label><input type="text" id="sekbidNama" class="admin-input" placeholder="cth: Sekbid 1" maxlength="80" /></div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-            <div class="field"><label>Kategori</label><select id="sekbidKategori" class="admin-input"><option value="SEKBID">SEKBID</option><option value="BPH">BPH</option></select></div>
-            <div class="field"><label>Urutan</label><input type="number" id="sekbidUrutan" class="admin-input" value="99" min="1" max="999" /></div>
+          <div class="field">
+            <label>Nama</label
+            ><input
+              type="text"
+              id="sekbidNama"
+              class="admin-input"
+              placeholder="cth: Sekbid 1"
+              maxlength="80"
+            />
           </div>
-          <div class="field"><label>Icon</label><input type="text" id="sekbidIcon" class="admin-input" placeholder="fa-solid fa-users" maxlength="60" /></div>
-          <div class="field"><label>Deskripsi</label><textarea id="sekbidDeskripsi" class="admin-input admin-textarea" placeholder="Deskripsi singkat" maxlength="200" rows="3"></textarea></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+            <div class="field">
+              <label>Kategori</label
+              ><select id="sekbidKategori" class="admin-input">
+                <option value="SEKBID">SEKBID</option>
+                <option value="BPH">BPH</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Urutan</label
+              ><input
+                type="number"
+                id="sekbidUrutan"
+                class="admin-input"
+                value="99"
+                min="1"
+                max="999"
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label>Icon</label
+            ><input
+              type="text"
+              id="sekbidIcon"
+              class="admin-input"
+              placeholder="fa-solid fa-users"
+              maxlength="60"
+            />
+          </div>
+          <div class="field">
+            <label>Deskripsi</label
+            ><textarea
+              id="sekbidDeskripsi"
+              class="admin-input admin-textarea"
+              placeholder="Deskripsi singkat"
+              maxlength="200"
+              rows="3"
+            ></textarea>
+          </div>
           <div class="form-actions-row" style="margin-top: 12px">
-            <button class="btn btn-white" onclick="Anggota.tutupPopupSekbid()">Batal</button>
-            <button class="btn btn-red" id="btnSimpanSekbidPopup"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+            <button class="btn btn-white" onclick="Anggota.tutupPopupSekbid()">
+              Batal
+            </button>
+            <button class="btn btn-red" id="btnSimpanSekbidPopup">
+              <i class="fa-solid fa-floppy-disk"></i> Simpan
+            </button>
           </div>
           <input type="hidden" id="sekbidPopupId" />
         </div>

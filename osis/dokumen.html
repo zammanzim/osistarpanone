@@ -1,9 +1,9 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dokumen OSIS - OSIS TARPAN ONE</title>
+    <title>Dokumen — OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
@@ -455,72 +455,18 @@
         padding: 10px 12px;
         margin-top: 8px;
       }
-      /* OSIS header menu - desktop pill, mobile titik tiga */
-      .osis-nav {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-shrink: 0;
-      }
-      .osis-nav-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
-        border: 2.5px solid var(--ink);
-        border-radius: 999px;
-        background: var(--white);
-        font-size: 0.78rem;
-        font-weight: 800;
-        text-decoration: none;
-        color: var(--ink);
-        box-shadow: 2px 2px 0 var(--ink);
-        transition:
-          transform 0.12s,
-          box-shadow 0.12s,
-          background 0.12s,
-          color 0.12s;
-        white-space: nowrap;
-      }
-      .osis-nav-link:hover {
-        transform: translate(-1px, -1px);
-        box-shadow: 3px 3px 0 var(--ink);
-      }
-      .osis-nav-link:active {
-        transform: translate(1px, 1px);
-        box-shadow: none;
-      }
-      .osis-nav-link.active {
-        background: var(--red);
-        color: #fff;
-      }
-      #osisMoreWrap {
-        display: none;
-        position: relative;
-      }
-      #osisMoreWrap.show {
-        display: inline-flex !important;
-      }
-      #osisMoreMenu .header-more-item.active {
-        background: var(--red);
-        color: #fff;
-      }
-      @media (max-width: 640px) {
-        .osis-nav {
-          display: none !important;
-        }
-      }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../jsbin/config.js"></script>
-    <script src="../jsbin/db.js" defer></script>
-    <script src="../jsbin/app.js" defer></script>
-    <script src="../jsbin/toast.js" defer></script>
-    <script src="../jsbin/show-popup.js" defer></script>
-    <script src="../jsbin/osis-auth.js" defer></script>
-    <script src="../jsbin/osis-sidebar.js" defer></script>
-    <script src="../jsbin/dokumen.js" defer></script>
-    <script src="../jsbin/pwa.js" defer></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-sidebar.js" defer></script>
+    <script src="../js/form-persist.js" defer></script>
+    <script src="../js/dokumen.js" defer></script>
+    <script src="../js/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -548,7 +494,11 @@
           <h1>DOKUMEN OSIS</h1>
           <p>Arsip dan kelola seluruh dokumen OSIS dalam satu tempat.</p>
         </div>
-        <button class="btn btn-red" id="btnUploadDokumen">
+        <button
+          class="btn btn-red"
+          id="btnUploadDokumen"
+          style="display: none"
+        >
           <i class="fa-solid fa-plus"></i> Upload Dokumen
         </button>
       </div>
@@ -591,7 +541,7 @@
             type="text"
             id="filterQ"
             class="admin-input"
-            placeholder="ðŸ” Cari nama dokumen..."
+            placeholder="Cari nama dokumen..."
           />
         </div>
         <div class="field">
@@ -779,10 +729,18 @@
           <button class="btn btn-white btn-sm" id="btnDownloadDetail">
             <i class="fa-solid fa-download"></i> Download
           </button>
-          <button class="btn btn-white btn-sm" id="btnEditDariDetail">
+          <button
+            class="btn btn-white btn-sm"
+            id="btnEditDariDetail"
+            style="display: none"
+          >
             <i class="fa-solid fa-pen"></i> Edit
           </button>
-          <button class="btn btn-red btn-sm" id="btnHapusDariDetail">
+          <button
+            class="btn btn-red btn-sm"
+            id="btnHapusDariDetail"
+            style="display: none"
+          >
             <i class="fa-solid fa-trash-can"></i> Hapus
           </button>
         </div>

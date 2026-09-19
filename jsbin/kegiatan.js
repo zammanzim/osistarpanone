@@ -428,6 +428,29 @@ const Kegiatan = {
       showToast("Tambah minimal 1 foto", "error");
       return;
     }
+    const __kegOrder = (() => {
+      const list = Kegiatan.cache || [];
+      if (!list.length) return 99;
+      try {
+        return Math.min(...list.map((k) => parseInt(k.display_order, 10) || 99)) - 1;
+      } catch { return 99; }
+    })();
+    const __spec = () => ({ modul: "kegiatan", op: "create",
+      label: "Kegiatan: " + String(d.judul || "").trim().slice(0, 42),
+      payload: { judul: d.judul.trim(), deskripsi: d.deskripsi || "", badge: d.badge || "",
+        order: __kegOrder,
+        fotosExisting: (d.fotos || []).map((fl) => ({
+          path: typeof fl === "string" ? fl : fl.path,
+          caption: typeof fl === "string" ? "" : fl.caption || "",
+        })) },
+      files: (d.files || []).map((fl, i) => ({ slot: "foto" + i, file: fl, name: fl.name, type: fl.type })),
+      cacheKeys: ["kegiatan"] });
+    const __sesudahAntre = () => { Kegiatan.draft = null; Kegiatan.render(); };
+    if (typeof Outbox !== "undefined" && Outbox.offline()) {
+      try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+      Outbox.sesudahAntre(__sesudahAntre);
+      return;
+    }
     const btn = document.querySelector("#kegiatanGrid .gal-save");
     if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     try {
@@ -471,6 +494,10 @@ const Kegiatan = {
       await Kegiatan.muat();
     } catch (err) {
       console.error(err);
+      if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+        Outbox.sesudahAntre(__sesudahAntre);
+        return;
+      }
       showToast("Gagal simpan: " + err.message, "error");
       if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i>';
     }

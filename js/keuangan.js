@@ -1,6 +1,6 @@
 ﻿// =========================================================================
-// KEUANGAN â€” halaman khusus OSIS (folder /osis)
-// Dipakai di osis2/keuangan.html â€” kas masuk/keluar, saldo = masuk - keluar (dihitung client). Bukti foto drag & drop folder kas/.
+// KEUANGAN - halaman khusus OSIS (folder /osis)
+// Dipakai di osis2/keuangan.html - kas masuk/keluar, saldo = masuk - keluar (dihitung client). Bukti foto drag & drop folder kas/.
 // Export/cetak laporan via print CSS. Visual ikut design system Agenda.
 // =========================================================================
 
@@ -47,6 +47,11 @@ const Keuangan = {
       location.replace("../login");
       return;
     }
+    // Segarkan hak kendali (biar perubahan akses langsung berlaku)
+    try {
+      await OsisAuth.refreshAkses();
+    } catch {}
+    Keuangan.terapkanAkses();
 
     // opsi divisi: BPH + Umum + sekbid (fail silent)
     try {
@@ -60,7 +65,7 @@ const Keuangan = {
         )
         .join("");
       const dd = document.getElementById("kasDivisi");
-      if (dd) dd.innerHTML = `<option value="">â€” Pilih â€”</option>` + opts;
+      if (dd) dd.innerHTML = `<option value="">- Pilih -</option>` + opts;
       const fd = document.getElementById("filterDivisi");
       if (fd) fd.innerHTML = `<option value="">Semua</option>` + opts;
     } catch {}
@@ -311,7 +316,7 @@ const Keuangan = {
     const tp = document.getElementById("kasProker");
     if (tp) {
       tp.innerHTML =
-        `<option value="">â€” Tidak ada â€”</option>` +
+        `<option value="">- Tidak ada -</option>` +
         (Keuangan.prokerCache || [])
           .map(
             (p) =>
@@ -325,7 +330,7 @@ const Keuangan = {
         String(b.tanggal || "") < String(a.tanggal || "") ? -1 : 1,
       );
       ta.innerHTML =
-        `<option value="">â€” Tidak ada â€”</option>` +
+        `<option value="">- Tidak ada -</option>` +
         list
           .map((a) => {
             const tgl = a.tanggal
@@ -334,7 +339,7 @@ const Keuangan = {
                   month: "short",
                 })
               : "";
-            return `<option value="${a.id}">${escapeHtml(a.judul || "Tanpa judul")}${tgl ? " Â· " + tgl : ""}</option>`;
+            return `<option value="${a.id}">${escapeHtml(a.judul || "Tanpa judul")}${tgl ? " · " + tgl : ""}</option>`;
           })
           .join("");
     }
@@ -400,7 +405,7 @@ const Keuangan = {
     set("rumusKeluar", "- " + Keuangan.rp(keluar));
     set(
       "saldoPeriodeLbl",
-      f.periode ? `Â· Periode ${f.periode}` : "Â· Semua periode",
+      f.periode ? `· Periode ${f.periode}` : "· Semua periode",
     );
     set("statMasuk", Keuangan.rp(masuk));
     set("statKeluar", Keuangan.rp(keluar));
@@ -459,7 +464,7 @@ const Keuangan = {
           : "Rekap Per Bulan";
     }
 
-    // rekap proker â€” tampil kalau filter proker? (filter tidak ada proker; tampil ringkas top proker)
+    // rekap proker - tampil kalau filter proker? (filter tidak ada proker; tampil ringkas top proker)
     const pc = document.getElementById("prokerCard");
     if (pc) {
       const byProker = {};
@@ -480,7 +485,7 @@ const Keuangan = {
             const b = byProker[k];
             return `<div class="rekap-row">
                         <div class="top"><span>${escapeHtml(Keuangan.prokerName(k))}</span><small>Sisa ${Keuangan.rp(b.masuk - b.keluar)}</small></div>
-                        <div class="top"><small>Masuk ${Keuangan.rp(b.masuk)} Â· Keluar ${Keuangan.rp(b.keluar)}</small></div>
+                        <div class="top"><small>Masuk ${Keuangan.rp(b.masuk)} · Keluar ${Keuangan.rp(b.keluar)}</small></div>
                     </div>`;
           })
           .join("");
@@ -491,7 +496,12 @@ const Keuangan = {
     const wrap = document.getElementById("kasWrap");
     if (!wrap) return;
     if (!(Keuangan.cache || []).length) {
-      wrap.innerHTML = `<div class="pesan-empty" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-wallet" style="color:var(--red)"></i></div><b>Belum ada transaksi</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Tambahkan transaksi pertama untuk mulai mencatat keuangan OSIS.</p><button class="btn btn-red btn-sm" onclick="Keuangan.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah Transaksi</button></div>`;
+      wrap.innerHTML = `      <div class="pesan-empty" style="text-align:center; padding:26px 12px"><div
+          style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-wallet"
+          style="color:var(--red)"></i></div><b>Belum ada transaksi</b><p style="font-size:0.8rem; color:var(--gray);
+          margin:6px 0 12px">Tambahkan transaksi pertama untuk mulai mencatat keuangan OSIS.</p>${OsisAuth.bisa("keuangan") ? `<button class="btn
+           btn-red btn-sm" onclick="Keuangan.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah
+           Transaksi</button>` : ""}</div>`;
       return;
     }
     if (!data.length) {
@@ -557,7 +567,19 @@ const Keuangan = {
     if (typeof FormPersist !== "undefined") FormPersist.touch("kasForm");
   },
 
+  // Sembunyikan tombol aksi kalau tidak punya kendali atas halaman ini
+  terapkanAkses() {
+    const boleh = OsisAuth.bisa("keuangan");
+    ["btnTambahKas", "btnEditDariDetail", "btnHapusDariDetail"].forEach(
+      (id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = boleh ? "" : "none";
+      },
+    );
+  },
+
   bukaForm() {
+    if (!OsisAuth.butuh("keuangan")) return;
     Keuangan.editingId = null;
     Keuangan.stagedFile = null;
     Keuangan.existingBukti = "";
@@ -597,6 +619,7 @@ const Keuangan = {
   },
 
   edit(id) {
+    if (!OsisAuth.butuh("keuangan")) return;
     const item = Keuangan.cache.find((t) => String(t.id) === String(id));
     if (!item) return;
     Keuangan.editingId = id;
@@ -729,6 +752,7 @@ const Keuangan = {
       showPopup("Cuma OSIS", "error");
       return;
     }
+    if (!OsisAuth.butuh("keuangan")) return;
     const f = Keuangan.kumpulkanForm();
     const id = document.getElementById("kasId").value
       ? parseInt(document.getElementById("kasId").value, 10)
@@ -743,6 +767,21 @@ const Keuangan = {
     }
     if (!f.nominal || f.nominal <= 0) {
       showToast("Nominal harus lebih dari 0", "error");
+      return;
+    }
+
+    const __spec = () => ({ modul: "keuangan", op: id ? "update" : "create",
+      label: (f.jenis === "keluar" ? "Kas keluar: " : "Kas masuk: ") + String(f.keterangan || "").slice(0, 40),
+      payload: { id: id || null, f, existingBukti: Keuangan.existingBukti || "" },
+      files: Keuangan.stagedFile ? [{ slot: "bukti", file: Keuangan.stagedFile, name: Keuangan.stagedFile.name, type: Keuangan.stagedFile.type }] : [],
+      cacheKeys: ["kas"] });
+    const __sesudahAntre = () => {
+      if (typeof FormPersist !== "undefined") FormPersist.clear("kasForm");
+      Keuangan.tutupForm();
+    };
+    if (typeof Outbox !== "undefined" && Outbox.offline()) {
+      try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+      Outbox.sesudahAntre(__sesudahAntre);
       return;
     }
 
@@ -781,6 +820,10 @@ const Keuangan = {
       await Keuangan.muat();
     } catch (err) {
       console.error(err);
+      if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+        Outbox.sesudahAntre(__sesudahAntre);
+        return;
+      }
       showToast("Gagal simpan: " + err.message, "error");
     } finally {
       if (btn) {
@@ -793,6 +836,7 @@ const Keuangan = {
   async hapus(id, dariDetail) {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     if (!u || u.mode !== "osis") return;
+    if (!OsisAuth.butuh("keuangan")) return;
     const item = Keuangan.cache.find((t) => String(t.id) === String(id));
     const yakin = await showPopup(
       `Hapus transaksi "${item ? item.keterangan : ""}" (${item ? Keuangan.rp(item.nominal) : ""})? Saldo ikut berubah.`,
@@ -887,7 +931,7 @@ const Keuangan = {
             <div style="font-family:Arial,Helvetica,sans-serif; color:#111; max-width:700px; margin:0 auto">
                 <div style="text-align:center; border-bottom:3px solid #111; padding-bottom:10px; margin-bottom:14px">
                     <div style="font-size:18px; font-weight:900">LAPORAN KEUANGAN OSIS</div>
-                    <div style="font-size:12px">SMK Taruna Harapan 1 Cipatat â€” ${judul}</div>
+                    <div style="font-size:12px">SMK Taruna Harapan 1 Cipatat - ${judul}</div>
                 </div>
                 <table style="font-size:13px; margin-bottom:12px">
                     <tr><td>Total Pemasukan (${data.filter((t) => t.jenis === "masuk").length})</td><td style="text-align:right"><b>${Keuangan.rp(masuk)}</b></td></tr>

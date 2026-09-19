@@ -3,17 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Task â€” OSIS TARPAN ONE</title>
+    <title>Task - OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
-<meta name="theme-color" content="#e11d2e" />
+    <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
-<link rel="manifest" href="../manifest.webmanifest" />
-<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
-<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -174,10 +182,18 @@
         border-radius: 999px;
         padding: 1px 9px;
       }
-      .kanban-col.col-todo > h3 i { color: var(--gray); }
-      .kanban-col.col-in_progress > h3 i { color: #c25700; }
-      .kanban-col.col-review > h3 i { color: #6d28d9; }
-      .kanban-col.col-done > h3 i { color: #146314; }
+      .kanban-col.col-todo > h3 i {
+        color: var(--gray);
+      }
+      .kanban-col.col-in_progress > h3 i {
+        color: #c25700;
+      }
+      .kanban-col.col-review > h3 i {
+        color: #6d28d9;
+      }
+      .kanban-col.col-done > h3 i {
+        color: #146314;
+      }
       .task-card {
         background: var(--white);
         border: 2.5px solid var(--ink);
@@ -226,10 +242,22 @@
         border-radius: 999px;
         border: 1.5px solid var(--ink);
       }
-      .prio.urgent { background: var(--red); color: #fff; }
-      .prio.high { background: #ff9f43; color: var(--ink); }
-      .prio.medium { background: var(--yellow); color: var(--ink); }
-      .prio.low { background: var(--white); color: var(--gray); }
+      .prio.urgent {
+        background: var(--red);
+        color: #fff;
+      }
+      .prio.high {
+        background: #ff9f43;
+        color: var(--ink);
+      }
+      .prio.medium {
+        background: var(--yellow);
+        color: var(--ink);
+      }
+      .prio.low {
+        background: var(--white);
+        color: var(--gray);
+      }
       .telat {
         font-size: 0.62rem;
         font-weight: 900;
@@ -311,7 +339,7 @@
         text-align: center;
         padding: 12px 4px;
       }
-      /* popup â€” pola agenda */
+      /* popup - pola agenda */
       .task-form {
         position: fixed;
         inset: 0;
@@ -398,7 +426,7 @@
         background: var(--line);
         border-radius: 2px;
       }
-      /* OSIS header menu â€” desktop pill, mobile titik tiga */
+      /* OSIS header menu - desktop pill, mobile titik tiga */
       .osis-nav {
         display: flex;
         align-items: center;
@@ -463,7 +491,7 @@
     <script src="../jsbin/osis-auth.js" defer></script>
     <script src="../jsbin/osis-sidebar.js" defer></script>
     <script src="../jsbin/task.js" defer></script>
-  <script src="../jsbin/pwa.js" defer></script>
+    <script src="../jsbin/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -474,10 +502,12 @@
           <p>Tugas Pengurus</p>
         </div>
       </a>
-      
+
       <div class="top-nav-extra">
-        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
-        
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+
         <div id="areaAuth"></div>
       </div>
     </header>
@@ -489,62 +519,273 @@
           <h1>TASK</h1>
           <p>Kelola tugas dan tanggung jawab pengurus OSIS.</p>
         </div>
-        <button class="btn btn-red" id="btnTambahTask"><i class="fa-solid fa-plus"></i> Tambah Task</button>
+        <button class="btn btn-red" id="btnTambahTask">
+          <i class="fa-solid fa-plus"></i> Tambah Task
+        </button>
       </div>
 
       <div class="stat-grid">
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-list"></i> Semua Task</span><b id="statTotal">â€”</b></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle"></i> Belum</span><b id="statTodo">â€”</b></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span><b id="statJalan">â€”</b></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-circle-check"></i> Selesai</span><b id="statSelesai">â€”</b></div>
-        <div class="stat-card danger"><span class="lbl"><i class="fa-solid fa-triangle-exclamation"></i> Terlambat</span><b id="statTelat">â€”</b></div>
+        <div class="stat-card">
+          <span class="lbl"><i class="fa-solid fa-list"></i> Semua Task</span
+          ><b id="statTotal">-</b>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"><i class="fa-solid fa-circle"></i> Belum</span
+          ><b id="statTodo">-</b>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"><i class="fa-solid fa-spinner"></i> Berjalan</span
+          ><b id="statJalan">-</b>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"
+            ><i class="fa-solid fa-circle-check"></i> Selesai</span
+          ><b id="statSelesai">-</b>
+        </div>
+        <div class="stat-card danger">
+          <span class="lbl"
+            ><i class="fa-solid fa-triangle-exclamation"></i> Terlambat</span
+          ><b id="statTelat">-</b>
+        </div>
       </div>
 
       <div class="filter-card">
-        <div class="field"><label>Cari task</label><input type="text" id="filterQ" class="admin-input" placeholder="ðŸ” Cari task..." /></div>
-        <div class="field"><label>PIC</label><select id="filterPic" class="admin-input"><option value="">Semua</option></select></div>
-        <div class="field"><label>Divisi</label><select id="filterDivisi" class="admin-input"><option value="">Semua</option></select></div>
-        <div class="field"><label>Priority</label><select id="filterPriority" class="admin-input"><option value="">Semua</option><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
-        <div class="field"><label>Status</label><select id="filterStatus" class="admin-input"><option value="">Semua</option><option value="todo">Todo</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Done</option></select></div>
-        <div class="field"><label>Proker</label><select id="filterProker" class="admin-input"><option value="">Semua</option></select></div>
-        <div class="field"><label>Urutkan</label><select id="filterSort" class="admin-input"><option value="deadline">Deadline</option><option value="baru">Terbaru</option><option value="prioritas">Prioritas</option></select></div>
-        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
+        <div class="field">
+          <label>Cari task</label
+          ><input
+            type="text"
+            id="filterQ"
+            class="admin-input"
+            placeholder="ðŸ” Cari task..."
+          />
+        </div>
+        <div class="field">
+          <label>PIC</label
+          ><select id="filterPic" class="admin-input">
+            <option value="">Semua</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Divisi</label
+          ><select id="filterDivisi" class="admin-input">
+            <option value="">Semua</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Priority</label
+          ><select id="filterPriority" class="admin-input">
+            <option value="">Semua</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label
+          ><select id="filterStatus" class="admin-input">
+            <option value="">Semua</option>
+            <option value="todo">Todo</option>
+            <option value="in_progress">In Progress</option>
+            <option value="review">Review</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Proker</label
+          ><select id="filterProker" class="admin-input">
+            <option value="">Semua</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Urutkan</label
+          ><select id="filterSort" class="admin-input">
+            <option value="deadline">Deadline</option>
+            <option value="baru">Terbaru</option>
+            <option value="prioritas">Prioritas</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label
+          ><button
+            class="btn btn-white btn-sm"
+            id="btnResetFilter"
+            title="Reset filter"
+          >
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
       </div>
 
       <div class="kanban" id="kanban">
-        <div class="kanban-col col-todo"><h3><i class="fa-regular fa-circle"></i> Todo <span class="n" id="countTodo">0</span></h3><div id="colTodo" style="display:flex; flex-direction:column; gap:10px"></div></div>
-        <div class="kanban-col col-in_progress"><h3><i class="fa-solid fa-spinner"></i> In Progress <span class="n" id="countProg">0</span></h3><div id="colProg" style="display:flex; flex-direction:column; gap:10px"></div></div>
-        <div class="kanban-col col-review"><h3><i class="fa-solid fa-eye"></i> Review <span class="n" id="countReview">0</span></h3><div id="colReview" style="display:flex; flex-direction:column; gap:10px"></div></div>
-        <div class="kanban-col col-done"><h3><i class="fa-solid fa-circle-check"></i> Done <span class="n" id="countDone">0</span></h3><div id="colDone" style="display:flex; flex-direction:column; gap:10px"></div></div>
+        <div class="kanban-col col-todo">
+          <h3>
+            <i class="fa-regular fa-circle"></i> Todo
+            <span class="n" id="countTodo">0</span>
+          </h3>
+          <div
+            id="colTodo"
+            style="display: flex; flex-direction: column; gap: 10px"
+          ></div>
+        </div>
+        <div class="kanban-col col-in_progress">
+          <h3>
+            <i class="fa-solid fa-spinner"></i> In Progress
+            <span class="n" id="countProg">0</span>
+          </h3>
+          <div
+            id="colProg"
+            style="display: flex; flex-direction: column; gap: 10px"
+          ></div>
+        </div>
+        <div class="kanban-col col-review">
+          <h3>
+            <i class="fa-solid fa-eye"></i> Review
+            <span class="n" id="countReview">0</span>
+          </h3>
+          <div
+            id="colReview"
+            style="display: flex; flex-direction: column; gap: 10px"
+          ></div>
+        </div>
+        <div class="kanban-col col-done">
+          <h3>
+            <i class="fa-solid fa-circle-check"></i> Done
+            <span class="n" id="countDone">0</span>
+          </h3>
+          <div
+            id="colDone"
+            style="display: flex; flex-direction: column; gap: 10px"
+          ></div>
+        </div>
       </div>
     </div>
 
     <!-- POPUP FORM -->
     <div class="task-form" id="taskForm">
       <div class="task-form-inner">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px">
-          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-clipboard-check" style="color: var(--red)"></i> <span id="taskFormTitle">Tambah Task</span></span>
-          <button class="icon-btn" onclick="Task.tutupForm()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+          "
+        >
+          <span
+            style="
+              font-weight: 900;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+            ><i
+              class="fa-solid fa-clipboard-check"
+              style="color: var(--red)"
+            ></i>
+            <span id="taskFormTitle">Tambah Task</span></span
+          >
+          <button
+            class="icon-btn"
+            onclick="Task.tutupForm()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <div class="field"><label>Judul task</label><input type="text" id="taskJudul" class="admin-input" placeholder="cth: Cetak poster PESAK" maxlength="160" /></div>
-        <div class="field"><label>Deskripsi</label><textarea id="taskDeskripsi" class="admin-input admin-textarea" rows="3" maxlength="2000" placeholder="Detail tugas..."></textarea></div>
+        <div class="field">
+          <label>Judul task</label
+          ><input
+            type="text"
+            id="taskJudul"
+            class="admin-input"
+            placeholder="cth: Cetak poster PESAK"
+            maxlength="160"
+          />
+        </div>
+        <div class="field">
+          <label>Deskripsi</label
+          ><textarea
+            id="taskDeskripsi"
+            class="admin-input admin-textarea"
+            rows="3"
+            maxlength="2000"
+            placeholder="Detail tugas..."
+          ></textarea>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-          <div class="field"><label>PIC</label><input type="text" id="taskPic" class="admin-input" placeholder="Nama penanggung jawab" maxlength="80" /></div>
-          <div class="field"><label>Divisi</label><select id="taskDivisi" class="admin-input"></select></div>
+          <div class="field">
+            <label>PIC</label
+            ><input
+              type="text"
+              id="taskPic"
+              class="admin-input"
+              placeholder="Nama penanggung jawab"
+              maxlength="80"
+            />
+          </div>
+          <div class="field">
+            <label>Divisi</label
+            ><select id="taskDivisi" class="admin-input"></select>
+          </div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px">
-          <div class="field"><label>Priority</label><select id="taskPriority" class="admin-input"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
-          <div class="field"><label>Deadline</label><input type="date" id="taskDeadline" class="admin-input" /></div>
-          <div class="field"><label>Status</label><select id="taskStatus" class="admin-input"><option value="todo" selected>Todo</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Done</option></select></div>
+        <div
+          style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px"
+        >
+          <div class="field">
+            <label>Priority</label
+            ><select id="taskPriority" class="admin-input">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Deadline</label
+            ><input type="date" id="taskDeadline" class="admin-input" />
+          </div>
+          <div class="field">
+            <label>Status</label
+            ><select id="taskStatus" class="admin-input">
+              <option value="todo" selected>Todo</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-          <div class="field"><label>Program Kerja terkait</label><select id="taskProker" class="admin-input"><option value="">â€” Tidak ada â€”</option></select></div>
-          <div class="field"><label>Agenda terkait</label><select id="taskAgenda" class="admin-input"><option value="">â€” Tidak ada â€”</option></select></div>
+          <div class="field">
+            <label>Program Kerja terkait</label
+            ><select id="taskProker" class="admin-input">
+              <option value="">- Tidak ada -</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Agenda terkait</label
+            ><select id="taskAgenda" class="admin-input">
+              <option value="">- Tidak ada -</option>
+            </select>
+          </div>
         </div>
-        <div class="field"><label>Catatan</label><textarea id="taskCatatan" class="admin-input admin-textarea" rows="2" maxlength="2000" placeholder="Catatan tambahan..."></textarea></div>
+        <div class="field">
+          <label>Catatan</label
+          ><textarea
+            id="taskCatatan"
+            class="admin-input admin-textarea"
+            rows="2"
+            maxlength="2000"
+            placeholder="Catatan tambahan..."
+          ></textarea>
+        </div>
         <div class="form-actions-row" style="margin-top: 12px">
           <button class="btn btn-white" id="btnBatalTask">Batal</button>
-          <button class="btn btn-red" id="btnSimpanTask"><i class="fa-solid fa-floppy-disk"></i> Simpan Task</button>
+          <button class="btn btn-red" id="btnSimpanTask">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Task
+          </button>
         </div>
         <input type="hidden" id="taskId" />
       </div>
@@ -553,16 +794,48 @@
     <!-- POPUP DETAIL -->
     <div class="task-form" id="taskDetail">
       <div class="task-form-inner">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
-          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-file-lines" style="color: var(--red)"></i> Detail Task</span>
-          <button class="icon-btn" onclick="Task.tutupDetail()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+          "
+        >
+          <span
+            style="
+              font-weight: 900;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+            ><i class="fa-solid fa-file-lines" style="color: var(--red)"></i>
+            Detail Task</span
+          >
+          <button
+            class="icon-btn"
+            onclick="Task.tutupDetail()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
         <div id="taskDetailBody"></div>
         <div class="form-actions-row" style="margin-top: 14px">
-          <button class="btn btn-white btn-sm" onclick="Task.tutupDetail()">Tutup</button>
-          <button class="btn btn-white btn-sm" id="btnEditDariDetail"><i class="fa-solid fa-pen"></i> Edit</button>
-          <button class="btn btn-yellow btn-sm" id="btnSelesaiDariDetail"><i class="fa-solid fa-check"></i> Tandai Selesai</button>
-          <button class="btn btn-red btn-sm" id="btnHapusDariDetail"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+          <button class="btn btn-white btn-sm" onclick="Task.tutupDetail()">
+            Tutup
+          </button>
+          <button class="btn btn-white btn-sm" id="btnEditDariDetail">
+            <i class="fa-solid fa-pen"></i> Edit
+          </button>
+          <button class="btn btn-yellow btn-sm" id="btnSelesaiDariDetail">
+            <i class="fa-solid fa-check"></i> Tandai Selesai
+          </button>
+          <button class="btn btn-red btn-sm" id="btnHapusDariDetail">
+            <i class="fa-solid fa-trash-can"></i> Hapus
+          </button>
         </div>
       </div>
     </div>

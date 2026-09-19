@@ -5,6 +5,18 @@
 
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Normalisasi error RPC tulis: penolakan hak akses jadi pesan yang ramah.
+// Dipakai semua wrapper di bawah (cekOk = hasil "OK", cekId = hasil id baru).
+function cekOk(data) {
+    if (data === "OK") return;
+    throw new Error(data === "ERR_NO_AUTH" ? "Kamu tidak punya kendali atas halaman ini." : data);
+}
+function cekId(data) {
+    if (data && Number(data) > 0) return data;
+    if (Number(data) === -1) throw new Error("Kamu tidak punya kendali atas halaman ini.");
+    throw new Error("Gagal simpan (" + data + ")");
+}
+
 // Bangun URL publik foto di bucket
 function getFoto(pathFoto) {
     if (!pathFoto) return "";
@@ -204,7 +216,7 @@ async function updateOsisProfil(userId, nama, bio, foto) {
         p_user_id: userId, p_nama: nama, p_bio: bio, p_foto: foto
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // Ganti username OSIS (harus unik) — return OK atau throw ERR_TAKEN/ERR_INVALID
@@ -213,7 +225,7 @@ async function gantiOsisUsername(userId, username) {
         p_user_id: userId, p_username: username
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // Ganti password OSIS (verifikasi lama di server) — throw ERR_WRONG/ERR_INVALID
@@ -222,7 +234,7 @@ async function gantiOsisPassword(userId, oldPw, newPw) {
         p_user_id: userId, p_old: oldPw, p_new: newPw
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // =========================================================================
@@ -280,7 +292,7 @@ async function kirimAspirasi(nama, kelas, isi, isPrivate = false) {
         p_is_private: !!isPrivate
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // Ambil aspirasi terbaru buat ditampilkan (terbaru di atas, maks 50)
@@ -301,7 +313,7 @@ async function hapusAspirasiSendiri(id) {
         p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // Cek sakelar buka/tutup aspirasi
@@ -330,7 +342,7 @@ async function kirimRequestLagu(judul, penyanyi, pesan, nama) {
         p_nama: nama
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // Catat kunjungan unik per perangkat (1x per hari WIB), return total kunjungan.
@@ -384,7 +396,7 @@ async function hapusLaguSendiri(id) {
         p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // Hapus aspirasi/lagu oleh OSIS (boleh hapus punya siapa aja)
@@ -394,7 +406,7 @@ async function hapusAspirasiOsis(userId, id) {
         p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 async function hapusLaguOsis(userId, id) {
     const { data, error } = await supa.rpc("hapus_lagu_osis", {
@@ -402,7 +414,7 @@ async function hapusLaguOsis(userId, id) {
         p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // Edit aspirasi milik sendiri (device_id + 1 jam dicek di server)
@@ -415,7 +427,7 @@ async function editAspirasiSendiri(id, nama, kelas, isi) {
         p_isi: isi
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // Edit request lagu milik sendiri (device_id + 1 jam dicek di server)
@@ -429,7 +441,7 @@ async function editLaguSendiri(id, judul, penyanyi, pesan, nama) {
         p_nama: nama
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // Edit aspirasi/lagu oleh OSIS (boleh ubah punya siapa aja)
@@ -442,7 +454,7 @@ async function editAspirasiOsis(userId, id, nama, kelas, isi) {
         p_isi: isi
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 async function editLaguOsis(userId, id, judul, penyanyi, pesan, nama) {
     const { data, error } = await supa.rpc("edit_lagu_osis", {
@@ -454,7 +466,7 @@ async function editLaguOsis(userId, id, judul, penyanyi, pesan, nama) {
         p_nama: nama
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // =========================================================================
@@ -475,7 +487,7 @@ async function buatPrestasi(userId, tag, caption, fotos, order = 99) {
         p_user_id: userId, p_tag: tag, p_caption: caption, p_fotos: fotos, p_display_order: order
     });
     if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("prestasi");
     return data;
 }
@@ -484,7 +496,7 @@ async function updatePrestasi(userId, id, tag, caption, fotos, order) {
         p_user_id: userId, p_id: id, p_tag: tag, p_caption: caption, p_fotos: fotos, p_display_order: order
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("prestasi");
 }
 async function hapusPrestasi(userId, id) {
@@ -492,7 +504,7 @@ async function hapusPrestasi(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("prestasi");
 }
 
@@ -514,7 +526,7 @@ async function buatKegiatan(userId, judul, deskripsi, badge, fotos, order = 99) 
         p_user_id: userId, p_judul: judul, p_deskripsi: deskripsi, p_badge: badge, p_fotos: fotos, p_display_order: order
     });
     if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("kegiatan");
     return data;
 }
@@ -523,7 +535,7 @@ async function updateKegiatan(userId, id, judul, deskripsi, badge, fotos, order)
         p_user_id: userId, p_id: id, p_judul: judul, p_deskripsi: deskripsi, p_badge: badge, p_fotos: fotos, p_display_order: order
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("kegiatan");
 }
 async function hapusKegiatan(userId, id) {
@@ -531,7 +543,7 @@ async function hapusKegiatan(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("kegiatan");
 }
 
@@ -555,7 +567,7 @@ async function buatNotulensi(userId, f) {
         p_tindak_lanjut: f.tindak_lanjut, p_lampiran: f.lampiran, p_status: f.status
     });
     if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("notulensi");
     return data;
 }
@@ -567,7 +579,7 @@ async function updateNotulensi(userId, id, f) {
         p_tindak_lanjut: f.tindak_lanjut, p_lampiran: f.lampiran, p_status: f.status
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("notulensi");
 }
 async function hapusNotulensi(userId, id) {
@@ -575,7 +587,7 @@ async function hapusNotulensi(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("notulensi");
 }
 
@@ -600,7 +612,7 @@ async function buatProker(userId, f) {
         p_evaluasi_lanjut: f.evaluasi_lanjut, p_dokumentasi: f.dokumentasi
     });
     if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("proker");
     return data;
 }
@@ -613,7 +625,7 @@ async function updateProker(userId, id, f) {
         p_evaluasi_lanjut: f.evaluasi_lanjut, p_dokumentasi: f.dokumentasi
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("proker");
 }
 async function hapusProker(userId, id) {
@@ -621,7 +633,7 @@ async function hapusProker(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("proker");
 }
 
@@ -643,7 +655,7 @@ async function buatDokumen(userId, f) {
         p_ukuran_bytes: f.ukuran_bytes, p_pengunggah: f.pengunggah
     });
     if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("dokumen");
     return data;
 }
@@ -654,7 +666,7 @@ async function updateDokumen(userId, id, f) {
         p_ukuran_bytes: f.ukuran_bytes, p_pengunggah: f.pengunggah
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("dokumen");
 }
 async function hapusDokumen(userId, id) {
@@ -662,7 +674,7 @@ async function hapusDokumen(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("dokumen");
 }
 
@@ -685,7 +697,7 @@ async function buatTask(userId, f) {
         p_proker_id: f.proker_id, p_agenda_id: f.agenda_id, p_catatan: f.catatan
     });
     if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("task");
     return data;
 }
@@ -696,7 +708,7 @@ async function updateTask(userId, id, f) {
         p_proker_id: f.proker_id, p_agenda_id: f.agenda_id, p_catatan: f.catatan
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("task");
 }
 async function pindahTask(userId, id, status) {
@@ -704,7 +716,7 @@ async function pindahTask(userId, id, status) {
         p_user_id: userId, p_id: id, p_status: status
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("task");
 }
 async function hapusTask(userId, id) {
@@ -712,7 +724,7 @@ async function hapusTask(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("task");
 }
 
@@ -742,7 +754,7 @@ async function buatKas(userId, f) {
         p_catatan: f.catatan, p_bukti_path: f.bukti_path
     });
     if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("kas");
     return data;
 }
@@ -753,7 +765,7 @@ async function updateKas(userId, id, f) {
         p_catatan: f.catatan, p_bukti_path: f.bukti_path
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("kas");
 }
 async function hapusKas(userId, id) {
@@ -761,7 +773,7 @@ async function hapusKas(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("kas");
 }
 async function setSaldoAwal(userId, periode, nominal) {
@@ -769,7 +781,7 @@ async function setSaldoAwal(userId, periode, nominal) {
         p_user_id: userId, p_periode: periode, p_nominal: nominal
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
 }
 
 // =========================================================================
@@ -794,7 +806,7 @@ async function buatEvaluasi(userId, f) {
         p_perbaiki: f.perbaiki, p_rekomendasi: f.rekomendasi, p_dokumentasi: f.dokumentasi, p_tugas: f.tugas
     });
     if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("evaluasi");
     return data;
 }
@@ -808,7 +820,7 @@ async function updateEvaluasi(userId, id, f) {
         p_perbaiki: f.perbaiki, p_rekomendasi: f.rekomendasi, p_dokumentasi: f.dokumentasi, p_tugas: f.tugas
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("evaluasi");
 }
 async function hapusEvaluasi(userId, id) {
@@ -816,7 +828,7 @@ async function hapusEvaluasi(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("evaluasi");
 }
 
@@ -846,7 +858,7 @@ async function setFormulirSlug(userId, id, slug) {
         p_user_id: userId, p_id: id, p_slug: slug
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("formulir");
 }
 async function getPertanyaan(formId) {
@@ -873,7 +885,7 @@ async function simpanFormulir(userId, id, judul, deskripsi, status, settings, pe
         p_status: status, p_settings: settings, p_pertanyaan: pertanyaan
     });
     if (error) throw error;
-    if (!data || data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("formulir");
     return data;
 }
@@ -882,7 +894,7 @@ async function hapusFormulir(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("formulir");
 }
 async function kirimRespons(formId, jawaban, userId) {
@@ -890,7 +902,7 @@ async function kirimRespons(formId, jawaban, userId) {
         p_form_id: formId, p_jawaban: jawaban, p_user_id: userId || null
     });
     if (error) throw error;
-    if (!data || data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("formulir");
     return data;
 }
@@ -923,7 +935,7 @@ async function buatAgenda(userId, sekbidId, judul, deskripsi, tanggal, lokasi, s
         p_user_id: userId, p_sekbid_id: sekbidId, p_judul: judul, p_deskripsi: deskripsi, p_tanggal: tanggal, p_lokasi: lokasi, p_status: status, p_fotos: fotos, p_display_order: order, p_pelaksana: pelaksana || ""
     });
     if (error) throw error;
-    if (data <= 0) throw new Error(String(data));
+    cekId(data);
     Cache.del("agenda_" + sekbidId);
     Cache.del("agenda_all");
     return data;
@@ -933,7 +945,7 @@ async function updateAgenda(userId, id, judul, deskripsi, tanggal, lokasi, statu
         p_user_id: userId, p_id: id, p_judul: judul, p_deskripsi: deskripsi, p_tanggal: tanggal, p_lokasi: lokasi, p_status: status, p_fotos: fotos, p_display_order: order, p_pelaksana: pelaksana || ""
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     // invalidate all agenda caches (simple)
     Cache.del("agenda_all");
     // need to know sekbid_id to del specific, but we del all with prefix
@@ -944,7 +956,7 @@ async function hapusAgenda(userId, id) {
         p_user_id: userId, p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("agenda_all");
     try { Object.keys(localStorage).forEach(k => { if (k.startsWith(Cache.prefix + "agenda_")) localStorage.removeItem(k); }); } catch {}
 }
@@ -985,7 +997,7 @@ async function galeriAddFoto(userId, id, path) {
         p_path: path
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("gallery");
 }
 
@@ -998,7 +1010,7 @@ async function galeriUpdateMeta(userId, id, judul, deskripsi) {
         p_deskripsi: deskripsi
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("gallery");
 }
 
@@ -1010,7 +1022,7 @@ async function galeriUpdateFotos(userId, id, fotos) {
         p_fotos: fotos
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("gallery");
 }
 
@@ -1021,7 +1033,7 @@ async function hapusGallery(userId, id) {
         p_id: id
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("gallery");
 }
 
@@ -1044,7 +1056,7 @@ async function saveSiteText(userId, kunci, nilai) {
         p_value: nilai
     });
     if (error) throw error;
-    if (data !== "OK") throw new Error(data);
+    cekOk(data);
     Cache.del("site_content");
 }
 
@@ -1070,61 +1082,121 @@ async function simpanPengaturan(kunci, nilai) {
 }
 
 async function simpanPimpinan(row) {
-    const { error } = await supa
-        .from("pimpinan")
-        .upsert(row, { onConflict: "tahun" });
+    const { data, error } = await supa.rpc("simpan_pimpinan", {
+        p_user_id: _uid(), p_tahun: row.tahun, p_ketua_nama: row.ketua_nama || "",
+        p_wakil_nama: row.wakil_nama || "", p_ketua_foto: row.ketua_foto || "",
+        p_wakil_foto: row.wakil_foto || "", p_foto_angkatan: row.foto_angkatan || ""
+    });
     if (error) throw error;
+    cekOk(data);
     Cache.del("pimpinan");
 }
 
 async function hapusPimpinan(tahun) {
-    const { error } = await supa.from("pimpinan").delete().eq("tahun", tahun);
+    const { data, error } = await supa.rpc("hapus_pimpinan", {
+        p_user_id: _uid(), p_tahun: tahun
+    });
     if (error) throw error;
+    cekOk(data);
     Cache.del("pimpinan");
 }
 
 async function tambahAnggota(row) {
-    const { error } = await supa.from("anggota").insert(row);
+    const { data, error } = await supa.rpc("tambah_anggota", {
+        p_user_id: _uid(), p_tahun: row.tahun, p_nama: row.nama || "",
+        p_jabatan: row.jabatan || "", p_urutan: row.urutan ?? 99, p_foto: row.foto || ""
+    });
     if (error) throw error;
+    cekId(data);
     Cache.del("anggota");
+    return data;
 }
 
 async function updateAnggota(id, row) {
-    const { error } = await supa.from("anggota").update(row).eq("id", id);
+    const { data, error } = await supa.rpc("update_anggota", {
+        p_user_id: _uid(), p_id: id, p_nama: row.nama || "",
+        p_jabatan: row.jabatan || "", p_urutan: row.urutan ?? 99
+    });
     if (error) throw error;
+    cekOk(data);
     Cache.del("anggota");
 }
 
 async function hapusAnggota(id) {
-    const { error } = await supa.from("anggota").delete().eq("id", id);
+    const { data, error } = await supa.rpc("hapus_anggota", {
+        p_user_id: _uid(), p_id: id
+    });
     if (error) throw error;
+    cekOk(data);
     Cache.del("anggota");
 }
 
 async function tambahSekbid(row) {
-    const { error } = await supa.from("sekbid").insert(row);
+    const { data, error } = await supa.rpc("tambah_sekbid", {
+        p_user_id: _uid(), p_nama: row.nama || "", p_kategori: row.kategori || "",
+        p_icon: row.icon || "", p_deskripsi: row.deskripsi || "",
+        p_urutan: row.urutan ?? 99, p_foto: row.foto || ""
+    });
     if (error) throw error;
+    cekId(data);
     Cache.del("sekbid");
+    return data;
 }
 
 async function updateSekbid(id, row) {
-    const { error } = await supa.from("sekbid").update(row).eq("id", id);
+    const { data, error } = await supa.rpc("update_sekbid", {
+        p_user_id: _uid(), p_id: id, p_nama: row.nama || "", p_kategori: row.kategori || "",
+        p_icon: row.icon || "", p_deskripsi: row.deskripsi || "",
+        p_urutan: row.urutan ?? 99, p_foto: row.foto || ""
+    });
     if (error) throw error;
+    cekOk(data);
     Cache.del("sekbid");
 }
 
 async function hapusSekbid(id) {
-    const { error } = await supa.from("sekbid").delete().eq("id", id);
+    const { data, error } = await supa.rpc("hapus_sekbid", {
+        p_user_id: _uid(), p_id: id
+    });
     if (error) throw error;
+    cekOk(data);
     Cache.del("sekbid");
 }
 
 async function simpanWebFoto(kunci, path) {
-    const { error } = await supa
-        .from("web_foto")
-        .upsert({ kunci: kunci, path: path, updated_at: new Date().toISOString() });
+    const { data, error } = await supa.rpc("simpan_web_foto", {
+        p_user_id: _uid(), p_kunci: kunci, p_path: path
+    });
     if (error) throw error;
+    cekOk(data);
     Cache.del("web_foto");
+}
+
+// userId diambil dari sesi login (biar signature lama tetap kompatibel).
+function _uid() {
+    try {
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        return (u && u.mode === "osis" && u.id) ? u.id : null;
+    } catch { return null; }
+}
+
+// Daftar halaman yang boleh dikendalikan user (buat sweeping tombol).
+// {halaman:[], sekbid_id, sekbid_nama, super} — null kalau belum dimuat.
+async function aksesSaya(userId) {
+    const { data, error } = await supa.rpc("akses_saya", { p_user_id: userId });
+    if (error) throw error;
+    return data || { halaman: [], sekbid_id: null, sekbid_nama: null, super: false };
+}
+
+// Bagi/cabut akses (hanya super_admin). p_ubah_sekbid=true untuk set sekbid user.
+async function setAkses(adminId, targetId, halaman, sekbidId = null, ubahSekbid = false) {
+    const { data, error } = await supa.rpc("set_akses", {
+        p_admin: adminId, p_target: targetId, p_halaman: halaman || [],
+        p_sekbid_id: sekbidId, p_ubah_sekbid: !!ubahSekbid
+    });
+    if (error) throw error;
+    cekOk(data);
+    return data;
 }
 
 // Kompres gambar di browser biar <1MB sebelum upload

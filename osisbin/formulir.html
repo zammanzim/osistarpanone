@@ -3,17 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Formulir â€” OSIS TARPAN ONE</title>
+    <title>Formulir - OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css" />
-<meta name="theme-color" content="#e11d2e" />
+    <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
-<link rel="manifest" href="../manifest.webmanifest" />
-<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
-<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -144,9 +152,17 @@
         border-radius: 999px;
         border: 2px solid var(--ink);
       }
-      .status-badge.draft { background: #e8e0da; }
-      .status-badge.aktif { background: #d6f5d6; color: #146314; }
-      .status-badge.ditutup { background: var(--red); color: #fff; }
+      .status-badge.draft {
+        background: #e8e0da;
+      }
+      .status-badge.aktif {
+        background: #d6f5d6;
+        color: #146314;
+      }
+      .status-badge.ditutup {
+        background: var(--red);
+        color: #fff;
+      }
       .status-dot {
         display: inline-block;
         width: 8px;
@@ -561,7 +577,7 @@
       .resp-scroll {
         overflow-x: auto;
       }
-      /* OSIS header menu â€” desktop pill, mobile titik tiga */
+      /* OSIS header menu - desktop pill, mobile titik tiga */
       .osis-nav {
         display: flex;
         align-items: center;
@@ -612,7 +628,10 @@
         color: #fff;
       }
       @media (min-width: 900px) {
-        .osis-nav { flex-wrap: wrap; row-gap: 6px; }
+        .osis-nav {
+          flex-wrap: wrap;
+          row-gap: 6px;
+        }
       }
       @media (max-width: 640px) {
         .osis-nav {
@@ -629,7 +648,7 @@
     <script src="../jsbin/osis-auth.js" defer></script>
     <script src="../jsbin/osis-sidebar.js" defer></script>
     <script src="../jsbin/formulir.js" defer></script>
-  <script src="../jsbin/pwa.js" defer></script>
+    <script src="../jsbin/pwa.js" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -640,43 +659,88 @@
           <p>Form Builder OSIS</p>
         </div>
       </a>
-      
+
       <div class="top-nav-extra">
-        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
-        
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+
         <div id="areaAuth"></div>
       </div>
     </header>
 
     <div class="formulir-wrap">
       <!-- DAFTAR -->
-      <div id="viewDaftar" style="display: flex; flex-direction: column; gap: 14px">
+      <div
+        id="viewDaftar"
+        style="display: flex; flex-direction: column; gap: 14px"
+      >
         <div class="formulir-head">
           <div class="ico"><i class="fa-solid fa-clipboard-question"></i></div>
           <div style="flex: 1; min-width: 180px">
             <h1>FORMULIR</h1>
             <p>BUAT DAN KELOLA FORMULIR OSIS</p>
           </div>
-          <button class="btn btn-red" id="btnBuatForm"><i class="fa-solid fa-plus"></i> Buat Formulir</button>
+          <button class="btn btn-red" id="btnBuatForm">
+            <i class="fa-solid fa-plus"></i> Buat Formulir
+          </button>
         </div>
-        <div id="formList"><div class="loading-block"><div class="spinner"></div>Memuat formulir...</div></div>
+        <div id="formList">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat formulir...
+          </div>
+        </div>
       </div>
 
       <!-- BUILDER -->
-      <div id="viewBuilder" style="display: none; flex-direction: column; gap: 14px">
+      <div
+        id="viewBuilder"
+        style="display: none; flex-direction: column; gap: 14px"
+      >
         <div class="builder-bar">
-          <button class="btn btn-white btn-sm" id="btnKembaliDaftar"><i class="fa-solid fa-arrow-left"></i> Daftar</button>
+          <button class="btn btn-white btn-sm" id="btnKembaliDaftar">
+            <i class="fa-solid fa-arrow-left"></i> Daftar
+          </button>
           <span class="status-badge draft" id="builderStatus">Draft</span>
           <span class="spacer"></span>
-          <button class="btn btn-white btn-sm" id="btnPreview"><i class="fa-solid fa-eye"></i> Preview</button>
-          <button class="btn btn-white btn-sm" id="btnSimpanBuilder"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
-          <button class="btn btn-red btn-sm" id="btnPublish"><i class="fa-solid fa-paper-plane"></i> Publikasikan</button>
+          <button class="btn btn-white btn-sm" id="btnPreview">
+            <i class="fa-solid fa-eye"></i> Preview
+          </button>
+          <button class="btn btn-white btn-sm" id="btnSimpanBuilder">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan
+          </button>
+          <button class="btn btn-red btn-sm" id="btnPublish">
+            <i class="fa-solid fa-paper-plane"></i> Publikasikan
+          </button>
         </div>
         <div class="fcard accent-top">
-          <div class="field"><label>Judul formulir</label><input type="text" id="bJudul" class="admin-input" placeholder="cth: Evaluasi Class Meeting" maxlength="160" style="font-weight: 900; font-size: 1.05rem" /></div>
-          <div class="field"><label>Deskripsi</label><textarea id="bDeskripsi" class="admin-input admin-textarea" rows="2" maxlength="1000" placeholder="Deskripsi untuk responden..."></textarea></div>
+          <div class="field">
+            <label>Judul formulir</label
+            ><input
+              type="text"
+              id="bJudul"
+              class="admin-input"
+              placeholder="cth: Evaluasi Class Meeting"
+              maxlength="160"
+              style="font-weight: 900; font-size: 1.05rem"
+            />
+          </div>
+          <div class="field">
+            <label>Deskripsi</label
+            ><textarea
+              id="bDeskripsi"
+              class="admin-input admin-textarea"
+              rows="2"
+              maxlength="1000"
+              placeholder="Deskripsi untuk responden..."
+            ></textarea>
+          </div>
         </div>
-        <div id="builderList" style="display: flex; flex-direction: column; gap: 12px"></div>
+        <div
+          id="builderList"
+          style="display: flex; flex-direction: column; gap: 12px"
+        ></div>
         <div class="fcard">
           <h3><i class="fa-solid fa-plus"></i> Tambah Pertanyaan</h3>
           <p class="sub">Klik tipe buat nambah kartu pertanyaan baru.</p>
@@ -685,49 +749,183 @@
         <div class="fcard">
           <h3><i class="fa-solid fa-gear"></i> Pengaturan</h3>
           <p class="sub">Berlaku saat form dipublikasikan.</p>
-          <div class="set-row"><div>Status<small>Aktif = bisa diisi Â· Ditutup = responden ditolak</small></div><span style="margin-left: auto; display: flex; gap: 6px"><button class="btn btn-white btn-sm" id="btnStatusAktif">Aktif</button><button class="btn btn-white btn-sm" id="btnStatusTutup">Tutup</button></span></div>
-          <div class="set-row"><div>Siapa yang bisa isi<small>OSIS = wajib login Â· Publik = link /form tanpa login</small></div><select id="setAudience" style="margin-left: auto; border: 2px solid var(--ink); border-radius: 9px; padding: 6px 9px; font-family: inherit; font-size: 0.8rem; font-weight: 800"><option value="osis">OSIS saja</option><option value="publik">Publik</option></select></div>
-          <div class="set-row"><div>Batas respons<small>0 = tanpa batas</small></div><input type="number" id="setBatas" min="0" max="100000" value="0" /></div>
-          <div class="set-row"><div>Boleh isi lebih dari 1x<small>Responden yang sama boleh kirim berkali-kali</small></div><input type="checkbox" id="setMulti" checked /></div>
-          <div class="set-row"><div>Acak urutan pertanyaan<small>Urutan diacak tiap responden buka</small></div><input type="checkbox" id="setAcak" /></div>
-          <div class="set-row"><div>Simpan waktu pengisian<small>Catat jam kirim tiap respons</small></div><input type="checkbox" id="setWaktu" checked /></div>
-          <div class="set-row" style="display: block"><div>Pesan setelah submit</div><textarea id="setPesan" rows="2" style="width: 100%; border: 2px solid var(--ink); border-radius: 9px; padding: 8px 10px; font-family: inherit; font-size: 0.8rem; margin-top: 6px">Terima kasih, respons kamu telah berhasil dikirim.</textarea></div>
+          <div class="set-row">
+            <div>
+              Status<small
+                >Aktif = bisa diisi · Ditutup = responden ditolak</small
+              >
+            </div>
+            <span style="margin-left: auto; display: flex; gap: 6px"
+              ><button class="btn btn-white btn-sm" id="btnStatusAktif">
+                Aktif</button
+              ><button class="btn btn-white btn-sm" id="btnStatusTutup">
+                Tutup
+              </button></span
+            >
+          </div>
+          <div class="set-row">
+            <div>
+              Siapa yang bisa isi<small
+                >OSIS = wajib login · Publik = link /form tanpa login</small
+              >
+            </div>
+            <select
+              id="setAudience"
+              style="
+                margin-left: auto;
+                border: 2px solid var(--ink);
+                border-radius: 9px;
+                padding: 6px 9px;
+                font-family: inherit;
+                font-size: 0.8rem;
+                font-weight: 800;
+              "
+            >
+              <option value="osis">OSIS saja</option>
+              <option value="publik">Publik</option>
+            </select>
+          </div>
+          <div class="set-row">
+            <div>Batas respons<small>0 = tanpa batas</small></div>
+            <input type="number" id="setBatas" min="0" max="100000" value="0" />
+          </div>
+          <div class="set-row">
+            <div>
+              Boleh isi lebih dari 1x<small
+                >Responden yang sama boleh kirim berkali-kali</small
+              >
+            </div>
+            <input type="checkbox" id="setMulti" checked />
+          </div>
+          <div class="set-row">
+            <div>
+              Acak urutan pertanyaan<small
+                >Urutan diacak tiap responden buka</small
+              >
+            </div>
+            <input type="checkbox" id="setAcak" />
+          </div>
+          <div class="set-row">
+            <div>
+              Simpan waktu pengisian<small>Catat jam kirim tiap respons</small>
+            </div>
+            <input type="checkbox" id="setWaktu" checked />
+          </div>
+          <div class="set-row" style="display: block">
+            <div>Pesan setelah submit</div>
+            <textarea
+              id="setPesan"
+              rows="2"
+              style="
+                width: 100%;
+                border: 2px solid var(--ink);
+                border-radius: 9px;
+                padding: 8px 10px;
+                font-family: inherit;
+                font-size: 0.8rem;
+                margin-top: 6px;
+              "
+            >
+Terima kasih, respons kamu telah berhasil dikirim.</textarea
+            >
+          </div>
           <div class="share-box" id="shareBox" style="display: none">
-            <input type="text" id="shareLink" readonly onclick="this.select()" />
-            <button class="btn btn-red btn-sm" id="btnSalinLink"><i class="fa-solid fa-copy"></i> Salin Link</button>
+            <input
+              type="text"
+              id="shareLink"
+              readonly
+              onclick="this.select()"
+            />
+            <button class="btn btn-red btn-sm" id="btnSalinLink">
+              <i class="fa-solid fa-copy"></i> Salin Link
+            </button>
           </div>
           <div class="set-row" id="slugRow" style="display: none">
-            <div>Link custom<small>.../formulir?id=evaluasi â€” huruf kecil, angka, dash (3â€“40). Kosongkan = pakai link ID.</small></div>
-            <input type="text" id="slugInput" placeholder="evaluasi" maxlength="40" autocomplete="off" style="text-transform: lowercase; width: 140px" />
-            <button class="btn btn-white btn-sm" id="btnSimpanSlug" style="margin-left: 8px; flex-shrink: 0">OK</button>
+            <div>
+              Link custom<small
+                >.../formulir?id=evaluasi - huruf kecil, angka, dash (3-40).
+                Kosongkan = pakai link ID.</small
+              >
+            </div>
+            <input
+              type="text"
+              id="slugInput"
+              placeholder="evaluasi"
+              maxlength="40"
+              autocomplete="off"
+              style="text-transform: lowercase; width: 140px"
+            />
+            <button
+              class="btn btn-white btn-sm"
+              id="btnSimpanSlug"
+              style="margin-left: 8px; flex-shrink: 0"
+            >
+              OK
+            </button>
           </div>
         </div>
       </div>
 
       <!-- ISI / PREVIEW -->
-      <div id="viewIsi" style="display: none; flex-direction: column; gap: 14px">
+      <div
+        id="viewIsi"
+        style="display: none; flex-direction: column; gap: 14px"
+      >
         <div class="builder-bar">
-          <button class="btn btn-white btn-sm" id="btnIsiKembali"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+          <button class="btn btn-white btn-sm" id="btnIsiKembali">
+            <i class="fa-solid fa-arrow-left"></i> Kembali
+          </button>
           <span class="status-badge aktif" id="isiModeBadge">Preview</span>
         </div>
         <div class="fcard accent-top">
-          <h2 id="isiJudul" style="font-size: 1.3rem; font-weight: 900; overflow-wrap: anywhere">â€”</h2>
-          <p id="isiDeskripsi" class="sub" style="margin-bottom: 0; margin-top: 4px; font-size: 0.84rem"></p>
+          <h2
+            id="isiJudul"
+            style="font-size: 1.3rem; font-weight: 900; overflow-wrap: anywhere"
+          >
+            -
+          </h2>
+          <p
+            id="isiDeskripsi"
+            class="sub"
+            style="margin-bottom: 0; margin-top: 4px; font-size: 0.84rem"
+          ></p>
         </div>
-        <div id="isiBody" style="display: flex; flex-direction: column; gap: 12px"></div>
-        <button class="btn btn-red" id="btnKirimIsi" style="justify-content: center"><i class="fa-solid fa-paper-plane"></i> Kirim</button>
+        <div
+          id="isiBody"
+          style="display: flex; flex-direction: column; gap: 12px"
+        ></div>
+        <button
+          class="btn btn-red"
+          id="btnKirimIsi"
+          style="justify-content: center"
+        >
+          <i class="fa-solid fa-paper-plane"></i> Kirim
+        </button>
       </div>
 
       <!-- RESPONS -->
-      <div id="viewRespons" style="display: none; flex-direction: column; gap: 14px">
+      <div
+        id="viewRespons"
+        style="display: none; flex-direction: column; gap: 14px"
+      >
         <div class="builder-bar">
-          <button class="btn btn-white btn-sm" id="btnResponsKembali"><i class="fa-solid fa-arrow-left"></i> Daftar</button>
+          <button class="btn btn-white btn-sm" id="btnResponsKembali">
+            <i class="fa-solid fa-arrow-left"></i> Daftar
+          </button>
           <span class="status-badge aktif" id="responsJudulBadge">Respons</span>
         </div>
         <div class="fcard">
-          <h3 id="responsJudul">â€”</h3>
-          <p class="sub" id="responsMeta">â€”</p>
-          <div id="responsRingkas" style="display: flex; flex-direction: column; gap: 14px; margin-top: 8px"></div>
+          <h3 id="responsJudul">-</h3>
+          <p class="sub" id="responsMeta">-</p>
+          <div
+            id="responsRingkas"
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 14px;
+              margin-top: 8px;
+            "
+          ></div>
         </div>
         <div class="fcard">
           <h3><i class="fa-solid fa-users"></i> Daftar Responden</h3>

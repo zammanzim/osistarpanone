@@ -13,6 +13,10 @@ const Galeri = {
     init() {
         if (Galeri.terinisialisasi) return;
         Galeri.terinisialisasi = true;
+        // Segarkan hak kendali lalu sesuaikan tombol
+        if (typeof OsisAuth.refreshAkses === "function") {
+            OsisAuth.refreshAkses().then(() => { Galeri.cekLogin(); Galeri.render(); }).catch(() => {});
+        }
         Galeri.cekLogin();
         Galeri.muat();
 
@@ -53,19 +57,20 @@ const Galeri = {
 
     },
 
-    // Tombol tambah tetap ada walau ga edit (samain kayak kegiatan)
+    // Tombol tambah & hapus khusus pemegang kendali galeri
     cekLogin() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         const osis = !!(u && u.mode === "osis");
-        const edit = document.body.classList.contains("edit-mode");
+        const boleh = osis && OsisAuth.bisa && OsisAuth.bisa("galeri");
         const btn = document.getElementById("btnBukaUpload");
-        if (btn) btn.style.display = osis ? "" : "none";
+        if (btn) btn.style.display = boleh ? "" : "none";
         const grid = document.getElementById("galGrid");
-        if (grid) grid.classList.toggle("mode-osis", osis && edit);
+        if (grid) grid.classList.toggle("mode-osis", !!boleh);
     },
 
     // ============ DRAFT BLOCK ============
     buatDraft() {
+        if (!OsisAuth.butuh("galeri")) return;
         if (Galeri.draft) {
             const j = document.querySelector(".draft-judul");
             if (j) j.focus();
@@ -113,6 +118,7 @@ const Galeri = {
     async simpanDraft() {
         const u = OsisAuth.getUser();
         if (!u || u.mode !== "osis" || !Galeri.draft) return;
+        if (!OsisAuth.butuh("galeri")) return;
         Galeri.bacaTeksDraft();
         const judul = Galeri.draft.judul || "";
         const files = Galeri.draft.files || [];
@@ -125,6 +131,18 @@ const Galeri = {
         }
         if (files.length === 0) {
             showToast("Tambah minimal 1 foto dulu!", "error");
+            return;
+        }
+
+        const __spec = () => ({ modul: "galeri", op: "create",
+            label: "Galeri: " + String(judul).slice(0, 42),
+            payload: { judul, deskripsi: Galeri.draft.deskripsi || "" },
+            files: files.map((fl, i) => ({ slot: "foto" + i, file: fl, name: fl.name, type: fl.type })),
+            cacheKeys: ["gallery"] });
+        const __sesudahAntre = () => { Galeri.draft = null; Galeri.render(); };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
             return;
         }
 
@@ -149,6 +167,10 @@ const Galeri = {
             await Galeri.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             if (String(err.message).includes("-1") || err.message === "ERR_NO_AUTH") {
                 showPopup("Cuma akun OSIS yang bisa nambah galeri.", "error");
             } else {
@@ -327,6 +349,7 @@ const Galeri = {
     async hapusFoto(id, idx) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("galeri")) return;
         const item = Galeri.cache.find(g => String(g.id) === String(id));
         if (!item || !Array.isArray(item.fotos) || !item.fotos[idx]) return;
         const path = item.fotos[idx];
@@ -359,6 +382,7 @@ const Galeri = {
     async hapus(id) {
         const u = OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("galeri")) return;
 
         const yakin = await showPopup("Yakin hapus kegiatan ini? Fotonya ikut terhapus.", "confirm");
         if (!yakin) return;

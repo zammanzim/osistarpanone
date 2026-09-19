@@ -12,6 +12,15 @@ const Kegiatan = {
   init() {
     if (Kegiatan.terinisialisasi) return;
     Kegiatan.terinisialisasi = true;
+    // Segarkan hak kendali lalu sesuaikan tombol
+    if (typeof OsisAuth.refreshAkses === "function") {
+      OsisAuth.refreshAkses()
+        .then(() => {
+          Kegiatan.cekLogin();
+          Kegiatan.render();
+        })
+        .catch(() => {});
+    }
     Kegiatan.cekLogin();
     Kegiatan.muat();
     const grid = document.getElementById("kegiatanGrid");
@@ -104,15 +113,16 @@ const Kegiatan = {
       });
     }
   },
-
   cekLogin() {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     const osis = !!(u && u.mode === "osis");
-    const edit = document.body.classList.contains("edit-mode");
+    const boleh = osis && OsisAuth.bisa && OsisAuth.bisa("kegiatan");
     const grid = document.getElementById("kegiatanGrid");
-    if (grid) grid.classList.toggle("mode-osis", osis && edit);
+    if (grid) grid.classList.toggle("mode-osis", !!boleh);
     const btn = document.getElementById("btnTambahKegiatan");
-    if (btn) btn.style.display = osis ? "" : "none";
+    if (btn)
+      btn.style.display =
+        osis && OsisAuth.bisa && OsisAuth.bisa("kegiatan") ? "" : "none";
   },
 
   async muat() {
@@ -213,10 +223,9 @@ const Kegiatan = {
     const badge = escapeHtml(item.badge || "");
     const fotos = Array.isArray(item.fotos) ? item.fotos : [];
     const isEdit =
-      document.body.classList.contains("edit-mode") &&
       typeof OsisAuth !== "undefined" &&
-      OsisAuth.getUser &&
-      OsisAuth.getUser()?.mode === "osis";
+      OsisAuth.bisa &&
+      OsisAuth.bisa("kegiatan");
     let fotosHtml = fotos
       .map((f, idx) => {
         const path = typeof f === "string" ? f : f.path;
@@ -287,7 +296,10 @@ const Kegiatan = {
   bindPopupCaption(id, fotoIdx) {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     const isEdit =
-      document.body.classList.contains("edit-mode") && u && u.mode === "osis";
+      u &&
+      u.mode === "osis" &&
+      OsisAuth.bisa &&
+      OsisAuth.bisa("kegiatan");
     if (!isEdit) return;
 
     const modal = document.querySelector(".struktur-modal");
@@ -354,6 +366,7 @@ const Kegiatan = {
   },
 
   buatDraft() {
+    if (!OsisAuth.butuh("kegiatan")) return;
     if (Kegiatan.draft) {
       const j = document.querySelector("#kegiatanGrid .draft-judul");
       if (j) j.focus();
@@ -415,6 +428,7 @@ const Kegiatan = {
       showPopup("Cuma OSIS", "error");
       return;
     }
+    if (!OsisAuth.butuh("kegiatan")) return;
     Kegiatan.bacaTeksDraft();
     const d = Kegiatan.draft;
     if (!d || !d.judul || !d.judul.trim()) {
@@ -426,6 +440,29 @@ const Kegiatan = {
       (!d.fotos || d.fotos.length === 0)
     ) {
       showToast("Tambah minimal 1 foto", "error");
+      return;
+    }
+    const __kegOrder = (() => {
+      const list = Kegiatan.cache || [];
+      if (!list.length) return 99;
+      try {
+        return Math.min(...list.map((k) => parseInt(k.display_order, 10) || 99)) - 1;
+      } catch { return 99; }
+    })();
+    const __spec = () => ({ modul: "kegiatan", op: "create",
+      label: "Kegiatan: " + String(d.judul || "").trim().slice(0, 42),
+      payload: { judul: d.judul.trim(), deskripsi: d.deskripsi || "", badge: d.badge || "",
+        order: __kegOrder,
+        fotosExisting: (d.fotos || []).map((fl) => ({
+          path: typeof fl === "string" ? fl : fl.path,
+          caption: typeof fl === "string" ? "" : fl.caption || "",
+        })) },
+      files: (d.files || []).map((fl, i) => ({ slot: "foto" + i, file: fl, name: fl.name, type: fl.type })),
+      cacheKeys: ["kegiatan"] });
+    const __sesudahAntre = () => { Kegiatan.draft = null; Kegiatan.render(); };
+    if (typeof Outbox !== "undefined" && Outbox.offline()) {
+      try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+      Outbox.sesudahAntre(__sesudahAntre);
       return;
     }
     const btn = document.querySelector("#kegiatanGrid .gal-save");
@@ -471,6 +508,10 @@ const Kegiatan = {
       await Kegiatan.muat();
     } catch (err) {
       console.error(err);
+      if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+        Outbox.sesudahAntre(__sesudahAntre);
+        return;
+      }
       showToast("Gagal simpan: " + err.message, "error");
       if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i>';
     }
@@ -518,6 +559,7 @@ const Kegiatan = {
   async updateText(kegiatanId, field, value) {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     if (!u || u.mode !== "osis") return;
+    if (!OsisAuth.butuh("kegiatan")) return;
     const item = Kegiatan.cache.find(
       (k) => String(k.id) === String(kegiatanId),
     );
@@ -553,6 +595,7 @@ const Kegiatan = {
   async hapus(id) {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     if (!u || u.mode !== "osis") return;
+    if (!OsisAuth.butuh("kegiatan")) return;
     const yakin = await showPopup(
       "Hapus kegiatan ini? Fotonya ikut terhapus.",
       "confirm",
@@ -582,6 +625,7 @@ const Kegiatan = {
   async hapusFoto(kegiatanId, fotoIdx) {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     if (!u || u.mode !== "osis") return;
+    if (!OsisAuth.butuh("kegiatan")) return;
     const item = Kegiatan.cache.find(
       (k) => String(k.id) === String(kegiatanId),
     );

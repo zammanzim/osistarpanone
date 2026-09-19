@@ -12,6 +12,10 @@ const Prestasi = {
     init() {
         if (Prestasi.terinisialisasi) return;
         Prestasi.terinisialisasi = true;
+        // Segarkan hak kendali lalu sesuaikan tombol
+        if (typeof OsisAuth.refreshAkses === "function") {
+            OsisAuth.refreshAkses().then(() => { Prestasi.cekLogin(); Prestasi.render(); }).catch(() => {});
+        }
         Prestasi.cekLogin();
         Prestasi.muat();
     },
@@ -19,10 +23,10 @@ const Prestasi = {
     cekLogin() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         const osis = !!(u && u.mode === "osis");
-        const edit = document.body.classList.contains("edit-mode");
+        const boleh = osis && OsisAuth.bisa && OsisAuth.bisa("prestasi");
         const grid = document.getElementById("prestasiGrid");
         if (grid) {
-            grid.classList.toggle("mode-osis", osis && edit);
+            grid.classList.toggle("mode-osis", !!boleh);
             if (!grid._editBound) {
                 grid._editBound = true;
                 grid.addEventListener("focusout", (e) => {
@@ -47,7 +51,7 @@ const Prestasi = {
             }
         }
         const btn = document.getElementById("btnTambahPrestasi");
-        if (btn) btn.style.display = osis ? "" : "none";
+        if (btn) btn.style.display = (osis && OsisAuth.bisa && OsisAuth.bisa("prestasi")) ? "" : "none";
     },
 
     async muat() {
@@ -93,7 +97,7 @@ const Prestasi = {
         const fotos = Array.isArray(item.fotos) ? item.fotos : [];
         const cover = fotos[0] ? (typeof fotos[0] === "string" ? fotos[0] : fotos[0].path) : "";
         const tag = escapeHtml(item.tag || "");
-        const isEdit = document.body.classList.contains("edit-mode") && (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
+        const isEdit = (typeof OsisAuth !== "undefined" && OsisAuth.bisa && OsisAuth.bisa("prestasi"));
         return `
             <div class="prestasi-card" data-prestasi-id="${item.id}" style="position:relative">
                 <img src="${getFoto(cover)}" alt="${tag || "Prestasi"}" loading="lazy" onerror="this.style.display='none'" onclick="Prestasi.bukaPopup(${item.id})">
@@ -181,7 +185,7 @@ const Prestasi = {
 
     bindPopupCaption(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
-        const isEdit = document.body.classList.contains("edit-mode") && u && u.mode === "osis";
+        const isEdit = u && u.mode === "osis" && OsisAuth.bisa && OsisAuth.bisa("prestasi");
         if (!isEdit) return;
 
         const modal = document.querySelector(".struktur-modal");
@@ -206,6 +210,7 @@ const Prestasi = {
     bukaForm() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
+        if (!OsisAuth.butuh("prestasi")) return;
         Prestasi.pendingFile = null;
         // buat overlay
         const existing = document.getElementById("prestasiFormOverlay");
@@ -295,10 +300,28 @@ const Prestasi = {
     async simpanForm() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
+        if (!OsisAuth.butuh("prestasi")) return;
         const tag = document.getElementById("prestasiTag")?.value.trim() || "";
         const caption = document.getElementById("prestasiCaption")?.value.trim() || "";
         const file = Prestasi.pendingFile;
         if (!file) { showToast("Pilih foto dulu", "error"); return; }
+        const __presOrder = (() => {
+            try {
+                const c = Prestasi.cache || [];
+                return c.length ? Math.min(...c.map(p => p.display_order ?? 99)) - 1 : 99;
+            } catch { return 99; }
+        })();
+        const __spec = () => ({ modul: "prestasi", op: "create",
+            label: "Prestasi: " + String(tag || caption || "baru").slice(0, 42),
+            payload: { tag, caption, order: __presOrder },
+            files: [{ slot: "foto", file, name: file.name, type: file.type }],
+            cacheKeys: ["prestasi"] });
+        const __sesudahAntre = () => { Prestasi.tutupForm(); };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
         const btn = document.getElementById("btnSimpanPrestasi");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         try {
@@ -314,6 +337,10 @@ const Prestasi = {
             await Prestasi.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: "+err.message, "error");
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan'; }
         }
@@ -322,6 +349,7 @@ const Prestasi = {
     async hapus(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode!=="osis") return;
+        if (!OsisAuth.butuh("prestasi")) return;
         const yakin = await showPopup("Hapus prestasi ini? Fotonya ikut terhapus.", "confirm");
         if (!yakin) return;
         try {

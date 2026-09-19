@@ -21,6 +21,9 @@ const Absensi = {
             location.replace("../login");
             return;
         }
+        // Segarkan hak kendali (biar perubahan akses langsung berlaku)
+        try { await OsisAuth.refreshAkses(); } catch {}
+        Absensi.terapkanAkses();
 
         document.getElementById("btnTambahAbsensi")?.addEventListener("click", () => Absensi.bukaForm());
         document.getElementById("btnResetFilter")?.addEventListener("click", () => Absensi.resetFilter());
@@ -182,8 +185,9 @@ const Absensi = {
 
         const wrap = document.getElementById("absensiWrap");
         if (!wrap) return;
+        const boleh = OsisAuth.bisa("absensi");
         if (!allTK.length) {
-            wrap.innerHTML = `<div class="pesan-empty" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-clipboard-user" style="color:var(--red)"></i></div><b>Belum ada data ketidakhadiran</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Catat pengurus yang izin, sakit, atau alpha.</p><button class="btn btn-red btn-sm" onclick="Absensi.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah Data</button></div>`;
+            wrap.innerHTML = `<div class="pesan-empty" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-clipboard-user" style="color:var(--red)"></i></div><b>Belum ada data ketidakhadiran</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Catat pengurus yang izin, sakit, atau alpha.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Absensi.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah Data</button>` : ""}</div>`;
             return;
         }
         if (!data.length) {
@@ -214,10 +218,10 @@ const Absensi = {
                     <td>${escapeHtml(r.alasan || "Tidak ada keterangan")}</td>
                 </tr>`).join("")}
                 </tbody></table></div>
-                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
+                ${boleh ? `<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
                     <button class="btn btn-white btn-sm" data-abs-edithari="${t}"><i class="fa-solid fa-pen"></i> Edit</button>
                     <button class="btn btn-red btn-sm" data-abs-delhari="${t}"><i class="fa-solid fa-trash-can"></i> Hapus</button>
-                </div>
+                </div>` : ""}
             </div>`;
         };
         wrap.innerHTML = Object.keys(perBulan).sort().reverse().map(ym => {
@@ -277,9 +281,19 @@ const Absensi = {
         }));
     },
 
+    // Sembunyikan tombol aksi kalau tidak punya kendali atas halaman ini
+    terapkanAkses() {
+        const boleh = OsisAuth.bisa("absensi");
+        ["btnTambahAbsensi", "btnAbsenLangsung"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = boleh ? "" : "none";
+        });
+    },
+
     bukaForm() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("absensi")) return;
         Absensi.editTanggal = null;
         document.getElementById("absensiFormTitle").textContent = "Tambah Ketidakhadiran";
         document.getElementById("absTanggal").value = Absensi.filter.tanggal || new Date().toISOString().slice(0, 10);
@@ -306,6 +320,7 @@ const Absensi = {
     editHari(tanggal) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("absensi")) return;
         // Edit sehari hanya untuk izin/sakit/alpha; baris 'hadir' tidak ikut
         const rows = (Absensi.cache || []).filter(r => String(r.tanggal) === String(tanggal) && r.status !== "hadir");
         if (!rows.length) return;
@@ -329,6 +344,7 @@ const Absensi = {
     async simpan() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("absensi")) return;
         const tanggal = document.getElementById("absTanggal").value || "";
         if (!tanggal) { showToast("Tanggal wajib diisi.", "error"); return; }
         const kegiatan = (document.getElementById("absKegiatan")?.value || "").trim().slice(0, 120);
@@ -355,6 +371,23 @@ const Absensi = {
             if (bentrok) { showToast(nama + " sudah tercatat pada tanggal ini.", "error"); return; }
             rows.push({ id: rid, nama, status, alasan });
         }
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            if (Absensi.editTanggal || rows.some(r => r.id)) {
+                showToast("Ubah absensi butuh koneksi — data pembanding ada di server.", "error");
+                return;
+            }
+            try {
+                await Outbox.enqueue({ modul: "absensi", op: "create",
+                    label: "Absensi " + tanggal + " (" + rows.length + " orang)",
+                    payload: { rows: rows.map(r => ({ tanggal, nama: r.nama, status: r.status, alasan: r.alasan, kegiatan })) },
+                    files: [], cacheKeys: ["absensi"] });
+            } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(() => {
+                if (typeof FormPersist !== "undefined") FormPersist.clear("absensiForm");
+                Absensi.tutupForm();
+            });
+            return;
+        }
         try {
             const hapusIds = originalIds.filter(id => !rows.some(r => String(r.id) === String(id)));
             for (const hid of hapusIds) await hapusAbsensi(u.id, hid);
@@ -376,6 +409,7 @@ const Absensi = {
     async hapusHari(tanggal) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("absensi")) return;
         // Hapus sehari hanya untuk izin/sakit/alpha; baris 'hadir' tidak ikut
         const rows = (Absensi.cache || []).filter(r => String(r.tanggal) === String(tanggal) && r.status !== "hadir");
         if (!rows.length) return;
@@ -419,6 +453,7 @@ const Absensi = {
     async bukaLangsung() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("absensi")) return;
         const hariIni = new Date().toISOString().slice(0, 10);
         const tDef = Absensi.filter.tanggal || hariIni;
         document.getElementById("langsungTanggal").value = tDef;
@@ -582,6 +617,7 @@ const Absensi = {
         if (!nama) return;
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("absensi")) return;
         const { tanggal, kegiatan } = Absensi.sesiLangsung();
         if (!tanggal) { showToast("Tanggal wajib diisi.", "error"); return; }
         // Cegah dobel & bentrok di client (DB juga dilindungi UNIQUE)
@@ -625,6 +661,7 @@ const Absensi = {
         if (L.saving) return;
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("absensi")) return;
         const { tanggal, kegiatan } = Absensi.sesiLangsung();
         if (!tanggal) { showToast("Tanggal wajib diisi.", "error"); return; }
         const d = Absensi.daftarLangsung();

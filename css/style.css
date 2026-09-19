@@ -1,5 +1,5 @@
 ﻿/* ============================================================
-   OSIS TARPAN ONE â€” NEW SITE
+   OSIS TARPAN ONE - NEW SITE
    Tema: Merah-Putih Enerjik
    ============================================================ */
 
@@ -820,8 +820,8 @@ img {
   margin: 34px 0 0;
 }
 .pembina-photo {
-    width: min(66vw, 290px);
-    filter: drop-shadow(0 16px 18px rgba(26, 19, 20, 0.18));
+  width: min(66vw, 290px);
+  filter: drop-shadow(0 16px 18px rgba(26, 19, 20, 0.18));
 }
 .pembina-photo img {
   display: block;
@@ -1053,16 +1053,26 @@ img {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
+  from {
+    opacity: 0;
+  }
 }
 @keyframes popIn {
-  from { opacity: 0; transform: scale(0.92); }
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
 }
 @keyframes fadeOut {
-  to { opacity: 0; }
+  to {
+    opacity: 0;
+  }
 }
 @keyframes popOut {
-  to { opacity: 0; transform: scale(0.94); }
+  to {
+    opacity: 0;
+    transform: scale(0.94);
+  }
 }
 .struktur-modal.tutup .struktur-modal-bg {
   animation: fadeOut 0.18s forwards;
@@ -1304,7 +1314,9 @@ img {
   border-radius: 50%;
   box-shadow: 4px 4px 0 var(--ink);
   cursor: pointer;
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
 }
 .gal-fab:hover {
   transform: translate(-1px, -1px);
@@ -1807,8 +1819,12 @@ body.edit-mode .bento-meta .gal-del {
   font-size: 0.95rem;
 }
 @keyframes laguSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .lagu-body {
   flex: 1;
@@ -1850,7 +1866,7 @@ body.edit-mode .bento-meta .gal-del {
 }
 
 /* ============================================================
-   TOAST â€” notifikasi singkat (universal)
+   TOAST - notifikasi singkat (universal)
    ============================================================ */
 #toast-container {
   position: fixed;
@@ -1898,15 +1914,23 @@ body.edit-mode .bento-meta .gal-del {
   font-size: 1.05rem;
   flex-shrink: 0;
 }
-.toast-success i { color: #1e7a33; }
-.toast-error i { color: var(--red); }
-.toast-info i { color: #d99b00; }
+.toast-success i {
+  color: #1e7a33;
+}
+.toast-error i {
+  color: var(--red);
+}
+.toast-info i {
+  color: #d99b00;
+}
 @media (min-width: 1024px) {
-  #toast-container { bottom: 40px; }
+  #toast-container {
+    bottom: 40px;
+  }
 }
 
 /* ============================================================
-   POPUP â€” universal (pengganti alert/confirm)
+   POPUP - universal (pengganti alert/confirm)
    ============================================================ */
 .uni-overlay {
   position: fixed;
@@ -2087,7 +2111,9 @@ body.edit-mode .bento-meta .gal-del {
 /* ============================================================
    VIEW SPA (router)
    ============================================================ */
-.view { display: none; }
+.view {
+  display: none;
+}
 .view.active {
   display: block;
   animation: viewIn 0.35s ease;
@@ -2097,10 +2123,16 @@ body.edit-mode .bento-meta .gal-del {
   animation: viewOut 0.17s ease forwards;
 }
 @keyframes viewIn {
-  from { opacity: 0; transform: translateY(16px); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
 }
 @keyframes viewOut {
-  to { opacity: 0; transform: translateY(-10px); }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
 }
 
 /* ============================================================
@@ -2133,7 +2165,9 @@ body.edit-mode .bento-meta .gal-del {
   z-index: 0;
   pointer-events: none;
 }
-.nav-pill.no-anim { transition: none; }
+.nav-pill.no-anim {
+  transition: none;
+}
 .tab-item {
   flex: 1;
   position: relative;
@@ -2293,15 +2327,15 @@ body.edit-mode .bento-meta .gal-del {
     font-size: 1.3rem;
     margin-top: 28px;
   }
-    .pembina-photo {
-        order: 2;
-        flex: 1 1 48%;
-        max-width: 408px;
-        margin-left: -28px;
-        filter: drop-shadow(0 24px 28px rgba(26, 19, 20, 0.22));
-        transform: rotate(1.5deg);
-        transition: transform 0.25s ease;
-    }
+  .pembina-photo {
+    order: 2;
+    flex: 1 1 48%;
+    max-width: 408px;
+    margin-left: -28px;
+    filter: drop-shadow(0 24px 28px rgba(26, 19, 20, 0.22));
+    transform: rotate(1.5deg);
+    transition: transform 0.25s ease;
+  }
   .pembina-photo:hover {
     transform: rotate(0deg) scale(1.03);
   }
@@ -2348,8 +2382,12 @@ body.edit-mode .bento-meta .gal-del {
     margin-right: 0;
     margin-left: -3%;
   }
-  .orang-info h4 { font-size: 1.6rem; }
-  .orang-info p { font-size: 0.92rem; }
+  .orang-info h4 {
+    font-size: 1.6rem;
+  }
+  .orang-info p {
+    font-size: 0.92rem;
+  }
 
   .prestasi-grid {
     grid-template-columns: repeat(4, 1fr);
@@ -2401,7 +2439,7 @@ body.edit-mode .bento-meta .gal-del {
 }
 
 /* ============================================================
-   ASPIRASI â€” grid form + daftar suara
+   ASPIRASI - grid form + daftar suara
    ============================================================ */
 .aspirasi-grid {
   display: grid;
@@ -2606,7 +2644,9 @@ body.edit-mode .bento-meta .gal-del {
   color: var(--gray);
   text-decoration: none;
   border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 .login-back:hover {
   color: var(--ink);
@@ -2802,7 +2842,8 @@ p[contenteditable]:empty::before {
   color: var(--red-dark);
 }
 #galGrid.mode-osis .gal-save,
-#galGrid.mode-osis .gal-del,
+#galGrid.mode-osis .bento-block.draft .gal-del,
+body.edit-mode #galGrid.mode-osis .bento-block:not(.draft) .gal-del,
 #kegiatanGrid .bento-block.draft .gal-save,
 #kegiatanGrid .bento-block.draft .gal-del,
 #prestasiGrid.mode-osis .gal-del,
@@ -2819,6 +2860,13 @@ body.edit-mode #kegiatanGrid .bento-block .gal-del {
   position: absolute;
   top: 8px;
   right: 0;
+}
+/* Hapus galeri yang sudah publish: cuma muncul pas edit-mode DAN punya hak
+   (mode-osis). Tanpa salah satunya, paksa sembunyi — menimpa rule generik
+   body.edit-mode di bawah. Tombol draft tidak ikut (draft = sedang bikin). */
+body.edit-mode #galGrid:not(.mode-osis) .bento-block:not(.draft) .gal-del,
+body.edit-mode #galGrid:not(.mode-osis) .item .foto-del-btn {
+  display: none !important;
 }
 /* ============================================================
    EDIT MODE — toggle di header, cuma OSIS
@@ -2837,7 +2885,9 @@ body.edit-mode #kegiatanGrid .bento-block .gal-del {
   background: var(--white);
   box-shadow: 2px 2px 0 var(--ink);
 }
-.edit-toggle-wrap input { display: none; }
+.edit-toggle-wrap input {
+  display: none;
+}
 .edit-slider {
   width: 36px;
   height: 20px;
@@ -2860,8 +2910,12 @@ body.edit-mode #kegiatanGrid .bento-block .gal-del {
   border-radius: 50%;
   transition: transform 0.2s;
 }
-.edit-toggle-wrap input:checked + .edit-slider { background: var(--red); }
-.edit-toggle-wrap input:checked + .edit-slider::after { transform: translateX(16px); }
+.edit-toggle-wrap input:checked + .edit-slider {
+  background: var(--red);
+}
+.edit-toggle-wrap input:checked + .edit-slider::after {
+  transform: translateX(16px);
+}
 
 /* text editable */
 body.edit-mode [data-edit-key] {
@@ -2884,7 +2938,7 @@ body.edit-mode .vm-card.visi [data-edit-key]:focus {
 }
 /* version di footer gelap: jangan jadi putih pas focus / outline */
 body.edit-mode .site-footer-motto:focus {
-  background: rgba(255,255,255,.14) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
   color: #fff !important;
 }
 
@@ -2907,8 +2961,13 @@ body.edit-mode .site-footer-motto:focus {
   box-shadow: 1.5px 1.5px 0 var(--ink);
   z-index: 2;
 }
-body.edit-mode .photo-edit-btn { display: inline-flex; }
-.photo-edit-btn:active { transform: translate(1px,1px); box-shadow: none; }
+body.edit-mode .photo-edit-btn {
+  display: inline-flex;
+}
+.photo-edit-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
 
 /* tambah/hapus di mode edit */
 .edit-add-btn {
@@ -2924,8 +2983,13 @@ body.edit-mode .photo-edit-btn { display: inline-flex; }
   color: var(--gray);
   cursor: pointer;
 }
-body.edit-mode .edit-add-btn { display: block; }
-.edit-add-btn:hover { background: var(--white); color: var(--ink); }
+body.edit-mode .edit-add-btn {
+  display: block;
+}
+.edit-add-btn:hover {
+  background: var(--white);
+  color: var(--ink);
+}
 
 .edit-del-btn {
   display: none;
@@ -2944,16 +3008,26 @@ body.edit-mode .edit-add-btn { display: block; }
   cursor: pointer;
   z-index: 2;
 }
-body.edit-mode .edit-del-btn { display: inline-flex; }
+body.edit-mode .edit-del-btn {
+  display: inline-flex;
+}
 
 /* biar edit area ga ketutup bottom nav */
-body.edit-mode { padding-bottom: 0; }
+body.edit-mode {
+  padding-bottom: 0;
+}
 /* edit-mode: slot tambah foto kegiatan di home */
-.up-slot-kegiatan i { font-size: 1.4rem; color: var(--red); }
+.up-slot-kegiatan i {
+  font-size: 1.4rem;
+  color: var(--red);
+}
 /* ============================================================
    HEADER MORE (titik tiga) — mobile sempit
    ============================================================ */
-#headerMoreWrap { display: none; position: relative; }
+#headerMoreWrap {
+  display: none;
+  position: relative;
+}
 .header-more-menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -2969,7 +3043,9 @@ body.edit-mode { padding-bottom: 0; }
   gap: 4px;
   z-index: 95;
 }
-.header-more-menu.open { display: flex; }
+.header-more-menu.open {
+  display: flex;
+}
 .header-more-item {
   display: flex;
   align-items: center;
@@ -2987,17 +3063,27 @@ body.edit-mode { padding-bottom: 0; }
   font-family: inherit;
   color: var(--ink);
 }
-.header-more-item:hover { background: var(--paper-2); }
-.header-more-item.danger { color: var(--red-dark); }
+.header-more-item:hover {
+  background: var(--paper-2);
+}
+.header-more-item.danger {
+  color: var(--red-dark);
+}
 .header-more-item .edit-toggle-wrap.small {
   padding: 4px 8px;
   font-size: 0.68rem;
   box-shadow: 1.5px 1.5px 0 var(--ink);
 }
 @media (max-width: 500px) {
-  #editToggleWrap { display: none !important; }
-  #areaAuth .icon-btn { display: none !important; }
-  #headerMoreWrap.show { display: inline-flex !important; }
+  #editToggleWrap {
+    display: none !important;
+  }
+  #areaAuth .icon-btn {
+    display: none !important;
+  }
+  #headerMoreWrap.show {
+    display: inline-flex !important;
+  }
 }
 /* kegiatan home: tombol hapus di kanan atas meta (jangan nutupin judul) */
 .edit-del-btn.kegiatan-del {
@@ -3005,7 +3091,10 @@ body.edit-mode { padding-bottom: 0; }
   right: 0 !important;
   top: 8px !important;
 }
-#galGrid .bento-block .gal-del { left: auto; right: 0; }
+#galGrid .bento-block .gal-del {
+  left: auto;
+  right: 0;
+}
 /* popup jejak editable */
 .anggota-chip.edit {
   flex-direction: row;
@@ -3035,7 +3124,9 @@ body.edit-mode { padding-bottom: 0; }
   color: var(--gray);
   text-transform: capitalize;
 }
-.pesan-date-sep:first-child { margin-top: 2px; }
+.pesan-date-sep:first-child {
+  margin-top: 2px;
+}
 .pesan-date-line {
   flex: 1;
   height: 1.5px;
@@ -3154,8 +3245,12 @@ body.edit-mode { padding-bottom: 0; }
   top: auto;
   bottom: 12px;
 }
-.prestasi-card { position: relative; }
-.bento-grid .item { position: relative; }
+.prestasi-card {
+  position: relative;
+}
+.bento-grid .item {
+  position: relative;
+}
 body.edit-mode .prestasi-tag[contenteditable="true"] {
   cursor: text;
 }
@@ -3179,7 +3274,7 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
 .prestasi-form-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15,10,11,0.78);
+  background: rgba(15, 10, 11, 0.78);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3188,7 +3283,9 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.22s ease, visibility 0.22s ease;
+  transition:
+    opacity 0.22s ease,
+    visibility 0.22s ease;
 }
 .prestasi-form-overlay.active {
   opacity: 1;
@@ -3200,7 +3297,7 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
   background: var(--white);
   border: 3px solid var(--ink);
   border-radius: 18px;
-  box-shadow: 6px 6px 0 rgba(15,10,11,0.55);
+  box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
   padding: 18px;
   max-height: 90vh;
   overflow-y: auto;
@@ -3221,7 +3318,9 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 .prestasi-drop.dragover {
   background: var(--white);
@@ -3237,9 +3336,18 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
   align-items: center;
   gap: 6px;
 }
-.prestasi-drop-inner i { font-size: 1.6rem; color: var(--red); }
-.prestasi-drop-inner small { font-size: 0.68rem; font-weight: 600; opacity: 0.8; }
-.prestasi-drop.has-file .prestasi-drop-inner { display: none; }
+.prestasi-drop-inner i {
+  font-size: 1.6rem;
+  color: var(--red);
+}
+.prestasi-drop-inner small {
+  font-size: 0.68rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+.prestasi-drop.has-file .prestasi-drop-inner {
+  display: none;
+}
 /* foto hapus per-item — edit mode */
 .item .foto-del-btn,
 .prestasi-card .foto-del-btn {
@@ -3261,15 +3369,51 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
   box-shadow: 1.5px 1.5px 0 var(--ink);
 }
 body.edit-mode .item .foto-del-btn,
-body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
-.item .foto-del-btn:active { transform: translate(1px,1px); box-shadow: none; }
+body.edit-mode .prestasi-card .foto-del-btn {
+  display: inline-flex;
+}
+.item .foto-del-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
 /* agenda public di #sekbid */
-.agenda-sekbid { background:var(--white); border:2.5px solid var(--ink); border-radius:14px; padding:12px; margin-top:10px; box-shadow:3px 3px 0 var(--ink); }
-.agenda-sekbid-head { font-size:0.82rem; font-weight:900; display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-.agenda-mini-item { display:flex; gap:8px; align-items:center; padding:6px 0; border-bottom:1px dashed var(--line); font-size:0.78rem; }
-.agenda-mini-item:last-child { border-bottom:none; }
-.agenda-mini-date { font-weight:800; color:var(--red); white-space:nowrap; min-width:60px; }
-.agenda-mini-judul { flex:1; font-weight:700; }
+.agenda-sekbid {
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 10px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.agenda-sekbid-head {
+  font-size: 0.82rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.agenda-mini-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 0.78rem;
+}
+.agenda-mini-item:last-child {
+  border-bottom: none;
+}
+.agenda-mini-date {
+  font-weight: 800;
+  color: var(--red);
+  white-space: nowrap;
+  min-width: 60px;
+}
+.agenda-mini-judul {
+  flex: 1;
+  font-weight: 700;
+}
 
 /* ============================================================
    SEKBID REDESIGN — editorial: 1 foto background per section
@@ -3329,7 +3473,11 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   font-weight: 900;
   color: var(--red);
   background:
-    repeating-linear-gradient(-45deg, rgba(26, 19, 20, 0.05) 0 14px, transparent 14px 28px),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(26, 19, 20, 0.05) 0 14px,
+      transparent 14px 28px
+    ),
     var(--paper-2);
 }
 .sekbid-foto-loading {
@@ -3340,7 +3488,11 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   align-items: center;
   justify-content: center;
   background:
-    repeating-linear-gradient(-45deg, rgba(26, 19, 20, 0.05) 0 14px, transparent 14px 28px),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(26, 19, 20, 0.05) 0 14px,
+      transparent 14px 28px
+    ),
     var(--paper-2);
 }
 .sekbid-foto-loading .spinner {
@@ -3406,20 +3558,52 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
     border: none;
     border-radius: 0;
     -webkit-mask-image:
-      linear-gradient(to bottom,
-        transparent 0%, rgba(0, 0, 0, 0.35) 4%, rgba(0, 0, 0, 0.75) 7%, black 10%,
-        black 90%, rgba(0, 0, 0, 0.75) 93%, rgba(0, 0, 0, 0.35) 96%, transparent 100%),
-      linear-gradient(to right,
-        transparent 0%, rgba(0, 0, 0, 0.4) 3%, rgba(0, 0, 0, 0.8) 6%, black 9%,
-        black 91%, rgba(0, 0, 0, 0.8) 94%, rgba(0, 0, 0, 0.4) 97%, transparent 100%);
+      linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0.35) 4%,
+        rgba(0, 0, 0, 0.75) 7%,
+        black 10%,
+        black 90%,
+        rgba(0, 0, 0, 0.75) 93%,
+        rgba(0, 0, 0, 0.35) 96%,
+        transparent 100%
+      ),
+      linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(0, 0, 0, 0.4) 3%,
+        rgba(0, 0, 0, 0.8) 6%,
+        black 9%,
+        black 91%,
+        rgba(0, 0, 0, 0.8) 94%,
+        rgba(0, 0, 0, 0.4) 97%,
+        transparent 100%
+      );
     -webkit-mask-composite: source-in;
     mask-image:
-      linear-gradient(to bottom,
-        transparent 0%, rgba(0, 0, 0, 0.35) 4%, rgba(0, 0, 0, 0.75) 7%, black 10%,
-        black 90%, rgba(0, 0, 0, 0.75) 93%, rgba(0, 0, 0, 0.35) 96%, transparent 100%),
-      linear-gradient(to right,
-        transparent 0%, rgba(0, 0, 0, 0.4) 3%, rgba(0, 0, 0, 0.8) 6%, black 9%,
-        black 91%, rgba(0, 0, 0, 0.8) 94%, rgba(0, 0, 0, 0.4) 97%, transparent 100%);
+      linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0.35) 4%,
+        rgba(0, 0, 0, 0.75) 7%,
+        black 10%,
+        black 90%,
+        rgba(0, 0, 0, 0.75) 93%,
+        rgba(0, 0, 0, 0.35) 96%,
+        transparent 100%
+      ),
+      linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(0, 0, 0, 0.4) 3%,
+        rgba(0, 0, 0, 0.8) 6%,
+        black 9%,
+        black 91%,
+        rgba(0, 0, 0, 0.8) 94%,
+        rgba(0, 0, 0, 0.4) 97%,
+        transparent 100%
+      );
     mask-composite: intersect;
   }
   .sekbid-desc {
@@ -3439,14 +3623,24 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
       rgba(15, 10, 11, 0.28) 88%,
       transparent 100%
     );
-    -webkit-mask-image:
-      linear-gradient(to right,
-        transparent 0%, rgba(0, 0, 0, 0.5) 2.5%, black 5%,
-        black 95%, rgba(0, 0, 0, 0.5) 97.5%, transparent 100%);
-    mask-image:
-      linear-gradient(to right,
-        transparent 0%, rgba(0, 0, 0, 0.5) 2.5%, black 5%,
-        black 95%, rgba(0, 0, 0, 0.5) 97.5%, transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.5) 2.5%,
+      black 5%,
+      black 95%,
+      rgba(0, 0, 0, 0.5) 97.5%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.5) 2.5%,
+      black 5%,
+      black 95%,
+      rgba(0, 0, 0, 0.5) 97.5%,
+      transparent 100%
+    );
   }
   .sekbid-no {
     font-size: 1.6rem;
@@ -3478,12 +3672,36 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
     border-radius: 0;
     background: transparent;
     -webkit-mask-image:
-      linear-gradient(to bottom, transparent 0, black 7%, black 93%, transparent 100%),
-      linear-gradient(to right, transparent 0, black 5%, black 95%, transparent 100%);
+      linear-gradient(
+        to bottom,
+        transparent 0,
+        black 7%,
+        black 93%,
+        transparent 100%
+      ),
+      linear-gradient(
+        to right,
+        transparent 0,
+        black 5%,
+        black 95%,
+        transparent 100%
+      );
     -webkit-mask-composite: source-in;
     mask-image:
-      linear-gradient(to bottom, transparent 0, black 7%, black 93%, transparent 100%),
-      linear-gradient(to right, transparent 0, black 5%, black 95%, transparent 100%);
+      linear-gradient(
+        to bottom,
+        transparent 0,
+        black 7%,
+        black 93%,
+        transparent 100%
+      ),
+      linear-gradient(
+        to right,
+        transparent 0,
+        black 5%,
+        black 95%,
+        transparent 100%
+      );
     mask-composite: intersect;
   }
   .sekbid-desc {
@@ -3557,13 +3775,27 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   word-break: break-word;
   min-width: 0;
 }
-.logo-makna-card[data-area="perisai"] { grid-area: perisai; }
-.logo-makna-card[data-area="osis"] { grid-area: osis; }
-.logo-makna-card[data-area="bintang"] { grid-area: bintang; }
-.logo-makna-card[data-area="padi"] { grid-area: padi; }
-.logo-makna-card[data-area="kapas"] { grid-area: kapas; }
-.logo-makna-card[data-area="obor"] { grid-area: obor; }
-.logo-makna-card[data-area="sekolah"] { grid-area: sekolah; }
+.logo-makna-card[data-area="perisai"] {
+  grid-area: perisai;
+}
+.logo-makna-card[data-area="osis"] {
+  grid-area: osis;
+}
+.logo-makna-card[data-area="bintang"] {
+  grid-area: bintang;
+}
+.logo-makna-card[data-area="padi"] {
+  grid-area: padi;
+}
+.logo-makna-card[data-area="kapas"] {
+  grid-area: kapas;
+}
+.logo-makna-card[data-area="obor"] {
+  grid-area: obor;
+}
+.logo-makna-card[data-area="sekolah"] {
+  grid-area: sekolah;
+}
 /* card tengah (atas/bawah logo): compact, tidak full-width ala list */
 .logo-makna-card[data-area="perisai"],
 .logo-makna-card[data-area="obor"],
@@ -3593,8 +3825,12 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
   margin-top: 2px;
 }
 /* mobile: tampilkan teks pendek, desktop: teks penuh */
-.logo-makna-card .lm-t-full { display: none; }
-.logo-makna-card .lm-t-short { display: block; }
+.logo-makna-card .lm-t-full {
+  display: none;
+}
+.logo-makna-card .lm-t-short {
+  display: block;
+}
 .logo-makna-num {
   flex-shrink: 0;
   min-width: 30px;
@@ -3728,15 +3964,21 @@ body.edit-mode .prestasi-card .foto-del-btn { display: inline-flex; }
     justify-self: center;
     width: 100%;
   }
-  .logo-makna-card h4 { font-size: 0.88rem; }
+  .logo-makna-card h4 {
+    font-size: 0.88rem;
+  }
   .logo-makna-card .lm-t-full,
   .logo-makna-card .lm-t-short {
     font-size: 0.79rem;
     margin-top: 3px;
   }
   /* desktop: teks penuh, sembunyikan versi pendek */
-  .logo-makna-card .lm-t-full { display: block; }
-  .logo-makna-card .lm-t-short { display: none; }
+  .logo-makna-card .lm-t-full {
+    display: block;
+  }
+  .logo-makna-card .lm-t-short {
+    display: none;
+  }
   .logo-makna-num {
     min-width: 38px;
     height: 32px;

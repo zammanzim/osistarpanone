@@ -13,6 +13,18 @@ const Home = {
         if (Home.terinisialisasi) return;
         Home.terinisialisasi = true;
         Home.renderTicker();
+        Home.bindGlobal();
+        // Prestasi & kegiatan sekarang DB-driven (prestasi.js/kegiatan.js handle popup sendiri)
+        // Tidak perlu listener hardcode di sini.
+        await Home.muatArsip();
+    },
+
+    // Listener global (ESC/panah/back) didaftarkan sekali saat script dimuat,
+    // BUKAN di init() — init() cuma jalan kalau view Home dibuka, padahal
+    // popup foto/struktur bisa dibuka dari galeri/prestasi/kegiatan.
+    bindGlobal() {
+        if (Home._globalBound) return;
+        Home._globalBound = true;
         document.addEventListener("keydown", (e) => {
             const active = document.activeElement;
             if (active && (active.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName))) return;
@@ -40,9 +52,6 @@ const Home = {
             }
             if (document.querySelector(".struktur-modal")) Home.tutupModal(true);
         });
-        // Prestasi & kegiatan sekarang DB-driven (prestasi.js/kegiatan.js handle popup sendiri)
-        // Tidak perlu listener hardcode di sini.
-        await Home.muatArsip();
     },
 
     // ============ POPUP FOTO ============
@@ -394,6 +403,9 @@ const Home = {
         Home.bukaModal(next, true, true);
     }
 };
+
+// Daftarkan listener global segera (lihat bindGlobal) — jangan tunggu init home.
+Home.bindGlobal();
 
 if (typeof Router !== "undefined") {
     Router.register("home", () => Home.init());

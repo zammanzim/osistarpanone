@@ -16,7 +16,18 @@ const SiteEdit = {
 
         const u = OsisAuth.getUser && OsisAuth.getUser();
         const isOsis = !!(u && u.mode === "osis");
-        wrap.style.display = isOsis ? "" : "none";
+        // Tombol Edit cuma untuk super_admin (bukan semua OSIS).
+        // Hak bisa datang belakangan (refresh async) — terapkan ulang setelahnya.
+        const terapkanToggle = () => {
+            const superUser = (typeof OsisAuth.isSuper === "function") && OsisAuth.isSuper();
+            wrap.style.display = superUser ? "" : "none";
+            const er = document.getElementById("headerMoreEditRow");
+            if (er) er.style.display = superUser ? "" : "none";
+        };
+        terapkanToggle();
+        if (isOsis && typeof OsisAuth.refreshAkses === "function") {
+            OsisAuth.refreshAkses().then(terapkanToggle).catch(() => {});
+        }
         // paksa edit mode mati pas refresh — jangan kebawa restore browser
         SiteEdit.active = false;
         document.body.classList.remove("edit-mode");
@@ -88,6 +99,15 @@ const SiteEdit = {
     },
 
     toggle(on) {
+        // Nyalakan edit-mode cuma boleh super_admin
+        if (on && !((typeof OsisAuth.isSuper === "function") && OsisAuth.isSuper())) {
+            if (typeof showToast === "function") showToast("Mode edit khusus super admin.", "error");
+            const main = document.getElementById("editToggle");
+            if (main) main.checked = false;
+            const moreEdit = document.getElementById("headerMoreEditToggle");
+            if (moreEdit) moreEdit.checked = false;
+            return;
+        }
         SiteEdit.active = !!on;
         document.body.classList.toggle("edit-mode", SiteEdit.active);
 
@@ -106,6 +126,12 @@ const SiteEdit = {
         if (SiteEdit.active) {
             SiteEdit.injectPhotoButtons();
             showToast("Edit mode aktif — klik teks/foto buat ubah", "info");
+            // Kabari kalau user sama sekali tidak punya hak kendali edit
+            try {
+                const adaHak = ["site", "anggota", "prestasi", "kegiatan", "galeri"]
+                    .some(h => OsisAuth.bisa && OsisAuth.bisa(h));
+                if (!adaHak) showToast("Kamu tidak punya hak kendali edit (hubungi admin).", "error");
+            } catch {}
         } else {
             SiteEdit.removePhotoButtons();
         }
@@ -139,6 +165,21 @@ const SiteEdit = {
         // untuk html, simpen innerText aja biar simpel — nanti dirender \n->br
         const simpanVal = isHtml ? el.innerText.trim() : el.textContent.trim();
         if (!key) return;
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try {
+                await Outbox.enqueue({ modul: "siteteks", op: "create",
+                    label: "Teks: " + key,
+                    payload: { kunci: key, nilai: simpanVal },
+                    files: [], cacheKeys: ["site_content"] });
+            } catch (e) { showToast(e.message, "error"); return; }
+            const cached0 = Cache.get("site_content") || [];
+            const idx0 = cached0.findIndex(r => r.kunci === key);
+            if (idx0 >= 0) cached0[idx0].nilai = simpanVal;
+            else cached0.push({ kunci: key, nilai: simpanVal });
+            Cache.set("site_content", cached0);
+            Outbox.toastAntre();
+            return;
+        }
         try {
             await saveSiteText(u.id, key, simpanVal);
             // update cache biar instant next load
@@ -150,6 +191,17 @@ const SiteEdit = {
             showToast("Tersimpan: " + key, "success");
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, { modul: "siteteks", op: "create",
+                    label: "Teks: " + key, payload: { kunci: key, nilai: simpanVal },
+                    files: [], cacheKeys: ["site_content"] })) {
+                const cached0 = Cache.get("site_content") || [];
+                const idx0 = cached0.findIndex(r => r.kunci === key);
+                if (idx0 >= 0) cached0[idx0].nilai = simpanVal;
+                else cached0.push({ kunci: key, nilai: simpanVal });
+                Cache.set("site_content", cached0);
+                Outbox.toastAntre();
+                return;
+            }
             showToast("Gagal simpan " + key, "error");
         }
     },
@@ -378,6 +430,26 @@ const SiteEdit = {
         let ketuaFoto = lama.ketua_foto || "";
         let wakilFoto = lama.wakil_foto || "";
         let fotoAngkatan = lama.foto_angkatan || "";
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            const __nmK = document.getElementById(`pimpKetuaNama-${tahun}`)?.value.trim() || "";
+            const __nmW = document.getElementById(`pimpWakilNama-${tahun}`)?.value.trim() || "";
+            const __fl = [];
+            const __kf = document.getElementById(`pimpKetuaFile-${tahun}`)?.files[0];
+            const __wf = document.getElementById(`pimpWakilFile-${tahun}`)?.files[0];
+            const __af = document.getElementById(`pimpAngkatanFile-${tahun}`)?.files[0];
+            if (__kf) __fl.push({ slot: "ketua_foto", file: __kf, name: __kf.name, type: __kf.type });
+            if (__wf) __fl.push({ slot: "wakil_foto", file: __wf, name: __wf.name, type: __wf.type });
+            if (__af) __fl.push({ slot: "foto_angkatan", file: __af, name: __af.name, type: __af.type });
+            try {
+                await Outbox.enqueue({ modul: "pimpinan", op: "update",
+                    label: "Pengurus " + tahun,
+                    payload: { tahun: parseInt(tahun, 10), ketua_nama: __nmK, wakil_nama: __nmW,
+                        existing: { ketua_foto: ketuaFoto, wakil_foto: wakilFoto, foto_angkatan: fotoAngkatan } },
+                    files: __fl, cacheKeys: ["pimpinan"] });
+            } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.toastAntre();
+            return;
+        }
         try {
             const ketuaFile = document.getElementById(`pimpKetuaFile-${tahun}`)?.files[0];
             if (ketuaFile) {
@@ -426,6 +498,16 @@ const SiteEdit = {
         const jabatan = row.querySelector('[data-field="jabatan"]')?.value.trim() || "";
         const urutan = parseInt(row.querySelector('[data-field="urutan"]')?.value, 10) || 99;
         if (!nama || !jabatan) { showToast("Nama & jabatan wajib diisi", "error"); return; }
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try {
+                await Outbox.enqueue({ modul: "anggota", op: "update",
+                    label: "Ubah anggota: " + String(nama).slice(0, 42),
+                    payload: { id, tahun: parseInt(tahun, 10), nama, jabatan, urutan },
+                    files: [], cacheKeys: ["anggota"] });
+            } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.toastAntre();
+            return;
+        }
         try {
             await updateAnggota(id, { nama, jabatan, urutan });
             // update cache
@@ -525,6 +607,21 @@ const SiteEdit = {
         try {
             if (target.type === "web_foto") {
                 const oldPath = FotoWeb.map[target.key];
+                if (typeof Outbox !== "undefined" && Outbox.offline()) {
+                    try {
+                        await Outbox.enqueue({ modul: "webfoto", op: "create",
+                            label: "Foto: " + target.key,
+                            payload: { kunci: target.key, existingPath: oldPath || "" },
+                            files: [{ slot: "foto", file, name: file.name, type: file.type }],
+                            cacheKeys: ["web_foto"] });
+                    } catch (e) { showToast(e.message, "error"); return; }
+                    try {
+                        const urlPrev = URL.createObjectURL(file);
+                        document.querySelectorAll(`[data-foto="${target.key}"]`).forEach(el => { el.src = urlPrev; });
+                    } catch {}
+                    Outbox.toastAntre();
+                    return;
+                }
                 const path = `web/${target.key}-${Date.now()}.${ext}`;
                 await uploadFotoStorage(file, path);
                 await simpanWebFoto(target.key, path);
@@ -542,6 +639,27 @@ const SiteEdit = {
                 showToast("Foto diganti!", "success");
             } else if (target.type === "pimpinan") {
                 const oldPath = (typeof Home !== "undefined" && Home.cachePimpinan && Home.cachePimpinan[String(target.tahun)]) ? Home.cachePimpinan[String(target.tahun)].foto_angkatan : null;
+                if (typeof Outbox !== "undefined" && Outbox.offline()) {
+                    const prow = (typeof Home !== "undefined" && Home.cachePimpinan && Home.cachePimpinan[String(target.tahun)]) || {};
+                    try {
+                        await Outbox.enqueue({ modul: "pimpinan", op: "update",
+                            label: "Foto angkatan " + target.tahun,
+                            payload: { tahun: parseInt(target.tahun, 10),
+                                ketua_nama: prow.ketua_nama || "", wakil_nama: prow.wakil_nama || "",
+                                existing: { ketua_foto: prow.ketua_foto || "", wakil_foto: prow.wakil_foto || "",
+                                    foto_angkatan: prow.foto_angkatan || "" } },
+                            files: [{ slot: "foto_angkatan", file, name: file.name, type: file.type }],
+                            cacheKeys: ["pimpinan"] });
+                    } catch (e) { showToast(e.message, "error"); return; }
+                    try {
+                        const urlPrev = URL.createObjectURL(file);
+                        const card = document.querySelector(`.year-card[onclick*="${target.tahun}"]`);
+                        const img = card && card.querySelector("img");
+                        if (img) img.src = urlPrev;
+                    } catch {}
+                    Outbox.toastAntre();
+                    return;
+                }
                 const path = `angkatan/foto-${target.tahun}-${Date.now()}.${ext}`;
                 await uploadFotoStorage(file, path);
                 // simpan ke pimpinan (upsert)
@@ -558,6 +676,10 @@ const SiteEdit = {
                 if (oldPath && oldPath !== path) { try { await hapusFotoStorage(oldPath); } catch {} }
                 showToast("Foto angkatan diganti!", "success");
             } else if (target.type === "pimpinan_modal") {
+                if (typeof Outbox !== "undefined" && Outbox.offline()) {
+                    showToast("Ganti foto ini butuh koneksi.", "error");
+                    return;
+                }
                 const tahun = target.tahun;
                 const field = target.field;
                 let folder, prefix;
@@ -641,7 +763,8 @@ const HeaderMore = {
             rootOsisNav.style.display = (isOsis && !narrow) ? "flex" : "none";
         }
         if (moreOsisDash) moreOsisDash.style.display = (isOsis && narrow) ? "" : "none";
-        if (editRow) editRow.style.display = isOsis ? "" : "none";
+        const superUser = (typeof OsisAuth.isSuper === "function") && OsisAuth.isSuper();
+        if (editRow) editRow.style.display = superUser ? "" : "none";
         if (logoutBtn) logoutBtn.style.display = isLogged ? "" : "none";
         if (moreEdit) {
             const main = document.getElementById("editToggle");
@@ -666,7 +789,8 @@ OsisAuth.renderHeader = function() {
     _origRenderHeader();
     const wrap = document.getElementById("editToggleWrap");
     const u = OsisAuth.getUser && OsisAuth.getUser();
-    if (wrap) wrap.style.display = (u && u.mode === "osis") ? "" : "none";
+    const superUser = (typeof OsisAuth.isSuper === "function") && OsisAuth.isSuper();
+    if (wrap) wrap.style.display = superUser ? "" : "none";
     // sync checkbox titik tiga
     const moreEdit = document.getElementById("headerMoreEditToggle");
     const main = document.getElementById("editToggle");

@@ -299,6 +299,23 @@ const Prestasi = {
         const caption = document.getElementById("prestasiCaption")?.value.trim() || "";
         const file = Prestasi.pendingFile;
         if (!file) { showToast("Pilih foto dulu", "error"); return; }
+        const __presOrder = (() => {
+            try {
+                const c = Prestasi.cache || [];
+                return c.length ? Math.min(...c.map(p => p.display_order ?? 99)) - 1 : 99;
+            } catch { return 99; }
+        })();
+        const __spec = () => ({ modul: "prestasi", op: "create",
+            label: "Prestasi: " + String(tag || caption || "baru").slice(0, 42),
+            payload: { tag, caption, order: __presOrder },
+            files: [{ slot: "foto", file, name: file.name, type: file.type }],
+            cacheKeys: ["prestasi"] });
+        const __sesudahAntre = () => { Prestasi.tutupForm(); };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
         const btn = document.getElementById("btnSimpanPrestasi");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         try {
@@ -314,6 +331,10 @@ const Prestasi = {
             await Prestasi.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: "+err.message, "error");
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan'; }
         }

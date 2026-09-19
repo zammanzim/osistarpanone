@@ -14,6 +14,10 @@ const Dashboard = {
             location.replace("../login");
             return;
         }
+        // Segarkan hak kendali (biar panel hak + menu selalu akurat)
+        try {
+            if (typeof OsisAuth.refreshAkses === "function") await OsisAuth.refreshAkses();
+        } catch {}
         document.getElementById("osisHello").textContent = `Halo, ${(u.nama || u.username || "OSIS").split(" ")[0]}! 👋`;
         document.getElementById("osisSub").textContent = "Berikut ringkasan aktivitas OSIS saat ini.";
         const meta = document.getElementById("osisMeta");
@@ -23,6 +27,7 @@ const Dashboard = {
                 <span class="osis-badge">@${escapeHtml(u.username || "-")}</span>`;
         }
         Dashboard.renderAvatar(u);
+        Dashboard.renderHak();
         Dashboard.tickJam();
         setInterval(() => Dashboard.tickJam(), 1000);
         // refresh foto PP terbaru (fail silent)
@@ -54,6 +59,31 @@ const Dashboard = {
         Dashboard.renderProker(proker);
         Dashboard.renderDokumen(dokumen);
         Dashboard.renderAktivitas(agenda, proker, task, dokumen, notulensi);
+    },
+
+    // ============ HAK KENDALI SAYA (khusus halaman baru osis/index) ============
+    // Guard element: halaman lama (osisbin) tidak punya panel ini -> skip.
+    renderHak() {
+        const chips = document.getElementById("hakChips");
+        if (!chips) return;
+        const a = (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) ? OsisAuth.getAkses() : null;
+        const superUser = (typeof OsisAuth !== "undefined" && OsisAuth.isSuper) ? OsisAuth.isSuper() : false;
+        const list = a && Array.isArray(a.halaman) ? a.halaman : [];
+        if (superUser) {
+            chips.innerHTML = `<span class="hak-chip super"><i class="fa-solid fa-crown"></i> Super Admin — semua halaman</span>`;
+        } else if (!list.length) {
+            chips.innerHTML = `<span class="hak-note">Belum ada hak kendali. Lihat tetap bisa, ubah perlu izin admin.</span>`;
+        } else {
+            chips.innerHTML = list.map(h => `<span class="hak-chip">${escapeHtml(h)}</span>`).join("");
+        }
+        const sekEl = document.getElementById("hakSekbid");
+        if (sekEl) {
+            sekEl.textContent = a && a.sekbid_nama
+                ? `Sekbid kamu: ${a.sekbid_nama} (agenda terkunci ke sekbid ini)`
+                : "";
+        }
+        const menuAkses = document.getElementById("menuAksesCard");
+        if (menuAkses) menuAkses.style.display = superUser ? "" : "none";
     },
 
     inisial(nama) {

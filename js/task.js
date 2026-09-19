@@ -416,6 +416,15 @@ const Task = {
         const f = Task.kumpulkanForm();
         const id = document.getElementById("taskId").value ? parseInt(document.getElementById("taskId").value, 10) : null;
         if (!f.judul) { showToast("Judul task wajib diisi", "error"); return; }
+        const __spec = () => ({ modul: "task", op: id ? "update" : "create",
+            label: "Task: " + String(f.judul).slice(0, 42),
+            payload: { id: id || null, f }, files: [], cacheKeys: ["task"] });
+        const __sesudahAntre = () => { Task.tutupForm(); };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(__sesudahAntre);
+            return;
+        }
 
         const btn = document.getElementById("btnSimpanTask");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
@@ -432,6 +441,10 @@ const Task = {
             await Task.muat();
         } catch (err) {
             console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
+                Outbox.sesudahAntre(__sesudahAntre);
+                return;
+            }
             showToast("Gagal simpan: " + err.message, "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Task'; }
