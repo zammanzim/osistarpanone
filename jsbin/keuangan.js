@@ -151,18 +151,27 @@ const Keuangan = {
     async muat() {
         try {
             const cached = Cache.get("kas");
+            // Render cache DULU biar offline langsung tampil (jangan tunggu network).
+            if (cached) {
+                Keuangan.prokerCache = Cache.get("proker") || [];
+                Keuangan.agendaCache = Cache.get("agenda_all") || [];
+                try { Keuangan.buildOptions(); } catch {}
+                Keuangan.cache = cached;
+                Keuangan.render();
+            }
             const [pk, ag] = await Promise.all([
-                getProker().catch(() => []),
-                getAllAgenda().catch(() => [])
+                getProker().catch(() => null),
+                getAllAgenda().catch(() => null)
             ]);
-            Keuangan.prokerCache = pk || [];
-            Keuangan.agendaCache = ag || [];
-            Keuangan.buildOptions();
+            if (pk) { Keuangan.prokerCache = pk; Cache.set("proker", pk); }
+            else if (!cached) Keuangan.prokerCache = [];
+            if (ag) { Keuangan.agendaCache = ag; Cache.set("agenda_all", ag); }
+            else if (!cached) Keuangan.agendaCache = [];
+            try { Keuangan.buildOptions(); } catch {}
             try {
                 Keuangan.saldoAwal = await getSaldoAwal();
             } catch { Keuangan.saldoAwal = []; }
             if (cached) {
-                Keuangan.cache = cached;
                 Keuangan.render();
                 getKas().then(fresh => {
                     if (JSON.stringify(fresh) !== JSON.stringify(cached)) {

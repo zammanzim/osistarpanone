@@ -136,15 +136,24 @@ const Absensi = {
     },
 
     async segarkan() {
+        // Render cache dulu biar offline langsung tampil.
+        const cached = Cache.get("absensi");
+        if (cached) {
+            Absensi.cache = cached || [];
+            try { Absensi.render(); } catch {}
+        }
         try {
             const data = await getAbsensi();
-            Cache.set("absensi", data);
-            Absensi.cache = data || [];
+            if (JSON.stringify(data) !== JSON.stringify(cached)) {
+                Cache.set("absensi", data);
+                Absensi.cache = data || [];
+                Absensi.render();
+            }
         } catch (err) {
             console.error(err);
-            showToast("Gagal memuat ulang: " + err.message, "error");
+            if (!cached) showToast("Gagal memuat ulang: " + err.message, "error");
+            try { Absensi.render(); } catch {}
         }
-        Absensi.render();
     },
 
     dataTampil() {

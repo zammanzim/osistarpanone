@@ -1003,6 +1003,7 @@
   // =====================================================================
   var fab = null;
   var modal = null;
+  var pill = null;
 
   var CSS =
     "#outboxFab{position:fixed;left:16px;bottom:96px;z-index:9998;display:none;align-items:center;gap:8px;" +
@@ -1035,7 +1036,10 @@
     ".ob-chip.pending{background:#ffd43b}" +
     ".ob-chip.failed{background:#ffb3b3}" +
     ".ob-chip.sending{background:#bfe3ff}" +
-    ".ob-empty{text-align:center;padding:26px 10px;color:#6f6668;font-size:.84rem;font-weight:600}";
+    ".ob-empty{text-align:center;padding:26px 10px;color:#6f6668;font-size:.84rem;font-weight:600}" +
+    "#offlinePill{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:9997;display:none;" +
+    "align-items:center;gap:6px;padding:8px 14px;background:#1a1314;color:#ffd43b;border-radius:999px;" +
+    "font-family:Outfit,system-ui,sans-serif;font-size:.72rem;font-weight:800;box-shadow:2px 2px 0 rgba(0,0,0,.3)}";
 
   function pastikanUI() {
     if (!document.getElementById("outboxStyle")) {
@@ -1078,7 +1082,20 @@
           Outbox.processQueue({ manual: true });
         });
     }
+    if (!pill) {
+      pill = document.createElement("div");
+      pill.id = "offlinePill";
+      pill.innerHTML =
+        '<i class="fa-solid fa-cloud"></i><span>Offline — menampilkan data terakhir</span>';
+      document.body.appendChild(pill);
+      Outbox.tampilkanPill();
+    }
   }
+
+  // Pill "offline" global — muncul di semua halaman saat tanpa koneksi.
+  Outbox.tampilkanPill = function () {
+    if (pill) pill.style.display = Outbox.offline() ? "inline-flex" : "none";
+  };
 
   Outbox.bukaPanel = async function () {
     pastikanUI();
@@ -1165,9 +1182,14 @@
   function init() {
     pastikanUI();
     Outbox._emit();
+    Outbox.tampilkanPill();
     window.addEventListener("online", function () {
+      Outbox.tampilkanPill();
       toast("Online lagi — mengirim antrean…", "info");
       Outbox.processQueue({ silent: true });
+    });
+    window.addEventListener("offline", function () {
+      Outbox.tampilkanPill();
     });
     try {
       document.addEventListener("visibilitychange", function () {

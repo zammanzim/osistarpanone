@@ -136,33 +136,48 @@ const Anggota = {
     },
 
     // ============ MUAT ============
+    // ============ MUAT ============
+    terapkanSemua(pimp, agg, sek) {
+        Anggota.pimpinanCache = pimp || [];
+        Anggota.anggotaCache = agg || [];
+        Anggota.sekbidCache = sek || [];
+        // daftar tahun = gabungan pimpinan + anggota, terbaru dulu
+        const setTahun = new Set();
+        Anggota.pimpinanCache.forEach(p => { if (p.tahun) setTahun.add(parseInt(p.tahun, 10)); });
+        Anggota.anggotaCache.forEach(a => { if (a.tahun) setTahun.add(parseInt(a.tahun, 10)); });
+        Anggota.tahunList = [...setTahun].filter(Number.isFinite).sort((a, b) => b - a);
+        if (!Anggota.tahunList.length) {
+            Anggota.tahunList = [new Date().getFullYear()];
+        }
+        if (!Anggota.tahun || !Anggota.tahunList.includes(Anggota.tahun)) {
+            Anggota.tahun = Anggota.tahunList[0];
+        }
+        Anggota._revokePfUrls();
+        Anggota.pfFiles = {};
+        Anggota.renderTahun();
+        Anggota.renderAnggota();
+        Anggota.renderPengurus();
+        Anggota.renderSekbid();
+    },
+
     async muatSemua() {
+        // Render cache DULU biar offline langsung tampil.
+        const cp = Cache.get("pimpinan"), ca = Cache.get("anggota"), cs = Cache.get("sekbid");
+        if (cp || ca || cs) {
+            try { Anggota.terapkanSemua(cp || [], ca || [], cs || []); } catch {}
+        }
         try {
             const [pimp, agg, sek] = await Promise.all([getPimpinan(), getAnggota(), getSekbid()]);
-            Anggota.pimpinanCache = pimp || [];
-            Anggota.anggotaCache = agg || [];
-            Anggota.sekbidCache = sek || [];
-            // daftar tahun = gabungan pimpinan + anggota, terbaru dulu
-            const setTahun = new Set();
-            Anggota.pimpinanCache.forEach(p => { if (p.tahun) setTahun.add(parseInt(p.tahun, 10)); });
-            Anggota.anggotaCache.forEach(a => { if (a.tahun) setTahun.add(parseInt(a.tahun, 10)); });
-            Anggota.tahunList = [...setTahun].filter(Number.isFinite).sort((a, b) => b - a);
-            if (!Anggota.tahunList.length) {
-                Anggota.tahunList = [new Date().getFullYear()];
-            }
-            if (!Anggota.tahun || !Anggota.tahunList.includes(Anggota.tahun)) {
-                Anggota.tahun = Anggota.tahunList[0];
-            }
-            Anggota._revokePfUrls();
-            Anggota.pfFiles = {};
-            Anggota.renderTahun();
-            Anggota.renderAnggota();
-            Anggota.renderPengurus();
-            Anggota.renderSekbid();
+            Cache.set("pimpinan", pimp || []);
+            Cache.set("anggota", agg || []);
+            Cache.set("sekbid", sek || []);
+            Anggota.terapkanSemua(pimp, agg, sek);
         } catch (err) {
             console.error(err);
-            document.getElementById("anggotaTable").innerHTML = `<div class="pesan-empty">Gagal memuat data.</div>`;
-            showToast("Gagal memuat: " + err.message, "error");
+            if (!(cp || ca || cs)) {
+                document.getElementById("anggotaTable").innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Offline dan belum ada data tersimpan. Buka halaman ini sekali saat online.</div>`;
+                showToast("Gagal memuat: " + err.message, "error");
+            }
         }
     },
 

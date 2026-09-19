@@ -11,12 +11,16 @@ const Aspirasi = {
     async init() {
         if (Aspirasi.terinisialisasi) return;
         Aspirasi.terinisialisasi = true;
+        // Render cache dulu (wajib saat offline), sisanya jalan background.
+        try { Aspirasi.muatPesan(); } catch {}
         if (typeof OsisAuth.refreshAkses === "function") {
             try { await OsisAuth.refreshAkses(); } catch {}
         }
-        Aspirasi.status = await cekStatusAspirasi();
+        try {
+            Aspirasi.status = await cekStatusAspirasi();
+        } catch { Aspirasi.status = "BUKA"; }
         if (Aspirasi.status === "TUTUP") Aspirasi.kunciFormulir();
-        Aspirasi.muatPesan();
+        try { Aspirasi.muatPesan(); } catch {}
     },
 
     // ============ DAFTAR PESAN — SWR ============

@@ -11,9 +11,13 @@ const Aspirasi = {
     async init() {
         if (Aspirasi.terinisialisasi) return;
         Aspirasi.terinisialisasi = true;
-        Aspirasi.status = await cekStatusAspirasi();
+        // Render cache dulu (wajib saat offline), status jalan background.
+        try { Aspirasi.muatPesan(); } catch {}
+        try {
+            Aspirasi.status = await cekStatusAspirasi();
+        } catch { Aspirasi.status = "BUKA"; }
         if (Aspirasi.status === "TUTUP") Aspirasi.kunciFormulir();
-        Aspirasi.muatPesan();
+        try { Aspirasi.muatPesan(); } catch {}
     },
 
     // ============ DAFTAR PESAN — SWR ============

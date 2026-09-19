@@ -25,8 +25,17 @@ const AgendaAdmin = {
         try { await OsisAuth.refreshAkses(); } catch {}
         // Muat daftar sekbid + pasang filter (satu sekbid aja, bisa diganti).
         // Default: sekbid sendiri; yang belum diset fallback ke ketua/BPH.
+        // Offline: pakai cache sekbid biar filter tetap jalan.
+        let list = null;
         try {
-            const list = await getSekbid();
+            list = await getSekbid();
+            if (list) Cache.set("sekbid", list);
+        } catch (err) {
+            console.error(err);
+            list = Cache.get("sekbid");
+            if (!list) showToast("Offline dan daftar sekbid belum tersimpan.", "error");
+        }
+        if (list) {
             AgendaAdmin.sekbidList = list || [];
             const sel = document.getElementById("pilihSekbid");
             if (sel) {
@@ -40,9 +49,6 @@ const AgendaAdmin = {
                 });
             }
             AgendaAdmin.isiOpsiSekbidForm(null);
-        } catch (err) {
-            console.error(err);
-            showToast("Gagal load sekbid", "error");
         }
 
         // tab tipe: per sekbid / per orang
@@ -149,14 +155,24 @@ const AgendaAdmin = {
 
     async muat() {
         const listEl = document.getElementById("agendaList");
-        if (listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat agenda...</div>`;
+        // Render cache DULU biar offline langsung tampil.
+        const cached = Cache.get("agenda_all");
+        if (cached) {
+            AgendaAdmin.cache = cached || [];
+            try { AgendaAdmin.render(); } catch {}
+        } else if (listEl) {
+            listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat agenda...</div>`;
+        }
         try {
             const data = await getAllAgenda();
-            AgendaAdmin.cache = data || [];
-            AgendaAdmin.render();
+            if (JSON.stringify(data) !== JSON.stringify(cached)) {
+                Cache.set("agenda_all", data);
+                AgendaAdmin.cache = data || [];
+                AgendaAdmin.render();
+            }
         } catch (err) {
             console.error(err);
-            if (listEl) listEl.innerHTML = `<div class="pesan-empty">Gagal memuat agenda.</div>`;
+            if (!cached && listEl) listEl.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Offline dan belum ada data tersimpan. Buka halaman ini sekali saat online.</div>`;
         }
     },
 

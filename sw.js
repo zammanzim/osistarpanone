@@ -3,12 +3,13 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v3";
+const VERSI = "tarpan-v4";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 
-// App shell - file inti biar halaman publik + login langsung offline-ready.
-// (Halaman osis/*, foto sekbid, dan CDN di-cache saat runtime.)
+// App shell - SEMUA halaman + script lokal di-precache biar offline-ready
+// sejak kunjungan pertama (tidak tergantung runtime cache yang bisa kehapus
+// saat update versi). API Supabase tetap network-only (lihat fetch handler).
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -16,25 +17,93 @@ const APP_SHELL = [
   "./offline.html",
   "./manifest.webmanifest",
   "./css/style.css",
+  "./osis/absensi.html",
+  "./osis/agenda.html",
+  "./osis/akses.html",
+  "./osis/dokumen.html",
+  "./osis/index.html",
+  "./osis/keuangan.html",
+  "./osis/tabungan.html",
+  "./osisbin/agenda.html",
+  "./osisbin/anggota.html",
+  "./osisbin/dokumen.html",
+  "./osisbin/evaluasi.html",
+  "./osisbin/form.html",
+  "./osisbin/formulir.html",
+  "./osisbin/index.html",
+  "./osisbin/keuangan.html",
+  "./osisbin/notulensi.html",
+  "./osisbin/profil.html",
+  "./osisbin/proker.html",
+  "./osisbin/task.html",
+  "./js/supabase.min.js",
   "./js/config.js",
   "./js/db.js",
   "./js/app.js",
   "./js/absensi.js",
-  "./js/toast.js",
-  "./js/show-popup.js",
-  "./js/visitor.js",
-  "./js/home.js",
-  "./js/prestasi.js",
-  "./js/kegiatan.js",
-  "./js/sekbid.js",
+  "./js/agenda.js",
+  "./js/akses.js",
+  "./js/anggota.js",
   "./js/aspirasi.js",
-  "./js/lagu.js",
+  "./js/dashboard.js",
+  "./js/dokumen.js",
+  "./js/evaluasi.js",
+  "./js/form-persist.js",
+  "./js/form-publik.js",
+  "./js/formulir.js",
   "./js/galeri.js",
-  "./js/osis-auth.js",
-  "./js/site-edit.js",
+  "./js/home.js",
+  "./js/kegiatan.js",
+  "./js/keuangan.js",
+  "./js/lagu.js",
   "./js/login.js",
+  "./js/notulensi.js",
+  "./js/osis-auth.js",
+  "./js/osis-menu.js",
+  "./js/osis-sidebar.js",
+  "./js/prestasi.js",
+  "./js/profil.js",
+  "./js/proker.js",
   "./js/pwa.js",
   "./js/outbox.js",
+  "./js/sekbid.js",
+  "./js/show-popup.js",
+  "./js/site-edit.js",
+  "./js/tabungan.js",
+  "./js/task.js",
+  "./js/toast.js",
+  "./js/visitor.js",
+  "./jsbin/agenda.js",
+  "./jsbin/anggota.js",
+  "./jsbin/app.js",
+  "./jsbin/aspirasi.js",
+  "./jsbin/config.js",
+  "./jsbin/dashboard.js",
+  "./jsbin/db.js",
+  "./jsbin/dokumen.js",
+  "./jsbin/evaluasi.js",
+  "./jsbin/form-publik.js",
+  "./jsbin/formulir.js",
+  "./jsbin/galeri.js",
+  "./jsbin/home.js",
+  "./jsbin/kegiatan.js",
+  "./jsbin/keuangan.js",
+  "./jsbin/lagu.js",
+  "./jsbin/login.js",
+  "./jsbin/notulensi.js",
+  "./jsbin/osis-auth.js",
+  "./jsbin/osis-menu.js",
+  "./jsbin/osis-sidebar.js",
+  "./jsbin/prestasi.js",
+  "./jsbin/profil.js",
+  "./jsbin/proker.js",
+  "./jsbin/pwa.js",
+  "./jsbin/sekbid.js",
+  "./jsbin/show-popup.js",
+  "./jsbin/site-edit.js",
+  "./jsbin/task.js",
+  "./jsbin/toast.js",
+  "./jsbin/visitor.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-512-maskable.png",
@@ -99,6 +168,8 @@ function apiJanganCache(url) {
 }
 
 // Stale-while-revalidate: sajikan cache dulu, update di background.
+// Saat fetch gagal (offline): fallback cache persis, lalu cache tanpa
+// query (?v=7) biar URL berversion tetap ketemu precache.
 async function basiDulu(request, namaCache) {
   const cache = await caches.open(namaCache);
   const cached = await cache.match(request, { ignoreSearch: false });
@@ -108,7 +179,16 @@ async function basiDulu(request, namaCache) {
         cache.put(request, res.clone());
       return res;
     })
-    .catch(() => cached);
+    .catch(async () => {
+      if (cached) return cached;
+      if (new URL(request.url).origin === self.location.origin) {
+        const tanpaQuery = await cache.match(request, {
+          ignoreSearch: true,
+        });
+        if (tanpaQuery) return tanpaQuery;
+      }
+      throw new Error("offline");
+    });
   return cached || ambil;
 }
 

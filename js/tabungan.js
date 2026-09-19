@@ -143,15 +143,24 @@ const Tabungan = {
     },
 
     async segarkan() {
+        // Render cache dulu biar offline langsung tampil.
+        const cached = Cache.get("tabungan");
+        if (cached) {
+            Tabungan.cache = cached || [];
+            try { Tabungan.render(); } catch {}
+        }
         try {
             const data = await getTabungan();
-            Cache.set("tabungan", data);
-            Tabungan.cache = data || [];
+            if (JSON.stringify(data) !== JSON.stringify(cached)) {
+                Cache.set("tabungan", data);
+                Tabungan.cache = data || [];
+                Tabungan.render();
+            }
         } catch (err) {
             console.error(err);
-            showToast("Gagal memuat ulang: " + err.message, "error");
+            if (!cached) showToast("Gagal memuat ulang: " + err.message, "error");
+            try { Tabungan.render(); } catch {}
         }
-        Tabungan.render();
     },
 
     dataTampil() {

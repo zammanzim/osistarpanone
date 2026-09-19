@@ -3,7 +3,25 @@
 // Urutan include: 1) CDN supabase-js  2) config.js  3) db.js
 // =========================================================================
 
-const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supa = (() => {
+  try {
+    return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (e) {
+    // CDN gagal dimuat (offline sebelum sempat cache) — JANGAN matikan file ini.
+    // Cache/DeviceId/getter lokal tetap jalan; semua akses network lempar error
+    // ramah yang ditangkap UI (adapterOffline di bawah) jadi daftar cache tetap tampil.
+    console.warn("Supabase CDN belum termuat, mode baca-cache.", e);
+    const t = new Error("Offline — data live tidak tersedia.");
+    return new Proxy(
+      {},
+      {
+        get() {
+          throw t;
+        },
+      },
+    );
+  }
+})();
 
 // Normalisasi error RPC tulis: penolakan hak akses jadi pesan yang ramah.
 // Dipakai semua wrapper di bawah (cekOk = hasil "OK", cekId = hasil id baru).

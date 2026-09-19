@@ -246,15 +246,33 @@ const Keuangan = {
   async muat() {
     try {
       const cached = Cache.get("kas");
-      const [pk, ag] = await Promise.all([
-        getProker().catch(() => []),
-        getAllAgenda().catch(() => []),
-      ]);
-      Keuangan.prokerCache = pk || [];
-      Keuangan.agendaCache = ag || [];
-      Keuangan.buildOptions();
+      // Render cache DULU biar offline langsung tampil (jangan tunggu network).
       if (cached) {
+        Keuangan.prokerCache = Cache.get("proker") || [];
+        Keuangan.agendaCache = Cache.get("agenda_all") || [];
+        try {
+          Keuangan.buildOptions();
+        } catch {}
         Keuangan.cache = cached;
+        Keuangan.render();
+      }
+      const [pk, ag] = await Promise.all([
+        getProker().catch(() => null),
+        getAllAgenda().catch(() => null),
+      ]);
+      if (pk) {
+        Keuangan.prokerCache = pk;
+        Cache.set("proker", pk);
+      }
+      if (ag) {
+        Keuangan.agendaCache = ag;
+        Cache.set("agenda_all", ag);
+      }
+      try {
+        Keuangan.buildOptions();
+      } catch {}
+      if (cached) {
+        // nama proker/agenda lookup bisa berubah walau kas sama
         Keuangan.render();
         getKas()
           .then((fresh) => {

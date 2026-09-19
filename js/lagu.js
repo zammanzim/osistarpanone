@@ -10,10 +10,12 @@ const Lagu = {
     async init() {
         if (Lagu.terinisialisasi) return;
         Lagu.terinisialisasi = true;
+        // Render cache dulu (wajib saat offline), sisanya jalan background.
+        try { Lagu.muatDaftar(); } catch {}
         if (typeof OsisAuth.refreshAkses === "function") {
             try { await OsisAuth.refreshAkses(); } catch {}
         }
-        Lagu.muatDaftar();
+        try { Lagu.muatDaftar(); } catch {}
     },
 
     // ============ PLAYLIST — SWR ============
