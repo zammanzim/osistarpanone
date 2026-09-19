@@ -1,4 +1,4 @@
-﻿-- ============================================================
+-- ============================================================
 -- WEB OSIS TARPAN ONE - SCHEMA LENGKAP (RUN SEMUA SEKALI)
 -- Jalankan SEMUA di Supabase SQL Editor (project OSIS).
 -- Project pake localStorage custom auth (BUKAN Supabase Auth),
@@ -1814,6 +1814,203 @@ SELECT * FROM (VALUES
      '[]'::jsonb, '[]'::jsonb, '', '', '', '', '[]'::jsonb)
 ) AS v(nama, deskripsi, divisi, pj, periode, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, agenda_ids, tugas, evaluasi_hasil, evaluasi_kendala, evaluasi_solusi, evaluasi_lanjut, dokumentasi)
   WHERE NOT EXISTS (SELECT 1 FROM public.proker);
+
+-- =========================================================================
+-- PROGRAM OSIS — Tahunan & Bulanan (halaman osis/program-tahunan & program-bulanan)
+-- BLOK INI JALANKAN UTUH SEKALIGUS, URUT DARI ATAS KE BAWAH.
+-- Mulai bersih: hapus schema program yang lama dulu.
+-- PERHATIAN: DROP TABLE menghapus SEMUA data program yang ada!
+-- =========================================================================
+-- 0. Bersih-bersih schema lama (aman di-run ulang, IF EXISTS semua).
+DO $$ DECLARE r record; BEGIN
+  FOR r IN SELECT p.oid::regprocedure AS sig FROM pg_proc p
+           JOIN pg_namespace n ON n.oid = p.pronamespace
+           WHERE n.nspname = 'public'
+             AND p.proname IN ('buat_program', 'update_program', 'hapus_program', 'osis_bisa_program') LOOP
+    EXECUTE 'DROP FUNCTION ' || r.sig;
+    RAISE NOTICE 'DROP: %', r.sig;
+  END LOOP;
+END $$;
+DROP FUNCTION IF EXISTS public.buat_program(bigint, bigint, text, text, text, text, date, date, text, text, text, integer, text);
+DROP FUNCTION IF EXISTS public.buat_program(bigint, text, text, text, text, text, date, date, text, text, text, integer, text);
+DROP FUNCTION IF EXISTS public.update_program(bigint, bigint, bigint, text, text, text, text, date, date, text, text, text, integer, text);
+DROP FUNCTION IF EXISTS public.update_program(bigint, bigint, text, text, text, text, text, date, date, text, text, text, integer, text);
+DROP FUNCTION IF EXISTS public.update_program(bigint, bigint, text, text, text, text, text, date, date, text, text, integer, text);
+DROP FUNCTION IF EXISTS public.hapus_program(bigint, bigint);
+DROP FUNCTION IF EXISTS public.osis_bisa_program(bigint, bigint);
+DROP TABLE IF EXISTS public.program CASCADE;
+DROP POLICY IF EXISTS "osis_foto_program_select" ON storage.objects;
+DROP POLICY IF EXISTS "osis_foto_program_insert" ON storage.objects;
+DROP POLICY IF EXISTS "osis_foto_program_delete" ON storage.objects;
+
+-- 1. Tabel fresh (sekbid_id terikat ke public.sekbid, sama seperti di agenda)
+CREATE TABLE public.program (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    sekbid_id bigint NOT NULL REFERENCES public.sekbid(id) ON DELETE CASCADE,
+    tipe text NOT NULL CHECK (tipe IN ('tahunan','bulanan')) DEFAULT 'tahunan',
+    nama text NOT NULL DEFAULT '',
+    deskripsi text NOT NULL DEFAULT '',
+    pj text NOT NULL DEFAULT '',
+    tgl_mulai date,
+    tgl_selesai date,
+    lokasi text NOT NULL DEFAULT '',
+    target_peserta text NOT NULL DEFAULT '',
+    status text NOT NULL DEFAULT 'rencana' CHECK (status IN ('rencana','berjalan','selesai','batal')),
+    progress integer NOT NULL DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+    catatan text NOT NULL DEFAULT '',
+    created_by bigint,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_program_sekbid ON public.program (sekbid_id);
+CREATE INDEX IF NOT EXISTS idx_program_tipe ON public.program (tipe);
+CREATE INDEX IF NOT EXISTS idx_program_status ON public.program (status);
+CREATE INDEX IF NOT EXISTS idx_program_created ON public.program (created_at DESC);
+ALTER TABLE public.program ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "program_public_select" ON public.program;
+CREATE POLICY "program_public_select" ON public.program FOR SELECT USING (true);
+DROP POLICY IF EXISTS "program_public_insert" ON public.program;
+
+-- Aturan hak akses program (sama seperti osis_bisa_agenda):
+-- Global (super / punya hak program) bebas semua sekbid.
+-- Anggota sekbid hanya bisa kelola program sekbid miliknya.
+CREATE OR REPLACE FUNCTION public.osis_bisa_program(p_user_id bigint, p_sekbid_id bigint)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
+DECLARE v_sekbid bigint;
+BEGIN
+    IF public.osis_bisa(p_user_id, 'program') THEN RETURN true; END IF;
+    SELECT sekbid_id INTO v_sekbid
+    FROM public.osis_users WHERE id = p_user_id;
+    IF NOT FOUND THEN RETURN false; END IF;
+    IF v_sekbid IS NULL OR p_sekbid_id IS NULL THEN RETURN false; END IF;
+    RETURN v_sekbid IS NOT DISTINCT FROM p_sekbid_id;
+END $$;
+
+-- RPC: buat program
+CREATE OR REPLACE FUNCTION public.buat_program(
+    p_user_id bigint,
+    p_sekbid_id bigint,
+    p_tipe text,
+    p_nama text,
+    p_deskripsi text,
+    p_pj text,
+    p_tgl_mulai date,
+    p_tgl_selesai date,
+    p_lokasi text,
+    p_target_peserta text,
+    p_status text,
+    p_progress integer,
+    p_catatan text
+)
+RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE nid bigint;
+BEGIN
+    IF NOT public.osis_bisa_program(p_user_id, p_sekbid_id) THEN RETURN -1; END IF;
+    IF p_sekbid_id IS NULL OR NOT EXISTS (SELECT 1 FROM public.sekbid WHERE id = p_sekbid_id) THEN RETURN -2; END IF;
+    IF p_tipe NOT IN ('tahunan','bulanan') THEN RETURN -1; END IF;
+    p_nama := left(COALESCE(NULLIF(btrim(p_nama),''),'Tanpa Nama'), 120);
+    p_deskripsi := left(COALESCE(p_deskripsi,''), 1000);
+    p_pj := left(COALESCE(p_pj,''), 80);
+    p_lokasi := left(COALESCE(p_lokasi,''), 80);
+    p_target_peserta := left(COALESCE(p_target_peserta,''), 80);
+    p_status := COALESCE(NULLIF(btrim(p_status),''), 'rencana');
+    IF p_status NOT IN ('rencana','berjalan','selesai','batal') THEN p_status := 'rencana'; END IF;
+    p_progress := GREATEST(0, LEAST(100, COALESCE(p_progress,0)));
+    p_catatan := left(COALESCE(p_catatan,''), 2000);
+    INSERT INTO public.program (sekbid_id, tipe, nama, deskripsi, pj, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, created_by)
+    VALUES (p_sekbid_id, p_tipe, p_nama, p_deskripsi, p_pj, p_tgl_mulai, p_tgl_selesai, p_lokasi, p_target_peserta, p_status, p_progress, p_catatan, p_user_id)
+    RETURNING id INTO nid;
+    RETURN nid;
+END $$;
+
+-- RPC: update program
+CREATE OR REPLACE FUNCTION public.update_program(
+    p_user_id bigint,
+    p_id bigint,
+    p_sekbid_id bigint,
+    p_tipe text,
+    p_nama text,
+    p_deskripsi text,
+    p_pj text,
+    p_tgl_mulai date,
+    p_tgl_selesai date,
+    p_lokasi text,
+    p_target_peserta text,
+    p_status text,
+    p_progress integer,
+    p_catatan text
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF NOT public.osis_bisa_program(p_user_id, (SELECT sekbid_id FROM public.program WHERE id = p_id)) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    IF p_sekbid_id IS NOT NULL AND NOT public.osis_bisa_program(p_user_id, p_sekbid_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    UPDATE public.program SET
+        sekbid_id = COALESCE(p_sekbid_id, sekbid_id),
+        tipe = COALESCE(p_tipe, tipe),
+        nama = left(COALESCE(NULLIF(btrim(p_nama),nama),nama),120),
+        deskripsi = left(COALESCE(p_deskripsi,deskripsi),1000),
+        pj = left(COALESCE(p_pj,pj),80),
+        tgl_mulai = COALESCE(p_tgl_mulai,tgl_mulai),
+        tgl_selesai = COALESCE(p_tgl_selesai,tgl_selesai),
+        lokasi = left(COALESCE(p_lokasi,lokasi),80),
+        target_peserta = left(COALESCE(p_target_peserta,target_peserta),80),
+        status = COALESCE(NULLIF(btrim(p_status),status),status),
+        progress = GREATEST(0, LEAST(100, COALESCE(p_progress,progress))),
+        catatan = left(COALESCE(p_catatan,catatan),2000)
+    WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
+-- RPC: hapus program
+CREATE OR REPLACE FUNCTION public.hapus_program(
+    p_user_id bigint,
+    p_id bigint
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF NOT public.osis_bisa_program(p_user_id, (SELECT sekbid_id FROM public.program WHERE id = p_id)) THEN RETURN 'ERR_NO_AUTH'; END IF;
+    DELETE FROM public.program WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
+-- Grants
+REVOKE EXECUTE ON FUNCTION public.osis_bisa_program(bigint, bigint) FROM public;
+REVOKE EXECUTE ON FUNCTION public.buat_program(bigint, bigint, text, text, text, text, date, date, text, text, text, integer, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.update_program(bigint, bigint, bigint, text, text, text, text, date, date, text, text, text, integer, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.hapus_program(bigint, bigint) FROM public;
+GRANT EXECUTE ON FUNCTION public.osis_bisa_program(bigint, bigint) TO anon;
+GRANT EXECUTE ON FUNCTION public.buat_program(bigint, bigint, text, text, text, text, date, date, text, text, text, integer, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_program(bigint, bigint, bigint, text, text, text, text, date, date, text, text, text, integer, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.hapus_program(bigint, bigint) TO anon;
+
+-- Storage program/ (dokumentasi/bukti) di bucket osis-foto
+DROP POLICY IF EXISTS "osis_foto_program_select" ON storage.objects;
+CREATE POLICY "osis_foto_program_select" ON storage.objects FOR SELECT TO anon USING (bucket_id='osis-foto' AND (storage.foldername(name))[1]='program');
+DROP POLICY IF EXISTS "osis_foto_program_insert" ON storage.objects;
+CREATE POLICY "osis_foto_program_insert" ON storage.objects FOR INSERT TO anon WITH CHECK (bucket_id='osis-foto' AND (storage.foldername(name))[1]='program');
+DROP POLICY IF EXISTS "osis_foto_program_delete" ON storage.objects;
+CREATE POLICY "osis_foto_program_delete" ON storage.objects FOR DELETE TO anon USING (bucket_id='osis-foto' AND (storage.foldername(name))[1]='program');
+
+-- Seed dummy (cuma kalau tabel masih kosong — ambil sekbid pertama yang ada)
+DO $$
+DECLARE v_sekbid_id bigint;
+BEGIN
+    SELECT id INTO v_sekbid_id FROM public.sekbid ORDER BY urutan ASC LIMIT 1;
+    IF v_sekbid_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.program) THEN
+        INSERT INTO public.program (sekbid_id, tipe, nama, deskripsi, pj, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan)
+        VALUES
+        (v_sekbid_id, 'tahunan', 'Rencana Tahunan 2026', 'Rencana kerja OSIS untuk tahun 2026: Makrab, PESAK, Takjilin, dll.', 'Ketua OSIS', '2026-01-01'::date, '2026-12-31'::date, 'Kantin & Aula', 'Seluruh siswa', 'rencana', 0, 'Rencana induk tahunan'),
+        (v_sekbid_id, 'bulanan', 'Makrab OSIS Januari', 'Makrab rutin bulan Januari 2026', 'Ketua Kesenian', '2026-01-15'::date, '2026-01-16'::date, 'Aula', 'Kelas XI & XII', 'rencana', 0, 'Booking aula & persiapan'),
+        (v_sekbid_id, 'bulanan', 'Kunjungan Industri', 'Kunjungan ke industri IT untuk kelas XII', 'Ketua Teknologi', '2026-02-10'::date, '2026-02-11'::date, 'PT. Tech Jaya', 'Kelas XII', 'rencana', 0, 'Koordinasi dengan industri');
+    END IF;
+END $$;
 
 -- ============ 16. DOKUMEN OSIS (halaman osis/dokumen) ============
 -- Satu baris = satu file arsip. File fisik di bucket osis-foto folder

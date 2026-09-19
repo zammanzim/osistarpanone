@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Program Tahunan — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .program-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .program-head {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .program-head .ico {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: #fff3d6;
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        color: #b8860b;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .program-head h1 {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .program-head p {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .stat-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+      .stat-card {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+        padding: 12px;
+        text-align: center;
+      }
+      .stat-card .lbl {
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--gray);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .stat-card .lbl i {
+        color: var(--red);
+      }
+      .stat-card b {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 900;
+        margin-top: 4px;
+      }
+      .filter-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .filter-card {
+          grid-template-columns: 2fr 1fr 1fr auto;
+          align-items: end;
+        }
+      }
+      .filter-card .field {
+        margin-bottom: 0;
+      }
+      #programList {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .prog-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .prog-grup {
+        margin-bottom: 6px;
+      }
+      .prog-grup-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      .prog-grup-head h3 {
+        font-size: 1rem;
+        font-weight: 900;
+      }
+      .prog-grup-count {
+        background: var(--red);
+        color: #fff;
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 2px 10px;
+        box-shadow: 2px 2px 0 var(--ink);
+      }
+      .prog-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .prog-item {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .prog-ico {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 2.5px solid var(--ink);
+        display: grid;
+        place-items: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        background: #fff3d6;
+        color: #b8860b;
+      }
+      .prog-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .prog-body h4 {
+        font-size: 0.88rem;
+        font-weight: 900;
+        overflow-wrap: anywhere;
+      }
+      .prog-meta {
+        font-size: 0.7rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 2px;
+        overflow-wrap: anywhere;
+      }
+      .prog-meta b {
+        color: var(--red);
+        font-weight: 800;
+      }
+      .prog-bar {
+        height: 10px;
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        background: var(--paper-2);
+        overflow: hidden;
+        margin-top: 8px;
+      }
+      .prog-bar > span {
+        display: block;
+        height: 100%;
+        background: var(--red);
+        border-radius: 999px;
+      }
+      .prog-bar.big {
+        height: 14px;
+        margin-top: 10px;
+      }
+      .prog-persen {
+        font-size: 0.72rem;
+        font-weight: 800;
+        margin-top: 4px;
+      }
+      .prog-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .prog-tag {
+        font-size: 0.62rem;
+        font-weight: 900;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+        white-space: nowrap;
+      }
+      .prog-tag.rencana { background: var(--yellow); }
+      .prog-tag.berjalan { background: #e3ecff; color: #1d4ed8; }
+      .prog-tag.selesai { background: #d6f5d6; color: #146314; }
+      .prog-tag.batal { background: #ffe9e9; color: var(--red-dark); }
+      /* popup - pola halaman OSIS lain */
+      .program-form {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 10, 11, 0.78);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 210;
+        padding: 18px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.22s ease,
+          visibility 0.22s ease;
+      }
+      .program-form.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      .program-form-inner {
+        width: min(520px, 100%);
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.96) translateY(10px);
+        transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+      }
+      .program-form.open .program-form-inner {
+        transform: scale(1) translateY(0);
+      }
+      .detail-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+        font-size: 0.82rem;
+        margin-top: 10px;
+      }
+      .detail-info .k {
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray);
+      }
+      .detail-info .v {
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+      .detail-text {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-top: 8px;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/db.js" defer></script>
+    <script src="../js/app.js" defer></script>
+    <script src="../js/toast.js" defer></script>
+    <script src="../js/show-popup.js" defer></script>
+    <script src="../js/osis-auth.js" defer></script>
+    <script src="../js/osis-sidebar.js" defer></script>
+    <script src="../js/form-persist.js" defer></script>
+    <script src="../js/program.js" defer></script>
+    <script src="../js/pwa.js" defer></script>
+  </head>
+  <body data-tipe="tahunan">
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>PROGRAM TAHUNAN</h2>
+          <p>Rencana Besar OSIS</p>
+        </div>
+      </a>
+
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="program-wrap">
+      <div class="program-head">
+        <div class="ico"><i class="fa-solid fa-calendar"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>PROGRAM TAHUNAN</h1>
+          <p>Rencana besar OSIS selama satu tahun kepengurusan.</p>
+        </div>
+        <button
+          class="btn btn-red"
+          id="btnTambahProgram"
+          style="display: none"
+        >
+          <i class="fa-solid fa-plus"></i> Tambah Program
+        </button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span class="lbl"><i class="fa-solid fa-list"></i> Total</span
+          ><b id="statTotal">-</b>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"><i class="fa-solid fa-play"></i> Berjalan</span
+          ><b id="statBerjalan">-</b>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"><i class="fa-solid fa-check"></i> Selesai</span
+          ><b id="statSelesai">-</b>
+        </div>
+        <div class="stat-card">
+          <span class="lbl"><i class="fa-solid fa-clock"></i> Rencana</span
+          ><b id="statRencana">-</b>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <div class="field">
+          <label>Cari program</label
+          ><input
+            type="text"
+            id="filterQ"
+            class="admin-input"
+            placeholder="Nama / PIC / sekbid..."
+          />
+        </div>
+        <div class="field">
+          <label>Sekbid</label
+          ><select id="filterSekbid" class="admin-input">
+            <option value="">Semua sekbid</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label
+          ><select id="filterStatus" class="admin-input">
+            <option value="">Semua status</option>
+            <option value="rencana">Rencana</option>
+            <option value="berjalan">Berjalan</option>
+            <option value="selesai">Selesai</option>
+            <option value="batal">Batal</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label
+          ><button
+            class="btn btn-white btn-sm"
+            id="btnResetFilter"
+            title="Reset filter"
+          >
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="programList">
+        <div class="loading-block">
+          <div class="spinner"></div>
+          Memuat program tahunan...
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP FORM -->
+    <div class="program-form" id="programForm">
+      <div class="program-form-inner">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+          "
+        >
+          <span
+            style="
+              font-weight: 900;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+            ><i class="fa-solid fa-calendar" style="color: var(--red)"></i>
+            <span id="programFormTitle">Tambah Program</span></span
+          >
+          <button
+            class="icon-btn"
+            onclick="Program.tutupForm()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="field">
+          <label>Nama program</label
+          ><input
+            type="text"
+            id="progNama"
+            class="admin-input"
+            placeholder="cth: Makrab OSIS 2026"
+            maxlength="120"
+          />
+        </div>
+        <div class="field">
+          <label>Deskripsi</label
+          ><textarea
+            id="progDeskripsi"
+            class="admin-input admin-textarea"
+            placeholder="Deskripsi singkat program..."
+            maxlength="1000"
+            rows="3"
+          ></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field">
+            <label>Sekbid</label
+            ><select id="progSekbid" class="admin-input">
+              <option value="">— Pilih Sekbid —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>PIC</label
+            ><input
+              type="text"
+              id="progPJ"
+              class="admin-input"
+              placeholder="Penanggung jawab"
+              maxlength="80"
+            />
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field">
+            <label>Tanggal mulai</label
+            ><input type="date" id="progMulai" class="admin-input" />
+          </div>
+          <div class="field">
+            <label>Tanggal selesai</label
+            ><input type="date" id="progSelesai" class="admin-input" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Lokasi</label
+          ><input
+            type="text"
+            id="progLokasi"
+            class="admin-input"
+            placeholder="Aula / Lapangan..."
+            maxlength="80"
+          />
+        </div>
+        <div class="field">
+          <label>Target peserta</label
+          ><input
+            type="text"
+            id="progTarget"
+            class="admin-input"
+            placeholder="cth: Seluruh siswa"
+            maxlength="80"
+          />
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field">
+            <label>Status</label
+            ><select id="progStatus" class="admin-input">
+              <option value="rencana">Rencana</option>
+              <option value="berjalan">Berjalan</option>
+              <option value="selesai">Selesai</option>
+              <option value="batal">Batal</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Progress (<span id="progProgressLbl">0%</span>)</label
+            ><input
+              type="range"
+              id="progProgress"
+              min="0"
+              max="100"
+              value="0"
+              step="5"
+              style="width: 100%; accent-color: var(--red)"
+            />
+          </div>
+        </div>
+        <div class="field">
+          <label>Catatan (opsional)</label
+          ><textarea
+            id="progCatatan"
+            class="admin-input admin-textarea"
+            placeholder="Catatan tambahan..."
+            maxlength="2000"
+            rows="2"
+          ></textarea>
+        </div>
+        <div class="form-actions-row" style="margin-top: 12px">
+          <button class="btn btn-white" id="btnBatalProgram">Batal</button>
+          <button class="btn btn-red" id="btnSimpanProgram">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan
+          </button>
+        </div>
+        <input type="hidden" id="progId" />
+      </div>
+    </div>
+
+    <!-- POPUP DETAIL -->
+    <div class="program-form" id="programDetail">
+      <div class="program-form-inner" style="width: min(620px, 100%)">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+          "
+        >
+          <span
+            style="
+              font-weight: 900;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+            ><i class="fa-solid fa-calendar" style="color: var(--red)"></i>
+            Detail Program</span
+          >
+          <button
+            class="icon-btn"
+            onclick="Program.tutupDetail()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div id="programDetailBody"></div>
+        <div class="form-actions-row" style="margin-top: 14px">
+          <button class="btn btn-white btn-sm" onclick="Program.tutupDetail()">
+            Tutup
+          </button>
+          <button class="btn btn-white btn-sm" id="btnEditDariDetail">
+            <i class="fa-solid fa-pen"></i> Edit
+          </button>
+          <button class="btn btn-red btn-sm" id="btnHapusDariDetail">
+            <i class="fa-solid fa-trash-can"></i> Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

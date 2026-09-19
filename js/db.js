@@ -1,4 +1,4 @@
-﻿// =========================================================================
+// =========================================================================
 // DATA LAYER - SEMUA AKSES SUPABASE LEWAT FILE INI
 // Urutan include: 1) CDN supabase-js  2) config.js  3) db.js
 // =========================================================================
@@ -800,6 +800,72 @@ async function hapusProker(userId, id) {
   if (error) throw error;
   cekOk(data);
   Cache.del("proker");
+}
+
+// =========================================================================
+// PROGRAM OSIS — Tahunan & Bulanan (halaman osis/program)
+// =========================================================================
+async function getProgram() {
+  const { data, error } = await supa
+    .from("program")
+    .select("id, sekbid_id, nama, tipe, deskripsi, pj, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, created_at")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+async function buatProgram(userId, f) {
+  const { data, error } = await supa.rpc("buat_program", {
+    p_user_id: userId,
+    p_sekbid_id: f.sekbid_id,
+    p_tipe: f.tipe,
+    p_nama: f.nama,
+    p_deskripsi: f.deskripsi,
+    p_pj: f.pj,
+    p_tgl_mulai: f.tgl_mulai,
+    p_tgl_selesai: f.tgl_selesai,
+    p_lokasi: f.lokasi,
+    p_target_peserta: f.target_peserta,
+    p_status: f.status,
+    p_progress: f.progress,
+    p_catatan: f.catatan
+  });
+  if (error) throw error;
+  cekId(data);
+  Cache.del("program");
+  return data;
+}
+
+async function updateProgram(userId, id, f) {
+  const { data, error } = await supa.rpc("update_program", {
+    p_user_id: userId,
+    p_id: id,
+    p_sekbid_id: f.sekbid_id,
+    p_tipe: f.tipe,
+    p_nama: f.nama,
+    p_deskripsi: f.deskripsi,
+    p_pj: f.pj,
+    p_tgl_mulai: f.tgl_mulai,
+    p_tgl_selesai: f.tgl_selesai,
+    p_lokasi: f.lokasi,
+    p_target_peserta: f.target_peserta,
+    p_status: f.status,
+    p_progress: f.progress,
+    p_catatan: f.catatan
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("program");
+}
+
+async function hapusProgram(userId, id) {
+  const { data, error } = await supa.rpc("hapus_program", {
+    p_user_id: userId,
+    p_id: id
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("program");
 }
 
 // =========================================================================

@@ -15,6 +15,7 @@ const Akses = {
         ["formulir", "Formulir"],
         ["notulensi", "Notulensi"],
         ["proker", "Proker"],
+        ["program", "Program"],
         ["task", "Task"],
         ["galeri", "Galeri"],
         ["prestasi", "Prestasi"],

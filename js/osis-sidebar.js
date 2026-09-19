@@ -16,6 +16,8 @@ const OsisSidebar = {
     ["keuangan", "Keuangan", "fa-solid fa-wallet"],
     ["agenda", "Agenda", "fa-solid fa-calendar-days"],
     ["dokumen", "Dokumen", "fa-solid fa-folder-open"],
+    ["program-tahunan", "Program Tahunan", "fa-solid fa-calendar"],
+    ["program-bulanan", "Program Bulanan", "fa-solid fa-calendar-days"],
     ["akses", "Akses", "fa-solid fa-key", "super"],
   ],
 

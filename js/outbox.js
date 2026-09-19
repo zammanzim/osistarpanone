@@ -1037,7 +1037,7 @@
     ".ob-chip.failed{background:#ffb3b3}" +
     ".ob-chip.sending{background:#bfe3ff}" +
     ".ob-empty{text-align:center;padding:26px 10px;color:#6f6668;font-size:.84rem;font-weight:600}" +
-    "#offlinePill{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:9997;display:none;" +
+    "#offlinePill{position:fixed;top:84px;right:16px;z-index:90;display:none;" +
     "align-items:center;gap:6px;padding:8px 14px;background:#1a1314;color:#ffd43b;border-radius:999px;" +
     "font-family:Outfit,system-ui,sans-serif;font-size:.72rem;font-weight:800;box-shadow:2px 2px 0 rgba(0,0,0,.3)}";
 
