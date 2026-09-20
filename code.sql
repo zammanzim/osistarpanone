@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- WEB OSIS TARPAN ONE - SCHEMA LENGKAP (RUN SEMUA SEKALI)
 -- Jalankan SEMUA di Supabase SQL Editor (project OSIS).
 -- Project pake localStorage custom auth (BUKAN Supabase Auth),
@@ -2957,3 +2957,322 @@ GRANT EXECUTE ON FUNCTION public.buat_tabungan(bigint, text, date, bigint, text)
 GRANT EXECUTE ON FUNCTION public.update_tabungan(bigint, bigint, text, date, bigint, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.toggle_tabungan_cek(bigint, bigint, boolean) TO anon;
 GRANT EXECUTE ON FUNCTION public.hapus_tabungan(bigint, bigint) TO anon;
+
+-- ============ BIODATA ANGGOTA (halaman publik pengurus) ============
+-- Kolom tambahan buat popup biodata: panggilan, TTL, visi, misi, medsos.
+-- Jalankan blok ini utuh sekaligus di SQL editor Supabase.
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS panggilan text NOT NULL DEFAULT '';
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS ttl text NOT NULL DEFAULT '';
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS visi text NOT NULL DEFAULT '';
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS misi text NOT NULL DEFAULT '';
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS ig text NOT NULL DEFAULT '';
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS wa text NOT NULL DEFAULT '';
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS tiktok text NOT NULL DEFAULT '';
+
+-- Ganti RPC lama dengan versi biodata (tanda tangan berubah -> DROP dulu).
+DROP FUNCTION IF EXISTS public.tambah_anggota(bigint, integer, text, text, integer, text);
+DROP FUNCTION IF EXISTS public.update_anggota(bigint, bigint, text, text, integer, text);
+
+CREATE OR REPLACE FUNCTION public.tambah_anggota(
+    p_user_id bigint, p_tahun integer, p_nama text, p_jabatan text,
+    p_urutan integer DEFAULT 99, p_foto text DEFAULT '',
+    p_panggilan text DEFAULT '', p_ttl text DEFAULT '',
+    p_visi text DEFAULT '', p_misi text DEFAULT '',
+    p_ig text DEFAULT '', p_wa text DEFAULT '', p_tiktok text DEFAULT ''
+) RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE nid bigint;
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN -1; END IF;
+    INSERT INTO public.anggota (tahun, nama, jabatan, urutan, foto,
+            panggilan, ttl, visi, misi, ig, wa, tiktok)
+    VALUES (p_tahun, left(COALESCE(NULLIF(btrim(p_nama),''),'Tanpa Nama'),80),
+            left(COALESCE(p_jabatan,''),80), COALESCE(p_urutan,99), left(COALESCE(p_foto,''),300),
+            left(COALESCE(p_panggilan,''),40), left(COALESCE(p_ttl,''),120),
+            left(COALESCE(p_visi,''),500), left(COALESCE(p_misi,''),500),
+            left(COALESCE(p_ig,''),120), left(COALESCE(p_wa,''),40),
+            left(COALESCE(p_tiktok,''),120))
+    RETURNING id INTO nid;
+    RETURN nid;
+END $$;
+CREATE OR REPLACE FUNCTION public.update_anggota(
+    p_user_id bigint, p_id bigint, p_nama text, p_jabatan text, p_urutan integer,
+    p_foto text DEFAULT '', p_panggilan text DEFAULT '', p_ttl text DEFAULT '',
+    p_visi text DEFAULT '', p_misi text DEFAULT '',
+    p_ig text DEFAULT '', p_wa text DEFAULT '', p_tiktok text DEFAULT ''
+) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+    UPDATE public.anggota SET nama = left(COALESCE(NULLIF(btrim(p_nama),''),nama),80),
+        jabatan = left(COALESCE(NULLIF(btrim(p_jabatan),''),jabatan),80),
+        urutan = COALESCE(p_urutan,urutan),
+        foto = left(COALESCE(NULLIF(p_foto,''),foto),300),
+        panggilan = left(COALESCE(NULLIF(btrim(p_panggilan),''),panggilan),40),
+        ttl = left(COALESCE(NULLIF(btrim(p_ttl),''),ttl),120),
+        visi = left(COALESCE(p_visi,visi),500),
+        misi = left(COALESCE(p_misi,misi),500),
+        ig = left(COALESCE(NULLIF(btrim(p_ig),''),ig),120),
+        wa = left(COALESCE(NULLIF(btrim(p_wa),''),wa),40),
+        tiktok = left(COALESCE(NULLIF(btrim(p_tiktok),''),tiktok),120) WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+REVOKE EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text) FROM public;
+GRANT EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text) TO anon;
+
+-- ============ MOTTO ANGGOTA (quote bar di popup biodata) ============
+-- Jalankan blok ini utuh sekaligus di SQL editor Supabase.
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS motto text NOT NULL DEFAULT '';
+
+DROP FUNCTION IF EXISTS public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text);
+
+CREATE OR REPLACE FUNCTION public.tambah_anggota(
+    p_user_id bigint, p_tahun integer, p_nama text, p_jabatan text,
+    p_urutan integer DEFAULT 99, p_foto text DEFAULT '',
+    p_panggilan text DEFAULT '', p_ttl text DEFAULT '',
+    p_visi text DEFAULT '', p_misi text DEFAULT '',
+    p_ig text DEFAULT '', p_wa text DEFAULT '', p_tiktok text DEFAULT '',
+    p_motto text DEFAULT ''
+) RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE nid bigint;
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN -1; END IF;
+    INSERT INTO public.anggota (tahun, nama, jabatan, urutan, foto,
+            panggilan, ttl, visi, misi, ig, wa, tiktok, motto)
+    VALUES (p_tahun, left(COALESCE(NULLIF(btrim(p_nama),''),'Tanpa Nama'),80),
+            left(COALESCE(p_jabatan,''),80), COALESCE(p_urutan,99), left(COALESCE(p_foto,''),300),
+            left(COALESCE(p_panggilan,''),40), left(COALESCE(p_ttl,''),120),
+            left(COALESCE(p_visi,''),500), left(COALESCE(p_misi,''),500),
+            left(COALESCE(p_ig,''),120), left(COALESCE(p_wa,''),40),
+            left(COALESCE(p_tiktok,''),120), left(COALESCE(p_motto,''),300))
+    RETURNING id INTO nid;
+    RETURN nid;
+END $$;
+CREATE OR REPLACE FUNCTION public.update_anggota(
+    p_user_id bigint, p_id bigint, p_nama text, p_jabatan text, p_urutan integer,
+    p_foto text DEFAULT '', p_panggilan text DEFAULT '', p_ttl text DEFAULT '',
+    p_visi text DEFAULT '', p_misi text DEFAULT '',
+    p_ig text DEFAULT '', p_wa text DEFAULT '', p_tiktok text DEFAULT '',
+    p_motto text DEFAULT ''
+) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+    UPDATE public.anggota SET nama = left(COALESCE(NULLIF(btrim(p_nama),''),nama),80),
+        jabatan = left(COALESCE(NULLIF(btrim(p_jabatan),''),jabatan),80),
+        urutan = COALESCE(p_urutan,urutan),
+        foto = left(COALESCE(NULLIF(p_foto,''),foto),300),
+        panggilan = left(COALESCE(NULLIF(btrim(p_panggilan),''),panggilan),40),
+        ttl = left(COALESCE(NULLIF(btrim(p_ttl),''),ttl),120),
+        visi = left(COALESCE(p_visi,visi),500),
+        misi = left(COALESCE(p_misi,misi),500),
+        ig = left(COALESCE(NULLIF(btrim(p_ig),''),ig),120),
+        wa = left(COALESCE(NULLIF(btrim(p_wa),''),wa),40),
+        tiktok = left(COALESCE(NULLIF(btrim(p_tiktok),''),tiktok),120),
+        motto = left(COALESCE(p_motto,motto),300) WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+REVOKE EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text, text) FROM public;
+GRANT EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text, text) TO anon;
+
+-- ============ KELAS ANGGOTA ============
+-- Jalankan blok ini utuh sekaligus di SQL editor Supabase.
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS kelas text NOT NULL DEFAULT '';
+
+DROP FUNCTION IF EXISTS public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text, text);
+
+CREATE OR REPLACE FUNCTION public.tambah_anggota(
+    p_user_id bigint, p_tahun integer, p_nama text, p_jabatan text,
+    p_urutan integer DEFAULT 99, p_foto text DEFAULT '',
+    p_panggilan text DEFAULT '', p_ttl text DEFAULT '',
+    p_visi text DEFAULT '', p_misi text DEFAULT '',
+    p_ig text DEFAULT '', p_wa text DEFAULT '', p_tiktok text DEFAULT '',
+    p_motto text DEFAULT '', p_kelas text DEFAULT ''
+) RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE nid bigint;
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN -1; END IF;
+    INSERT INTO public.anggota (tahun, nama, jabatan, urutan, foto,
+            panggilan, ttl, visi, misi, ig, wa, tiktok, motto, kelas)
+    VALUES (p_tahun, left(COALESCE(NULLIF(btrim(p_nama),''),'Tanpa Nama'),80),
+            left(COALESCE(p_jabatan,''),80), COALESCE(p_urutan,99), left(COALESCE(p_foto,''),300),
+            left(COALESCE(p_panggilan,''),40), left(COALESCE(p_ttl,''),120),
+            left(COALESCE(p_visi,''),500), left(COALESCE(p_misi,''),500),
+            left(COALESCE(p_ig,''),120), left(COALESCE(p_wa,''),40),
+            left(COALESCE(p_tiktok,''),120), left(COALESCE(p_motto,''),300),
+            left(COALESCE(p_kelas,''),40))
+    RETURNING id INTO nid;
+    RETURN nid;
+END $$;
+CREATE OR REPLACE FUNCTION public.update_anggota(
+    p_user_id bigint, p_id bigint, p_nama text, p_jabatan text, p_urutan integer,
+    p_foto text DEFAULT '', p_panggilan text DEFAULT '', p_ttl text DEFAULT '',
+    p_visi text DEFAULT '', p_misi text DEFAULT '',
+    p_ig text DEFAULT '', p_wa text DEFAULT '', p_tiktok text DEFAULT '',
+    p_motto text DEFAULT '', p_kelas text DEFAULT ''
+) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+    UPDATE public.anggota SET nama = left(COALESCE(NULLIF(btrim(p_nama),''),nama),80),
+        jabatan = left(COALESCE(NULLIF(btrim(p_jabatan),''),jabatan),80),
+        urutan = COALESCE(p_urutan,urutan),
+        foto = left(COALESCE(NULLIF(p_foto,''),foto),300),
+        panggilan = left(COALESCE(NULLIF(btrim(p_panggilan),''),panggilan),40),
+        ttl = left(COALESCE(NULLIF(btrim(p_ttl),''),ttl),120),
+        visi = left(COALESCE(p_visi,visi),500),
+        misi = left(COALESCE(p_misi,misi),500),
+        ig = left(COALESCE(NULLIF(btrim(p_ig),''),ig),120),
+        wa = left(COALESCE(NULLIF(btrim(p_wa),''),wa),40),
+        tiktok = left(COALESCE(NULLIF(btrim(p_tiktok),''),tiktok),120),
+        motto = left(COALESCE(p_motto,motto),300),
+        kelas = left(COALESCE(NULLIF(btrim(p_kelas),''),kelas),40) WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+REVOKE EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text, text, text, text) FROM public;
+GRANT EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text, text, text, text) TO anon;
+
+-- ============ FINAL: kosong = hapus + murni cocok username ============
+-- Aturan baru: string kosong MENGHAPUS isi (bukan "jangan ubah").
+-- NULL (param tidak dikirim) = jangan ubah. Berlaku untuk kolom biodata
+-- (panggilan, ttl, kelas, visi, misi, ig, wa, tiktok, motto).
+-- Nama, jabatan, foto, username tetap pola lama (kosong = jangan ubah).
+-- Kepemilikan edit-sendiri: murni cocok username (tanpa anggota_id).
+-- Tanda tangan TIDAK berubah -> blok ini aman di-run kapan saja.
+-- Jalankan blok ini utuh sekaligus di SQL editor Supabase.
+CREATE OR REPLACE FUNCTION public.update_anggota(
+    p_user_id bigint, p_id bigint, p_nama text, p_jabatan text, p_urutan integer,
+    p_foto text DEFAULT '', p_panggilan text DEFAULT '', p_ttl text DEFAULT '',
+    p_visi text DEFAULT '', p_misi text DEFAULT '',
+    p_ig text DEFAULT '', p_wa text DEFAULT '', p_tiktok text DEFAULT '',
+    p_motto text DEFAULT '', p_kelas text DEFAULT '', p_username text DEFAULT ''
+) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN 'ERR_NO_AUTH'; END IF;
+    UPDATE public.anggota SET nama = left(COALESCE(NULLIF(btrim(p_nama),''),nama),80),
+        jabatan = left(COALESCE(NULLIF(btrim(p_jabatan),''),jabatan),80),
+        urutan = COALESCE(p_urutan,urutan),
+        foto = left(COALESCE(NULLIF(p_foto,''),foto),300),
+        panggilan = left(COALESCE(btrim(p_panggilan),panggilan),40),
+        ttl = left(COALESCE(btrim(p_ttl),ttl),120),
+        visi = left(COALESCE(p_visi,visi),500),
+        misi = left(COALESCE(p_misi,misi),500),
+        ig = left(COALESCE(btrim(p_ig),ig),120),
+        wa = left(COALESCE(btrim(p_wa),wa),40),
+        tiktok = left(COALESCE(btrim(p_tiktok),tiktok),120),
+        motto = left(COALESCE(p_motto,motto),300),
+        kelas = left(COALESCE(btrim(p_kelas),kelas),40),
+        username = left(COALESCE(NULLIF(btrim(p_username),''),username),60) WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+CREATE OR REPLACE FUNCTION public.anggota_saya(p_user_id bigint)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE AS $$
+DECLARE r jsonb;
+BEGIN
+    IF p_user_id IS NULL THEN RETURN NULL; END IF;
+    SELECT to_jsonb(a) INTO r FROM public.anggota a
+    WHERE btrim(lower(a.username)) = (SELECT btrim(lower(username)) FROM public.osis_users WHERE id = p_user_id)
+      AND btrim(COALESCE(a.username,'')) <> ''
+    ORDER BY a.tahun DESC, a.id DESC LIMIT 1;
+    RETURN r;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.update_anggota_sendiri(
+    p_user_id bigint, p_id bigint,
+    p_panggilan text DEFAULT '', p_ttl text DEFAULT '', p_kelas text DEFAULT '',
+    p_visi text DEFAULT '', p_misi text DEFAULT '',
+    p_ig text DEFAULT '', p_wa text DEFAULT '', p_tiktok text DEFAULT '',
+    p_motto text DEFAULT '', p_foto text DEFAULT ''
+) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_milik bigint;
+BEGIN
+    IF p_user_id IS NULL OR p_id IS NULL THEN RETURN 'ERR_NO_AUTH'; END IF;
+    SELECT a.id INTO v_milik FROM public.anggota a
+    WHERE btrim(lower(a.username)) = (SELECT btrim(lower(username)) FROM public.osis_users WHERE id = p_user_id)
+      AND btrim(COALESCE(a.username,'')) <> ''
+    ORDER BY a.tahun DESC, a.id DESC LIMIT 1;
+    IF v_milik IS NULL OR v_milik <> p_id THEN RETURN 'ERR_BUKAN_MILIK'; END IF;
+    UPDATE public.anggota SET
+        panggilan = left(COALESCE(btrim(p_panggilan),panggilan),40),
+        ttl = left(COALESCE(btrim(p_ttl),ttl),120),
+        kelas = left(COALESCE(btrim(p_kelas),kelas),40),
+        visi = left(COALESCE(p_visi,visi),500),
+        misi = left(COALESCE(p_misi,misi),500),
+        ig = left(COALESCE(btrim(p_ig),ig),120),
+        wa = left(COALESCE(btrim(p_wa),wa),40),
+        tiktok = left(COALESCE(btrim(p_tiktok),tiktok),120),
+        motto = left(COALESCE(p_motto,motto),300),
+        foto = left(COALESCE(NULLIF(p_foto,''),foto),300) WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF; RETURN 'ERR_NOT_FOUND';
+END $$;
+
+-- ============ HAPUS TAUT anggota_id (murni cocok username) ============
+-- Kolom anggota_id terbukti rawan salah orang, tidak dipakai lagi.
+-- Jalankan blok ini utuh sekaligus di SQL editor Supabase.
+ALTER TABLE public.osis_users DROP COLUMN IF EXISTS anggota_id;
+
+-- (Definisi anggota_saya & update_anggota_sendiri versi blok ini DIPINDAH
+--  ke blok FINAL di atas — yang berlaku versi FINAL: kosong = hapus.)
+
+-- BLOK "EDIT BIODATA SENDIRI" (cocok-nama + anggota_id) DIHAPUS 2026-09-20:
+-- rawan salah orang. Diganti blok HAPUS TAUT (cocok username) di atas.
+-- (Dulu di sini: ADD COLUMN anggota_id + backfill cocok-nama. Jangan kembalikan.)
+
+-- (DUPLIKAT BASI DIHAPUS 2026-09-20: definisi anggota_saya/update_anggota_sendiri
+--  versi cocok-nama sudah diganti versi username di bawah. Jangan kembalikan.)
+
+-- ============ TAUT USERNAME ANGGOTA (ganti cocok-nama) ============
+-- Cocok-nama rawan salah orang (nama kembar). Mulai sekarang penautan
+-- pakai kolom username (unik, diisi admin via dashboard).
+-- Jalankan blok ini utuh sekaligus di SQL editor Supabase.
+ALTER TABLE public.anggota ADD COLUMN IF NOT EXISTS username text NOT NULL DEFAULT '';
+
+-- (Dulu di sini: UPDATE anggota_id = NULL — DIHAPUS karena kolomnya sudah di-DROP.
+--  Jangan kembalikan; baris ini error kalau di-run.)
+
+DROP FUNCTION IF EXISTS public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text, text, text);
+
+CREATE OR REPLACE FUNCTION public.tambah_anggota(
+    p_user_id bigint, p_tahun integer, p_nama text, p_jabatan text,
+    p_urutan integer DEFAULT 99, p_foto text DEFAULT '',
+    p_panggilan text DEFAULT '', p_ttl text DEFAULT '',
+    p_visi text DEFAULT '', p_misi text DEFAULT '',
+    p_ig text DEFAULT '', p_wa text DEFAULT '', p_tiktok text DEFAULT '',
+    p_motto text DEFAULT '', p_kelas text DEFAULT '', p_username text DEFAULT ''
+) RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE nid bigint;
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'anggota') THEN RETURN -1; END IF;
+    INSERT INTO public.anggota (tahun, nama, jabatan, urutan, foto,
+            panggilan, ttl, visi, misi, ig, wa, tiktok, motto, kelas, username)
+    VALUES (p_tahun, left(COALESCE(NULLIF(btrim(p_nama),''),'Tanpa Nama'),80),
+            left(COALESCE(p_jabatan,''),80), COALESCE(p_urutan,99), left(COALESCE(p_foto,''),300),
+            left(COALESCE(p_panggilan,''),40), left(COALESCE(p_ttl,''),120),
+            left(COALESCE(p_visi,''),500), left(COALESCE(p_misi,''),500),
+            left(COALESCE(p_ig,''),120), left(COALESCE(p_wa,''),40),
+            left(COALESCE(p_tiktok,''),120), left(COALESCE(p_motto,''),300),
+            left(COALESCE(p_kelas,''),40), left(COALESCE(btrim(p_username),''),60))
+    RETURNING id INTO nid;
+    RETURN nid;
+END $$;
+-- (Definisi update_anggota versi blok ini DIHAPUS 2026-09-20:
+--  masih pakai NULLIF (kosong = jangan ubah). Versi kanonis ada di
+--  blok FINAL di atas: kosong = hapus. Jangan kembalikan.)
+
+-- (Definisi anggota_saya & update_anggota_sendiri versi link-first DIHAPUS
+--  2026-09-20: merujuk kolom anggota_id yang sudah di-DROP -> error 100%.
+--  Versi kanonis ada di blok FINAL di atas. Jangan kembalikan.)
+
+REVOKE EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text, text, text, text) FROM public;
+GRANT EXECUTE ON FUNCTION public.tambah_anggota(bigint, integer, text, text, integer, text, text, text, text, text, text, text, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_anggota(bigint, bigint, text, text, integer, text, text, text, text, text, text, text, text, text, text, text) TO anon;

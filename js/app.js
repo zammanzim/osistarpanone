@@ -67,7 +67,7 @@ function labelTahun(thn) {
 // =========================================================================
 
 const Router = {
-    daftarView: ["home", "sekbid", "galeri", "aspirasi", "kontak"],
+    daftarView: ["home", "pengurus", "sekbid", "galeri", "aspirasi", "kontak"],
     initFns: {},       // init lazy per view
     selesai: {},       // flag view sudah pernah di-init
     current: "home",
@@ -80,7 +80,10 @@ const Router = {
     init() {
         window.addEventListener("hashchange", () => Router.go());
         window.addEventListener("resize", () => Router.geserPill(false));
+        window.addEventListener("load", () => Router.geserPill(false));
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => Router.geserPill(false)).catch(() => {});
         Router.go();
+        requestAnimationFrame(() => Router.geserPill(false));
     },
 
     parse() {
@@ -134,10 +137,10 @@ const Router = {
         if (!tab) return;
 
         if (!animasi) pill.classList.add("no-anim");
-        const navRect = nav.getBoundingClientRect();
-        const tabRect = tab.getBoundingClientRect();
-        pill.style.width = tabRect.width + "px";
-        pill.style.transform = `translateX(${tabRect.left - navRect.left}px)`;
+        // offsetLeft/offsetWidth relatif ke nav (offsetParent) -> pas dengan border+padding nav,
+        // kebal terhadap scroll, zoom, dan transform centering di desktop.
+        pill.style.width = tab.offsetWidth + "px";
+        pill.style.transform = `translateX(${tab.offsetLeft}px)`;
         requestAnimationFrame(() => pill.classList.remove("no-anim"));
     }
 };

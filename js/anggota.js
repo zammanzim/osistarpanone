@@ -1,10 +1,9 @@
 // =========================================================================
-// ANGGOTA & PENGURUS — halaman khusus OSIS (folder /osis)
-// Dipakai di osis/anggota.html — 3 tab:
-// - Anggota: grid kartu per tahun + popup tambah/edit (foto drag&drop)
-// - Pengurus: ketua/wakil + foto per periode (upsert by tahun)
+// ANGGOTA & SEKBID — halaman khusus OSIS (folder /osis)
+// Dipakai di osis/anggota.html — 2 tab:
+// - Anggota: grid kartu per tahun + popup tambah/edit (foto drag&drop + biodata)
+//   (ketua & wakil cukup jadi anggota dengan jabatan Ketua / Wakil Ketua OSIS)
 // - Sekbid: grid kartu BPH + seksi bidang + popup tambah/edit
-// Tulis langsung via helper db.js (pola lama, bukan RPC).
 // =========================================================================
 
 const Anggota = {
@@ -191,9 +190,12 @@ const Anggota = {
     gantiTab(tab) {
         Anggota.tab = tab;
         document.querySelectorAll(".angg-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
-        document.getElementById("panelAnggota").style.display = tab === "anggota" ? "" : "none";
-        document.getElementById("panelPengurus").style.display = tab === "pengurus" ? "" : "none";
-        document.getElementById("panelSekbid").style.display = tab === "sekbid" ? "" : "none";
+        const panelA = document.getElementById("panelAnggota");
+        const panelP = document.getElementById("panelPengurus");
+        const panelS = document.getElementById("panelSekbid");
+        if (panelA) panelA.style.display = tab === "anggota" ? "" : "none";
+        if (panelP) panelP.style.display = tab === "pengurus" ? "" : "none";
+        if (panelS) panelS.style.display = tab === "sekbid" ? "" : "none";
         document.getElementById("pilihTahun").style.visibility = tab === "sekbid" ? "hidden" : "";
         document.getElementById("btnTambahTahun").style.visibility = tab === "sekbid" ? "hidden" : "";
     },
@@ -219,7 +221,7 @@ const Anggota = {
         Anggota.renderTahun();
         Anggota.renderAnggota();
         Anggota.renderPengurus();
-        Anggota.gantiTab("pengurus");
+        Anggota.gantiTab("anggota");
         showToast(`Periode ${thn} siap — isi pengurus lalu Simpan`, "info");
     },
 
@@ -270,6 +272,7 @@ const Anggota = {
         document.getElementById("anggotaPopupId").value = "";
         document.getElementById("anggotaNama").value = "";
         document.getElementById("anggotaJabatan").value = "";
+        Anggota.isiBio(null);
         // urutan otomatis: max + 1 biar di paling bawah
         const rows = Anggota.rowsTahun();
         const nextNo = rows.length ? Math.max(...rows.map(a => parseInt(a.urutan, 10) || 0)) + 1 : 1;
@@ -290,6 +293,7 @@ const Anggota = {
         document.getElementById("anggotaNama").value = item.nama || "";
         document.getElementById("anggotaJabatan").value = item.jabatan || "";
         document.getElementById("anggotaUrutan").value = item.urutan ?? 99;
+        Anggota.isiBio(item);
         document.getElementById("anggotaPopupTitle").textContent = "Edit Anggota";
         Anggota.renderPopupFoto("agg");
         document.getElementById("anggotaPopup").classList.add("open");
@@ -343,11 +347,34 @@ const Anggota = {
         }
     },
 
+    // Biodata tambahan buat popup publik (panggilan, TTL, visi, misi, medsos)
+    bacaBio() {
+        const g = (id) => ((document.getElementById(id) || {}).value || "").trim();
+        return {
+            panggilan: g("anggotaPanggilan"), ttl: g("anggotaTtl"),
+            visi: g("anggotaVisi"), misi: g("anggotaMisi"),
+            ig: g("anggotaIg"), wa: g("anggotaWa"), tiktok: g("anggotaTiktok"),
+            motto: g("anggotaMotto"), kelas: g("anggotaKelas"),
+            username: g("anggotaUsername")
+        };
+    },
+
+    isiBio(item) {
+        const s = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ""; };
+        item = item || {};
+        s("anggotaPanggilan", item.panggilan); s("anggotaTtl", item.ttl);
+        s("anggotaVisi", item.visi); s("anggotaMisi", item.misi);
+        s("anggotaIg", item.ig); s("anggotaWa", item.wa); s("anggotaTiktok", item.tiktok);
+        s("anggotaMotto", item.motto); s("anggotaKelas", item.kelas);
+        s("anggotaUsername", item.username);
+    },
+
     async simpanPopupAnggota() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
         const nama = document.getElementById("anggotaNama").value.trim();
         const jabatan = document.getElementById("anggotaJabatan").value.trim();
+        const bio = Anggota.bacaBio();
         let urutan = parseInt(document.getElementById("anggotaUrutan").value, 10);
         if (!Number.isFinite(urutan) || urutan < 1) urutan = 99;
         const id = document.getElementById("anggotaPopupId").value || null;
@@ -356,8 +383,8 @@ const Anggota = {
             const pf = Anggota.aggForm.pendingFile;
             return { modul: "anggota", op: id ? "update" : "create",
                 label: "Anggota: " + String(nama).slice(0, 42),
-                payload: { id: id || null, tahun: Anggota.tahun, nama, jabatan, urutan,
-                    fotoExist: Anggota.aggForm.fotoPath || "" },
+                payload: Object.assign({ id: id || null, tahun: Anggota.tahun, nama, jabatan, urutan,
+                    fotoExist: Anggota.aggForm.fotoPath || "" }, bio),
                 files: pf ? [{ slot: "foto", file: pf, name: pf.name, type: pf.type }] : [],
                 cacheKeys: ["anggota"] };
         };
@@ -382,11 +409,11 @@ const Anggota = {
             const colFotoMissing = (e) => String((e && e.message) || e || "").match(/foto/i);
             if (id) {
                 try {
-                    await updateAnggota(id, { nama, jabatan, urutan, foto });
+                    await updateAnggota(id, Object.assign({ nama, jabatan, urutan, foto }, bio));
                 } catch (e) {
                     // kolom foto belum ada (migrasi belum di-run) — simpan tanpa foto
                     if (!foto || !colFotoMissing(e)) throw e;
-                    await updateAnggota(id, { nama, jabatan, urutan });
+                    await updateAnggota(id, Object.assign({ nama, jabatan, urutan }, bio));
                     showToast("Tersimpan tanpa foto (run migrasi blok 13 dulu)", "info");
                     Anggota.tutupPopupAnggota();
                     const fresh0 = await getAnggota();
@@ -396,7 +423,7 @@ const Anggota = {
                 }
                 showToast("Anggota diperbarui!", "success");
             } else {
-                await tambahAnggota({ tahun: Anggota.tahun, nama, jabatan, urutan, foto });
+                await tambahAnggota(Object.assign({ tahun: Anggota.tahun, nama, jabatan, urutan, foto }, bio));
                 showToast("Anggota ditambah!", "success");
             }
             Anggota.tutupPopupAnggota();
@@ -437,6 +464,8 @@ const Anggota = {
     },
 
     renderPengurus() {
+        // Panel pengurus sudah digabung ke daftar anggota — keluar kalau panel tidak ada
+        if (!document.getElementById("panelPengurus")) return;
         const p = Anggota.pimpTahun() || {};
         document.getElementById("pimpKetuaNama").value = p.ketua_nama || "";
         document.getElementById("pimpWakilNama").value = p.wakil_nama || "";

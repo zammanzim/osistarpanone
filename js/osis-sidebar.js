@@ -11,6 +11,7 @@ const OsisSidebar = {
   // cth: ["agenda", "Agenda", "fa-solid fa-calendar-days"],
   MENU: [
     ["index", "Dashboard", "fa-solid fa-grip"],
+    ["anggota", "Anggota", "fa-solid fa-users"],
     ["absensi", "Absensi", "fa-solid fa-clipboard-user"],
     ["tabungan", "Tabungan", "fa-solid fa-piggy-bank"],
     ["keuangan", "Keuangan", "fa-solid fa-wallet"],

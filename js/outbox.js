@@ -783,7 +783,11 @@
       }
     }
     if (op.op === "update" && p.id) {
-      var rowU = { nama: p.nama, jabatan: p.jabatan, urutan: p.urutan };
+      var rowU = { nama: p.nama, jabatan: p.jabatan, urutan: p.urutan,
+        panggilan: p.panggilan || "", ttl: p.ttl || "",
+        visi: p.visi || "", misi: p.misi || "",
+        ig: p.ig || "", wa: p.wa || "", tiktok: p.tiktok || "",
+        motto: p.motto || "", kelas: p.kelas || "", username: p.username || "" };
       // foto hanya dikirim kalau ada (baru/existing) — jangan hapus foto server.
       if (foto || (op.files && op.files.length)) rowU.foto = foto;
       try {
@@ -795,7 +799,9 @@
         } else throw e;
       }
     } else {
-      await tambahAnggota({ tahun: p.tahun, nama: p.nama, jabatan: p.jabatan, urutan: p.urutan, foto: foto });
+      await tambahAnggota({ tahun: p.tahun, nama: p.nama, jabatan: p.jabatan, urutan: p.urutan, foto: foto,
+        panggilan: p.panggilan || "", ttl: p.ttl || "", visi: p.visi || "", misi: p.misi || "",
+        ig: p.ig || "", wa: p.wa || "", tiktok: p.tiktok || "", motto: p.motto || "", kelas: p.kelas || "", username: p.username || "" });
     }
   };
   Outbox.handlers.pimpinan = async function (op) {

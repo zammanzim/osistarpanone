@@ -2161,7 +2161,7 @@ body.edit-mode .bento-meta .gal-del {
   border-radius: 14px;
   border: 2px solid var(--ink);
   box-shadow: 2px 2px 0 var(--ink);
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 0;
   pointer-events: none;
 }
@@ -4122,5 +4122,823 @@ body.edit-mode .prestasi-card .foto-del-btn {
   }
   .logo-makna-card:hover::before {
     background: var(--yellow);
+  }
+}
+
+/* ============================================================
+   PENGURUS — satu list, card gede full-width
+   ============================================================ */
+.pengurus-wrap {
+  padding-top: 28px;
+  padding-bottom: 48px;
+  background-image: radial-gradient(
+    rgba(26, 19, 20, 0.08) 1.5px,
+    transparent 1.6px
+  );
+  background-size: 22px 22px;
+}
+
+/* Card miring selang-seling biar hidup */
+.pg-card:nth-child(odd) {
+  transform: rotate(-0.5deg);
+}
+
+.pg-card:nth-child(even) {
+  transform: rotate(0.5deg);
+}
+
+.pengurus-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 20px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+/* Mobile: filter di bawah judul */
+.pengurus-wrap .sec-head {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+@media (min-width: 769px) {
+  /* Desktop: filter di kanan judul */
+  .pengurus-wrap .sec-head {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+  .pengurus-bar {
+    margin: 0 0 4px auto;
+    width: min(320px, 100%);
+  }
+}
+
+#pengurusPeriode {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background: var(--white);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  outline: none;
+  cursor: pointer;
+}
+
+#pengurusList {
+  display: grid;
+  grid-template-columns: minmax(0, 420px);
+  justify-content: center;
+  gap: 100px;
+  margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .pengurus-wrap {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* Card kompak ala makna-logo: foto atas, biodata di bawah */
+.pg-card {
+  position: relative;
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 4px 4px 0 var(--ink);
+  text-align: center;
+  min-width: 0;
+}
+
+.pg-num {
+  position: absolute;
+  top: -10px;
+  left: -6px;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--red);
+  color: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  transform: rotate(-4deg);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.pg-periode {
+  position: absolute;
+  top: -10px;
+  right: -6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--yellow);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 5px 8px;
+  transform: rotate(3deg);
+  box-shadow: 2px 2px 0 var(--ink);
+  white-space: nowrap;
+}
+
+.pg-foto {
+  width: 100%;
+  aspect-ratio: 3 / 3.4;
+  margin: 0 0 10px;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--yellow);
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pg-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 7px;
+}
+
+.pg-initial {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--red);
+}
+
+.pg-info {
+  min-width: 0;
+}
+
+.pg-info h3 {
+  font-size: 0.88rem;
+  font-weight: 900;
+  line-height: 1.25;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.pg-info p {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--red);
+  margin-bottom: 4px;
+}
+
+.pg-card.pg-pimpinan .pg-info p {
+  color: var(--ink);
+}
+
+.pg-info span {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+
+@media (min-width: 700px) {
+  .pg-info h3 {
+    font-size: 1rem;
+  }
+  .pg-info p {
+    font-size: 0.75rem;
+  }
+}
+
+@media (min-width: 769px) {
+  #pengurusList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: center;
+    gap: 128px;
+    max-width: 800px;
+    margin: 10px auto 28px;
+  }
+}
+
+.pg-card {
+  cursor: pointer;
+}
+
+/* Mini biodata 2x2 di bawah info card */
+.pg-bio {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.pg-bio-item {
+  background: var(--paper-2);
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  padding: 6px 8px;
+  min-width: 0;
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+}
+
+.pg-bio-item > i {
+  color: var(--red);
+  font-size: 0.8rem;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.pg-bio-item > div {
+  min-width: 0;
+}
+
+.pg-bio-item span {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray);
+}
+
+.pg-bio-item p {
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Tombol profil lengkap */
+.pg-more {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--red);
+  color: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+
+.pg-more:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Tombol edit di header popup */
+.pg-head-btns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.struktur-edit {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid #fff;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 0.8rem;
+  cursor: pointer;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+
+/* Mode edit inline di popup */
+#pengurusModal.pg-editing [data-f] {
+  outline: 2px dashed var(--red);
+  outline-offset: 3px;
+  border-radius: 6px;
+  min-height: 1.2em;
+  cursor: text;
+}
+
+#pengurusModal.pg-editing [data-f]:focus {
+  outline-style: solid;
+  background: #fff;
+}
+
+.pg-edit-cam {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: 2.5px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  font-size: 1rem;
+  cursor: pointer;
+  display: none;
+  place-items: center;
+  z-index: 3;
+  overflow: hidden;
+}
+
+.pg-edit-cam input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+#pengurusModal.pg-editing .pg-edit-cam {
+  display: grid;
+}
+
+.pg-pop-sos-in {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: var(--white);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 var(--ink);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pg-pop-sos-in i {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.pg-pop-sos-in input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--ink);
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+}
+
+.pg-edit-actions {
+  position: sticky;
+  bottom: -14px;
+  display: flex;
+  gap: 8px;
+  background: var(--white);
+  margin: 14px -14px -14px;
+  padding: 10px 14px 14px;
+  border-top: 2px dashed var(--line, #e5ddd6);
+}
+
+.pg-edit-actions .btn {
+  flex: 1;
+}
+
+/* ---- Popup biodata (numpang .struktur-modal) ---- */
+.pg-pop-box {
+  width: min(860px, 100%);
+}
+
+.pg-pop-top {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+
+.pg-pop-foto-wrap {
+  width: 38%;
+  max-width: 200px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.pg-pop-main {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (min-width: 720px) {
+  .pg-pop-top {
+    gap: 16px;
+  }
+  .pg-pop-foto-wrap {
+    width: 250px;
+    max-width: none;
+  }
+}
+
+.pg-pop-no {
+  position: absolute;
+  top: -12px;
+  left: -8px;
+  z-index: 2;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--red);
+  color: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 900;
+  transform: rotate(-4deg);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.pg-pop-foto {
+  width: 100%;
+  aspect-ratio: 3 / 3.5;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--yellow);
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.pg-pop-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 11px;
+}
+
+.pg-pop-jab {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 4px;
+}
+
+.pg-pop-nama {
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.pg-pop-sub {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--gray);
+  margin-top: 2px;
+}
+
+.pg-pop-rule {
+  width: 56px;
+  height: 4px;
+  background: var(--red);
+  border-radius: 2px;
+  margin: 8px 0 12px;
+}
+
+@media (min-width: 720px) {
+  .pg-pop-jab {
+    font-size: 0.78rem;
+  }
+  .pg-pop-nama {
+    font-size: 1.5rem;
+  }
+  .pg-pop-sub {
+    font-size: 0.85rem;
+  }
+}
+
+.pg-pop-medsos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.pg-pop-medsos a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 10px;
+  background: var(--white);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 2px 2px 0 var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pg-pop-medsos > :nth-child(3):last-child {
+  grid-column: span 2;
+}
+
+.pg-pop-off {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 10px;
+  background: var(--paper-2);
+  color: var(--gray);
+  border: 2px dashed var(--gray);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-style: italic;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.pg-pop-off i {
+  font-size: 1rem;
+  font-style: normal;
+}
+
+.pg-pop-medsos a i {
+  font-size: 1rem;
+}
+
+.pg-pop-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.pg-pop-tiles:empty {
+  display: none;
+}
+
+/* Tile ganjil terakhir bentang penuh */
+.pg-pop-tile:last-child:nth-child(odd) {
+  grid-column: span 2;
+}
+
+.pg-pop-tiles-desktop {
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .pg-pop-tiles-desktop {
+    display: grid;
+  }
+  .pg-pop-tiles-mobile {
+    display: none;
+  }
+}
+
+.pg-pop-tile {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.pg-pop-tile > i {
+  color: var(--red);
+  font-size: 1.05rem;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.pg-pop-tile > div {
+  min-width: 0;
+}
+
+.pg-pop-tile span {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray);
+}
+
+.pg-pop-tile p {
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.pg-pop-vm {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 719px) {
+  .pg-pop-vm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pg-pop-vm-solo {
+  grid-template-columns: 1fr;
+}
+
+.pg-pop-vm-card {
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--white);
+  box-shadow: 3px 3px 0 var(--ink);
+  min-width: 0;
+}
+
+.pg-pop-vm-card h5 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+
+.pg-pop-vm-card h5 i {
+  font-size: 1.2rem;
+}
+
+.pg-pop-visi {
+  position: relative;
+  background: #fff3f3;
+  border-radius: 10px;
+  padding: 20px 12px 26px;
+}
+
+.pg-pop-visi::before,
+.pg-pop-visi::after {
+  position: absolute;
+  font-size: 2.4rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #f5b5b5;
+}
+
+.pg-pop-visi::before {
+  content: "\201C";
+  top: 2px;
+  left: 10px;
+}
+
+.pg-pop-visi::after {
+  content: "\201D";
+  bottom: -8px;
+  right: 12px;
+}
+
+.pg-pop-visi p {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.pg-pop-misi {
+  background: #fff3f3;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.pg-pop-misi ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pg-pop-misi li {
+  display: flex;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.55;
+  align-items: flex-start;
+}
+
+.pg-pop-misi li::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.pg-pop-motto {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  background: var(--white);
+}
+
+.pg-pop-motto > i {
+  color: var(--red);
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.pg-pop-motto p {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.pg-pop-motto::after {
+  content: "";
+  width: 34px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--red);
+  flex-shrink: 0;
+}
+
+.pg-belum {
+  color: var(--gray) !important;
+  font-style: italic;
+  font-weight: 600 !important;
+}
+
+/* ============================================================
+   GLOBAL MOBILE SCALING -15% khusus HP kecil (<=480px, mis. 411dp)
+   HP lebar (mis. 600dp) TIDAK kena. Desktop TIDAK kena.
+   zoom: 0.85 = semua elemen (px + rem + border + shadow) mengecil 15%.
+   ============================================================ */
+@media (max-width: 480px) {
+  body {
+    zoom: 0.85;
+  }
+  /* Fallback Firefox lama yang belum dukung zoom: skala font root 15% */
+  @supports not (zoom: 1) {
+    html {
+      font-size: 13.6px;
+    }
   }
 }

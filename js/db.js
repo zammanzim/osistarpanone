@@ -1696,10 +1696,21 @@ async function hapusPimpinan(tahun) {
 }
 
 async function tambahAnggota(row) {
-  const { data, error } = await supa.rpc("tambah_anggota", {
+  const args = {
     p_user_id: _uid(), p_tahun: row.tahun, p_nama: row.nama || "",
-    p_jabatan: row.jabatan || "", p_urutan: row.urutan ?? 99, p_foto: row.foto || ""
-  });
+    p_jabatan: row.jabatan || "", p_urutan: row.urutan ?? 99, p_foto: row.foto || "",
+    p_panggilan: row.panggilan || "", p_ttl: row.ttl || "",
+    p_visi: row.visi || "", p_misi: row.misi || "",
+    p_ig: row.ig || "", p_wa: row.wa || "", p_tiktok: row.tiktok || "",
+    p_motto: row.motto || "", p_kelas: row.kelas || "", p_username: row.username || ""
+  };
+  let data, error;
+  ({ data, error } = await supa.rpc("tambah_anggota", args));
+  if (error && /p_(panggilan|ttl|visi|misi|ig|wa|tiktok|motto|kelas|username)/i.test(error.message || "")) {
+    // Migrasi biodata belum di-run — simpan field lama saja
+    ["p_panggilan", "p_ttl", "p_visi", "p_misi", "p_ig", "p_wa", "p_tiktok", "p_motto", "p_kelas", "p_username"].forEach(k => delete args[k]);
+    ({ data, error } = await supa.rpc("tambah_anggota", args));
+  }
   if (error) throw error;
   cekId(data);
   Cache.del("anggota");
@@ -1707,11 +1718,25 @@ async function tambahAnggota(row) {
 }
 
 async function updateAnggota(id, row) {
-  const { data, error } = await supa.rpc("update_anggota", {
+  // Field biodata yang TIDAK disertakan dikirim null = jangan ubah.
+  // (Lindungi pemanggil parsial cth. site-edit dari menghapus data.)
+  const bio = (k) => (k in row ? row[k] || "" : null);
+  const args = {
     p_user_id: _uid(), p_id: id, p_nama: row.nama || "",
     p_jabatan: row.jabatan || "", p_urutan: row.urutan ?? 99,
-    p_foto: ("foto" in row) ? (row.foto || "") : null
-  });
+    p_foto: ("foto" in row) ? (row.foto || "") : null,
+    p_panggilan: bio("panggilan"), p_ttl: bio("ttl"),
+    p_visi: bio("visi"), p_misi: bio("misi"),
+    p_ig: bio("ig"), p_wa: bio("wa"), p_tiktok: bio("tiktok"),
+    p_motto: bio("motto"), p_kelas: bio("kelas"), p_username: bio("username")
+  };
+  let data, error;
+  ({ data, error } = await supa.rpc("update_anggota", args));
+  if (error && /p_(panggilan|ttl|visi|misi|ig|wa|tiktok|motto|kelas|username)/i.test(error.message || "")) {
+    // Migrasi biodata belum di-run — simpan field lama saja
+    ["p_panggilan", "p_ttl", "p_visi", "p_misi", "p_ig", "p_wa", "p_tiktok", "p_motto", "p_kelas", "p_username"].forEach(k => delete args[k]);
+    ({ data, error } = await supa.rpc("update_anggota", args));
+  }
   if (error) throw error;
   cekOk(data);
   Cache.del("anggota");
@@ -1720,6 +1745,29 @@ async function updateAnggota(id, row) {
 async function hapusAnggota(id) {
   const { data, error } = await supa.rpc("hapus_anggota", {
     p_user_id: _uid(), p_id: id
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("anggota");
+}
+
+// Baris anggota milik user yang login (cocok username). null kalau tidak ada.
+async function getAnggotaSaya() {
+  const uid = _uid();
+  if (!uid) return null;
+  const { data, error } = await supa.rpc("anggota_saya", { p_user_id: uid });
+  if (error) throw error;
+  return data || null;
+}
+
+// Update biodata MILIK SENDIRI (nama & jabatan dikunci di server).
+async function updateAnggotaSendiri(id, row) {
+  const { data, error } = await supa.rpc("update_anggota_sendiri", {
+    p_user_id: _uid(), p_id: id,
+    p_panggilan: row.panggilan || "", p_ttl: row.ttl || "", p_kelas: row.kelas || "",
+    p_visi: row.visi || "", p_misi: row.misi || "",
+    p_ig: row.ig || "", p_wa: row.wa || "", p_tiktok: row.tiktok || "",
+    p_motto: row.motto || "", p_foto: row.foto || ""
   });
   if (error) throw error;
   cekOk(data);
