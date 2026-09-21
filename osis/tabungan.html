@@ -66,9 +66,19 @@
         margin-top: 4px;
       }
       .stat-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        display: flex;
+        flex-direction: column;
         gap: 8px;
+      }
+      .stat-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      @media (min-width: 720px) {
+        .stat-group {
+          grid-template-columns: repeat(3, 1fr);
+        }
       }
       .stat-card {
         background: var(--white);
@@ -296,9 +306,9 @@
     <script src="../js/toast.js?v=10" defer></script>
     <script src="../js/show-popup.js?v=10" defer></script>
     <script src="../js/osis-auth.js?v=10" defer></script>
-    <script src="../js/osis-sidebar.js?v=10" defer></script>
+    <script src="../js/osis-sidebar.js?v=12" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/tabungan.js?v=10" defer></script>
+    <script src="../js/tabungan.js?v=11" defer></script>
   <script src="../js/pwa.js?v=10" defer></script>
   </head>
   <body>
@@ -327,10 +337,16 @@
       </div>
 
       <div class="stat-grid">
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-users"></i> Penabung</span><b id="statOrang">-</b></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-wallet"></i> Total Tabungan</span><b id="statTotal">-</b></div>
-        <div class="stat-card sudah"><span class="lbl"><i class="fa-solid fa-square-check"></i> Sudah Ceklis</span><b id="statSudah">-</b></div>
-        <div class="stat-card belum"><span class="lbl"><i class="fa-solid fa-square"></i> Belum Ceklis</span><b id="statBelum">-</b></div>
+        <div class="stat-group">
+          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-wallet"></i> Total Tabungan</span><b id="statTotal">-</b></div>
+          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-week"></i> Total Mingguan</span><b id="statMinggu">-</b></div>
+          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-days"></i> Total Bulanan</span><b id="statBulan">-</b></div>
+        </div>
+        <div class="stat-group">
+          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-users"></i> Penabung</span><b id="statOrang">-</b></div>
+          <div class="stat-card sudah"><span class="lbl"><i class="fa-solid fa-square-check"></i> Sudah Ceklis</span><b id="statSudah">-</b></div>
+          <div class="stat-card belum"><span class="lbl"><i class="fa-solid fa-square"></i> Belum Ceklis</span><b id="statBelum">-</b></div>
+        </div>
       </div>
 
       <div class="filter-card">

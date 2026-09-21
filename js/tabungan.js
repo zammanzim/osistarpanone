@@ -208,9 +208,31 @@ const Tabungan = {
         const totalSemua = (Tabungan.cache || []).reduce((a, r) => a + Tabungan.nilai(r), 0);
         const sudah = (Tabungan.cache || []).filter(r => !!r.cek).length;
         const belum = (Tabungan.cache || []).length - sudah;
+        // Total minggu berjalan (Senin-Minggu) + bulan berjalan dari tanggal setoran.
+        const now = new Date();
+        const mundur = (now.getDay() + 6) % 7; // Senin=0 ... Minggu=6
+        const senin = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mundur);
+        const minggu = new Date(senin.getFullYear(), senin.getMonth(), senin.getDate() + 6);
+        const p2 = (x) => String(x).padStart(2, "0");
+        const keStr = (d) => d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+        const strSenin = keStr(senin);
+        const strMinggu = keStr(minggu);
+        const blnIni = keStr(now).slice(0, 7);
+        const rows = Tabungan.cache || [];
+        const totalMinggu = rows.reduce((a, r) => {
+            const t = String(r.tanggal || "");
+            return a + ((t >= strSenin && t <= strMinggu) ? Tabungan.nilai(r) : 0);
+        }, 0);
+        const totalBulan = rows.reduce((a, r) => {
+            return a + (String(r.tanggal || "").slice(0, 7) === blnIni ? Tabungan.nilai(r) : 0);
+        }, 0);
         setStat("statOrang", orang, "orang");
         const elTotal = document.getElementById("statTotal");
         if (elTotal) elTotal.textContent = Tabungan.rp(totalSemua);
+        const elMinggu = document.getElementById("statMinggu");
+        if (elMinggu) elMinggu.textContent = Tabungan.rp(totalMinggu);
+        const elBulan = document.getElementById("statBulan");
+        if (elBulan) elBulan.textContent = Tabungan.rp(totalBulan);
         setStat("statSudah", sudah, "setoran");
         setStat("statBelum", belum, "setoran");
 

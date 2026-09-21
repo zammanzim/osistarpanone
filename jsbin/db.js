@@ -1079,6 +1079,38 @@ async function saveSiteText(userId, kunci, nilai) {
 }
 
 // =========================================================================
+// SIDEBAR DINAMIS - config pusat milik super_admin (site_content).
+// Baca publik, tulis hanya pengelola Site (termasuk super_admin).
+// Kunci: "sidebar_menu" (folder /osis), "sidebar_menu_bin" (folder /osisbin).
+// =========================================================================
+async function getSidebarMenu(kunci) {
+    const { data, error } = await supa
+        .from("site_content")
+        .select("nilai")
+        .eq("kunci", kunci)
+        .maybeSingle();
+    if (error) throw error;
+    if (!data || !data.nilai) return null;
+    try {
+        const arr = JSON.parse(data.nilai);
+        return Array.isArray(arr) ? arr : null;
+    } catch {
+        return null;
+    }
+}
+
+async function simpanSidebarMenu(userId, kunci, menu) {
+    const { data, error } = await supa.rpc("simpan_sidebar", {
+        p_user_id: userId,
+        p_key: kunci,
+        p_menu: menu
+    });
+    if (error) throw error;
+    cekOk(data);
+    Cache.del("sidebar_" + kunci);
+}
+
+// =========================================================================
 // ADMIN — CRUD & STORAGE
 // =========================================================================
 

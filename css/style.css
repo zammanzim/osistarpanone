@@ -4943,3 +4943,24 @@ body.edit-mode .prestasi-card .foto-del-btn {
     }
   }
 }
+
+/* ============================================================
+   BOTTOM-NAV MOBILE FIX
+   1. safe-area: gesture bar Android/iPhone tidak lagi motong nav.
+   2. tab ramping <=480px: 6 label (Pengurus/Aspirasi) muat tanpa wrap.
+   ============================================================ */
+.bottom-nav {
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 480px) {
+  .tab-item {
+    padding: 8px 4px;
+    font-size: 0.58rem;
+    gap: 1px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .tab-item .ico {
+    font-size: 1rem;
+  }
+}
