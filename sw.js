@@ -1,9 +1,9 @@
-﻿// =========================================================================
+// =========================================================================
 // SW - OSIS TARPAN ONE (PWA)
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v9";
+const VERSI = "tarpan-v10";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 
