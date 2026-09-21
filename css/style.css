@@ -2847,10 +2847,9 @@ body.edit-mode #galGrid.mode-osis .bento-block:not(.draft) .gal-del,
 #kegiatanGrid .bento-block.draft .gal-save,
 #kegiatanGrid .bento-block.draft .gal-del,
 #prestasiGrid.mode-osis .gal-del,
-#kegiatanGrid.mode-osis .gal-del,
+body.edit-mode #kegiatanGrid.mode-osis .bento-block:not(.draft) .gal-del,
 body.edit-mode .gal-del,
-body.edit-mode .prestasi-card .gal-del,
-body.edit-mode #kegiatanGrid .bento-block .gal-del {
+body.edit-mode .prestasi-card .gal-del {
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
@@ -2861,11 +2860,13 @@ body.edit-mode #kegiatanGrid .bento-block .gal-del {
   top: 8px;
   right: 0;
 }
-/* Hapus galeri yang sudah publish: cuma muncul pas edit-mode DAN punya hak
+/* Hapus galeri/kegiatan yang sudah publish: cuma muncul pas edit-mode DAN punya hak
    (mode-osis). Tanpa salah satunya, paksa sembunyi — menimpa rule generik
    body.edit-mode di bawah. Tombol draft tidak ikut (draft = sedang bikin). */
 body.edit-mode #galGrid:not(.mode-osis) .bento-block:not(.draft) .gal-del,
-body.edit-mode #galGrid:not(.mode-osis) .item .foto-del-btn {
+body.edit-mode #galGrid:not(.mode-osis) .item .foto-del-btn,
+body.edit-mode #kegiatanGrid:not(.mode-osis) .bento-block:not(.draft) .gal-del,
+body.edit-mode #kegiatanGrid:not(.mode-osis) .item .foto-del-btn {
   display: none !important;
 }
 /* ============================================================

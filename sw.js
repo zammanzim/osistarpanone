@@ -1,4 +1,4 @@
-﻿﻿// =========================================================================
+﻿// =========================================================================
 // SW - OSIS TARPAN ONE (PWA)
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
@@ -112,12 +112,10 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches
-      .open(STATIS)
-      .then((c) => c.addAll(APP_SHELL))
-      .then(() => self.skipWaiting()),
-  );
+  // Catatan: JANGAN skipWaiting() di sini. SW baru wajib menunggu sampai
+  // halaman memintanya via pesan SKIP_WAITING (js/pwa.js). skipWaiting
+  // otomatis = take-over tiba-tiba + controllerchange + reload sendiri.
+  e.waitUntil(caches.open(STATIS).then((c) => c.addAll(APP_SHELL)));
 });
 
 self.addEventListener("activate", (e) => {
