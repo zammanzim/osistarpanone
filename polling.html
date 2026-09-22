@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polling Waketos - OSIS TARPAN ONE</title>
+    <meta name="description" content="Polling Wakil Ketua OSIS SMK Taruna Harapan 1 Cipatat. Satu perangkat satu suara, wajib masuk, hasil live.">
+    <meta name="theme-color" content="#e11d2e">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE">
+    <link rel="stylesheet" href="css/style.css?v=10">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .pol-wrap{max-width:880px;margin:0 auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+        .pol-card{background:var(--white);border:3px solid var(--ink);border-radius:18px;padding:16px;box-shadow:4px 4px 0 var(--ink)}
+        .pol-card.accent-top{border-top:10px solid var(--red)}
+        .pol-hero h1{font-size:1.35rem;font-weight:900;letter-spacing:-.02em;margin:6px 0 4px}
+        .pol-desc{font-size:.84rem;font-weight:600;color:var(--gray);line-height:1.55;margin:0}
+        .pol-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+        .pol-meta .chip{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:800;background:var(--paper);border:2px solid var(--line);border-radius:999px;padding:5px 12px}
+        .pol-meta .chip b{font-size:.9rem}
+        .pol-closed{margin-top:12px;background:#ffe1e4;border:2px dashed var(--red);color:#a31220;font-size:.8rem;font-weight:800;border-radius:12px;padding:10px 12px}
+        .pol-open{margin-top:12px;background:#d6f5d6;border:2px dashed #146314;color:#146314;font-size:.8rem;font-weight:800;border-radius:12px;padding:10px 12px}
+        .pol-gate-row{display:flex;gap:8px;margin-top:6px}
+        .pol-gate-row .admin-input{flex:1;min-width:0}
+        .pol-login-info{font-size:.82rem;font-weight:700;background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .pol-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+        .pol-kartu{background:var(--white);border:3px solid var(--ink);border-radius:18px;overflow:hidden;box-shadow:4px 4px 0 var(--ink);display:flex;flex-direction:column;position:relative}
+        .pol-kartu.pilihan{border-color:var(--red);box-shadow:4px 4px 0 var(--red)}
+        .pol-nomor{position:absolute;top:10px;left:10px;width:38px;height:38px;display:grid;place-items:center;background:var(--yellow);border:2.5px solid var(--ink);border-radius:12px;font-weight:900;font-size:1.05rem;box-shadow:2px 2px 0 var(--ink)}
+        .pol-foto{width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--paper);border-bottom:3px solid var(--ink)}
+        .pol-foto-ph{width:100%;aspect-ratio:1/1;display:grid;place-items:center;background:var(--paper);border-bottom:3px solid var(--ink);font-size:3rem;font-weight:900;color:var(--line)}
+        .pol-body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
+        .pol-nama{font-size:1rem;font-weight:900}
+        .pol-kelas{font-size:.72rem;font-weight:800;color:var(--gray)}
+        .pol-visi{font-size:.78rem;font-weight:600;line-height:1.5;background:var(--paper);border:2px solid var(--line);border-radius:10px;padding:8px 10px;white-space:pre-line}
+        .pol-visi summary{cursor:pointer;font-weight:800;font-size:.74rem;color:var(--red)}
+        .pol-badge-pilih{align-self:flex-start;font-size:.68rem;font-weight:900;background:var(--red);color:#fff;border-radius:999px;padding:4px 10px}
+        .pol-vote-row{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:6px}
+        .pol-vote-row .btn{flex:1;justify-content:center}
+        .pol-suara{font-size:.74rem;font-weight:800;color:var(--gray);white-space:nowrap}
+        .pol-bar{height:10px;background:var(--paper);border:2px solid var(--ink);border-radius:999px;overflow:hidden;margin-top:4px}
+        .pol-bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--red),#ff7a45);border-radius:999px;transition:width .4s}
+        .pol-hasil-row{padding:10px 0;border-bottom:2px dashed var(--line)}
+        .pol-hasil-row:last-child{border-bottom:none}
+        .pol-hasil-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:.84rem;font-weight:800}
+        .pol-hasil-top .pct{color:var(--red);font-weight:900}
+        .pol-admin .admin-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+        .pol-seg{display:inline-flex;border:2.5px solid var(--ink);border-radius:12px;overflow:hidden}
+        .pol-seg button{border:none;background:var(--white);font-family:inherit;font-size:.76rem;font-weight:900;padding:8px 14px;cursor:pointer}
+        .pol-seg button.on{background:var(--ink);color:#fff}
+        .pol-seg button.on.buka{background:#146314}
+        .pol-seg button.on.tutup{background:var(--red)}
+        .pol-kelola{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+        .pol-kelola-item{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:.8rem;font-weight:700}
+        .pol-kelola-item img{width:44px;height:44px;object-fit:cover;border-radius:10px;border:2px solid var(--ink)}
+        .pol-kelola-item .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .pol-kelola-item button{border:2px solid var(--ink);background:var(--white);border-radius:9px;padding:6px 9px;cursor:pointer;font-size:.76rem;font-weight:800}
+        .pol-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+        .pol-form-grid .full{grid-column:1/-1}
+        .pol-foto-prev{width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:2px solid var(--ink);margin-top:8px}
+        @media (max-width:560px){.pol-gate-row{flex-direction:column}.pol-form-grid{grid-template-columns:1fr}}
+    </style>
+    <script src="js/supabase.min.js?v=10"></script>
+    <script src="js/config.js?v=10"></script>
+    <script src="js/db.js?v=10" defer></script>
+    <script src="js/app.js?v=10" defer></script>
+    <script src="js/toast.js?v=10" defer></script>
+    <script src="js/show-popup.js?v=10" defer></script>
+    <script src="js/osis-auth.js?v=10" defer></script>
+    <script src="js/polling.js?v=10" defer></script>
+    <script src="js/pwa.js?v=10" defer></script>
+</head>
+<body>
+    <header class="top-nav">
+        <a href="index" class="brand">
+            <div class="logo-box"><img data-foto="logo1" alt="Logo OSIS"></div>
+            <div class="brand-text">
+                <h2>OSIS TARPAN ONE</h2>
+                <p>SMK Taruna Harapan 1 Cipatat</p>
+            </div>
+        </a>
+        <div class="top-nav-extra">
+            <span class="status-badge" id="polStatusBadge" style="font-size:.64rem;font-weight:900;text-transform:uppercase;padding:6px 12px;border-radius:999px;border:2px solid var(--ink);background:#d6f5d6;color:#146314;">Polling</span>
+            <div id="areaAuth"></div>
+        </div>
+    </header>
+
+    <main class="pol-wrap">
+        <section class="pol-card accent-top pol-hero">
+            <div class="sec-tag">Pemilihan</div>
+            <h1 id="polJudul">Polling Wakil Ketua OSIS</h1>
+            <p class="pol-desc">Satu perangkat = satu suara, wajib masuk (guest / OSIS). Boleh pindah pilihan kapan saja selagi polling dibuka. Hasil tampil live.</p>
+            <div class="pol-meta">
+                <span class="chip"><b id="polTotal">0</b>&nbsp;Suara masuk</span>
+                <span class="chip"><b id="polCount">0</b>&nbsp;Kandidat</span>
+                <span class="chip" id="polSayaChip" style="display:none"><i class="fa-solid fa-check"></i>&nbsp;Kamu sudah vote</span>
+                <button class="btn btn-white btn-sm" onclick="Polling.muatHasil(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            </div>
+            <div class="pol-closed" id="polClosedBanner" style="display:none"><i class="fa-solid fa-lock"></i> Polling sedang ditutup oleh pengurus OSIS. Hasil tetap bisa dilihat.</div>
+        </section>
+
+        <section class="pol-card" id="polGateCard">
+            <div class="form-head" id="polGateTitle">Masuk dulu untuk vote</div>
+            <div id="polGateBody">
+                <div class="loading-block"><div class="spinner"></div>Memuat...</div>
+            </div>
+        </section>
+
+        <div class="pol-grid" id="polGrid">
+            <div class="pol-card"><div class="loading-block"><div class="spinner"></div>Memuat kandidat...</div></div>
+        </div>
+
+        <section class="pol-card" id="polHasilCard">
+            <div class="form-head">Hasil Sementara (Live)</div>
+            <div id="polHasil"><div class="pesan-empty"><i class="fa-solid fa-chart-simple"></i> Belum ada data hasil.</div></div>
+        </section>
+
+        <section class="pol-card pol-admin" id="polAdmin" style="display:none">
+            <div class="form-head">Kelola Polling (OSIS)</div>
+            <div class="admin-row pol-admin-row">
+                <span style="font-size:.78rem;font-weight:800">Status:</span>
+                <span class="pol-seg">
+                    <button type="button" id="polBtnBuka" onclick="Polling.setStatus('BUKA')">BUKA</button>
+                    <button type="button" id="polBtnTutup" onclick="Polling.setStatus('TUTUP')">TUTUP</button>
+                </span>
+                <button class="btn btn-white btn-sm" onclick="Polling.reset()"><i class="fa-solid fa-trash-can"></i> Reset suara</button>
+            </div>
+            <div class="pol-form-grid">
+                <div><label class="lbl">Nomor urut</label><input type="number" id="polNomor" class="admin-input" value="1" min="1" max="99"></div>
+                <div><label class="lbl">Urutan tampil</label><input type="number" id="polOrder" class="admin-input" value="99" min="1" max="999"></div>
+                <div class="full"><label class="lbl">Nama kandidat</label><input type="text" id="polNama" class="admin-input" placeholder="Nama lengkap" maxlength="80"></div>
+                <div class="full"><label class="lbl">Kelas</label><input type="text" id="polKelas" class="admin-input" placeholder="Contoh: XI RPL 1" maxlength="40"></div>
+                <div class="full"><label class="lbl">Foto</label><button class="btn btn-white btn-sm" onclick="document.getElementById('polFileInput').click()"><i class="fa-solid fa-image"></i> Pilih foto</button><img id="polFotoPrev" class="pol-foto-prev" style="display:none" alt="Preview foto kandidat"></div>
+                <div class="full"><label class="lbl">Visi</label><textarea id="polVisi" class="admin-input" rows="2" placeholder="Visi kandidat" maxlength="1000"></textarea></div>
+                <div class="full"><label class="lbl">Misi</label><textarea id="polMisi" class="admin-input" rows="3" placeholder="Misi kandidat" maxlength="2000"></textarea></div>
+            </div>
+            <div class="admin-row pol-admin-row">
+                <button class="btn btn-red" id="polBtnSimpan" onclick="Polling.simpanKandidat()"><i class="fa-solid fa-floppy-disk"></i> Simpan kandidat</button>
+                <button class="btn btn-white" id="polBtnBatal" onclick="Polling.formBaru()" style="display:none"><i class="fa-solid fa-xmark"></i> Batal</button>
+            </div>
+            <div class="pol-kelola" id="polKelola"></div>
+        </section>
+
+        <a class="login-back login-center" href="index"><i class="fa-solid fa-house"></i> Kembali ke beranda</a>
+    </main>
+
+    <input type="file" id="polFileInput" accept="image/*" hidden>
+</body>
+</html>

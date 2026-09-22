@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#49c4c6" />
+    <title>Nihongo Quiz — Tebak Huruf Jepang</title>
+    <style>
+      :root {
+        --teal: #4fc4c5;
+        --teal2: #299ea2;
+        --ink: #182326;
+        --muted: #6d7a7d;
+        --card: #fff;
+        --line: #e6ecec;
+        --soft: #f2f7f7;
+        --good: #2d9c67;
+        --bad: #d95757;
+        --shadow: 0 18px 50px rgba(24, 35, 38, 0.1);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: var(--ink);
+        background: #f7faf9;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      .app {
+        min-height: 100vh;
+      }
+      .hero {
+        background: linear-gradient(180deg, #59cacc, #42b8ba);
+        color: white;
+        padding: 30px 20px 52px;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero:after {
+        content: "";
+        position: absolute;
+        left: -5%;
+        right: -5%;
+        bottom: -31px;
+        height: 65px;
+        background: #f7faf9;
+        border-radius: 50% 50% 0 0/100% 100% 0 0;
+      }
+      .hero-inner {
+        max-width: 1080px;
+        margin: auto;
+        position: relative;
+        z-index: 1;
+      }
+      .brand {
+        font-size: 13px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 800;
+        opacity: 0.9;
+      }
+      .hero h1 {
+        margin: 7px 0 5px;
+        font-size: clamp(30px, 5vw, 48px);
+        letter-spacing: -0.04em;
+      }
+      .hero p {
+        margin: 0;
+        max-width: 650px;
+        opacity: 0.9;
+      }
+      .wrap {
+        max-width: 1080px;
+        margin: -18px auto 0;
+        padding: 0 18px 50px;
+        position: relative;
+        z-index: 2;
+      }
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        padding: 20px;
+      }
+      .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .mode {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 15px;
+        padding: 13px 14px;
+        text-align: left;
+        cursor: pointer;
+        transition: 0.18s;
+      }
+      .mode:hover {
+        transform: translateY(-1px);
+        border-color: #b8dddd;
+      }
+      .mode.active {
+        border-color: var(--teal2);
+        background: #edfafa;
+        box-shadow: inset 0 0 0 1px var(--teal2);
+      }
+      .mode strong {
+        display: block;
+        font-size: 14px;
+      }
+      .mode small {
+        display: block;
+        color: var(--muted);
+        margin-top: 3px;
+        line-height: 1.35;
+      }
+      .quiz {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 1.4fr 0.8fr;
+        gap: 16px;
+      }
+      .question {
+        min-height: 480px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--soft);
+        border-radius: 999px;
+        padding: 7px 11px;
+        font-size: 12px;
+        font-weight: 750;
+        color: #4c5c5e;
+      }
+      .kana {
+        font-family: "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+        font-size: clamp(100px, 18vw, 190px);
+        line-height: 1;
+        margin: 25px 0 18px;
+        font-weight: 500;
+      }
+      .prompt {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .answers {
+        width: min(580px, 100%);
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 22px;
+      }
+      .answer {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 14px;
+        padding: 15px 12px;
+        font-size: 17px;
+        font-weight: 750;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+      .answer:hover {
+        background: #f5fbfb;
+        border-color: #acdada;
+      }
+      .answer.correct {
+        background: #eaf8f1;
+        border-color: #74c99e;
+        color: #20764d;
+      }
+      .answer.wrong {
+        background: #fff0f0;
+        border-color: #e38585;
+        color: #a43e3e;
+      }
+      .side {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .stat {
+        background: var(--soft);
+        border-radius: 14px;
+        padding: 13px;
+      }
+      .stat b {
+        display: block;
+        font-size: 22px;
+      }
+      .stat span {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .input-row {
+        display: flex;
+        gap: 8px;
+      }
+      .input-row input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 13px 14px;
+        outline: none;
+      }
+      .input-row input:focus {
+        border-color: var(--teal2);
+        box-shadow: 0 0 0 3px rgba(41, 158, 162, 0.1);
+      }
+      .primary {
+        border: 0;
+        background: var(--teal2);
+        color: white;
+        border-radius: 12px;
+        padding: 0 17px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .secondary {
+        border: 1px solid var(--line);
+        background: white;
+        color: var(--ink);
+        border-radius: 12px;
+        padding: 11px 14px;
+        font-weight: 750;
+        cursor: pointer;
+      }
+      .feedback {
+        min-height: 44px;
+        border-radius: 12px;
+        padding: 11px 13px;
+        background: var(--soft);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      .feedback.good {
+        background: #eaf8f1;
+        color: #20764d;
+      }
+      .feedback.bad {
+        background: #fff0f0;
+        color: #a43e3e;
+      }
+      .info {
+        padding: 14px;
+        border: 1px dashed #cddada;
+        border-radius: 14px;
+        color: #5c6b6e;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      .section-title {
+        font-size: 15px;
+        font-weight: 850;
+        margin: 4px 0 10px;
+      }
+      .footer {
+        color: #879294;
+        text-align: center;
+        font-size: 12px;
+        margin-top: 18px;
+      }
+      .kbd {
+        border: 1px solid #d9e1e1;
+        background: #fff;
+        border-bottom-width: 2px;
+        border-radius: 6px;
+        padding: 1px 5px;
+        font-size: 11px;
+      }
+      .hidden {
+        display: none !important;
+      }
+      @media (max-width: 850px) {
+        .mode-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .quiz {
+          grid-template-columns: 1fr;
+        }
+        .side {
+          order: -1;
+        }
+        .question {
+          min-height: 430px;
+        }
+      }
+      @media (max-width: 500px) {
+        .hero {
+          padding: 24px 16px 46px;
+        }
+        .wrap {
+          padding: 0 10px 30px;
+        }
+        .panel {
+          padding: 14px;
+          border-radius: 18px;
+        }
+        .mode-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .mode {
+          padding: 11px;
+        }
+        .answers {
+          grid-template-columns: 1fr 1fr;
+        }
+        .kana {
+          font-size: 120px;
+        }
+        .question {
+          min-height: 390px;
+        }
+        .stats {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="brand">Nihongo Rakuraku • Quiz</div>
+          <h1>日本語 — Tebak Huruf Jepang</h1>
+          <p>
+            Latihan hiragana & katakana dengan mode yang dipisah seperti daftar
+            huruf di buku kamu.
+          </p>
+        </div>
+      </header>
+      <main class="wrap">
+        <section class="panel">
+          <div class="section-title">Pilih mode</div>
+          <div class="mode-grid" id="modes"></div>
+        </section>
+        <section class="quiz">
+          <div class="panel question">
+            <div class="pill" id="modeLabel">Hiragana dasar • 46 huruf</div>
+            <div class="kana" id="kana">あ</div>
+            <div class="prompt">Huruf ini dibaca apa?</div>
+            <div class="answers" id="answers"></div>
+          </div>
+          <aside class="panel side">
+            <div class="stats">
+              <div class="stat"><b id="score">0</b><span>Skor</span></div>
+              <div class="stat"><b id="streak">0</b><span>Streak</span></div>
+              <div class="stat">
+                <b id="accuracy">0%</b><span>Akurasi</span>
+              </div>
+            </div>
+            <div>
+              <div class="section-title">Atau ketik jawaban</div>
+              <div class="input-row">
+                <input
+                  id="answerInput"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  placeholder="contoh: ka"
+                /><button class="primary" id="submit">Cek</button>
+              </div>
+            </div>
+            <div class="feedback" id="feedback">
+              Pilih salah satu jawaban atau ketik romaji.
+            </div>
+            <button class="secondary" id="next">Soal berikutnya →</button>
+            <div class="info">
+              <b>Tips:</b> untuk mode dakuten/handakuten, perhatikan tanda
+              <span class="kbd">゛</span> dan <span class="kbd">゜</span>. Mode
+              kombinasi memakai ゃ / ゅ / ょ kecil.
+            </div>
+          </aside>
+        </section>
+        <div class="footer">
+          Data huruf mengikuti kelompok dasar, dakuten/handakuten, dan yōon pada
+          referensi yang kamu kirim.
+        </div>
+      </main>
+    </div>
+    <script>
+      const basicH = [
+        ["あ", "a"],
+        ["い", "i"],
+        ["う", "u"],
+        ["え", "e"],
+        ["お", "o"],
+        ["か", "ka"],
+        ["き", "ki"],
+        ["く", "ku"],
+        ["け", "ke"],
+        ["こ", "ko"],
+        ["さ", "sa"],
+        ["し", "shi"],
+        ["す", "su"],
+        ["せ", "se"],
+        ["そ", "so"],
+        ["た", "ta"],
+        ["ち", "chi"],
+        ["つ", "tsu"],
+        ["て", "te"],
+        ["と", "to"],
+        ["な", "na"],
+        ["に", "ni"],
+        ["ぬ", "nu"],
+        ["ね", "ne"],
+        ["の", "no"],
+        ["は", "ha"],
+        ["ひ", "hi"],
+        ["ふ", "fu"],
+        ["へ", "he"],
+        ["ほ", "ho"],
+        ["ま", "ma"],
+        ["み", "mi"],
+        ["む", "mu"],
+        ["め", "me"],
+        ["も", "mo"],
+        ["や", "ya"],
+        ["ゆ", "yu"],
+        ["よ", "yo"],
+        ["ら", "ra"],
+        ["り", "ri"],
+        ["る", "ru"],
+        ["れ", "re"],
+        ["ろ", "ro"],
+        ["わ", "wa"],
+        ["を", "wo"],
+        ["ん", "n"],
+      ];
+      const voicedH = [
+        ["が", "ga"],
+        ["ぎ", "gi"],
+        ["ぐ", "gu"],
+        ["げ", "ge"],
+        ["ご", "go"],
+        ["ざ", "za"],
+        ["じ", "ji"],
+        ["ず", "zu"],
+        ["ぜ", "ze"],
+        ["ぞ", "zo"],
+        ["だ", "da"],
+        ["ぢ", "di"],
+        ["づ", "du"],
+        ["で", "de"],
+        ["ど", "do"],
+        ["ば", "ba"],
+        ["び", "bi"],
+        ["ぶ", "bu"],
+        ["べ", "be"],
+        ["ぼ", "bo"],
+        ["ぱ", "pa"],
+        ["ぴ", "pi"],
+        ["ぷ", "pu"],
+        ["ぺ", "pe"],
+        ["ぽ", "po"],
+      ];
+      const comboH = [
+        ["きゃ", "kya"],
+        ["きゅ", "kyu"],
+        ["きょ", "kyo"],
+        ["しゃ", "sha"],
+        ["しゅ", "shu"],
+        ["しょ", "sho"],
+        ["ちゃ", "cha"],
+        ["ちゅ", "chu"],
+        ["ちょ", "cho"],
+        ["にゃ", "nya"],
+        ["にゅ", "nyu"],
+        ["にょ", "nyo"],
+        ["ひゃ", "hya"],
+        ["ひゅ", "hyu"],
+        ["ひょ", "hyo"],
+        ["みゃ", "mya"],
+        ["みゅ", "myu"],
+        ["みょ", "myo"],
+        ["りゃ", "rya"],
+        ["りゅ", "ryu"],
+        ["りょ", "ryo"],
+        ["ぎゃ", "gya"],
+        ["ぎゅ", "gyu"],
+        ["ぎょ", "gyo"],
+        ["じゃ", "ja"],
+        ["じゅ", "ju"],
+        ["じょ", "jo"],
+        ["びゃ", "bya"],
+        ["びゅ", "byu"],
+        ["びょ", "byo"],
+      ];
+      const basicK = [
+        ["ア", "a"],
+        ["イ", "i"],
+        ["ウ", "u"],
+        ["エ", "e"],
+        ["オ", "o"],
+        ["カ", "ka"],
+        ["キ", "ki"],
+        ["ク", "ku"],
+        ["ケ", "ke"],
+        ["コ", "ko"],
+        ["サ", "sa"],
+        ["シ", "shi"],
+        ["ス", "su"],
+        ["セ", "se"],
+        ["ソ", "so"],
+        ["タ", "ta"],
+        ["チ", "chi"],
+        ["ツ", "tsu"],
+        ["テ", "te"],
+        ["ト", "to"],
+        ["ナ", "na"],
+        ["ニ", "ni"],
+        ["ヌ", "nu"],
+        ["ネ", "ne"],
+        ["ノ", "no"],
+        ["ハ", "ha"],
+        ["ヒ", "hi"],
+        ["フ", "fu"],
+        ["ヘ", "he"],
+        ["ホ", "ho"],
+        ["マ", "ma"],
+        ["ミ", "mi"],
+        ["ム", "mu"],
+        ["メ", "me"],
+        ["モ", "mo"],
+        ["ヤ", "ya"],
+        ["ユ", "yu"],
+        ["ヨ", "yo"],
+        ["ラ", "ra"],
+        ["リ", "ri"],
+        ["ル", "ru"],
+        ["レ", "re"],
+        ["ロ", "ro"],
+        ["ワ", "wa"],
+        ["ヲ", "wo"],
+        ["ン", "n"],
+      ];
+      const voicedK = [
+        ["ガ", "ga"],
+        ["ギ", "gi"],
+        ["グ", "gu"],
+        ["ゲ", "ge"],
+        ["ゴ", "go"],
+        ["ザ", "za"],
+        ["ジ", "ji"],
+        ["ズ", "zu"],
+        ["ゼ", "ze"],
+        ["ゾ", "zo"],
+        ["ダ", "da"],
+        ["ヂ", "di"],
+        ["ヅ", "du"],
+        ["デ", "de"],
+        ["ド", "do"],
+        ["バ", "ba"],
+        ["ビ", "bi"],
+        ["ブ", "bu"],
+        ["ベ", "be"],
+        ["ボ", "bo"],
+        ["パ", "pa"],
+        ["ピ", "pi"],
+        ["プ", "pu"],
+        ["ペ", "pe"],
+        ["ポ", "po"],
+      ];
+      const comboK = [
+        ["キャ", "kya"],
+        ["キュ", "kyu"],
+        ["キョ", "kyo"],
+        ["シャ", "sha"],
+        ["シュ", "shu"],
+        ["ショ", "sho"],
+        ["チャ", "cha"],
+        ["チュ", "chu"],
+        ["チョ", "cho"],
+        ["ニャ", "nya"],
+        ["ニュ", "nyu"],
+        ["ニョ", "nyo"],
+        ["ヒャ", "hya"],
+        ["ヒュ", "hyu"],
+        ["ヒョ", "hyo"],
+        ["ミャ", "mya"],
+        ["ミュ", "myu"],
+        ["ミョ", "myo"],
+        ["リャ", "rya"],
+        ["リュ", "ryu"],
+        ["リョ", "ryo"],
+        ["ギャ", "gya"],
+        ["ギュ", "gyu"],
+        ["ギョ", "gyo"],
+        ["ジャ", "ja"],
+        ["ジュ", "ju"],
+        ["ジョ", "jo"],
+        ["ビャ", "bya"],
+        ["ビュ", "byu"],
+        ["ビョ", "byo"],
+      ];
+      const modes = [
+        {
+          id: "hb",
+          name: "Hiragana dasar",
+          desc: "46 huruf dasar",
+          data: basicH,
+          label: "Hiragana dasar • 46 huruf",
+        },
+        {
+          id: "hv",
+          name: "Hiragana bercoret",
+          desc: "Dakuten + handakuten",
+          data: voicedH,
+          label: "Hiragana dakuten / handakuten • 25 huruf",
+        },
+        {
+          id: "hc",
+          name: "Hiragana kombinasi",
+          desc: "ゃ・ゅ・ょ kecil",
+          data: comboH,
+          label: "Hiragana kombinasi • 30 huruf",
+        },
+        {
+          id: "ha",
+          name: "Semua Hiragana",
+          desc: "Dasar + bercoret + kombinasi",
+          data: [...basicH, ...voicedH, ...comboH],
+          label: "Semua Hiragana • 101 huruf",
+        },
+        {
+          id: "kb",
+          name: "Katakana dasar",
+          desc: "46 huruf dasar",
+          data: basicK,
+          label: "Katakana dasar • 46 huruf",
+        },
+        {
+          id: "kv",
+          name: "Katakana bercoret",
+          desc: "Dakuten + handakuten",
+          data: voicedK,
+          label: "Katakana dakuten / handakuten • 25 huruf",
+        },
+        {
+          id: "kc",
+          name: "Katakana kombinasi",
+          desc: "ャ・ュ・ョ kecil",
+          data: comboK,
+          label: "Katakana kombinasi • 30 huruf",
+        },
+        {
+          id: "ka",
+          name: "Semua Katakana",
+          desc: "Dasar + bercoret + kombinasi",
+          data: [...basicK, ...voicedK, ...comboK],
+          label: "Semua Katakana • 101 huruf",
+        },
+        {
+          id: "all",
+          name: "Semua huruf",
+          desc: "Hiragana + Katakana",
+          data: [
+            ...basicH,
+            ...voicedH,
+            ...comboH,
+            ...basicK,
+            ...voicedK,
+            ...comboK,
+          ],
+          label: "Semua huruf Jepang • 202 huruf",
+        },
+      ];
+      let current = modes[0],
+        q = null,
+        score = 0,
+        streak = 0,
+        answered = 0,
+        correct = 0,
+        locked = false;
+      const $ = (id) => document.getElementById(id);
+      const modesEl = $("modes");
+      function renderModes() {
+        modesEl.innerHTML = modes
+          .map(
+            (m) =>
+              `<button class="mode ${m.id === current.id ? "active" : ""}" data-id="${m.id}"><strong>${m.name}</strong><small>${m.desc}</small></button>`,
+          )
+          .join("");
+        modesEl.querySelectorAll(".mode").forEach(
+          (b) =>
+            (b.onclick = () => {
+              current = modes.find((m) => m.id === b.dataset.id);
+              resetStats();
+              nextQuestion();
+              renderModes();
+            }),
+        );
+      }
+      function resetStats() {
+        score = 0;
+        streak = 0;
+        answered = 0;
+        correct = 0;
+        updateStats();
+      }
+      function updateStats() {
+        $("score").textContent = score;
+        $("streak").textContent = streak;
+        $("accuracy").textContent =
+          (answered ? Math.round((correct / answered) * 100) : 0) + "%";
+      }
+      function shuffle(a) {
+        return [...a].sort(() => Math.random() - 0.5);
+      }
+      function nextQuestion() {
+        locked = false;
+        $("answerInput").value = "";
+        $("feedback").className = "feedback";
+        $("feedback").textContent =
+          "Pilih salah satu jawaban atau ketik romaji.";
+        $("modeLabel").textContent = current.label;
+        q = current.data[Math.floor(Math.random() * current.data.length)];
+        $("kana").textContent = q[0];
+        let opts = shuffle([
+          q,
+          ...shuffle(current.data.filter((x) => x[0] !== q[0])).slice(0, 3),
+        ]);
+        $("answers").innerHTML = opts
+          .map(
+            (x) =>
+              `<button class="answer" data-romaji="${x[1]}">${x[1]}</button>`,
+          )
+          .join("");
+        $("answers")
+          .querySelectorAll(".answer")
+          .forEach((b) => (b.onclick = () => check(b.dataset.romaji, b)));
+      }
+      function check(value, button) {
+        if (locked) return;
+        locked = true;
+        answered++;
+        let ok = value.trim().toLowerCase() === q[1];
+        if (ok) {
+          correct++;
+          streak++;
+          score += 10 + Math.min(streak - 1, 5);
+          button?.classList.add("correct");
+          $("feedback").className = "feedback good";
+          $("feedback").textContent =
+            `✓ Benar! ${q[0]} = ${q[1]}. +${10 + Math.min(streak - 1, 5)} poin`;
+        } else {
+          streak = 0;
+          if (button) button.classList.add("wrong");
+          $("feedback").className = "feedback bad";
+          $("feedback").textContent =
+            `✕ Belum tepat. ${q[0]} dibaca “${q[1]}”.`;
+          $("answers")
+            .querySelectorAll(".answer")
+            .forEach((b) => {
+              if (b.dataset.romaji === q[1]) b.classList.add("correct");
+            });
+        }
+        updateStats();
+        setTimeout(nextQuestion, 850);
+      }
+      $("submit").onclick = () => check($("answerInput").value);
+      $("answerInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") check(e.target.value);
+      });
+      $("next").onclick = nextQuestion;
+      renderModes();
+      nextQuestion();
+    </script>
+  </body>
+</html>

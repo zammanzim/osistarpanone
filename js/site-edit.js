@@ -128,7 +128,7 @@ const SiteEdit = {
             showToast("Edit mode aktif — klik teks/foto buat ubah", "info");
             // Kabari kalau user sama sekali tidak punya hak kendali edit
             try {
-                const adaHak = ["site", "anggota", "prestasi", "kegiatan", "galeri"]
+                const adaHak = ["site", "anggota", "prestasi", "kegiatan", "galeri", "poster"]
                     .some(h => OsisAuth.bisa && OsisAuth.bisa(h));
                 if (!adaHak) showToast("Kamu tidak punya hak kendali edit (hubungi admin).", "error");
             } catch {}
@@ -139,9 +139,11 @@ const SiteEdit = {
         if (typeof Prestasi !== "undefined" && Prestasi.render) Prestasi.render();
         if (typeof Kegiatan !== "undefined" && Kegiatan.render) Kegiatan.render();
         if (typeof Galeri !== "undefined" && Galeri.render) Galeri.render();
+        if (typeof Poster !== "undefined" && Poster.render) Poster.render();
         if (typeof Prestasi !== "undefined" && Prestasi.cekLogin) Prestasi.cekLogin();
         if (typeof Kegiatan !== "undefined" && Kegiatan.cekLogin) Kegiatan.cekLogin();
         if (typeof Galeri !== "undefined" && Galeri.cekLogin) Galeri.cekLogin();
+        if (typeof Poster !== "undefined" && Poster.cekLogin) Poster.cekLogin();
         // Aspirasi & lagu: tombol edit/hapus admin cuma tampil pas edit mode,
         // jadi daftarnya harus di-render ulang tiap toggle.
         if (typeof Aspirasi !== "undefined" && Aspirasi.muatPesan) Aspirasi.muatPesan();

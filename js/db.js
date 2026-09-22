@@ -536,6 +536,203 @@ async function editLaguOsis(userId, id, judul, penyanyi, pesan, nama) {
 }
 
 // =========================================================================
+// POLLING WAKETOS - kandidat publik + vote 1x (wajib login) + hasil live
+// Vote TIDAK masuk Outbox (wajib online biar tidak dobel). Kelola kandidat
+// + buka/tutup + reset butuh hak "polling" (diatur super_admin di Akses).
+// =========================================================================
+async function getPollingKandidat() {
+  const { data, error } = await supa
+    .from("polling_kandidat")
+    .select("id, nomor, nama, kelas, foto, visi, misi, display_order, created_at")
+    .order("display_order", { ascending: true })
+    .order("nomor", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+// Hasil live: { perKandidat: {id: jumlah}, total }
+// Sekali panggil (RPC polling_hasil_total). Kalau DB belum dimigrasi,
+// otomatis fallback ke 2 RPC lama dan diingat untuk tick berikutnya.
+let _pollingHasilTotalOK = null;
+async function getPollingHasil() {
+  if (_pollingHasilTotalOK !== false) {
+    try {
+      const { data, error } = await supa.rpc("polling_hasil_total");
+      if (error) throw error;
+      _pollingHasilTotalOK = true;
+      const map = {};
+      ((data && data.hasil) || []).forEach((h) => {
+        map[String(h.kandidat_id)] = Number(h.jumlah) || 0;
+      });
+      return { perKandidat: map, total: Number((data && data.total) || 0) };
+    } catch (err) {
+      const msg = String((err && err.message) || "");
+      const hilang =
+        (err && (err.code === "PGRST202" || err.code === "42883")) ||
+        /not found|does not exist/i.test(msg);
+      if (!hilang) throw err;
+      _pollingHasilTotalOK = false;
+    }
+  }
+  const [hasil, total] = await Promise.all([
+    supa.rpc("polling_hasil").then((r) => {
+      if (r.error) throw r.error;
+      return r.data || [];
+    }),
+    supa.rpc("polling_total").then((r) => {
+      if (r.error) throw r.error;
+      return Number(r.data) || 0;
+    }),
+  ]);
+  const map = {};
+  (hasil || []).forEach((h) => {
+    map[String(h.kandidat_id)] = Number(h.jumlah) || 0;
+  });
+  return { perKandidat: map, total };
+}
+
+// Kandidat yang dipilih perangkat ini (id / null kalau belum vote)
+async function getPollingSuaraSaya() {
+  const { data, error } = await supa.rpc("polling_suara_saya", {
+    p_device_id: getDeviceId(),
+  });
+  if (error) throw error;
+  return data == null ? null : Number(data);
+}
+
+// Vote. userKey/nama diambil dari sesi login (guest / OSIS).
+// Return: "OK" (baru) / "OK_GANTI" (pindah pilihan) / "OK_SAMA".
+async function votePolling(kandidatId) {
+  const u =
+    typeof OsisAuth !== "undefined" && OsisAuth.getUser
+      ? OsisAuth.getUser()
+      : null;
+  if (!u) throw new Error("ERR_NO_LOGIN");
+  let key = "";
+  let nama = "";
+  if (u.mode === "osis" && u.id) {
+    key = "osis:" + u.id;
+    nama = u.nama || u.username || "";
+  } else if (
+    typeof OsisAuth.isGuest === "function" &&
+    OsisAuth.isGuest(u) &&
+    String(u.nickname || "").trim()
+  ) {
+    key = "guest:" + String(u.nickname).trim().toLowerCase();
+    nama = String(u.nickname).trim();
+  } else {
+    throw new Error("ERR_NO_LOGIN");
+  }
+  const { data, error } = await supa.rpc("vote_polling", {
+    p_device_id: getDeviceId(),
+    p_user_key: key,
+    p_nama: nama,
+    p_kandidat_id: kandidatId,
+  });
+  if (error) throw error;
+  if (data === "OK" || data === "OK_GANTI" || data === "OK_SAMA") {
+    Cache.del("polling_hasil");
+    Cache.del("polling_saya");
+    return data;
+  }
+  throw new Error(data);
+}
+
+// Sakelar buka/tutup (site_content.polling_status, default BUKA)
+async function cekStatusPolling() {
+  try {
+    const { data, error } = await supa
+      .from("site_content")
+      .select("nilai")
+      .eq("kunci", "polling_status")
+      .maybeSingle();
+    if (error) throw error;
+    return data ? String(data.nilai).trim().toUpperCase() : "BUKA";
+  } catch (err) {
+    console.error("Gagal baca status polling, default BUKA", err);
+    return "BUKA";
+  }
+}
+
+async function getPollingJudul() {
+  try {
+    const { data, error } = await supa
+      .from("site_content")
+      .select("nilai")
+      .eq("kunci", "polling_judul")
+      .maybeSingle();
+    if (error) throw error;
+    return data && data.nilai ? String(data.nilai) : "Polling Wakil Ketua OSIS";
+  } catch {
+    return "Polling Wakil Ketua OSIS";
+  }
+}
+
+async function tambahPollingKandidat(userId, f) {
+  const { data, error } = await supa.rpc("polling_kandidat_tambah", {
+    p_user_id: userId,
+    p_nomor: f.nomor ?? 1,
+    p_nama: f.nama || "",
+    p_kelas: f.kelas || "",
+    p_foto: f.foto || "",
+    p_visi: f.visi || "",
+    p_misi: f.misi || "",
+    p_order: f.order ?? 99,
+  });
+  if (error) throw error;
+  cekId(data);
+  Cache.del("polling_kandidat");
+  return data;
+}
+
+async function ubahPollingKandidat(userId, id, f) {
+  const { data, error } = await supa.rpc("polling_kandidat_ubah", {
+    p_user_id: userId,
+    p_id: id,
+    p_nomor: f.nomor ?? 1,
+    p_nama: f.nama || "",
+    p_kelas: f.kelas || "",
+    p_foto: f.foto || "",
+    p_visi: f.visi || "",
+    p_misi: f.misi || "",
+    p_order: f.order ?? 99,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("polling_kandidat");
+}
+
+async function hapusPollingKandidat(userId, id) {
+  const { data, error } = await supa.rpc("polling_kandidat_hapus", {
+    p_user_id: userId,
+    p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("polling_kandidat");
+  Cache.del("polling_hasil");
+}
+
+async function setPollingStatus(userId, status) {
+  const { data, error } = await supa.rpc("set_polling_status", {
+    p_user_id: userId,
+    p_status: status,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+
+async function resetPollingSuara(userId) {
+  const { data, error } = await supa.rpc("polling_reset", {
+    p_user_id: userId,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("polling_hasil");
+  Cache.del("polling_saya");
+}
+
+// =========================================================================
 // PRESTASI - home (DB-driven, multi-foto, display_order)
 // =========================================================================
 async function getPrestasi() {
@@ -582,6 +779,52 @@ async function hapusPrestasi(userId, id) {
   if (error) throw error;
   cekOk(data);
   Cache.del("prestasi");
+}
+
+// =========================================================================
+// POSTER - feed foto + caption (arsip peringatan), 1 foto per poster
+// =========================================================================
+async function getPoster() {
+  const { data, error } = await supa
+    .from("poster")
+    .select("id, judul, caption, foto, created_by, created_at")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data || [];
+}
+async function buatPoster(userId, judul, caption, foto) {
+  const { data, error } = await supa.rpc("buat_poster", {
+    p_user_id: userId,
+    p_judul: judul,
+    p_caption: caption,
+    p_foto: foto,
+  });
+  if (error) throw error;
+  cekId(data);
+  Cache.del("poster");
+  return data;
+}
+async function updatePoster(userId, id, judul, caption, foto) {
+  const { data, error } = await supa.rpc("update_poster", {
+    p_user_id: userId,
+    p_id: id,
+    p_judul: judul,
+    p_caption: caption,
+    p_foto: foto,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("poster");
+}
+async function hapusPoster(userId, id) {
+  const { data, error } = await supa.rpc("hapus_poster", {
+    p_user_id: userId,
+    p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("poster");
 }
 
 // =========================================================================

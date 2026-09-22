@@ -45,6 +45,7 @@
     galeri: "Galeri",
     kegiatan: "Kegiatan",
     prestasi: "Prestasi",
+    poster: "Poster",
     notulensi: "Notulensi",
     proker: "Proker",
     evaluasi: "Evaluasi",
@@ -742,6 +743,27 @@
     await buatPrestasi(uid, p.tag || "", p.caption || "", [{ path: path, caption: "" }], p.order == null ? 99 : p.order);
   };
 
+  Outbox.handlers.poster = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    if (!op.files || !op.files.length) throw new Error("Foto antrean hilang.");
+    if (op.op === "update" && p.id) {
+      var foto = p.fotoExist || null;
+      if (op.files.length && op.files[0]) {
+        foto = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
+          return "poster/poster-" + u + "-" + Date.now() + "." + extOf(m.name, "jpg");
+        }, uid);
+        if (p.fotoExist && p.fotoExist !== foto) { try { await hapusFotoStorage(p.fotoExist); } catch {} }
+      }
+      await updatePoster(uid, p.id, p.judul || "", p.caption || "", foto);
+      return;
+    }
+    var path = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
+      return "poster/poster-" + u + "-" + Date.now() + "." + extOf(m.name, "jpg");
+    }, uid);
+    await buatPoster(uid, p.judul || "", p.caption || "", path);
+  };
+
   // ---- Notulensi / Proker / Evaluasi (buat + ubah, multi lampiran)
   function handlerMulti(tabel) {
     var cfg = {
@@ -959,6 +981,9 @@
   });
   Outbox.refreshers.prestasi = coba(function () {
     return Prestasi.muat();
+  });
+  Outbox.refreshers.poster = coba(function () {
+    return Poster.muat();
   });
   Outbox.refreshers.keuangan = coba(function () {
     return Keuangan.muat();

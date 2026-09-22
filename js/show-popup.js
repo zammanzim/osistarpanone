@@ -304,7 +304,7 @@ window.closePopup = function () {
 // =========================================================================
 window.ModalNav = (function () {
     const IDS = [
-        "visitorOverlay", "prestasiFormOverlay",
+        "visitorOverlay", "prestasiFormOverlay", "posterFormOverlay",
         "agendaForm", "absensiForm", "absenLangsung",
         "kasForm", "kasDetail", "tabForm", "tabDetail",
         "dokumenForm", "dokumenDetail", "evaluasiForm", "evaluasiDetail",
@@ -319,7 +319,7 @@ window.ModalNav = (function () {
         IDS.forEach((id) => {
             const el = document.getElementById(id);
             if (!el) return;
-            if (id === "prestasiFormOverlay") out.push(el); // ada di DOM = terbuka
+            if (id === "prestasiFormOverlay" || id === "posterFormOverlay") out.push(el); // ada di DOM = terbuka
             else if (el.classList && el.classList.contains("open")) out.push(el);
         });
         return out;
@@ -343,6 +343,14 @@ window.ModalNav = (function () {
                 }
                 case "prestasiFormOverlay": {
                     const P = ambil("Prestasi");
+                    if (P && P.tutupForm) { P.tutupForm(); return; }
+                    const el = document.getElementById(id);
+                    if (el && el.parentNode) el.parentNode.removeChild(el);
+                    pulihkanScroll();
+                    return;
+                }
+                case "posterFormOverlay": {
+                    const P = ambil("Poster");
                     if (P && P.tutupForm) { P.tutupForm(); return; }
                     const el = document.getElementById(id);
                     if (el && el.parentNode) el.parentNode.removeChild(el);
@@ -449,7 +457,7 @@ window.ModalNav = (function () {
         const el = document.getElementById(id);
         if (el) {
             if (el.classList) el.classList.remove("open");
-            if (id === "prestasiFormOverlay" && el.parentNode) el.parentNode.removeChild(el);
+            if ((id === "prestasiFormOverlay" || id === "posterFormOverlay") && el.parentNode) el.parentNode.removeChild(el);
         }
         pulihkanScroll();
     }
@@ -556,6 +564,16 @@ window.ModalNav = (function () {
             if (P && P.tutupForm) P.tutupForm();
             else {
                 const p = document.getElementById("prestasiFormOverlay");
+                if (p && p.parentNode) p.parentNode.removeChild(p);
+                pulihkanScroll();
+            }
+            return;
+        }
+        if (document.getElementById("posterFormOverlay")) {
+            const P = ambil("Poster");
+            if (P && P.tutupForm) P.tutupForm();
+            else {
+                const p = document.getElementById("posterFormOverlay");
                 if (p && p.parentNode) p.parentNode.removeChild(p);
                 pulihkanScroll();
             }

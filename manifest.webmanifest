@@ -47,6 +47,11 @@
       "name": "Aspirasi",
       "url": "./#/aspirasi",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Polling Waketos",
+      "url": "./polling",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
