@@ -1,8 +1,8 @@
 // =========================================================================
 // DASHBOARD OSIS — command center (folder /osis)
-// Dipakai di osis/index.html — ringkasan dari modul agenda, proker, task,
-// dokumen, notulensi. Semua fetch fail-silent + empty state per section.
-// Sidebar tidak disentuh.
+// Dipakai di osis/index.html — ringkasan halaman yang ADA: agenda, anggota,
+// keuangan, tabungan, absensi, dokumen. Semua fetch fail-silent + empty
+// state per section. Sidebar tidak disentuh.
 // =========================================================================
 
 const Dashboard = {
@@ -43,22 +43,23 @@ const Dashboard = {
             }).catch(() => {});
         }
 
-        const [agenda, proker, task, dokumen, notulensi, sekbid] = await Promise.all([
+        const [agenda, anggota, kas, tabungan, absensi, dokumen, sekbid] = await Promise.all([
             (typeof getAllAgenda === "function" ? getAllAgenda() : Promise.resolve([])).catch(() => []),
-            (typeof getProker === "function" ? getProker() : Promise.resolve([])).catch(() => []),
-            (typeof getTask === "function" ? getTask() : Promise.resolve([])).catch(() => []),
+            (typeof getAnggota === "function" ? getAnggota() : Promise.resolve([])).catch(() => []),
+            (typeof getKas === "function" ? getKas() : Promise.resolve([])).catch(() => []),
+            (typeof getTabungan === "function" ? getTabungan() : Promise.resolve([])).catch(() => []),
+            (typeof getAbsensi === "function" ? getAbsensi() : Promise.resolve([])).catch(() => []),
             (typeof getDokumen === "function" ? getDokumen() : Promise.resolve([])).catch(() => []),
-            (typeof getNotulensi === "function" ? getNotulensi() : Promise.resolve([])).catch(() => []),
             (typeof getSekbid === "function" ? getSekbid() : Promise.resolve([])).catch(() => [])
         ]);
         (sekbid || []).forEach(s => { Dashboard.sekbidMap[String(s.id)] = s.nama || ""; });
 
-        Dashboard.renderStats(agenda, proker, task, notulensi);
+        Dashboard.renderStats(agenda, anggota, kas, tabungan);
         Dashboard.renderAgenda(agenda);
-        Dashboard.renderTask(task);
-        Dashboard.renderProker(proker);
+        Dashboard.renderKas(kas);
+        Dashboard.renderAbsensi(absensi);
         Dashboard.renderDokumen(dokumen);
-        Dashboard.renderAktivitas(agenda, proker, task, dokumen, notulensi);
+        Dashboard.renderAktivitas(agenda, kas, tabungan, absensi, dokumen);
     },
 
     // ============ HAK KENDALI SAYA (khusus halaman baru osis/index) ============
@@ -155,33 +156,42 @@ const Dashboard = {
         return Math.round(ms / 86400000);
     },
 
+    rp(n) {
+        return "Rp" + (parseInt(n, 10) || 0).toLocaleString("id-ID");
+    },
+
     // ============ STATS ============
-    renderStats(agenda, proker, task, notulensi) {
+    renderStats(agenda, anggota, kas, tabungan) {
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         agenda = agenda || [];
-        proker = proker || [];
-        task = task || [];
-        notulensi = notulensi || [];
+        anggota = anggota || [];
+        kas = kas || [];
+        tabungan = tabungan || [];
 
         set("statAgenda", String(agenda.length));
-        const blm = agenda.filter(a => a.status === "rencana").length;
-        set("statAgendaSub", blm ? blm + " masih rencana" : "semua sudah jalan");
+        const blnIni = Dashboard.hariIni().slice(0, 7);
+        const agBulan = agenda.filter(a => String(a.tanggal || "").slice(0, 7) === blnIni).length;
+        set("statAgendaSub", agBulan ? agBulan + " bulan ini" : "tidak ada bulan ini");
 
-        const aktif = proker.filter(p => p.status === "berjalan");
-        set("statProker", String(aktif.length));
-        set("statProkerSub", proker.length ? `dari ${proker.length} proker` : "belum ada proker");
+        // Anggota periode terbaru (fallback: semua)
+        const thns = [...new Set(anggota.map(a => parseInt(a.tahun, 10)).filter(Number.isFinite))].sort((a, b) => b - a);
+        const angAktif = thns.length ? anggota.filter(a => parseInt(a.tahun, 10) === thns[0]) : anggota;
+        set("statAnggota", String(angAktif.length));
+        set("statAnggotaSub", thns.length ? "periode " + thns[0] : "belum ada data");
 
-        const terbuka = task.filter(t => (t.status || "todo") !== "done");
-        set("statTask", String(terbuka.length));
-        const telat = terbuka.filter(t => {
-            const s = Dashboard.selisihDeadline(t.deadline);
-            return s !== null && s < 0;
-        }).length;
-        set("statTaskSub", telat ? telat + " terlambat!" : "tidak ada yang telat");
+        const masuk = kas.filter(t => t.jenis === "masuk").reduce((a, t) => a + (parseInt(t.nominal, 10) || 0), 0);
+        const keluar = kas.filter(t => t.jenis === "keluar").reduce((a, t) => a + (parseInt(t.nominal, 10) || 0), 0);
+        set("statKas", Dashboard.rp(masuk - keluar));
+        set("statKasSub", kas.length ? kas.length + " transaksi" : "belum ada transaksi");
 
-        const terbaru = notulensi[0] || null;
-        set("statRapat", terbaru ? Dashboard.fmtTanggal(terbaru.tanggal) : "—");
-        set("statRapatSub", terbaru ? (terbaru.judul || "Tanpa judul") : "belum ada notulensi");
+        const nilaiTab = (r) => {
+            const n = parseInt(r.nominal, 10) || 0;
+            return r.jenis === "keluar" ? -n : n;
+        };
+        const totalTab = tabungan.reduce((a, r) => a + nilaiTab(r), 0);
+        const penabung = new Set(tabungan.map(r => String(r.nama || "").trim().toLowerCase()).filter(Boolean)).size;
+        set("statTabungan", Dashboard.rp(totalTab));
+        set("statTabunganSub", penabung ? penabung + " penabung" : "belum ada data");
     },
 
     // ============ AGENDA TERDEKAT ============
@@ -209,63 +219,59 @@ const Dashboard = {
         }).join("");
     },
 
-    // ============ TASK PERHATIAN ============
-    renderTask(task) {
-        const wrap = document.getElementById("taskPerhatian");
+    // ============ KEUANGAN TERAKHIR ============
+    renderKas(kas) {
+        const wrap = document.getElementById("kasTerakhir");
         if (!wrap) return;
-        const bobot = { urgent: 0, high: 1, medium: 2, low: 3 };
-        const rows = (task || [])
-            .filter(t => (t.status || "todo") !== "done")
-            .map(t => {
-                const s = Dashboard.selisihDeadline(t.deadline);
-                return { t, telat: s !== null && s < 0, sisa: s === null ? 9999 : s };
-            })
-            .sort((a, b) => {
-                if (a.telat !== b.telat) return a.telat ? -1 : 1;
-                if (a.sisa !== b.sisa) return a.sisa - b.sisa;
-                return (bobot[a.t.priority] ?? 2) - (bobot[b.t.priority] ?? 2);
-            })
-            .slice(0, 5);
+        const rows = [...(kas || [])]
+            .sort((a, b) => String(b.tanggal || "") < String(a.tanggal || "") ? -1 : 1)
+            .slice(0, 4);
         if (!rows.length) {
-            wrap.innerHTML = `<div class="dash-empty">Tidak ada task terbuka. Kerja bagus!</div>`;
+            wrap.innerHTML = `<div class="dash-empty">Belum ada transaksi.</div>`;
             return;
         }
-        const prioLbl = { urgent: "Urgent", high: "High", medium: "Medium", low: "Low" };
-        wrap.innerHTML = rows.map(({ t, telat, sisa }) => {
-            const prio = t.priority || "medium";
-            let dl = `<small><i class="fa-solid fa-calendar" style="color:var(--red); margin-right:3px"></i>${Dashboard.fmtTanggal(t.deadline)}</small>`;
-            if (telat) dl = `<small style="color:var(--red-dark); font-weight:900">⚠ Terlambat ${Math.abs(sisa)} hari</small>`;
-            else if (sisa === 0) dl = `<small style="font-weight:900">Deadline hari ini</small>`;
-            else if (sisa === 1) dl = `<small style="font-weight:900">Deadline besok</small>`;
+        wrap.innerHTML = rows.map(t => {
+            const keluar = t.jenis === "keluar";
             return `<div class="dash-item">
-                <div class="di"><i class="fa-solid fa-clipboard-check"></i></div>
-                <div class="db"><b>${escapeHtml(t.judul || "Tanpa judul")}</b>
-                    <small>${escapeHtml(t.pic || "-")}</small>${dl}</div>
-                <span class="prio ${prio}">${prioLbl[prio] || prio}</span>
+                <div class="di"><i class="fa-solid ${keluar ? "fa-arrow-trend-down" : "fa-arrow-trend-up"}"></i></div>
+                <div class="db"><b>${escapeHtml(t.keterangan || "Tanpa keterangan")}</b>
+                    <small>${Dashboard.fmtTanggal(t.tanggal)}${t.kategori ? " · " + escapeHtml(t.kategori) : ""}</small></div>
+                <span class="tag ${keluar ? "red" : "green"}">${keluar ? "−" : "+"}${Dashboard.rp(t.nominal)}</span>
             </div>`;
         }).join("");
     },
 
-    // ============ PROKER BERJALAN ============
-    renderProker(proker) {
-        const wrap = document.getElementById("prokerJalan");
+    // ============ ABSENSI TERAKHIR ============
+    labelAbsen(s) {
+        return s === "izin" ? "Izin" : s === "sakit" ? "Sakit" : s === "hadir" ? "Hadir" : "Alpha";
+    },
+
+    renderAbsensi(absensi) {
+        const wrap = document.getElementById("absensiTerakhir");
         if (!wrap) return;
-        const rows = (proker || []).filter(p => p.status === "berjalan").slice(0, 4);
-        if (!rows.length) {
-            wrap.innerHTML = `<div class="dash-empty">Tidak ada proker yang sedang berjalan.</div>`;
+        const semua = absensi || [];
+        if (!semua.length) {
+            wrap.innerHTML = `<div class="dash-empty">Belum ada data absensi.</div>`;
             return;
         }
-        wrap.innerHTML = rows.map(p => {
-            const prog = Math.max(0, Math.min(100, parseInt(p.progress, 10) || 0));
-            return `<div class="dash-item" style="display:block">
-                <div style="display:flex; align-items:center; gap:8px">
-                    <div class="db" style="flex:1"><b>${escapeHtml(p.nama || "Tanpa nama")}</b>
-                        <small>${escapeHtml(p.divisi || "-")}</small></div>
-                    <span class="tag red">${prog}%</span>
-                </div>
-                <div class="dash-bar"><span style="width:${prog}%"></span></div>
-            </div>`;
-        }).join("");
+        const tTerakhir = semua.map(r => String(r.tanggal || "")).filter(Boolean).sort().reverse()[0];
+        const hari = semua.filter(r => String(r.tanggal) === String(tTerakhir));
+        const takHadir = hari.filter(r => r.status !== "hadir")
+            .sort((a, b) => String(a.nama || "").localeCompare(String(b.nama || "")));
+        const nHadir = hari.length - takHadir.length;
+        const sub = `${takHadir.length} tidak hadir${nHadir ? ` · ${nHadir} hadir` : ""} · ${Dashboard.fmtTanggal(tTerakhir)}`;
+        if (!takHadir.length) {
+            wrap.innerHTML = `<div class="dash-empty">✅ ${escapeHtml(sub)} — semua hadir!</div>`;
+            return;
+        }
+        wrap.innerHTML = `<div class="dash-empty" style="padding-bottom:2px">${escapeHtml(sub)}</div>` + takHadir.slice(0, 4).map(r => `
+            <div class="dash-item">
+                <div class="di"><i class="fa-solid fa-user-xmark"></i></div>
+                <div class="db"><b>${escapeHtml(r.nama || "-")}</b>
+                    <small>${escapeHtml(r.kegiatan || "-")}</small></div>
+                <span class="tag ${r.status === "alpha" ? "red" : r.status === "sakit" ? "green" : "yellow"}">${Dashboard.labelAbsen(r.status)}</span>
+            </div>`).join("")
+            + (takHadir.length > 4 ? `<div class="dash-empty">+${takHadir.length - 4} lainnya…</div>` : "");
     },
 
     // ============ DOKUMEN TERBARU ============
@@ -291,28 +297,27 @@ const Dashboard = {
     },
 
     // ============ AKTIVITAS ============
-    renderAktivitas(agenda, proker, task, dokumen, notulensi) {
+    renderAktivitas(agenda, kas, tabungan, absensi, dokumen) {
         const wrap = document.getElementById("aktivitasList");
         if (!wrap) return;
         const ev = [];
+        const kapan = (r) => r.created_at || r.updated_at || r.tanggal || null;
         (agenda || []).forEach(a => {
             if (a.created_at) ev.push({ t: a.created_at, html: `<b>Agenda baru:</b> ${escapeHtml(a.judul || "Tanpa judul")}` });
-        });
-        (task || []).forEach(t => {
-            if ((t.status || "") === "done" && t.updated_at) {
-                ev.push({ t: t.updated_at, html: `<b>Task selesai:</b> ${escapeHtml(t.judul || "Tanpa judul")}` });
-            } else if (t.created_at) {
-                ev.push({ t: t.created_at, html: `<b>Task baru:</b> ${escapeHtml(t.judul || "Tanpa judul")}` });
-            }
         });
         (dokumen || []).forEach(d => {
             if (d.created_at) ev.push({ t: d.created_at, html: `<b>Dokumen diupload:</b> ${escapeHtml(d.nama || "Tanpa nama")}` });
         });
-        (notulensi || []).forEach(n => {
-            if (n.created_at) ev.push({ t: n.created_at, html: `<b>Notulensi dibuat:</b> ${escapeHtml(n.judul || "Tanpa judul")}` });
+        (kas || []).forEach(t => {
+            const k = kapan(t);
+            if (k) ev.push({ t: k, html: `<b>Kas ${t.jenis === "keluar" ? "keluar" : "masuk"}:</b> ${escapeHtml(t.keterangan || "Tanpa keterangan")} (${(t.jenis === "keluar" ? "−" : "+")}${Dashboard.rp(t.nominal)})` });
         });
-        (proker || []).forEach(p => {
-            if (p.created_at) ev.push({ t: p.created_at, html: `<b>Proker baru:</b> ${escapeHtml(p.nama || "Tanpa nama")}` });
+        (tabungan || []).forEach(r => {
+            const k = kapan(r);
+            if (k) ev.push({ t: k, html: `<b>Tabungan ${r.jenis === "keluar" ? "diambil" : ""}:</b> ${escapeHtml(r.nama || "-")} (${r.jenis === "keluar" ? "−" : "+"}${Dashboard.rp(r.nominal)})` });
+        });
+        (absensi || []).forEach(r => {
+            if (r.tanggal && r.status !== "hadir") ev.push({ t: r.tanggal, html: `<b>Absensi:</b> ${escapeHtml(r.nama || "-")} (${Dashboard.labelAbsen(r.status)})` });
         });
         ev.sort((a, b) => new Date(b.t) - new Date(a.t));
         const rows = ev.slice(0, 8);

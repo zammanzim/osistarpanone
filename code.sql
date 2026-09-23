@@ -1100,6 +1100,8 @@ CREATE TABLE IF NOT EXISTS public.osis_users (
 ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS foto text NOT NULL DEFAULT '';
 ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS bio text NOT NULL DEFAULT '';
 ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS angkatan text NOT NULL DEFAULT '';
+    -- LEGACY, tidak dipakai lagi: sekbid diturunkan otomatis dari jabatan
+    -- via osis_sekbid_dari_jabatan. Kolom dibiarkan agar data lama tidak rusak.
     -- Sekbid pemilik user (khusus aturan agenda: cuma bisa kelola agenda sekbid sendiri).
     -- NULL = belum ditetapkan = tidak bisa kelola agenda. Diisi via halaman akses / SQL.
     ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS sekbid_id bigint REFERENCES public.sekbid(id) ON DELETE SET NULL;
@@ -1167,15 +1169,32 @@ ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS angkatan text NOT NULL DE
         RETURN false;
     END $$;
 
+-- Sekbid dari teks jabatan: cari nama sekbid yang muncul sebagai kata utuh
+-- di dalam jabatan (cth: "Ketua Sekbid Humas" -> sekbid "Humas").
+-- Normalisasi huruf kecil + non-alfanumerik jadi spasi, lalu cocok penuh
+-- kata (biar sekbid "IT" tidak nyangkut di kata "panitia").
+-- Nama lebih panjang diprioritaskan ("Humas Inti" menang atas "Humas").
+-- NULL = jabatan tidak cocok sekbid manapun (fail closed).
+CREATE OR REPLACE FUNCTION public.osis_sekbid_dari_jabatan(p_jabatan text)
+RETURNS bigint LANGUAGE sql STABLE AS $$
+    SELECT s.id FROM public.sekbid s
+    WHERE (' ' || regexp_replace(lower(COALESCE(p_jabatan, '')), '[^a-z0-9]+', ' ', 'g') || ' ')
+        LIKE '% ' || regexp_replace(lower(s.nama), '[^a-z0-9]+', ' ', 'g') || ' %'
+      AND NULLIF(btrim(regexp_replace(lower(s.nama), '[^a-z0-9]+', ' ', 'g')), '') IS NOT NULL
+    ORDER BY length(s.nama) DESC, s.id
+    LIMIT 1;
+$$;
+
 -- Aturan agenda: semua orang OSIS boleh isi, TAPI hanya sekbid miliknya
--- (osis_users.sekbid_id). Pengendali global (super/mapping eksplisit) bebas
--- semua sekbid. Tanpa sekbid_id = tidak bisa apa-apa (fail closed).
+-- (diturunkan OTOMATIS dari teks jabatan via osis_sekbid_dari_jabatan).
+-- Pengendali global (super/mapping eksplisit) bebas semua sekbid.
+-- Jabatan tidak cocok sekbid manapun = tidak bisa apa-apa (fail closed).
 CREATE OR REPLACE FUNCTION public.osis_bisa_agenda(p_user_id bigint, p_sekbid_id bigint)
 RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
 DECLARE v_sekbid bigint;
 BEGIN
     IF public.osis_bisa(p_user_id, 'agenda') THEN RETURN true; END IF;
-    SELECT sekbid_id INTO v_sekbid
+    SELECT public.osis_sekbid_dari_jabatan(jabatan) INTO v_sekbid
     FROM public.osis_users WHERE id = p_user_id;
     IF NOT FOUND THEN RETURN false; END IF;
     IF v_sekbid IS NULL OR p_sekbid_id IS NULL THEN RETURN false; END IF;
@@ -1188,11 +1207,13 @@ END $$;
     DECLARE v_username text; v_jabatan text; v_sekbid bigint; v_super boolean;
         v_hal text[]; v_jab text[];
     BEGIN
-        SELECT username, jabatan, sekbid_id INTO v_username, v_jabatan, v_sekbid
+        SELECT username, jabatan INTO v_username, v_jabatan
         FROM public.osis_users WHERE id = p_user_id;
         IF NOT FOUND THEN
             RETURN jsonb_build_object('halaman', '[]'::jsonb, 'sekbid_id', NULL, 'sekbid_nama', NULL, 'super', false);
         END IF;
+        -- Sekbid diturunkan otomatis dari jabatan (kolom manual tidak dipakai).
+        v_sekbid := public.osis_sekbid_dari_jabatan(v_jabatan);
         v_super := lower(v_username) IN ('mizammm', 'bintangsandirofiansyah');
         SELECT COALESCE(array_agg(DISTINCT halaman), '{}') INTO v_hal
         FROM public.osis_akses WHERE user_id = p_user_id;
@@ -1208,7 +1229,9 @@ END $$;
         );
     END $$;
 
-    -- Bagi/cabut akses (HANYA super). Ganti total mapping target + opsional sekbid.
+    -- Bagi/cabut akses (HANYA super). Ganti total mapping target.
+    -- Param sekbid (p_sekbid_id/p_ubah_sekbid) LEGACY tidak dipakai lagi
+    -- (sekbid otomatis dari jabatan); dipertahankan biar tanda tangan tetap cocok.
     CREATE OR REPLACE FUNCTION public.set_akses(
         p_admin bigint, p_target bigint, p_halaman text[],
         p_sekbid_id bigint DEFAULT NULL, p_ubah_sekbid boolean DEFAULT false
@@ -1237,12 +1260,14 @@ END $$;
     END $$;
 
     REVOKE EXECUTE ON FUNCTION public.osis_norm_jabatan(text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.osis_sekbid_dari_jabatan(text) FROM public;
     REVOKE EXECUTE ON FUNCTION public.osis_hak_jabatan(text, text) FROM public;
     REVOKE EXECUTE ON FUNCTION public.osis_bisa(bigint, text) FROM public;
     REVOKE EXECUTE ON FUNCTION public.osis_bisa_agenda(bigint, bigint) FROM public;
     REVOKE EXECUTE ON FUNCTION public.akses_saya(bigint) FROM public;
     REVOKE EXECUTE ON FUNCTION public.set_akses(bigint, bigint, text[], bigint, boolean) FROM public;
     GRANT EXECUTE ON FUNCTION public.osis_norm_jabatan(text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.osis_sekbid_dari_jabatan(text) TO anon;
     GRANT EXECUTE ON FUNCTION public.osis_hak_jabatan(text, text) TO anon;
     GRANT EXECUTE ON FUNCTION public.osis_bisa(bigint, text) TO anon;
     GRANT EXECUTE ON FUNCTION public.osis_bisa_agenda(bigint, bigint) TO anon;
@@ -1259,8 +1284,9 @@ END $$;
             RETURN jsonb_build_object('error', 'ERR_NO_AUTH');
         END IF;
         RETURN (SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb) FROM (
-            SELECT u.id, u.username, u.nama, u.jabatan, u.sekbid_id, u.angkatan,
-                (SELECT s.nama FROM public.sekbid s WHERE s.id = u.sekbid_id) AS sekbid_nama,
+            SELECT u.id, u.username, u.nama, u.jabatan, u.angkatan,
+                public.osis_sekbid_dari_jabatan(u.jabatan) AS sekbid_id,
+                (SELECT s.nama FROM public.sekbid s WHERE s.id = public.osis_sekbid_dari_jabatan(u.jabatan)) AS sekbid_nama,
                 COALESCE((SELECT jsonb_agg(a.halaman ORDER BY a.halaman)
                         FROM public.osis_akses a WHERE a.user_id = u.id), '[]'::jsonb) AS halaman
             FROM public.osis_users u ORDER BY u.nama
@@ -1889,7 +1915,7 @@ RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
 DECLARE v_sekbid bigint;
 BEGIN
     IF public.osis_bisa(p_user_id, 'program') THEN RETURN true; END IF;
-    SELECT sekbid_id INTO v_sekbid
+    SELECT public.osis_sekbid_dari_jabatan(jabatan) INTO v_sekbid
     FROM public.osis_users WHERE id = p_user_id;
     IF NOT FOUND THEN RETURN false; END IF;
     IF v_sekbid IS NULL OR p_sekbid_id IS NULL THEN RETURN false; END IF;

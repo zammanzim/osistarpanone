@@ -925,7 +925,7 @@
   Outbox.handlers.akses = async function (op) {
     var uid = Outbox.butuhLogin(op);
     var p = op.payload || {};
-    await setAkses(uid, p.targetId, p.halaman || [], p.sekbidId ?? null, true);
+    await setAkses(uid, p.targetId, p.halaman || [], null, false);
   };
   Outbox.handlers.profil = async function (op) {
     var uid = Outbox.butuhLogin(op);

@@ -450,7 +450,7 @@
     <script src="../js/osis-auth.js?v=10" defer></script>
     <script src="../js/osis-sidebar.js?v=13" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/dashboard.js?v=10" defer></script>
+    <script src="../js/dashboard.js?v=11" defer></script>
     <script src="../js/pwa.js?v=10" defer></script>
   </head>
   <body>
@@ -500,6 +500,10 @@
       <div class="dash-panel">
         <h3><i class="fa-solid fa-grip"></i> Menu Halaman</h3>
         <div class="menu-grid">
+          <a class="menu-card" href="anggota">
+            <span class="mi"><i class="fa-solid fa-users"></i></span>
+            <span><b>Anggota</b><small>Pengurus &amp; sekbid</small></span>
+          </a>
           <a class="menu-card" href="absensi">
             <span class="mi"><i class="fa-solid fa-clipboard-user"></i></span>
             <span><b>Absensi</b><small>Kehadiran pengurus</small></span>
@@ -515,6 +519,14 @@
           <a class="menu-card" href="agenda">
             <span class="mi"><i class="fa-solid fa-calendar-days"></i></span>
             <span><b>Agenda</b><small>Per sekbid &amp; orang</small></span>
+          </a>
+          <a class="menu-card" href="dokumen">
+            <span class="mi"><i class="fa-solid fa-folder-open"></i></span>
+            <span><b>Dokumen</b><small>Arsip &amp; file</small></span>
+          </a>
+          <a class="menu-card" href="poster">
+            <span class="mi"><i class="fa-solid fa-newspaper"></i></span>
+            <span><b>Poster</b><small>Galeri poster</small></span>
           </a>
           <a class="menu-card" href="program-tahunan">
             <span class="mi"><i class="fa-solid fa-calendar"></i></span>
@@ -538,23 +550,23 @@
           ><b id="statAgenda">-</b
           ><small id="statAgendaSub">memuat...</small></a
         >
-        <div class="dash-stat"
+        <a href="anggota" class="dash-stat"
           ><span class="lbl"
-            ><i class="fa-solid fa-list-check"></i> Proker Aktif</span
-          ><b id="statProker">-</b
-          ><small id="statProkerSub">memuat...</small></div
+            ><i class="fa-solid fa-users"></i> Anggota</span
+          ><b id="statAnggota">-</b
+          ><small id="statAnggotaSub">memuat...</small></a
         >
-        <div class="dash-stat"
+        <a href="keuangan" class="dash-stat"
           ><span class="lbl"
-            ><i class="fa-solid fa-clipboard-check"></i> Task Belum
-            Selesai</span
-          ><b id="statTask">-</b><small id="statTaskSub">memuat...</small></div
+            ><i class="fa-solid fa-wallet"></i> Saldo Kas</span
+          ><b id="statKas" style="font-size: 1.2rem">-</b
+          ><small id="statKasSub">memuat...</small></a
         >
-        <div class="dash-stat"
+        <a href="tabungan" class="dash-stat"
           ><span class="lbl"
-            ><i class="fa-solid fa-clipboard-list"></i> Rapat Terbaru</span
-          ><b id="statRapat" style="font-size: 1.05rem">-</b
-          ><small id="statRapatSub">memuat...</small></div
+            ><i class="fa-solid fa-piggy-bank"></i> Total Tabungan</span
+          ><b id="statTabungan" style="font-size: 1.2rem">-</b
+          ><small id="statTabunganSub">memuat...</small></a
         >
       </div>
 
@@ -570,10 +582,11 @@
         </div>
         <div class="dash-panel">
           <h3>
-            <i class="fa-solid fa-triangle-exclamation"></i> Butuh Perhatian
+            <i class="fa-solid fa-wallet"></i> Keuangan Terakhir
+            <a class="go" href="keuangan">Lihat semua →</a>
           </h3>
-          <div id="taskPerhatian">
-            <div class="dash-empty">Memuat task...</div>
+          <div id="kasTerakhir">
+            <div class="dash-empty">Memuat keuangan...</div>
           </div>
         </div>
       </div>
@@ -581,15 +594,17 @@
       <div class="dash-cols">
         <div class="dash-panel">
           <h3>
-            <i class="fa-solid fa-list-check"></i> Proker Berjalan
+            <i class="fa-solid fa-clipboard-user"></i> Absensi Terakhir
+            <a class="go" href="absensi">Lihat semua →</a>
           </h3>
-          <div id="prokerJalan">
-            <div class="dash-empty">Memuat proker...</div>
+          <div id="absensiTerakhir">
+            <div class="dash-empty">Memuat absensi...</div>
           </div>
         </div>
         <div class="dash-panel">
           <h3>
             <i class="fa-solid fa-folder-open"></i> Dokumen Terbaru
+            <a class="go" href="dokumen">Lihat semua →</a>
           </h3>
           <div id="dokBaru">
             <div class="dash-empty">Memuat dokumen...</div>

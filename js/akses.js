@@ -29,7 +29,6 @@ const Akses = {
         ["site", "Site/Edit"],
     ],
     rows: [],
-    sekbidList: [],
     filterQ: "",
     detailId: null,
 
@@ -63,8 +62,17 @@ const Akses = {
             });
         }
         document.addEventListener("keydown", (e) => {
-            if (e.key !== "Escape") return;
-            if (document.getElementById("aksDetail")?.classList.contains("open")) Akses.tutupDetail();
+            if (document.getElementById("aksDetail")?.classList.contains("open")) {
+                // Panah kiri/kanan = pindah orang (di-skip saat mengetik)
+                if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                    const tag = (document.activeElement && document.activeElement.tagName) || "";
+                    if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
+                    e.preventDefault();
+                    Akses.geserDetail(e.key === "ArrowRight" ? 1 : -1);
+                    return;
+                }
+                if (e.key === "Escape") Akses.tutupDetail();
+            }
         });
         await Akses.muat();
     },
@@ -74,17 +82,22 @@ const Akses = {
         if (wrap) wrap.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat data akses...</div>`;
         try {
             const u = OsisAuth.getUser();
-            const [rows, sekbid] = await Promise.all([
-                aksesMatriks(u.id),
-                getSekbid().catch(() => []),
-            ]);
+            const rows = await aksesMatriks(u.id);
             Akses.rows = rows || [];
-            Akses.sekbidList = sekbid || [];
             Akses.render();
         } catch (err) {
             console.error(err);
             if (wrap) wrap.innerHTML = `<div class="pesan-empty">Gagal memuat: ${escapeHtml(err.message)}</div>`;
         }
+    },
+
+    // Baris yang tampil (sesuai pencarian) — dipakai daftar + navigasi popup.
+    daftarTampil() {
+        const q = (Akses.filterQ || "").trim().toLowerCase();
+        return Akses.rows.filter(r => !q ||
+            String(r.nama || "").toLowerCase().includes(q) ||
+            String(r.username || "").toLowerCase().includes(q) ||
+            String(r.jabatan || "").toLowerCase().includes(q));
     },
 
     // Daftar nama ringkas, dikelompokkan per angkatan — ketuk satu nama
@@ -105,11 +118,7 @@ const Akses = {
             wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-users"></i> Belum ada user OSIS.</div>`;
             return;
         }
-        const q = (Akses.filterQ || "").trim().toLowerCase();
-        const rows = Akses.rows.filter(r => !q ||
-            String(r.nama || "").toLowerCase().includes(q) ||
-            String(r.username || "").toLowerCase().includes(q) ||
-            String(r.jabatan || "").toLowerCase().includes(q));
+        const rows = Akses.daftarTampil();
         if (!rows.length) {
             wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada nama yang cocok.</div>`;
             return;
@@ -162,30 +171,53 @@ const Akses = {
         Akses.detailId = id;
         document.getElementById("aksDetailTitle").textContent = "Akses — " + (r.nama || r.username || "-");
         const punya = new Set(r.halaman || []);
-        const sekbidOpts = `<option value="">—</option>` + Akses.sekbidList.map((s) =>
-            `<option value="${s.id}" ${String(s.id) === String(r.sekbid_id) ? "selected" : ""}>${escapeHtml(s.nama)}</option>`
-        ).join("");
         const checks = (daftar) => daftar.map(([k, lbl]) => `
             <label class="aks-check${punya.has(k) ? " on" : ""}">
                 <input type="checkbox" data-aks-user="${r.id}" data-aks-hal="${k}" ${punya.has(k) ? "checked" : ""}>
                 ${lbl}
             </label>`).join("");
+        // Sekbid tampil saja (otomatis dari jabatan) — tidak diatur manual.
+        const sekbidInfo = r.sekbid_nama
+            ? `<div class="aks-sub" style="margin-top:8px"><i class="fa-solid fa-folder-open"></i> Sekbid (otomatis dari jabatan): <b>${escapeHtml(r.sekbid_nama)}</b></div>`
+            : `<div class="aks-sub" style="margin-top:8px"><i class="fa-solid fa-triangle-exclamation"></i> Jabatan tidak cocok sekbid manapun — agenda & program terkunci.</div>`;
         document.getElementById("aksDetailBody").innerHTML = `
             <div class="aks-sub">@${escapeHtml(r.username || "-")} · ${escapeHtml(r.jabatan || "-")}${Akses.kunciAngkatan(r) ? ` · ${escapeHtml(Akses.labelAngkatan(Akses.kunciAngkatan(r)))}` : ""}${r.sekbid_nama ? ` · Sekbid ${escapeHtml(r.sekbid_nama)}` : ""} · ${punya.size} halaman dicentang</div>
-            <div class="field" style="margin-top:8px">
-                <label>Sekbid pemilik (khusus aturan agenda)</label>
-                <select class="admin-input" data-aks-sekbid="${r.id}">${sekbidOpts}</select>
-            </div>
+            ${sekbidInfo}
             <div class="aks-sub" style="margin-top:10px">Halaman OSIS (/osis)</div>
             <div class="aks-grid">${checks(Akses.HALAMAN_OSIS)}</div>
             <div class="aks-sub" style="margin-top:10px">Bagian beranda (mode edit)</div>
             <div class="aks-grid">${checks(Akses.HALAMAN_WEB)}</div>
-            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px">
-                <button class="btn btn-white btn-sm" onclick="Akses.tutupDetail()">Batal</button>
-                <button class="btn btn-red btn-sm" onclick="Akses.simpan(${r.id})"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
-            </div>`;
+            ${Akses.footerDetail(r.id)}
+            `;
         document.getElementById("aksDetail").classList.add("open");
         document.body.style.overflow = "hidden";
+    },
+
+    // Footer popup: panah pindah orang + posisi + Batal/Simpan.
+    footerDetail(id) {
+        const daftar = Akses.daftarTampil();
+        const idx = daftar.findIndex(x => String(x.id) === String(id));
+        const nav = daftar.length > 1 ? `
+            <button type="button" class="btn btn-white btn-sm" onclick="Akses.geserDetail(-1)" title="Orang sebelumnya (←)"><i class="fa-solid fa-chevron-left"></i></button>
+            <button type="button" class="btn btn-white btn-sm" onclick="Akses.geserDetail(1)" title="Orang berikutnya (→)"><i class="fa-solid fa-chevron-right"></i></button>
+            <span class="aks-sub" style="margin:0">${idx >= 0 ? idx + 1 : "?"} / ${daftar.length}</span>` : "";
+        return `<div style="display:flex; align-items:center; gap:8px; margin-top:12px; flex-wrap:wrap">
+            ${nav}
+            <span style="margin-left:auto; display:flex; gap:8px">
+                <button type="button" class="btn btn-white btn-sm" onclick="Akses.tutupDetail()">Batal</button>
+                <button type="button" class="btn btn-red btn-sm" onclick="Akses.simpan(${id})"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+            </span>
+        </div>`;
+    },
+
+    // Pindah popup ke orang sebelum/berikutnya dalam daftar tampil.
+    // Belum disimpan = hilang (seperti tutup popup biasa).
+    geserDetail(arah) {
+        const daftar = Akses.daftarTampil();
+        if (daftar.length < 2) return;
+        const i = daftar.findIndex(x => String(x.id) === String(Akses.detailId));
+        const target = daftar[((i < 0 ? 0 : i) + arah + daftar.length) % daftar.length];
+        if (target) Akses.detail(target.id);
     },
 
     tutupDetail() {
@@ -199,11 +231,10 @@ const Akses = {
         if (!u || u.mode !== "osis") return;
         const halaman = [...document.querySelectorAll(`input[data-aks-user="${targetId}"]:checked`)]
             .map((el) => el.dataset.aksHal);
-        const sekbidEl = document.querySelector(`select[data-aks-sekbid="${targetId}"]`);
-        const sekbidVal = sekbidEl && sekbidEl.value ? parseInt(sekbidEl.value, 10) : null;
+        // Sekbid otomatis dari jabatan — tidak dikirim manual lagi.
         const __specAks = () => ({ modul: "akses", op: "update",
             label: "Akses user #" + targetId,
-            payload: { targetId, halaman, sekbidId: sekbidVal }, files: [], cacheKeys: [] });
+            payload: { targetId, halaman, sekbidId: null }, files: [], cacheKeys: [] });
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
             try { await Outbox.enqueue(__specAks()); } catch (e) { showToast(e.message, "error"); return; }
             Outbox.sesudahAntre();
@@ -213,7 +244,7 @@ const Akses = {
         const btn = document.querySelector(`#aksDetailBody .btn-red`);
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         try {
-            await setAkses(u.id, targetId, halaman, sekbidVal, true);
+            await setAkses(u.id, targetId, halaman, null, false);
             showToast("Akses diperbarui.", "success");
             Akses.tutupDetail();
             await Akses.muat();

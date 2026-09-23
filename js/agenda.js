@@ -132,7 +132,7 @@ const AgendaAdmin = {
         return String(a.sekbid_id) === String(sekbidId);
     },
 
-    // Sekbid milik user yang login (null = belum diset / global).
+    // Sekbid milik user yang login (null = jabatan tak cocok sekbid / global).
     sekbidSaya() {
         const a = (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) ? OsisAuth.getAkses() : null;
         if (!a || !a.sekbid_id) return null;
@@ -470,7 +470,7 @@ const AgendaAdmin = {
             ? (document.getElementById("agendaSekbid")?.value || null)
             : AgendaAdmin.sekbidSaya();
         if (!AgendaAdmin.bisaKendali(sidAwal)) {
-            if (typeof showToast === "function") showToast("Akunmu belum diset sekbid — hubungi admin.", "error");
+            if (typeof showToast === "function") showToast("Jabatanmu tidak cocok sekbid manapun — hubungi admin.", "error");
             return;
         }
         document.getElementById("agendaJudul").value = "";
@@ -646,7 +646,7 @@ const AgendaAdmin = {
         const order = (itemEdit && parseInt(itemEdit.display_order, 10)) || 99;
 
         if (!judul) { showToast("Judul wajib diisi", "error"); return; }
-        if (!sekbidId) { showToast("Akunmu belum diset sekbid — hubungi admin.", "error"); return; }
+        if (!sekbidId) { showToast("Jabatanmu tidak cocok sekbid manapun — hubungi admin.", "error"); return; }
         if (!AgendaAdmin.bisaKendali(sekbidId)) {
             showToast("Kamu tidak punya kendali atas sekbid ini.", "error");
             return;

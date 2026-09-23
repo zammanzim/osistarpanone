@@ -2097,7 +2097,8 @@ async function aksesSaya(userId) {
   return data || { halaman: [], sekbid_id: null, sekbid_nama: null, super: false };
 }
 
-// Bagi/cabut akses (hanya super_admin). p_ubah_sekbid=true untuk set sekbid user.
+// Bagi/cabut akses (hanya super_admin). Param sekbid LEGACY (sekbid otomatis
+// dari jabatan) — selalu kirim null/false, dipertahankan biar cocok RPC.
 async function setAkses(adminId, targetId, halaman, sekbidId = null, ubahSekbid = false) {
   const { data, error } = await supa.rpc("set_akses", {
     p_admin: adminId, p_target: targetId, p_halaman: halaman || [],

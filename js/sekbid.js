@@ -19,11 +19,6 @@ const Sekbid = {
       let html = "";
       html += Sekbid.renderGrup("Badan Pengurus Harian", listBPH, "BPH");
       html += Sekbid.renderGrup("Seksi Bidang", listSekbid, "SEKBID");
-      html += Sekbid.renderGrup("Anggota", [{
-        nama: "Pengurus OSIS",
-        deskripsi: "Keluarga besar Pengurus OSIS Tarpan One — seluruh anggota dari setiap seksi bidang yang bergerak bersama menyukseskan setiap program dan kegiatan sekolah.",
-        foto: "sekbid/pengurus-osis.webp",
-      }], "ANGGOTA");
       container.innerHTML = html;
     };
 
@@ -51,7 +46,7 @@ const Sekbid = {
     }
   },
 
-  // Fallback lokal kalau kolom foto di DB kosong (cth. kartu sintetis "Pengurus OSIS").
+  // Fallback lokal kalau kolom foto di DB kosong.
   // Foto utama Sekbid sudah di-upload ke storage (folder sekbid/) dan dibaca dari DB.
   // (File "INFORMASI DAN TEKNOLOGI Copy" isinya foto Kewirausahaan.)
   fotoLatar(item) {
