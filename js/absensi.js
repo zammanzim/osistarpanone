@@ -8,7 +8,7 @@
 
 const Absensi = {
     cache: [],
-    filter: { q: "", status: "", tanggal: "" },
+    filter: { q: "", status: "", tanggal: "", tab: "tidak" },
     editTanggal: null,
     // State modal Absen Langsung (tandai hadir cepat dari tabel anggota)
     langsung: { anggota: [], tahun: null, q: "", activeIdx: 0, saving: false },
@@ -26,6 +26,8 @@ const Absensi = {
         Absensi.terapkanAkses();
 
         document.getElementById("btnTambahAbsensi")?.addEventListener("click", () => Absensi.bukaForm());
+        document.getElementById("btnTabTidak")?.addEventListener("click", () => Absensi.setTab("tidak"));
+        document.getElementById("btnTabHadir")?.addEventListener("click", () => Absensi.setTab("hadir"));
         document.getElementById("btnResetFilter")?.addEventListener("click", () => Absensi.resetFilter());
         ["filterQ", "filterStatus", "filterTanggal"].forEach(id => {
             document.getElementById(id)?.addEventListener("input", () => Absensi.bacaFilter());
@@ -62,6 +64,10 @@ const Absensi = {
         document.getElementById("langsungBelum")?.addEventListener("click", (e) => {
             const b = e.target.closest("[data-hadir]");
             if (b) Absensi.tandaiHadir(decodeURIComponent(b.dataset.hadir || ""));
+        });
+        document.getElementById("langsungSudah")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-batal-hadir]");
+            if (b) Absensi.batalHadir(decodeURIComponent(b.dataset.batalHadir || ""));
         });
         ["absensiForm", "absenLangsung"].forEach(id => {
             document.getElementById(id)?.addEventListener("click", (e) => {
@@ -159,18 +165,53 @@ const Absensi = {
     dataTampil() {
         const f = Absensi.filter;
         const q = f.q.trim().toLowerCase();
+        const isHadir = f.tab === "hadir";
         return (Absensi.cache || []).filter(r => {
-            // Baris 'hadir' (Absen Langsung) tidak tampil di riwayat ketidakhadiran
-            if (r.status === "hadir") return false;
-            if (f.status && r.status !== f.status) return false;
+            if (isHadir) {
+                // Tab Hadir: kebalikan tab Tidak Hadir — cuma baris 'hadir'
+                if (r.status !== "hadir") return false;
+            } else {
+                // Baris 'hadir' (Absen Langsung) tidak tampil di riwayat ketidakhadiran
+                if (r.status === "hadir") return false;
+                if (f.status && r.status !== f.status) return false;
+            }
             if (f.tanggal && String(r.tanggal) !== String(f.tanggal)) return false;
             if (q && !(String(r.nama || "").toLowerCase().includes(q) || String(r.kegiatan || "").toLowerCase().includes(q))) return false;
             return true;
         });
     },
 
+    // Pindah tab Hadir / Tidak Hadir. Filter status cuma berlaku di tab
+    // Tidak Hadir — di-reset tiap pindah biar tidak bingung.
+    setTab(t) {
+        Absensi.filter.tab = (t === "hadir") ? "hadir" : "tidak";
+        const isHadir = Absensi.filter.tab === "hadir";
+        Absensi.filter.status = "";
+        const st = document.getElementById("filterStatus");
+        if (st) {
+            st.value = "";
+            const f = st.closest(".field");
+            if (f) f.style.display = isHadir ? "none" : "";
+        }
+        const bT = document.getElementById("btnTabTidak");
+        const bH = document.getElementById("btnTabHadir");
+        if (bT) bT.className = isHadir ? "" : "on-tidak";
+        if (bH) bH.className = isHadir ? "on-hadir" : "";
+        Absensi.render();
+        // Tab Hadir butuh roster anggota buat hitung otomatis — muat duluan
+        if (isHadir) Absensi.muatRosterHadir();
+    },
+
     // ============ RENDER ============
     render() {
+        if (Absensi.filter.tab === "hadir") { Absensi.renderHadir(); return; }
+        // Kembalikan stat tab Tidak Hadir (diubah/disembunyikan tab Hadir)
+        ["statIzin", "statSakit", "statAlpha"].forEach(id => {
+            const card = document.getElementById(id)?.closest(".stat-card");
+            if (card) card.style.display = "";
+        });
+        const totalLbl0 = document.getElementById("statTotal")?.closest(".stat-card")?.querySelector(".lbl");
+        if (totalLbl0) totalLbl0.innerHTML = `<i class="fa-solid fa-users-slash"></i> Total Tidak Hadir`;
         const data = Absensi.dataTampil();
         // Angka + suffix (suffix disembunyikan di mobile via CSS .stat-suffix)
         const setStat = (id, count, suffix) => {
@@ -237,6 +278,114 @@ const Absensi = {
             const hari = perBulan[ym];
             const total = hari.reduce((a, t) => a + grup[t].length, 0);
             return `<div class="bulan-sep"><i class="fa-solid fa-calendar"></i> ${escapeHtml(Absensi.fmtBulan(ym))}<span class="cnt">${total} tidak hadir</span></div>`
+                + hari.map(kartuHari).join("");
+        }).join("");
+    },
+
+    // ============ TAB HADIR (kebalikan otomatis dari tidak hadir) ============
+    // Per tanggal: baris 'hadir' tersimpan (Absen Langsung) diutamakan.
+    // Kalau tidak ada, hadir = roster anggota − nama yang tercatat.
+    hadirTanggal(t) {
+        const hari = (Absensi.cache || []).filter(r => String(r.tanggal) === String(t));
+        const tersimpan = hari.filter(r => r.status === "hadir")
+            .map(r => String(r.nama || "").trim()).filter(Boolean)
+            .sort((a, b) => a.localeCompare(b));
+        if (tersimpan.length) return { daftar: tersimpan, otomatis: false };
+        const roster = Absensi.langsung.anggota || [];
+        const catat = new Set(hari.map(r => Absensi.norm(r.nama)));
+        return { daftar: roster.filter(n => !catat.has(Absensi.norm(n))), otomatis: true };
+    },
+
+    // Roster anggota (periode terbaru) buat hitung hadir otomatis.
+    // Cache-first; render ulang tab Hadir tiap ada data baru.
+    async muatRosterHadir() {
+        try {
+            const cached = (typeof Cache !== "undefined") ? Cache.get("anggota") : null;
+            if (cached && cached.length) {
+                const sebelum = JSON.stringify(Absensi.langsung.anggota || []);
+                Absensi.pakaiAnggota(cached);
+                if (JSON.stringify(Absensi.langsung.anggota || []) !== sebelum && Absensi.filter.tab === "hadir") Absensi.render();
+                getAnggota().then(fresh => {
+                    if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
+                        Cache.set("anggota", fresh);
+                        Absensi.pakaiAnggota(fresh);
+                        if (Absensi.filter.tab === "hadir") Absensi.render();
+                    }
+                }).catch(() => {});
+                return;
+            }
+            const fresh = await getAnggota();
+            if (typeof Cache !== "undefined") Cache.set("anggota", fresh);
+            Absensi.pakaiAnggota(fresh);
+            if (Absensi.filter.tab === "hadir") Absensi.render();
+        } catch (err) { console.error(err); }
+    },
+
+    renderHadir() {
+        const setStat = (id, count, suffix) => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = String(count) + `<span class="stat-suffix"> ${suffix}</span>`;
+        };
+        // Stat per-status disembunyikan, tinggal total hadir
+        ["statIzin", "statSakit", "statAlpha"].forEach(id => {
+            const card = document.getElementById(id)?.closest(".stat-card");
+            if (card) card.style.display = "none";
+        });
+        const totalLbl = document.getElementById("statTotal")?.closest(".stat-card")?.querySelector(".lbl");
+        if (totalLbl) totalLbl.innerHTML = `<i class="fa-solid fa-user-check"></i> Total Hadir`;
+
+        const all = Absensi.cache || [];
+        const q = Absensi.filter.q.trim().toLowerCase();
+        const tglSet = {};
+        all.forEach(r => {
+            if (!r.tanggal) return;
+            if (Absensi.filter.tanggal && String(r.tanggal) !== String(Absensi.filter.tanggal)) return;
+            tglSet[String(r.tanggal)] = true;
+        });
+        const grupHadir = {};
+        Object.keys(tglSet).sort().reverse().forEach(t => {
+            const h = Absensi.hadirTanggal(t);
+            const hariRows = all.filter(r => String(r.tanggal) === String(t));
+            const keg = (hariRows.map(r => String(r.kegiatan || "").trim()).find(Boolean) || "");
+            if (q && !(h.daftar.some(n => n.toLowerCase().includes(q)) || keg.toLowerCase().includes(q))) return;
+            grupHadir[t] = { daftar: h.daftar, otomatis: h.otomatis, keg };
+        });
+        const tgls = Object.keys(grupHadir).sort().reverse();
+
+        const tTarget = Absensi.filter.tanggal || (tgls[0] || "");
+        setStat("statTotal", tTarget && grupHadir[tTarget] ? grupHadir[tTarget].daftar.length : 0, "pengurus");
+
+        const wrap = document.getElementById("absensiWrap");
+        if (!wrap) return;
+        const boleh = OsisAuth.bisa("absensi");
+        if (!tgls.length) {
+            if (Absensi.filter.tanggal || q) {
+                wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada data hadir yang cocok. <a href="#" onclick="event.preventDefault(); Absensi.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
+            } else {
+                wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-user-check" style="color:#146314"></i></div><b>Belum ada data kehadiran</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Tandai kehadiran pengurus lewat Absen Langsung.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Absensi.bukaLangsung()"><i class="fa-solid fa-bolt"></i> Absen Langsung</button>` : ""}</div>`;
+            }
+            return;
+        }
+        const perBulan = {};
+        tgls.forEach(t => { const ym = String(t).slice(0, 7); (perBulan[ym] = perBulan[ym] || []).push(t); });
+        const kartuHari = (t) => {
+            const g = grupHadir[t];
+            return `<div class="rekap-card" style="margin-bottom:12px">
+                <h3><i class="fa-solid fa-calendar-day"></i> ${escapeHtml(Absensi.fmtTanggalPanjang(t))} <span class="jenis total" style="margin-left:auto">${g.daftar.length} hadir</span></h3>
+                ${g.keg ? `<div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:700; color:var(--gray); margin:-4px 0 8px 2px"><i class="fa-solid fa-bullhorn" style="color:var(--red)"></i> ${escapeHtml(g.keg)}</div>` : ""}
+                ${g.otomatis ? `<div style="font-size:0.7rem; font-weight:700; color:var(--gray); margin:-2px 0 8px 2px"><i class="fa-solid fa-wand-magic-sparkles"></i> Otomatis: daftar anggota − tidak hadir</div>` : ""}
+                <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Nama</th><th>Status</th></tr></thead><tbody>
+                ${g.daftar.map((n, i) => `<tr><td>${i + 1}</td><td><b>${escapeHtml(n)}</b></td><td><span class="jenis hadir">Hadir</span></td></tr>`).join("") || `<tr><td colspan="3" style="text-align:center; color:var(--gray)">Tidak ada — daftar anggota belum termuat.</td></tr>`}
+                </tbody></table></div>
+                ${boleh ? `<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
+                    <button class="btn btn-red btn-sm" data-abs-delhari="${t}"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+                </div>` : ""}
+            </div>`;
+        };
+        wrap.innerHTML = Object.keys(perBulan).sort().reverse().map(ym => {
+            const hari = perBulan[ym];
+            const total = hari.reduce((a, t) => a + grupHadir[t].daftar.length, 0);
+            return `<div class="bulan-sep"><i class="fa-solid fa-calendar"></i> ${escapeHtml(Absensi.fmtBulan(ym))}<span class="cnt">${total} hadir</span></div>`
                 + hari.map(kartuHari).join("");
         }).join("");
     },
@@ -419,10 +568,12 @@ const Absensi = {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
         if (!OsisAuth.butuh("absensi")) return;
-        // Hapus sehari hanya untuk izin/sakit/alpha; baris 'hadir' tidak ikut
-        const rows = (Absensi.cache || []).filter(r => String(r.tanggal) === String(tanggal) && r.status !== "hadir");
+        // Hapus sehari = semua baris tanggal itu (hadir + izin/sakit/alpha),
+        // biar tab Hadir dan Tidak Hadir sama-sama bersih.
+        const rows = (Absensi.cache || []).filter(r => String(r.tanggal) === String(tanggal));
         if (!rows.length) return;
-        const yakin = await showPopup(`Hapus ${rows.length} data ketidakhadiran (${Absensi.fmtTanggalPanjang(tanggal)})?`, "confirm");
+        const nHadir = rows.filter(r => r.status === "hadir").length;
+        const yakin = await showPopup(`Hapus semua data absensi (${Absensi.fmtTanggalPanjang(tanggal)})? ${rows.length} baris${nHadir ? ` (termasuk ${nHadir} hadir)` : ""} akan dihapus dari kedua tab.`, "confirm");
         if (!yakin) return;
         try {
             for (const r of rows) await hapusAbsensi(u.id, r.id);
@@ -587,7 +738,7 @@ const Absensi = {
         const sEl = document.getElementById("langsungSudah");
         if (sEl) {
             sEl.innerHTML = d.sudah.length
-                ? d.sudah.map(n => `<div class="absen-item done"><span class="dot"><i class="fa-solid fa-check"></i></span> ${escapeHtml(n)}<small>hadir</small></div>`).join("")
+                ? d.sudah.map(n => `<div class="absen-item done"><span class="dot"><i class="fa-solid fa-check"></i></span> ${escapeHtml(n)}<small>hadir</small><button type="button" class="batal" data-batal-hadir="${encodeURIComponent(n)}" title="Batalkan (salah pencet)"><i class="fa-solid fa-xmark"></i></button></div>`).join("")
                 : `<div class="pesan-empty">Belum ada yang hadir.</div>`;
         }
         const iEl = document.getElementById("langsungIzin");
@@ -652,17 +803,50 @@ const Absensi = {
             await Absensi.segarkan();
         } finally {
             L.saving = false;
-            // Siap untuk nama berikutnya: kosongkan search, fokus kembali
+            // Siap untuk nama berikutnya: kosongkan search TANPA focus ulang
+            // (focus otomatis bikin keyboard njedul di Android).
             L.q = "";
             L.activeIdx = 0;
             const s = document.getElementById("langsungSearch");
             if (s) s.value = "";
             Absensi.render();
             Absensi.renderLangsung();
-            setTimeout(() => document.getElementById("langsungSearch")?.focus(), 30);
         }
     },
 
+    // Batalkan satu hadir (salah pencet) — hapus baris 'hadir' sesi ini.
+    // Tanpa konfirmasi biar cepat; tandai ulang tinggal ketuk lagi.
+    async batalHadir(nama) {
+        const L = Absensi.langsung;
+        if (L.saving) return;
+        nama = String(nama || "").trim();
+        if (!nama) return;
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("absensi")) return;
+        const { tanggal, kegiatan } = Absensi.sesiLangsung();
+        if (!tanggal) return;
+        const k = Absensi.norm(nama);
+        const kNorm = Absensi.norm(kegiatan);
+        const row = (Absensi.cache || []).find(r =>
+            String(r.tanggal) === String(tanggal) && r.status === "hadir" && Absensi.norm(r.nama) === k &&
+            (!kNorm || !String(r.kegiatan || "").trim() || Absensi.norm(r.kegiatan) === kNorm));
+        if (!row) { showToast(nama + " tidak tercatat hadir di sesi ini.", "info"); return; }
+        L.saving = true;
+        try {
+            await hapusAbsensi(u.id, row.id);
+            Absensi.cache = (Absensi.cache || []).filter(r => String(r.id) !== String(row.id));
+            showToast(nama + " dibatalkan hadirnya.", "success");
+        } catch (err) {
+            console.error(err);
+            showToast("Gagal batalkan: " + Absensi.pesanDb(err.message), "error");
+            await Absensi.segarkan();
+        } finally {
+            L.saving = false;
+            Absensi.render();
+            Absensi.renderLangsung();
+        }
+    },
     // Selesai = sisa yang belum hadir langsung jadi data Alpha tanpa
     // keterangan, tampil di riwayat ketidakhadiran halaman utama.
     async selesaiLangsung() {

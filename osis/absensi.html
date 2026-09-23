@@ -211,7 +211,25 @@
       .jenis.izin { background: var(--yellow); color: var(--ink); }
       .jenis.sakit { background: #d6f5d6; color: #146314; }
       .jenis.alpha { background: #ffe9e9; color: var(--red-dark); }
+      .jenis.hadir { background: #d6f5d6; color: #146314; }
       .jenis.total { background: var(--paper-2); color: var(--ink); }
+      .tipe-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .tipe-tabs button {
+        padding: 11px;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        background: var(--white);
+        font-family: inherit;
+        font-size: 0.84rem;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .tipe-tabs button.on-tidak { background: #ffe9e9; color: var(--red-dark); box-shadow: 3px 3px 0 var(--ink); }
+      .tipe-tabs button.on-hadir { background: #d6f5d6; color: #146314; box-shadow: 3px 3px 0 var(--ink); }
       .kas-scroll { overflow-x: auto; }
       table.kas-tabel {
         width: 100%;
@@ -392,6 +410,20 @@
         text-transform: uppercase;
         flex-shrink: 0;
       }
+      .absen-item .batal {
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+        border: 2px solid var(--ink);
+        background: #fff;
+        color: var(--red-dark);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
     </style>
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=10"></script>
@@ -402,7 +434,7 @@
     <script src="../js/osis-auth.js?v=10" defer></script>
     <script src="../js/osis-sidebar.js?v=13" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/absensi.js?v=10" defer></script>
+    <script src="../js/absensi.js?v=15" defer></script>
   <script src="../js/pwa.js?v=10" defer></script>
   </head>
   <body>
@@ -438,6 +470,11 @@
         <div class="stat-card sakit"><span class="lbl"><i class="fa-solid fa-briefcase-medical"></i> Sakit</span><b id="statSakit">-</b></div>
         <div class="stat-card alpha"><span class="lbl"><i class="fa-solid fa-user-xmark"></i> Alpha</span><b id="statAlpha">-</b></div>
         <div class="stat-card"><span class="lbl"><i class="fa-solid fa-users-slash"></i> Total Tidak Hadir</span><b id="statTotal">-</b></div>
+      </div>
+
+      <div class="tipe-tabs">
+        <button type="button" id="btnTabTidak" class="on-tidak"><i class="fa-solid fa-user-xmark"></i> Tidak Hadir</button>
+        <button type="button" id="btnTabHadir"><i class="fa-solid fa-user-check"></i> Hadir</button>
       </div>
 
       <div class="filter-card">

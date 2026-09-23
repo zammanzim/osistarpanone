@@ -54,6 +54,52 @@ const Home = {
         });
     },
 
+    // ============ SWIPE HORIZONTAL (mouse & sentuh) ============
+    // Masalah sebelumnya: cuma pointerdown+pointerup. Di HP, begitu jari
+    // gerak sedikit diagonal, browser ambil alih buat scroll vertikal lalu
+    // menembak pointercancel → swipe batal → berasa "gabisa geser".
+    // Helper ini merebut gesture (setPointerCapture) begitu arah horizontal
+    // dominan, jadi swipe tidak dibatalkan browser.
+    pasangSwipe(el, cb) {
+        if (!el || typeof cb !== "function") return;
+        let sx = 0, sy = 0, track = false, merebut = false;
+        const abaikan = (t) => t && t.closest && (
+            t.closest('[contenteditable="true"]') ||
+            t.closest("input, textarea, select, button, a") ||
+            t.closest(".foto-hint") ||
+            t.closest(".foto-caption")
+        );
+        el.addEventListener("pointerdown", (e) => {
+            if (e.button !== undefined && e.button !== 0) return;
+            if (abaikan(e.target)) return;
+            track = true; merebut = false;
+            sx = e.clientX; sy = e.clientY;
+        });
+        el.addEventListener("pointermove", (e) => {
+            if (!track || merebut) return;
+            const dx = e.clientX - sx, dy = e.clientY - sy;
+            if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+                merebut = true;
+                try { el.setPointerCapture(e.pointerId); } catch (err) {}
+            }
+        });
+        const batal = () => { track = false; merebut = false; };
+        el.addEventListener("pointercancel", batal);
+        el.addEventListener("pointerup", (e) => {
+            if (!track) return;
+            track = false;
+            const direbut = merebut;
+            merebut = false;
+            if (abaikan(e.target) && !direbut) return;
+            const dx = e.clientX - sx, dy = e.clientY - sy;
+            if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+                // Telan klik berikutnya biar foto/link tidak ikut kebuka habis swipe
+                el.addEventListener("click", (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
+                cb(dx < 0 ? 1 : -1);
+            }
+        });
+    },
+
     // ============ POPUP FOTO ============
     bukaFotoPopup(img, judul, caption, opsi = {}) {
         Home.tutupModal();
@@ -108,19 +154,7 @@ const Home = {
         });
         // Swipe kanan-kiri untuk pindah foto (mouse & sentuh)
         const pop = modal.querySelector(".foto-pop");
-        if (pop && multi) {
-            let sx = 0, sy = 0, track = false;
-            pop.addEventListener("pointerdown", (e) => {
-                if (e.target.closest(".foto-caption") || e.target.closest(".foto-hint") || e.target.closest('[contenteditable="true"]')) return;
-                track = true; sx = e.clientX; sy = e.clientY;
-            });
-            pop.addEventListener("pointerup", (e) => {
-                if (!track) return; track = false;
-                const dx = e.clientX - sx, dy = e.clientY - sy;
-                if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) Home.geserFotoPopup(dx < 0 ? 1 : -1);
-            });
-            pop.addEventListener("pointercancel", () => { track = false; });
-        }
+        if (pop && multi) Home.pasangSwipe(pop, (arah) => Home.geserFotoPopup(arah));
         document.body.appendChild(modal);
         document.body.style.overflow = "hidden";
         if (Home.fotoPopup && typeof Home.fotoPopup.onChange === "function") {
@@ -335,7 +369,11 @@ const Home = {
                 ${hintAngkatan}
                 <div class="struktur-head">
                     <h4>${labelTahun(tahun)} (${tahun})</h4>
-                    <button class="struktur-close" type="button">&times;</button>
+                    <div class="struktur-head-btns">
+                        <button class="struktur-nav" type="button" data-nav="-1" title="Angkatan sebelumnya" aria-label="Angkatan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button class="struktur-nav" type="button" data-nav="1" title="Angkatan berikutnya" aria-label="Angkatan berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button class="struktur-close" type="button">&times;</button>
+                    </div>
                 </div>
                 <div class="struktur-modal-body">
                     <div class="struktur-foto">
@@ -380,31 +418,28 @@ const Home = {
 
         modal.querySelector(".struktur-modal-bg").addEventListener("click", () => Home.tutupModal());
         modal.querySelector(".struktur-close").addEventListener("click", () => Home.tutupModal());
+        modal.querySelectorAll(".struktur-nav").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                Home.geserStruktur(parseInt(btn.dataset.nav, 10) || 0);
+            });
+        });
         modal.querySelector("#angkatanHintX")?.addEventListener("click", (e) => {
             e.stopPropagation();
             document.getElementById("angkatanSwipeHint")?.remove();
             try { localStorage.setItem("angkatanSwipeHintOff", "1"); } catch (err) {}
         });
-        // Swipe kanan-kiri untuk ganti angkatan (mouse & sentuh)
-        const boxEl = modal.querySelector(".struktur-modal-box");
-        if (boxEl) {
-            let sx = 0, sy = 0, track = false;
-            boxEl.addEventListener("pointerdown", (e) => {
-                if (e.target.closest('[contenteditable="true"]') || e.target.closest("input, textarea, select, button, a") || e.target.closest(".foto-hint")) return;
-                track = true; sx = e.clientX; sy = e.clientY;
-            });
-            boxEl.addEventListener("pointerup", (e) => {
-                if (!track) return; track = false;
-                const dx = e.clientX - sx, dy = e.clientY - sy;
-                if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-                    // Telan klik berikutnya biar foto tidak ikut kebuka habis swipe
-                    boxEl.addEventListener("click", (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
-                    Home.geserStruktur(dx < 0 ? 1 : -1);
-                }
-            });
-            boxEl.addEventListener("pointercancel", () => { track = false; });
-        }
+        // Swipe kanan-kiri untuk ganti angkatan (mouse & sentuh).
+        // Dipasang di badan modal (area scroll), bukan seluruh box, supaya
+        // header/tombol navigasi tidak ikut ke-swipe.
+        const geserEl = modal.querySelector(".struktur-modal-body") || modal.querySelector(".struktur-modal-box");
+        if (geserEl) Home.pasangSwipe(geserEl, (arah) => Home.geserStruktur(arah));
         document.body.appendChild(modal);
+        // Cegah drag bawaan gambar (desktop) supaya mouse-swipe tidak putus
+        modal.querySelectorAll("img").forEach((im) => {
+            try { im.draggable = false; } catch (err) {}
+            im.addEventListener("dragstart", (e) => e.preventDefault());
+        });
         if (typeof isEdit !== "undefined" && isEdit && typeof SiteEdit !== "undefined" && SiteEdit.injectModalFotoButtons) {
             SiteEdit.injectModalFotoButtons(modal, tahun);
         }

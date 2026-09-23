@@ -47,6 +47,8 @@ const Tabungan = {
             if (hb) { Tabungan.hapusRow(hb.dataset.tabDel); return; }
             const tb = e.target.closest("[data-tab-tambah]");
             if (tb) { Tabungan.bukaForm(decodeURIComponent(tb.dataset.tabTambah || "")); return; }
+            const pf = e.target.closest("[data-tab-pdf]");
+            if (pf) { e.stopPropagation(); Tabungan.exportSatu(decodeURIComponent(pf.dataset.tabPdf || "")); return; }
             const row = e.target.closest("[data-tab-row]");
             if (row) { Tabungan.detail(row.dataset.tabRow); return; }
         });
@@ -267,9 +269,12 @@ const Tabungan = {
                     </div></td>` : ""}
                 </tr>`).join("")}
                 </tbody></table></div>
-                ${boleh ? `<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
+                ${boleh ? `<div style="display:flex; justify-content:space-between; gap:8px; margin-top:10px">
+                    <button class="btn btn-white btn-sm" data-tab-pdf="${encodeURIComponent(g.nama)}"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
                     <button class="btn btn-white btn-sm" data-tab-tambah="${encodeURIComponent(g.nama)}"><i class="fa-solid fa-plus"></i> Tambah Setoran</button>
-                </div>` : ""}
+                </div>` : `<div style="display:flex; justify-content:flex-start; gap:8px; margin-top:10px">
+                    <button class="btn btn-white btn-sm" data-tab-pdf="${encodeURIComponent(g.nama)}"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+                </div>`}
             </div>`;
         }).join("");
     },
@@ -475,6 +480,55 @@ const Tabungan = {
             document.body.style.overflow = "";
         }
         Tabungan.detailId = null;
+    },
+
+    // ============ EXPORT PDF (via dialog print → Save as PDF) ============
+    cariGrup(nama) {
+        const kunci = String(nama || "").trim().toLowerCase();
+        return Tabungan.grupPerOrang(Tabungan.dataTampil()).find(g => String(g.nama || "").trim().toLowerCase() === kunci) || null;
+    },
+
+    isiLaporanSatu(g) {
+        const esc = (s) => (typeof escapeHtml === "function" ? escapeHtml(s) : String(s ?? "-"));
+        const masuk = g.rows.filter(r => !Tabungan.isKeluar(r)).reduce((a, r) => a + (parseInt(r.nominal, 10) || 0), 0);
+        const keluar = g.rows.filter(r => Tabungan.isKeluar(r)).reduce((a, r) => a + (parseInt(r.nominal, 10) || 0), 0);
+        const sudah = g.rows.filter(r => !!r.cek).length;
+        return `
+            <div style="font-family:Arial,Helvetica,sans-serif; color:#111; max-width:700px; margin:0 auto">
+                <div style="text-align:center; border-bottom:3px solid #111; padding-bottom:10px; margin-bottom:14px">
+                    <div style="font-size:18px; font-weight:900">TABUNGAN PENGURUS OSIS</div>
+                    <div style="font-size:12px">SMK Taruna Harapan 1 Cipatat — ${esc(g.nama)}</div>
+                </div>
+                <table style="font-size:13px; margin-bottom:12px">
+                    <tr><td>Total Setoran (${g.rows.filter(r => !Tabungan.isKeluar(r)).length})</td><td style="text-align:right"><b>${Tabungan.rp(masuk)}</b></td></tr>
+                    <tr><td>Total Penarikan (${g.rows.filter(r => Tabungan.isKeluar(r)).length})</td><td style="text-align:right"><b>${Tabungan.rp(keluar)}</b></td></tr>
+                    <tr><td><b>Saldo Akhir</b></td><td style="text-align:right"><b>${Tabungan.rp(g.total)}</b></td></tr>
+                    <tr><td>Ceklis</td><td style="text-align:right">${sudah}/${g.rows.length} sudah diceklis</td></tr>
+                </table>
+                <table border="1" cellspacing="0" cellpadding="6" style="width:100%; font-size:12px; border-collapse:collapse">
+                    <thead><tr><th>No</th><th>Tanggal</th><th>Setoran</th><th>Penarikan</th><th>Saldo Jalan</th><th>Status</th></tr></thead>
+                    <tbody>${g.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(Tabungan.fmtTanggalPendek(r.tanggal))}</td><td style="text-align:right">${Tabungan.isKeluar(r) ? "-" : Tabungan.rp(r.nominal)}</td><td style="text-align:right">${Tabungan.isKeluar(r) ? Tabungan.rp(r.nominal) : "-"}</td><td style="text-align:right">${Tabungan.rp(r._total)}</td><td>${r.cek ? "Sudah" : "Belum"}</td></tr>`).join("") || `<tr><td colspan="6">Tidak ada data.</td></tr>`}</tbody>
+                </table>
+                <p style="font-size:11px; color:#666; margin-top:12px">Dicetak ${new Date().toLocaleString("id-ID")} dari website OSIS Tarpan One.</p>
+            </div>`;
+    },
+
+    cetakHtml(html, judulFile) {
+        const pa = document.getElementById("printArea");
+        if (!pa) { showToast("Area cetak tidak ditemukan.", "error"); return; }
+        pa.innerHTML = html;
+        const oldTitle = document.title;
+        document.title = judulFile;
+        showToast("Pilih 'Save as PDF' di dialog print", "info");
+        window.print();
+        setTimeout(() => { document.title = oldTitle; }, 500);
+    },
+
+    exportSatu(nama) {
+        const g = Tabungan.cariGrup(nama);
+        if (!g) { showToast("Data penabung tidak ditemukan.", "error"); return; }
+        const aman = String(g.nama || "tabungan").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-") || "tabungan";
+        Tabungan.cetakHtml(Tabungan.isiLaporanSatu(g), `Tabungan-${aman}`);
     },
 
     pesanDb(kode) {

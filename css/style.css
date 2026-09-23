@@ -4420,6 +4420,37 @@ body.edit-mode .prestasi-card .foto-del-btn {
   box-shadow: none;
 }
 
+/* Tombol navigasi angkatan (prev/next) di header popup */
+.struktur-head-btns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.struktur-nav {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid #fff;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 0.72rem;
+  cursor: pointer;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition:
+    transform 0.12s,
+    background 0.12s;
+}
+.struktur-nav:hover {
+  background: #fff;
+  color: var(--red);
+}
+.struktur-nav:active {
+  transform: scale(0.92);
+}
+
 /* Tombol edit di header popup */
 .pg-head-btns {
   display: flex;

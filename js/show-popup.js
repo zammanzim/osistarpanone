@@ -305,8 +305,8 @@ window.closePopup = function () {
 window.ModalNav = (function () {
     const IDS = [
         "visitorOverlay", "prestasiFormOverlay", "posterFormOverlay",
-        "agendaForm", "absensiForm", "absenLangsung",
-        "kasForm", "kasDetail", "tabForm", "tabDetail",
+        "agendaForm", "agendaDetail", "absensiForm", "absenLangsung",
+        "kasForm", "kasDetail", "tabForm", "tabDetail", "aksDetail",
         "dokumenForm", "dokumenDetail", "evaluasiForm", "evaluasiDetail",
         "notulensiForm", "notulensiDetail", "prokerForm", "prokerDetail",
         "taskForm", "taskDetail", "anggotaPopup", "sekbidPopup"
@@ -362,6 +362,11 @@ window.ModalNav = (function () {
                     if (A && A.tutupForm) { A.tutupForm(); return; }
                     break;
                 }
+                case "agendaDetail": {
+                    const A = ambil("AgendaAdmin");
+                    if (A && A.tutupDetail) { A.tutupDetail(); return; }
+                    break;
+                }
                 case "absensiForm": {
                     const A = ambil("Absensi");
                     if (A && A.tutupForm) { A.tutupForm(); return; }
@@ -390,6 +395,11 @@ window.ModalNav = (function () {
                 case "tabDetail": {
                     const T = ambil("Tabungan");
                     if (T && T.tutupDetail) { T.tutupDetail(); return; }
+                    break;
+                }
+                case "aksDetail": {
+                    const A = ambil("Akses");
+                    if (A && A.tutupDetail) { A.tutupDetail(); return; }
                     break;
                 }
                 case "dokumenForm": {

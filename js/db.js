@@ -1690,7 +1690,6 @@ async function getAgendaBySekbid(sekbidId) {
       "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, created_at",
     )
     .eq("sekbid_id", sekbidId)
-    .order("display_order", { ascending: true })
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -1703,7 +1702,7 @@ async function getAllAgenda() {
       "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, created_at",
     )
     .order("tanggal", { ascending: false })
-    .order("display_order", { ascending: true });
+    .order("created_at", { ascending: false });
   if (error) throw error;
   return data || [];
 }

@@ -107,33 +107,29 @@
       @media (max-width: 480px) {
         .agenda-stats { grid-template-columns: repeat(2, 1fr); }
       }
-      /* Tab tipe: per sekbid / per orang */
-      .agenda-tabs {
-        display: inline-flex;
-        background: var(--paper-2);
-        border: 2.5px solid var(--ink);
-        border-radius: 999px;
-        padding: 4px;
-        gap: 4px;
+      /* Pembatas per hari */
+      .agenda-hari {
+        margin-bottom: 14px;
       }
-      .atab {
-        border: none;
-        background: transparent;
-        border-radius: 999px;
-        padding: 8px 16px;
-        font-size: 0.8rem;
-        font-weight: 800;
-        color: var(--gray);
-        cursor: pointer;
-        display: inline-flex;
+      .agenda-hari-head {
+        display: flex;
         align-items: center;
-        gap: 6px;
-        font-family: inherit;
-      }
-      .atab.active {
-        background: var(--red);
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        background: var(--ink);
         color: #fff;
-        box-shadow: 2px 2px 0 var(--ink);
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        font-weight: 900;
+        box-shadow: 3px 3px 0 rgba(15, 10, 11, 0.25);
+      }
+      .agenda-hari-head .agenda-grup-count {
+        margin-left: auto;
+        background: var(--yellow);
+        color: var(--ink);
       }
       .agenda-toolbar {
         display: flex;
@@ -145,7 +141,7 @@
         flex: 1;
         min-width: 160px;
       }
-      /* Grup per sekbid / per orang */
+      /* Grup per sekbid */
       .agenda-grup {
         margin-bottom: 18px;
       }
@@ -412,17 +408,122 @@
         transform: translate(1px, 1px);
         box-shadow: none;
       }
+      /* Popup detail agenda (klik foto) */
+      .agenda-detail {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 10, 11, 0.78);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 220;
+        padding: 18px;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 0.22s ease,
+          visibility 0.22s ease;
+      }
+      .agenda-detail.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      .agenda-detail-inner {
+        width: min(560px, 100%);
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.96) translateY(10px);
+        transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+      }
+      .agenda-detail.open .agenda-detail-inner {
+        transform: scale(1) translateY(0);
+      }
+      .agenda-detail-stage {
+        position: relative;
+        margin-top: 10px;
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--ink);
+      }
+      .agenda-detail-stage img {
+        width: 100%;
+        max-height: 52vh;
+        object-fit: contain;
+        display: block;
+        background: #111;
+      }
+      .agenda-detail-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid var(--ink);
+        background: var(--white);
+        color: var(--ink);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+        font-size: 0.85rem;
+      }
+      .agenda-detail-nav.prev { left: 10px; }
+      .agenda-detail-nav.next { right: 10px; }
+      .agenda-detail-count {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(15, 10, 11, 0.8);
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 800;
+        border-radius: 999px;
+        padding: 3px 10px;
+      }
+      .agenda-detail-thumbs {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        overflow-x: auto;
+        padding: 2px;
+      }
+      .agenda-detail-thumbs img {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        cursor: pointer;
+        flex-shrink: 0;
+        opacity: 0.55;
+      }
+      .agenda-detail-thumbs img.aktif {
+        opacity: 1;
+        outline: 3px solid var(--yellow);
+      }
+      .agenda-fotos img.bisa-klik {
+        cursor: zoom-in;
+      }
     </style>
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=10"></script>
     <script src="../js/db.js?v=10" defer></script>
     <script src="../js/app.js?v=10" defer></script>
     <script src="../js/toast.js?v=10" defer></script>
-    <script src="../js/show-popup.js?v=10" defer></script>
+    <script src="../js/show-popup.js?v=11" defer></script>
     <script src="../js/osis-auth.js?v=10" defer></script>
     <script src="../js/osis-sidebar.js?v=13" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/agenda.js?v=10" defer></script>
+    <script src="../js/agenda.js?v=14" defer></script>
     <script src="../js/pwa.js?v=10" defer></script>
   </head>
   <body>
@@ -431,7 +532,7 @@
         <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
         <div class="brand-text">
           <h2>AGENDA</h2>
-          <p>Per Sekbid &amp; Per Orang</p>
+          <p>Per Sekbid</p>
         </div>
       </a>
 
@@ -450,8 +551,8 @@
         <div style="flex: 1; min-width: 180px">
           <h1>AGENDA</h1>
           <p>
-            Kegiatan yang sudah dilaksanakan — tercatat per orang, otomatis
-            masuk ke sekbidnya.
+            Kegiatan yang sudah dilaksanakan — terbaru di atas,
+            dikelompokkan per hari.
           </p>
         </div>
         <button class="btn btn-red" id="btnTambahAgenda" style="display: none">
@@ -461,16 +562,6 @@
 
       <!-- Statistik ringkas -->
       <div class="agenda-stats" id="agendaStats"></div>
-
-      <!-- Tipe tampilan: per sekbid / per orang (semua tampil, isi ikut sekbid sendiri) -->
-      <div class="agenda-tabs" id="agendaTabs">
-        <button type="button" class="atab active" data-atab="sekbid">
-          <i class="fa-solid fa-folder-open"></i> Per Sekbid
-        </button>
-        <button type="button" class="atab" data-atab="orang">
-          <i class="fa-solid fa-user"></i> Per Orang
-        </button>
-      </div>
 
       <div class="agenda-toolbar">
         <select
@@ -551,21 +642,6 @@
             </div>
           </div>
           <div class="field">
-            <label>Urutan</label
-            ><input
-              type="number"
-              id="agendaOrder"
-              class="admin-input"
-              value="99"
-              min="1"
-              max="999"
-            />
-          </div>
-          <div class="field">
-            <label>Pelaksana</label
-            ><select id="agendaPelaksana" class="admin-input"></select>
-          </div>
-          <div class="field">
             <label>Foto (opsional, bisa banyak)</label>
             <div id="agendaDrop" class="agenda-drop">
               <div class="agenda-drop-inner" id="agendaDropInner">
@@ -605,6 +681,17 @@
           <div class="spinner"></div>
           Memuat agenda...
         </div>
+      </div>
+    </div>
+
+    <!-- POPUP DETAIL: klik foto -->
+    <div class="agenda-detail" id="agendaDetail">
+      <div class="agenda-detail-inner">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-calendar" style="color: var(--red)"></i> Detail Agenda</span>
+          <button class="icon-btn" onclick="AgendaAdmin.tutupDetail()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="agendaDetailBody"></div>
       </div>
     </div>
   </body>

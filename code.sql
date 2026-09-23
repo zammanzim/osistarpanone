@@ -1099,6 +1099,7 @@ CREATE TABLE IF NOT EXISTS public.osis_users (
 );
 ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS foto text NOT NULL DEFAULT '';
 ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS bio text NOT NULL DEFAULT '';
+ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS angkatan text NOT NULL DEFAULT '';
     -- Sekbid pemilik user (khusus aturan agenda: cuma bisa kelola agenda sekbid sendiri).
     -- NULL = belum ditetapkan = tidak bisa kelola agenda. Diisi via halaman akses / SQL.
     ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS sekbid_id bigint REFERENCES public.sekbid(id) ON DELETE SET NULL;
@@ -1258,7 +1259,7 @@ END $$;
             RETURN jsonb_build_object('error', 'ERR_NO_AUTH');
         END IF;
         RETURN (SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb) FROM (
-            SELECT u.id, u.username, u.nama, u.jabatan, u.sekbid_id,
+            SELECT u.id, u.username, u.nama, u.jabatan, u.sekbid_id, u.angkatan,
                 (SELECT s.nama FROM public.sekbid s WHERE s.id = u.sekbid_id) AS sekbid_nama,
                 COALESCE((SELECT jsonb_agg(a.halaman ORDER BY a.halaman)
                         FROM public.osis_akses a WHERE a.user_id = u.id), '[]'::jsonb) AS halaman
