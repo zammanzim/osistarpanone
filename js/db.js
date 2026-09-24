@@ -70,6 +70,9 @@ async function r2MintaPresign(op, path, contentType) {
     const { data } = await supa.auth.getSession();
     token = (data && data.session && data.session.access_token) || "";
   } catch {}
+  if (!token) {
+    throw new Error("Kamu belum login — login dulu biar bisa upload.");
+  }
   const res = await fetch(R2_PRESIGN_URL, {
     method: "POST",
     headers: {

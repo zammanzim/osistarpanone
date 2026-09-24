@@ -144,8 +144,9 @@ async function presignUrl({ method, endpoint, bucket, key, accessKey, secretKey,
 }
 
 async function jwtValid(env, req) {
+  // return: "ok" | "tanpa-token" | "token-basi"
   const auth = req.headers.get("Authorization") || "";
-  if (!auth.startsWith("Bearer ")) return false;
+  if (!auth.startsWith("Bearer ") || auth.length < 20) return "tanpa-token";
   try {
     // Validasi via Supabase Auth API — tanpa perlu JWT secret di Worker.
     const r = await fetch(`${String(env.SUPABASE_URL).replace(/\/$/, "")}/auth/v1/user`, {
@@ -154,9 +155,9 @@ async function jwtValid(env, req) {
         "Authorization": auth,
       },
     });
-    return r.ok;
+    return r.ok ? "ok" : "token-basi";
   } catch {
-    return false;
+    return "token-basi";
   }
 }
 
@@ -191,8 +192,12 @@ export default {
     }
 
     // Wajib login Supabase untuk tulis/hapus (baca publik bebas via domain R2).
-    if (!(await jwtValid(env, req))) {
-      return jsonResponse({ error: "Unauthorized — login dulu." }, 401, env, req);
+    const authState = await jwtValid(env, req);
+    if (authState === "tanpa-token") {
+      return jsonResponse({ error: "Belum login — token tidak dikirim browser." }, 401, env, req);
+    }
+    if (authState !== "ok") {
+      return jsonResponse({ error: "Sesi tidak valid — login ulang dulu." }, 401, env, req);
     }
 
     const region = env.R2_REGION || "auto";

@@ -91,15 +91,20 @@ for (const folder of TARGET) {
   console.log(`\n== folder ${folder} ==`);
   const daftar = await listSemua(folder);
   console.log(`ditemukan ${daftar.length} file di Supabase`);
+  let no = 0;
   for (const key of daftar) {
+    no++;
+    const tag = `[${no}/${daftar.length}]`;
     hasil.total++;
     try {
       if (await sudahAda(key)) {
         hasil.dilewati++;
+        console.log(`  ${tag} SKIP (sudah ada) ${key}`);
         continue;
       }
       if (DRY_RUN) {
         hasil.disalin++;
+        console.log(`  ${tag} DRY-RUN (akan disalin) ${key}`);
         continue;
       }
       const { data, error } = await supa.storage.from(BUCKET_LAMA).download(key);
@@ -113,7 +118,7 @@ for (const folder of TARGET) {
         CacheControl: "public, max-age=31536000, immutable",
       }));
       hasil.disalin++;
-      if (hasil.disalin % 25 === 0) console.log(`  ...${hasil.disalin} tersalin`);
+      console.log(`  ${tag} OK ${key} (${(buf.length / 1024).toFixed(0)} KB)`);
     } catch (e) {
       hasil.gagal++;
       hasil.gagalDaftar.push(`${key} :: ${e.message}`);
