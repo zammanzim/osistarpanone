@@ -63,14 +63,21 @@ function getFoto(pathFoto) {
   return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${bersih}`;
 }
 
+// Upload jawaban form publik (responden tanpa login) memakai path berpola
+// formulir/f-<id>-<timestamp>.<ext> — SATU-SATUNYA upload publik yang diizinkan
+// Worker (tanpa JWT). Semua path lain wajib JWT + akun OSIS terlink + punya hak.
+const POLA_UPLOAD_PUBLIK = /^formulir\/f-\d+-\d+\.[a-z0-9]+$/;
+
 // Minta presigned URL ke Worker (auth via JWT Supabase dari session aktif).
 async function r2MintaPresign(op, path, contentType) {
+  const key = String(path).replace(/^\/+/, "");
   let token = "";
   try {
     const { data } = await supa.auth.getSession();
     token = (data && data.session && data.session.access_token) || "";
   } catch {}
-  if (!token) {
+  const publik = op === "put" && POLA_UPLOAD_PUBLIK.test(key);
+  if (!token && !publik) {
     throw new Error("Kamu belum login — login dulu biar bisa upload.");
   }
   const res = await fetch(R2_PRESIGN_URL, {
@@ -274,26 +281,33 @@ function getVisitorKey() {
 }
 
 // =========================================================================
-// AUTH - akun OSIS dari tabel osis_users
+// AUTH - akun OSIS dari tabel osis_users + Supabase Auth (JWT)
+// Login: email sintetis osis-<id>@domain + password (bcrypt di Auth).
+// Kolom password plaintext SUDAH dimatikan (migrasi-auth-2-kunci.sql) —
+// JANGAN pernah select kolom password dari client lagi.
 // =========================================================================
 
-// Ambil akun OSIS by username (password dicompare di client, pola e-learniz)
-// Fallback ke kolom lama kalau migrasi foto/bio belum di-run di Supabase
+// Email sintetis stabil untuk user OSIS (id tidak pernah berubah).
+function emailUntukOsis(id) {
+  return `osis-${id}@${AUTH_EMAIL_DOMAIN}`;
+}
+
+// Ambil akun OSIS by username (TANPA password — verifikasi via Auth API).
+// Fallback ke kolom minimal kalau migrasi foto/bio/auth_id belum di-run.
 async function getOsisUser(username) {
   try {
     const { data, error } = await supa
       .from("osis_users")
-      .select("id, username, password, nama, jabatan, foto, bio")
+      .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id")
       .eq("username", username)
       .maybeSingle();
     if (error) throw error;
     return data || null;
   } catch (err) {
-    // kolom foto/bio belum ada - pakai kolom lama
-    if (!String(err.message || "").match(/foto|bio|column/i)) throw err;
+    if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|column/i)) throw err;
     const { data, error } = await supa
       .from("osis_users")
-      .select("id, username, password, nama, jabatan")
+      .select("id, username, nama, jabatan")
       .eq("username", username)
       .maybeSingle();
     if (error) throw error;
@@ -301,25 +315,42 @@ async function getOsisUser(username) {
   }
 }
 
-// Ambil akun OSIS by id (buat refresh profil, termasuk password buat verifikasi)
+// Ambil akun OSIS by id (buat refresh profil — TANPA password).
 async function getOsisUserById(id) {
   try {
     const { data, error } = await supa
       .from("osis_users")
-      .select("id, username, password, nama, jabatan, foto, bio")
+      .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id")
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
     return data || null;
   } catch (err) {
-    if (!String(err.message || "").match(/foto|bio|column/i)) throw err;
+    if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|column/i)) throw err;
     const { data, error } = await supa
       .from("osis_users")
-      .select("id, username, password, nama, jabatan")
+      .select("id, username, nama, jabatan")
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
     return data ? { ...data, foto: "", bio: "" } : null;
+  }
+}
+
+// Ambil akun OSIS dari session Auth (pemetaan auth.users -> osis_users).
+async function getOsisUserByAuthId(authId) {
+  if (!authId) return null;
+  try {
+    const { data, error } = await supa
+      .from("osis_users")
+      .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id")
+      .eq("auth_id", authId)
+      .maybeSingle();
+    if (error) throw error;
+    return data || null;
+  } catch (err) {
+    if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|column/i)) throw err;
+    return null;
   }
 }
 
@@ -345,7 +376,9 @@ async function gantiOsisUsername(userId, username) {
   cekOk(data);
 }
 
-// Ganti password OSIS (verifikasi lama di server) - throw ERR_WRONG/ERR_INVALID
+// LEGACY, tidak dipakai lagi sejak migrasi Supabase Auth (password dipegang
+// Auth bcrypt, bukan kolom plaintext). dipertahankan biar cache lama tidak pecah.
+// Ganti password sekarang via supa.auth.updateUser (lihat profil.js).
 async function gantiOsisPassword(userId, oldPw, newPw) {
   const { data, error } = await supa.rpc("ganti_osis_password", {
     p_user_id: userId,

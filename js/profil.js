@@ -1,8 +1,8 @@
 // =========================================================================
 // PROFIL OSIS — halaman khusus OSIS (folder /osis)
 // Dipakai di osis/profil.html — ganti nama, username, password, PP, bio.
-// Tulis via RPC SECURITY DEFINER (update_osis_profil / ganti_osis_username /
-// ganti_osis_password), PP via bucket osis-foto folder profil/.
+// Nama/username via RPC SECURITY DEFINER (update_osis_profil / ganti_osis_username),
+// password via Supabase Auth API, PP via R2 folder profil/.
 // =========================================================================
 
 const Profil = {
@@ -274,24 +274,30 @@ const Profil = {
         const newPw = document.getElementById("profilPwBaru").value || "";
         const confPw = document.getElementById("profilPwKonfirm").value || "";
         if (!oldPw) { showToast("Password lama diisi dulu", "error"); return; }
-        if (newPw.length < 4) { showToast("Password baru minimal 4 karakter", "error"); return; }
+        if (newPw.length < 6) { showToast("Password baru minimal 6 karakter", "error"); return; }
         if (newPw !== confPw) { showToast("Konfirmasi tidak sama", "error"); return; }
 
         const btn = document.getElementById("btnSimpanPassword");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
         try {
-            await gantiOsisPassword(Profil.userId, oldPw, newPw);
+            // Password dipegang Supabase Auth (bcrypt). Verifikasi password lama
+            // dengan login ulang, lalu update via Auth API. Kolom plaintext lama
+            // sudah dimatikan (migrasi-auth-2-kunci.sql).
+            const email = emailUntukOsis(Profil.userId);
+            const cek = await supa.auth.signInWithPassword({ email, password: oldPw });
+            if (cek.error) {
+                showToast("Password lama salah", "error");
+                return;
+            }
+            const { error } = await supa.auth.updateUser({ password: newPw });
+            if (error) throw error;
             document.getElementById("profilPwLama").value = "";
             document.getElementById("profilPwBaru").value = "";
             document.getElementById("profilPwKonfirm").value = "";
             showToast("Password diganti! Login berikutnya pakai yang baru.", "success");
         } catch (err) {
             console.error(err);
-            showToast(Profil._pesanError(err, {
-                "ERR_WRONG": "Password lama salah",
-                "ERR_INVALID": "Password baru 4-100 karakter",
-                "ERR_NO_AUTH": "Sesi habis, login ulang ya"
-            }), "error");
+            showToast("Gagal ganti password: " + String((err && err.message) || err), "error");
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan'; }
         }

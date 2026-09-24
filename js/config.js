@@ -14,3 +14,6 @@ const R2_PUBLIC_BASE = "https://media.osistarpanone.my.id";
 const R2_PRESIGN_URL = "https://osis-media-presign.nizzcuy.workers.dev/presign";
 // Saklar utama media. true = baca R2 + upload via presign; false = Supabase lama.
 const R2_ENABLED = true;
+// Domain email sintetis akun OSIS di Supabase Auth: osis-<id>@domain.
+// Pakai id (BUKAN username) biar ganti username tidak merusak login.
+const AUTH_EMAIL_DOMAIN = "osistarpanone.my.id";

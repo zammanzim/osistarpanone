@@ -1,6 +1,9 @@
 // =========================================================================
-// AUTH OSIS — login 2 mode: Guest (nickname) / OSIS (username+password)
-// localStorage.osis_user (key beda dari e-learniz biar ga tabrakan)
+// AUTH OSIS — login 2 mode: Guest (nickname, lokal saja) / OSIS (Supabase Auth)
+// OSIS: session JWT di supa.auth = sumber kebenaran; baris osis_users dipetakan
+// via kolom auth_id. localStorage.osis_user hanya CACHE (offline + cepat) dan
+// disinkronkan tiap halaman dimuat (syncAuth): session hilang -> cache dibuang,
+// session ada tapi cache kosong/basi -> diambil ulang dari server.
 // =========================================================================
 
 const OsisAuth = {
@@ -74,7 +77,8 @@ const OsisAuth = {
         }));
     },
 
-    // Masuk sebagai anggota OSIS (akun dari tabel osis_users)
+    // Masuk sebagai anggota OSIS (dipanggil setelah signIn Auth sukses).
+    // userObj = baris osis_users TANPA password. Session JWT dipegang supabase-js.
     loginOsis(userObj) {
         const aman = { ...userObj };
         delete aman.password;
@@ -82,9 +86,53 @@ const OsisAuth = {
         localStorage.setItem(OsisAuth.KEY, JSON.stringify(aman));
     },
 
-    logout() {
-        localStorage.removeItem(OsisAuth.KEY);
+    buangCacheOsis() {
+        try { localStorage.removeItem(OsisAuth.KEY); } catch {}
         try { localStorage.removeItem(OsisAuth.AKSES_KEY); } catch {}
+    },
+
+    // Sinkronkan cache dengan session Auth. Dipanggil tiap halaman dimuat
+    // sebelum renderHeader. Offline/gagal baca session: pertahankan cache.
+    async syncAuth() {
+        let session = null;
+        try {
+            const r = await supa.auth.getSession();
+            session = r && r.data ? r.data.session : null;
+        } catch {
+            return; // CDN belum termuat / offline total — jangan utak-atik cache
+        }
+        const cached = OsisAuth.getUser();
+        if (!session) {
+            // Tidak ada session tapi cache bilang OSIS = basi (logout di tab
+            // lain / token dicabut) -> buang biar tidak dikira login.
+            if (cached && cached.mode === "osis") OsisAuth.buangCacheOsis();
+            return;
+        }
+        if (cached && cached.mode === "osis" && cached.auth_id === session.user.id && cached.id) {
+            return; // sudah sinkron
+        }
+        if (cached && OsisAuth.isGuest(cached)) return; // guest: lokal saja
+        try {
+            const row = await getOsisUserByAuthId(session.user.id);
+            if (row) {
+                OsisAuth.loginOsis(row);
+                try { await OsisAuth.refreshAkses(); } catch {}
+            } else {
+                // Session valid tapi tidak terlink ke akun OSIS (pendaftar liar)
+                // -> keluar paksa, bukan anggota.
+                try { await supa.auth.signOut(); } catch {}
+                OsisAuth.buangCacheOsis();
+            }
+        } catch {
+            // Offline saat fetch baris: pertahankan cache lama apa adanya.
+        }
+    },
+
+    async logout() {
+        // Cache dibuang DULU secara sinkron (pemanggil sync langsung lihat logout),
+        // session Auth dicabut setelahnya.
+        OsisAuth.buangCacheOsis();
+        try { await supa.auth.signOut(); } catch {}
     },
 
     async confirmLogout() {
@@ -139,10 +187,17 @@ const OsisAuth = {
     }
 };
 
+async function OsisAuthInit() {
+  try {
+    await OsisAuth.syncAuth();
+  } catch {}
+  OsisAuth.renderHeader();
+}
+
 if (typeof onReady === "function") {
-    onReady(() => OsisAuth.renderHeader());
+  onReady(() => OsisAuthInit());
 } else if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => OsisAuth.renderHeader());
+  document.addEventListener("DOMContentLoaded", () => OsisAuthInit());
 } else {
-    OsisAuth.renderHeader();
+  OsisAuthInit();
 }

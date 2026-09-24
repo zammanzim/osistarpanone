@@ -1,8 +1,13 @@
 // =========================================================================
 // WORKER: osis-media-presign — penerbit presigned URL R2 untuk frontend statis
-// Arsitektur: browser -> Worker (/presign, validasi JWT Supabase + allowlist
-// folder) -> dapat URL PUT/DELETE -> browser upload langsung ke R2.
-// Secret R2 TIDAK PERNAH ke frontend. Baca publik via custom domain R2.
+// Arsitektur: browser -> Worker (/presign, validasi + allowlist folder)
+// -> dapat URL PUT/DELETE -> browser upload langsung ke R2.
+// Secret (R2 + service_role) TIDAK PERNAH ke frontend. Baca publik via domain R2.
+//
+// AUTH (login app = Supabase Auth, dipetakan ke osis_users via kolom auth_id):
+// - PUT formulir/f-<id>-<ts>.<ext>: PUBLIK (responden form tanpa login).
+// - Lainnya: JWT valid + auth_id terlink ke osis_users + punya hak kelola
+//   (cek RPC akses_saya via service_role). Akun liar hasil signUp bebas = 403.
 //
 // DEPLOY (sekali):
 //   1. R2: buat bucket (mis. osis-media), pasang custom domain
@@ -143,10 +148,16 @@ async function presignUrl({ method, endpoint, bucket, key, accessKey, secretKey,
   return `${endpoint.replace(/\/$/, "")}${canonicalUri}?${sortedQuery}&X-Amz-Signature=${sig}`;
 }
 
+// Upload jawaban form publik (responden tanpa login) memakai path berpola
+// formulir/f-<idform>-<timestamp>.<ext> — SATU-SATUNYA presign publik (PUT saja).
+// Hapus di folder itu + semua folder lain wajib JWT + akun OSIS + punya hak.
+const POLA_PUBLIK = /^formulir\/f-\d+-\d+\.[a-z0-9]+$/;
+
+// Validasi JWT via Supabase Auth API. return {state, authUserId}.
+// state: "ok" | "tanpa-token" | "token-basi"
 async function jwtValid(env, req) {
-  // return: "ok" | "tanpa-token" | "token-basi"
   const auth = req.headers.get("Authorization") || "";
-  if (!auth.startsWith("Bearer ") || auth.length < 20) return "tanpa-token";
+  if (!auth.startsWith("Bearer ") || auth.length < 20) return { state: "tanpa-token", authUserId: null };
   try {
     // Validasi via Supabase Auth API — tanpa perlu JWT secret di Worker.
     const r = await fetch(`${String(env.SUPABASE_URL).replace(/\/$/, "")}/auth/v1/user`, {
@@ -155,9 +166,38 @@ async function jwtValid(env, req) {
         "Authorization": auth,
       },
     });
-    return r.ok ? "ok" : "token-basi";
+    if (!r.ok) return { state: "token-basi", authUserId: null };
+    const me = await r.json();
+    return { state: "ok", authUserId: (me && me.id) || null };
   } catch {
-    return "token-basi";
+    return { state: "token-basi", authUserId: null };
+  }
+}
+
+// Cek akun OSIS terlink + punya hak kelola (pakai service_role, tetap di Worker).
+// return osis user id (>0) atau 0 = tidak berhak.
+async function cekHakOsis(env, authUserId) {
+  if (!authUserId || !env.SUPABASE_SERVICE_KEY) return 0;
+  try {
+    const base = String(env.SUPABASE_URL).replace(/\/$/, "");
+    const h = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY };
+    const r1 = await fetch(`${base}/rest/v1/osis_users?auth_id=eq.${authUserId}&select=id`, { headers: h });
+    if (!r1.ok) return 0;
+    const arr = await r1.json();
+    const osisId = arr && arr[0] && arr[0].id;
+    if (!osisId) return 0; // JWT valid tapi bukan anggota OSIS (pendaftar liar)
+    const r2 = await fetch(`${base}/rest/v1/rpc/akses_saya`, {
+      method: "POST",
+      headers: { ...h, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_user_id: osisId }),
+    });
+    if (!r2.ok) return 0;
+    const a = await r2.json();
+    if (a && a.super) return osisId;
+    if (a && Array.isArray(a.halaman) && a.halaman.length) return osisId;
+    return 0;
+  } catch {
+    return 0;
   }
 }
 
@@ -191,13 +231,26 @@ export default {
       return jsonResponse({ error: "Path tidak diizinkan." }, 400, env, req);
     }
 
-    // Wajib login Supabase untuk tulis/hapus (baca publik bebas via domain R2).
-    const authState = await jwtValid(env, req);
-    if (authState === "tanpa-token") {
-      return jsonResponse({ error: "Belum login — token tidak dikirim browser." }, 401, env, req);
-    }
-    if (authState !== "ok") {
-      return jsonResponse({ error: "Sesi tidak valid — login ulang dulu." }, 401, env, req);
+    // Aturan auth:
+    // - PUT ke path publik formulir/* berpola: bebas (responden tanpa login).
+    // - Selain itu: wajib JWT valid + terlink ke osis_users + punya hak kelola.
+    //   (signUp terbuka untuk klaim akun, tapi akun tak terlink = tak berhak.)
+    const publik = op === "put" && POLA_PUBLIK.test(path);
+    if (!publik) {
+      if (!env.SUPABASE_SERVICE_KEY) {
+        return jsonResponse({ error: "Worker belum dikonfigurasi (service key hilang)." }, 500, env, req);
+      }
+      const { state, authUserId } = await jwtValid(env, req);
+      if (state === "tanpa-token") {
+        return jsonResponse({ error: "Belum login — login dulu." }, 401, env, req);
+      }
+      if (state !== "ok") {
+        return jsonResponse({ error: "Sesi tidak valid — login ulang dulu." }, 401, env, req);
+      }
+      const osisId = await cekHakOsis(env, authUserId);
+      if (!osisId) {
+        return jsonResponse({ error: "Akun ini tidak punya hak upload." }, 403, env, req);
+      }
     }
 
     const region = env.R2_REGION || "auto";
