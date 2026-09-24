@@ -11,6 +11,8 @@
   --paper: #fffdfa;
   --paper-2: #f5efea;
   --yellow: #ffd11a;
+  --green: #1a7f37;
+  --green-bg: #e7f8ec;
   --white: #ffffff;
   --gray: #6f6668;
   --line: #e8e0da;
@@ -1790,6 +1792,49 @@ body.edit-mode .bento-meta .gal-del {
 .lagu-item:first-child {
   background: var(--white);
   box-shadow: 3px 3px 0 var(--ink);
+}
+/* Request udah selesai diputar (ditandai super_admin): hijau */
+.lagu-item.selesai {
+  background: var(--green-bg);
+  border-color: var(--green);
+}
+.lagu-item.selesai:first-child {
+  background: var(--green-bg);
+  box-shadow: 3px 3px 0 var(--green);
+}
+.lagu-item.selesai .lagu-kaset i {
+  color: var(--green);
+}
+.lagu-badge-selesai {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 0.62rem;
+  font-weight: 900;
+  background: var(--green);
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+.lagu-badge-selesai i {
+  font-size: 0.6rem;
+}
+/* Tombol check super_admin: hijau */
+.hapus-btn.selesai-btn {
+  color: var(--green);
+}
+.hapus-btn.selesai-btn:hover {
+  background: var(--green);
+  color: #fff;
+}
+/* Kondisi udah selesai: tombol jadi undo (tetap hijau biar jelas) */
+.hapus-btn.selesai-btn.on {
+  background: var(--green);
+  color: #fff;
+}
+.hapus-btn.selesai-btn.on:hover {
+  background: #145f2a;
 }
 /* Kotak kaset: lingkaran kaset muter, ikon melodi di tengah */
 .lagu-cover {

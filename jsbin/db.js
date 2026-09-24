@@ -398,11 +398,22 @@ async function catatVisitor() {
 
 // Ambil request lagu terbaru (terbaru di atas, maks 30)
 async function getRequestLagu() {
-    const { data, error } = await supa
+    const kolom = "id, device_id, judul, penyanyi, pesan, nama, selesai, created_at";
+    let { data, error } = await supa
         .from("lagu_requests")
-        .select("id, device_id, judul, penyanyi, pesan, nama, created_at")
+        .select(kolom)
         .order("created_at", { ascending: false })
         .limit(30);
+    // Fallback: DB belum dimigrasi (kolom selesai belum ada) -> select lama.
+    if (error && String(error.message || "").match(/selesai|schema cache|column/i)) {
+        const fb = await supa
+            .from("lagu_requests")
+            .select("id, device_id, judul, penyanyi, pesan, nama, created_at")
+            .order("created_at", { ascending: false })
+            .limit(30);
+        if (fb.error) throw fb.error;
+        return (fb.data || []).map(r => ({ ...r, selesai: false }));
+    }
     if (error) throw error;
     return data || [];
 }
@@ -482,6 +493,17 @@ async function editLaguOsis(userId, id, judul, penyanyi, pesan, nama) {
         p_penyanyi: penyanyi,
         p_pesan: pesan,
         p_nama: nama
+    });
+    if (error) throw error;
+    cekOk(data);
+}
+
+// Tandai selesai / batalkan request lagu (KHUSUS super_admin)
+async function tandaiLaguSelesai(userId, id, selesai = true) {
+    const { data, error } = await supa.rpc("tandai_lagu_selesai", {
+        p_user_id: userId,
+        p_id: id,
+        p_selesai: !!selesai
     });
     if (error) throw error;
     cekOk(data);

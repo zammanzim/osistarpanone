@@ -46,8 +46,10 @@ CREATE TABLE IF NOT EXISTS public.lagu_requests (
 );
 
 ALTER TABLE public.lagu_requests ADD COLUMN IF NOT EXISTS pesan text NOT NULL DEFAULT '';
+ALTER TABLE public.lagu_requests ADD COLUMN IF NOT EXISTS selesai boolean NOT NULL DEFAULT false;
 
 CREATE INDEX IF NOT EXISTS idx_lagu_requests_created ON public.lagu_requests (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_lagu_requests_selesai ON public.lagu_requests (selesai);
 
 ALTER TABLE public.lagu_requests ENABLE ROW LEVEL SECURITY;
 
@@ -553,6 +555,31 @@ BEGIN
     RETURN 'ERR_NOT_FOUND';
 END $$;
 
+-- Tandai selesai / batalkan request lagu (KHUSUS super_admin).
+-- p_selesai=true -> tandai selesai (hijau di playlist), false -> batalkan.
+CREATE OR REPLACE FUNCTION public.tandai_lagu_selesai(
+    p_user_id bigint,
+    p_id bigint,
+    p_selesai boolean DEFAULT true
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE
+    v_username text;
+BEGIN
+    SELECT username INTO v_username
+    FROM public.osis_users WHERE id = p_user_id;
+    IF NOT FOUND OR NOT public.osis_is_super(v_username) THEN
+        RETURN 'ERR_NO_AUTH';
+    END IF;
+    UPDATE public.lagu_requests
+    SET selesai = COALESCE(p_selesai, true)
+    WHERE id = p_id;
+    IF FOUND THEN RETURN 'OK'; END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
 -- ============ 5. GRANT FUNCTION (anon) ============
 REVOKE EXECUTE ON FUNCTION public.kirim_aspirasi_terbatas(text, text, text, text, boolean, integer) FROM public;
 REVOKE EXECUTE ON FUNCTION public.kirim_lagu_terbatas(text, text, text, text, text, integer) FROM public;
@@ -565,6 +592,7 @@ REVOKE EXECUTE ON FUNCTION public.edit_aspirasi_own(text, bigint, text, text, te
 REVOKE EXECUTE ON FUNCTION public.edit_lagu_own(text, bigint, text, text, text, text) FROM public;
 REVOKE EXECUTE ON FUNCTION public.edit_aspirasi_osis(bigint, bigint, text, text, text) FROM public;
 REVOKE EXECUTE ON FUNCTION public.edit_lagu_osis(bigint, bigint, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.tandai_lagu_selesai(bigint, bigint, boolean) FROM public;
 GRANT EXECUTE ON FUNCTION public.kirim_aspirasi_terbatas(text, text, text, text, boolean, integer) TO anon;
 GRANT EXECUTE ON FUNCTION public.kirim_lagu_terbatas(text, text, text, text, text, integer) TO anon;
 GRANT EXECUTE ON FUNCTION public.tambah_visitor_unik(text, text, text, text, text, text, text) TO anon;
@@ -576,6 +604,7 @@ GRANT EXECUTE ON FUNCTION public.edit_aspirasi_own(text, bigint, text, text, tex
 GRANT EXECUTE ON FUNCTION public.edit_lagu_own(text, bigint, text, text, text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.edit_aspirasi_osis(bigint, bigint, text, text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.edit_lagu_osis(bigint, bigint, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.tandai_lagu_selesai(bigint, bigint, boolean) TO anon;
 
 -- ============ 6. TABEL GALLERY (dokumentasi kegiatan) ============
 -- Satu baris = satu kegiatan. `fotos` = jsonb array path foto di bucket.

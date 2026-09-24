@@ -29,6 +29,7 @@ const Lagu = {
             const deviceId = getDeviceId();
             const batasHapus = Date.now() - 3600000;
             const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
+            const isSuper = !!(isOsis && typeof OsisAuth.isSuper === "function" && OsisAuth.isSuper());
             const groups = [];
             let curKey = null;
             let curGroup = null;
@@ -50,16 +51,25 @@ const Lagu = {
                     // Pengunjung biasa: tetap seperti dulu (request sendiri <1 jam).
                     const editMode = document.body.classList.contains("edit-mode");
                     const canKelola = isOsis ? editMode : own;
+                    // Super admin: bisa nandain lagu udah selesai (hijau).
+                    // Tombol check selalu tampil buat super (tanpa edit mode).
+                    const selesai = !!l.selesai;
+                    const tombolSelesai = isSuper
+                        ? (selesai
+                            ? `<button class="hapus-btn selesai-btn on" onclick="Lagu.tandaiSelesai(${l.id}, false)" title="Batalkan tanda selesai"><i class="fa-solid fa-rotate-left"></i></button>`
+                            : `<button class="hapus-btn selesai-btn" onclick="Lagu.tandaiSelesai(${l.id}, true)" title="Tandai selesai (udah diputar)"><i class="fa-solid fa-check"></i></button>`)
+                        : "";
                     return `
-                <div class="lagu-item">
+                <div class="lagu-item${selesai ? " selesai" : ""}">
                     <div class="lagu-cover"><div class="lagu-kaset"><i class="fa-solid fa-music"></i></div></div>
                     <div class="lagu-body">
-                        <div class="lagu-title">${escapeHtml(l.judul)}</div>
+                        <div class="lagu-title">${escapeHtml(l.judul)}${selesai ? ` <span class="lagu-badge-selesai"><i class="fa-solid fa-circle-check"></i> Selesai</span>` : ""}</div>
                         <div class="lagu-artis">${escapeHtml(l.penyanyi || "-")}</div>
                         ${l.pesan ? `<div class="lagu-pesan">${escapeHtml(l.pesan)}</div>` : ""}
                         <div class="lagu-meta">
                             <span><i class="fa-solid fa-user"></i> ${escapeHtml(l.nama || "Anonim")}</span>
                             <span class="pesan-waktu">${Lagu.formatWaktu(l.created_at)}</span>
+                            ${tombolSelesai}
                             ${canKelola ? `<button class="hapus-btn" onclick="Lagu.edit(${l.id})" title="${isOsis ? "Edit (OSIS)" : "Edit request-ku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
                             ${canKelola ? `<button class="hapus-btn" onclick="Lagu.hapus(${l.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus request-ku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
                         </div>
@@ -186,6 +196,34 @@ const Lagu = {
                 showPopup("Cuma OSIS yang bisa hapus ini.", "error");
             } else {
                 showPopup("Gagal hapus. Cek koneksi lalu coba lagi.", "error");
+            }
+        }
+    },
+
+    // ============ TANDAI SELESAI (KHUSUS super_admin, hijau di UI) ============
+    async tandaiSelesai(id, nilai = true) {
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        const isSuper = !!(u && u.mode === "osis" && typeof OsisAuth.isSuper === "function" && OsisAuth.isSuper());
+        if (!isSuper) {
+            showToast("Cuma super admin yang bisa nandain selesai.", "error");
+            return;
+        }
+        // Langsung tandai tanpa popup, batalin lewat tombol undo.
+        try {
+            await tandaiLaguSelesai(u.id, id, nilai);
+            const item = (Lagu.cache || []).find(l => String(l.id) === String(id));
+            if (item) item.selesai = !!nilai;
+            showToast(nilai ? "Lagu ditandai selesai" : "Tanda selesai dibatalkan", "success");
+            Cache.del("lagu");
+            Lagu.muatDaftar();
+        } catch (err) {
+            console.error(err);
+            if (err.message === "ERR_NO_AUTH") {
+                showPopup("Cuma super admin yang bisa nandain selesai.", "error");
+            } else if (String(err.message || "").match(/schema cache|does not exist|not found|tandai_lagu_selesai/i)) {
+                showPopup("Database belum dimigrasi. Jalankan dulu migrasi-lagu-selesai.sql di Supabase.", "error");
+            } else {
+                showPopup("Gagal menandai. Cek koneksi lalu coba lagi.", "error");
             }
         }
     },
