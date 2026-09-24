@@ -1,0 +1,21 @@
+# wrangler.toml — Worker osis-media-presign
+# Deploy: cd worker && npx wrangler deploy
+# Secret (JANGAN taruh di file ini): R2_ACCESS_KEY, R2_SECRET_KEY
+#   npx wrangler secret put R2_ACCESS_KEY
+#   npx wrangler secret put R2_SECRET_KEY
+
+name = "osis-media-presign"
+main = "osis-media-presign.js"
+compatibility_date = "2024-09-01"
+
+[vars]
+# Endpoint S3-compatible R2: https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+R2_ENDPOINT = "https://3867256d31431bf04133a573895a27da.r2.cloudflarestorage.com"
+R2_BUCKET = "osis-media"
+R2_REGION = "auto"
+# Domain publik R2 (custom domain): https://media.osistarpanone.my.id
+PUBLIC_BASE_URL = "https://media.osistarpanone.my.id"
+SUPABASE_URL = "https://eefdfaqcccgpfthdidzp.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlZmRmYXFjY2NncGZ0aGRpZHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NzU1NzEsImV4cCI6MjEwMTE1MTU3MX0.QupX_C_jOzgsTkDmr678gD_vEJUPpYfzKKAeY6Hrod0"
+# Domain frontend yang boleh memanggil (pisahkan koma bila banyak)
+ALLOWED_ORIGIN = "https://osistarpanone.my.id"

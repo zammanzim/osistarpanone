@@ -63,7 +63,7 @@ const Dashboard = {
     },
 
     // ============ HAK KENDALI SAYA (khusus halaman baru osis/index) ============
-    // Guard element: halaman lama (osisbin) tidak punya panel ini -> skip.
+    // Guard element: kalau panel tidak ada di halaman ini -> skip.
     renderHak() {
         const chips = document.getElementById("hakChips");
         if (!chips) return;

@@ -296,7 +296,7 @@ window.closePopup = function () {
 //    #tabForm, #tabDetail, #dokumenForm, #dokumenDetail, #evaluasiForm,
 //    #evaluasiDetail, #notulensiForm, #notulensiDetail, #prokerForm,
 //    #prokerDetail, #taskForm, #taskDetail, #anggotaPopup, #sekbidPopup)
-// File ini dimuat di semua halaman (publik + osis + osisbin), jadi satu
+// File ini dimuat di semua halaman (publik + osis), jadi satu
 // tempat ini cukup untuk meng-cover semuanya tanpa edit tiap modul:
 //   - ESC (cadangan untuk popup yang belum punya handler sendiri)
 //   - klik area kosong (sudah ada di tiap modul; tidak diubah)

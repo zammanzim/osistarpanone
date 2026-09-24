@@ -1,0 +1,6 @@
+# Salin jadi .dev.vars untuk jalan lokal (wrangler dev):
+#   Copy-Item .dev.vars.example .dev.vars
+# Lalu isi nilai aslinya di .dev.vars. File .dev.vars JANGAN di-commit
+# (sudah di-ignore). Untuk production pakai: wrangler secret put <NAMA>
+R2_ACCESS_KEY = "isi-access-key-id-r2-di-sini"
+R2_SECRET_KEY = "isi-secret-access-key-r2-di-sini"

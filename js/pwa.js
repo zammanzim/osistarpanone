@@ -16,7 +16,7 @@
     if (!("serviceWorker" in navigator)) return;
     if (!/^https?:$/.test(location.protocol)) return; // file:// tidak dukung SW
     var pathBersih = location.pathname.replace(/\\/g, "/");
-    var diSub = /(^|\/)(osis|osisbin)\//.test(pathBersih);
+    var diSub = /(^|\/)osis\//.test(pathBersih);
     var swUrl = diSub ? "../sw.js" : "sw.js";
     // Ada controller sejak awal = kunjungan ulang (sudah ada SW aktif).
     // Kalau null = kunjungan pertama, jangan reload (tidak ada versi lama).
@@ -134,7 +134,7 @@
     else document.addEventListener("DOMContentLoaded", fn);
   }
 
-  // ---- 3) Outbox offline — muat sibling js/outbox.js (1 file untuk js+jsbin) ----
+  // ---- 3) Outbox offline — muat sibling js/outbox.js ----
   function muatOutbox() {
     try {
       if (document.querySelector('script[data-outbox]')) return;

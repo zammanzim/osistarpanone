@@ -50,11 +50,49 @@ function namaPengunggah() {
   } catch { return ""; }
 }
 
-// Bangun URL publik foto di bucket
+// Bangun URL publik media. DB menyimpan path relatif (mis. gallery/abc.jpg)
+// yang identik di R2 dan di bucket Supabase lama — cukup ganti base URL.
+// File lama dibulk-pindah ke R2 dengan key yang sama, jadi tanpa migrasi DB.
 function getFoto(pathFoto) {
   if (!pathFoto) return "";
   if (pathFoto.startsWith("http")) return pathFoto;
-  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${pathFoto}`;
+  const bersih = String(pathFoto).replace(/^\/+/, "");
+  if (typeof R2_ENABLED !== "undefined" && R2_ENABLED && typeof R2_PUBLIC_BASE === "string" && R2_PUBLIC_BASE.startsWith("http")) {
+    return `${R2_PUBLIC_BASE.replace(/\/$/, "")}/${bersih}`;
+  }
+  return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${bersih}`;
+}
+
+// Minta presigned URL ke Worker (auth via JWT Supabase dari session aktif).
+async function r2MintaPresign(op, path, contentType) {
+  let token = "";
+  try {
+    const { data } = await supa.auth.getSession();
+    token = (data && data.session && data.session.access_token) || "";
+  } catch {}
+  const res = await fetch(R2_PRESIGN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: "Bearer " + token } : {}),
+    },
+    body: JSON.stringify(op === "delete"
+      ? { op, path }
+      : { op, path, contentType }),
+  });
+  let body = null;
+  try { body = await res.json(); } catch {}
+  if (!res.ok) {
+    const pesan = (body && body.error) || `Presign gagal (${res.status})`;
+    throw new Error(res.status === 401 ? "Sesi habis — login ulang dulu." : pesan);
+  }
+  if (!body || !body.url) throw new Error("Presign tidak mengembalikan URL.");
+  return body;
+}
+
+function r2Aktif() {
+  return typeof R2_ENABLED !== "undefined" && R2_ENABLED
+    && typeof R2_PRESIGN_URL === "string" && R2_PRESIGN_URL.startsWith("http");
 }
 
 // =========================================================================
@@ -1994,7 +2032,8 @@ async function saveSiteText(userId, kunci, nilai) {
 // =========================================================================
 // SIDEBAR DINAMIS - config pusat milik super_admin (site_content).
 // Baca publik, tulis hanya pengelola Site (termasuk super_admin).
-// Kunci: "sidebar_menu" (folder /osis), "sidebar_menu_bin" (folder /osisbin).
+// Kunci: "sidebar_menu" (folder /osis). "sidebar_menu_bin" legacy
+// (folder /osisbin yang sudah dihapus) — diabaikan, jangan dipakai baru.
 // =========================================================================
 async function getSidebarMenu(kunci) {
   const { data, error } = await supa
@@ -2327,16 +2366,38 @@ async function uploadFotoStorage(file, path) {
       console.warn("compress gagal, pakai asli:", e);
     }
   }
+  const key = String(path).replace(/^\/+/, "");
+  // Jalur utama: presigned PUT langsung browser -> R2.
+  if (r2Aktif()) {
+    const tipe = (toUpload && toUpload.type) || (file && file.type) || "application/octet-stream";
+    const pres = await r2MintaPresign("put", key, tipe);
+    const up = await fetch(pres.url, {
+      method: "PUT",
+      headers: { "Content-Type": tipe },
+      body: toUpload,
+    });
+    if (!up.ok) throw new Error(`Upload R2 gagal (${up.status})`);
+    return key;
+  }
+  // Fallback legacy (sebelum Worker live): bucket Supabase lama.
   // kalau path masih .png tapi file jadi jpeg, biarin aja - storage ga ngecek ekstensi
   const { error } = await supa.storage
     .from(STORAGE_BUCKET)
-    .upload(path, toUpload, { upsert: true, cacheControl: "3600" });
+    .upload(key, toUpload, { upsert: true, cacheControl: "3600" });
   if (error) throw error;
-  return path;
+  return key;
 }
 
 async function hapusFotoStorage(path) {
   if (!path) return;
-  const { error } = await supa.storage.from(STORAGE_BUCKET).remove([path]);
+  const key = String(path).replace(/^\/+/, "");
+  if (r2Aktif()) {
+    const pres = await r2MintaPresign("delete", key);
+    const del = await fetch(pres.url, { method: "DELETE" });
+    // 404 = file memang sudah tidak ada, anggap sukses biar data DB tetap bisa dibersihkan.
+    if (!del.ok && del.status !== 404) throw new Error(`Hapus R2 gagal (${del.status})`);
+    return;
+  }
+  const { error } = await supa.storage.from(STORAGE_BUCKET).remove([key]);
   if (error) throw error;
 }

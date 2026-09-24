@@ -9,7 +9,7 @@
 // =========================================================================
 
 const OsisSidebar = {
-  // Kunci config di site_content untuk area ini ("sidebar_menu_bin" untuk /osisbin).
+  // Kunci config di site_content untuk area ini.
   KUNCI: "sidebar_menu",
 
   DEFAULT_MENU: [
