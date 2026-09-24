@@ -2298,6 +2298,17 @@ async function setAkses(adminId, targetId, halaman, sekbidId = null, ubahSekbid 
   return data;
 }
 
+// Jadikan/cabut super_admin (hanya super_admin aktif). throw ERR_NO_AUTH /
+// ERR_NOT_FOUND / ERR_SELF (tidak bisa cabut diri sendiri).
+async function setSuper(adminId, targetId, jadikan) {
+  const { data, error } = await supa.rpc("set_super", {
+    p_admin: adminId, p_target: targetId, p_jadikan_super: !!jadikan,
+  });
+  if (error) throw error;
+  cekOk(data);
+  return data;
+}
+
 // Matriks semua user + haknya (hanya super_admin). Tanpa password.
 async function aksesMatriks(adminId) {
   const { data, error } = await supa.rpc("akses_matriks", { p_admin: adminId });

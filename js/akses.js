@@ -127,11 +127,12 @@ const Akses = {
         const kartuOrang = (r) => {
             const nHal = new Set(r.halaman || []).size;
             const inisial = (String(r.nama || r.username || "?").trim().charAt(0) || "?").toUpperCase();
+            const mahkota = r.is_super ? ` <i class="fa-solid fa-crown" title="Super Admin" style="color:var(--yellow, #f5b301)"></i>` : "";
             return `
             <button type="button" class="aks-row" onclick="Akses.detail(${r.id})">
                 <span class="ava">${escapeHtml(inisial)}</span>
                 <span style="min-width:0">
-                    <span class="nm">${escapeHtml(r.nama || r.username || "-")}</span>
+                    <span class="nm">${escapeHtml(r.nama || r.username || "-")}${mahkota}</span>
                     <span class="sub">@${escapeHtml(r.username || "-")} · ${escapeHtml(r.jabatan || "-")}${r.sekbid_nama ? ` · ${escapeHtml(r.sekbid_nama)}` : ""} · ${nHal} halaman</span>
                 </span>
                 <i class="fa-solid fa-chevron-right chev"></i>
@@ -184,6 +185,13 @@ const Akses = {
         document.getElementById("aksDetailBody").innerHTML = `
             <div class="aks-sub">@${escapeHtml(r.username || "-")} · ${escapeHtml(r.jabatan || "-")}${Akses.kunciAngkatan(r) ? ` · ${escapeHtml(Akses.labelAngkatan(Akses.kunciAngkatan(r)))}` : ""}${r.sekbid_nama ? ` · Sekbid ${escapeHtml(r.sekbid_nama)}` : ""} · ${punya.size} halaman dicentang</div>
             ${sekbidInfo}
+            <div class="aks-sub" style="margin-top:10px">Super admin (semua hak + kelola akses)</div>
+            <div class="aks-grid">
+                <label class="aks-check${r.is_super ? " on" : ""}" style="border-color:var(--red, #e11d2e)">
+                    <input type="checkbox" data-aks-super="${r.id}" ${r.is_super ? "checked" : ""}>
+                    <i class="fa-solid fa-crown"></i> Super Admin
+                </label>
+            </div>
             <div class="aks-sub" style="margin-top:10px">Halaman OSIS (/osis)</div>
             <div class="aks-grid">${checks(Akses.HALAMAN_OSIS)}</div>
             <div class="aks-sub" style="margin-top:10px">Bagian beranda (mode edit)</div>
@@ -246,6 +254,19 @@ const Akses = {
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         try {
             await setAkses(u.id, targetId, halaman, null, false);
+            // Super admin berubah? Simpan juga (tidak bisa cabut diri sendiri).
+            const cbSuper = document.querySelector(`input[data-aks-super="${targetId}"]`);
+            const row = (Akses.rows || []).find(x => String(x.id) === String(targetId));
+            if (cbSuper && row && cbSuper.checked !== !!row.is_super) {
+                try {
+                    await setSuper(u.id, targetId, cbSuper.checked);
+                } catch (eSuper) {
+                    const kode = String((eSuper && eSuper.message) || eSuper || "");
+                    if (kode.includes("ERR_SELF")) {
+                        showToast("Tidak bisa mencabut super admin diri sendiri.", "error");
+                    } else throw eSuper;
+                }
+            }
             showToast("Akses diperbarui.", "success");
             Akses.tutupDetail();
             await Akses.muat();
