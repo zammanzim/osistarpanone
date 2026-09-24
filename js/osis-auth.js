@@ -169,12 +169,18 @@ const OsisAuth = {
         const guest = OsisAuth.isGuest(user);
         const ikon = guest ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-id-card"></i>';
         const judul = guest ? "Tamu" : (user.jabatan || "Anggota OSIS");
+        // Link relatif terhadap posisi halaman: root -> osis/profil,
+        // dalam /osis/* -> profil. Guest diarahkan ke login.
+        const diSub = /(^|\/)osis\//.test(String(location.pathname || "").replace(/\\/g, "/"));
+        const hrefChip = guest
+            ? ((diSub ? "../" : "") + "login")
+            : ((diSub ? "" : "osis/") + "profil");
 
         area.innerHTML = `
-            <span class="user-chip ${guest ? "chip-guest" : ""}" title="${judul}">
+            <a href="${hrefChip}" class="user-chip ${guest ? "chip-guest" : ""}" title="${escapeHtml(judul)} — klik untuk ${guest ? "masuk" : "buka profil"}" style="text-decoration:none;color:inherit;cursor:pointer">
                 ${ikon}
                 ${escapeHtml(OsisAuth.displayName(user))}
-            </span>
+            </a>
             <button class="icon-btn" title="Keluar" onclick="OsisAuth.confirmLogout()">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
             </button>`;
