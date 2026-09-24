@@ -108,7 +108,7 @@ const OsisAuth = {
             if (cached && cached.mode === "osis") OsisAuth.buangCacheOsis();
             return;
         }
-        if (cached && cached.mode === "osis" && cached.auth_id === session.user.id && cached.id) {
+        if (cached && cached.mode === "osis" && cached.auth_id === session.user.id && cached.id && cached.auth_email) {
             return; // sudah sinkron
         }
         if (cached && OsisAuth.isGuest(cached)) return; // guest: lokal saja

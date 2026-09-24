@@ -5,13 +5,13 @@
 -- Tulis tetap lewat RPC SECURITY DEFINER (jalan sebagai owner, tidak terpengaruh).
 --
 -- Kolom tabel: id, username, password, nama, jabatan, foto, bio, angkatan,
--- sekbid_id, auth_id. Semua dibuka KECUALI password. auth_id dibuka karena
--- client memakainya di klausa WHERE (Postgres mewajibkan hak SELECT untuk
--- kolom yang dipakai di WHERE).
+-- sekbid_id, auth_id, auth_email. Semua dibuka KECUALI password. auth_id dan
+-- auth_email dibuka karena client memakainya di klausa WHERE (Postgres
+-- mewajibkan hak SELECT untuk kolom yang dipakai di WHERE) dan menampilkannya.
 -- =============================================================================
 
 REVOKE ALL ON public.osis_users FROM anon, authenticated;
-GRANT SELECT (id, username, nama, jabatan, foto, bio, angkatan, sekbid_id, auth_id)
+GRANT SELECT (id, username, nama, jabatan, foto, bio, angkatan, sekbid_id, auth_id, auth_email)
     ON public.osis_users TO anon, authenticated;
 
 -- RLS tetap MATI untuk tabel ini (seperti sebelumnya) — keamanan kolom dipegang

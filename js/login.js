@@ -68,7 +68,9 @@ const Login = {
         }
         if (!row) return Login.tampilError("Akun tidak ditemukan.");
 
-        const email = emailUntukOsis(row.id);
+        // Email tersimpan (<nama>@domain); klaim mandiri pakai fallback id.
+        const email = emailUntukOsis(row);
+        const emailKlaim = emailKlaimOsis(row.id);
         try {
             // 1) Coba login normal (akun sudah termigrasi ke Auth).
             const s1 = await supa.auth.signInWithPassword({ email, password: pw });
@@ -76,10 +78,19 @@ const Login = {
                 await Login.lanjutMasuk(row.id);
                 return;
             }
+            // 1b) Email tersimpan tidak cocok tapi fallback id mungkin bisa
+            // (mis. auth_email belum tersinkron). Coba sekali sebelum klaim.
+            if (email !== emailKlaim) {
+                const s1b = await supa.auth.signInWithPassword({ email: emailKlaim, password: pw });
+                if (!s1b.error) {
+                    await Login.lanjutMasuk(row.id);
+                    return;
+                }
+            }
             // 2) Belum termigrasi: daftar + klaim akun via RPC (verifikasi
             //    password lama di server, lalu password plaintext dihapus).
             //    Butuh dashboard: Auth "Confirm email" = OFF.
-            const su = await supa.auth.signUp({ email, password: pw });
+            const su = await supa.auth.signUp({ email: emailKlaim, password: pw });
             const sudahAda = su.error && /already|registered|exists|duplicate/i.test(su.error.message || "");
             if (su.error && !sudahAda) {
                 console.error(su.error);
@@ -94,14 +105,14 @@ const Login = {
             // signUp kadang tidak langsung memberi session — coba login lagi.
             let sesi = su.data && su.data.session;
             if (!sesi) {
-                const s2 = await supa.auth.signInWithPassword({ email, password: pw });
+                const s2 = await supa.auth.signInWithPassword({ email: emailKlaim, password: pw });
                 if (s2.error || !s2.data.session) {
                     console.error(s2.error);
                     return Login.tampilError("Gagal mengaktifkan akun. Hubungi admin.");
                 }
             }
             const { data: hasil, error: eLink } = await supa.rpc("migrasi_link_auth", {
-                p_username: username, p_password: pw,
+                p_username: username, p_password: pw, p_email: emailKlaim,
             });
             if (eLink) {
                 console.error(eLink);

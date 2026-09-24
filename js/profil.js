@@ -283,7 +283,14 @@ const Profil = {
             // Password dipegang Supabase Auth (bcrypt). Verifikasi password lama
             // dengan login ulang, lalu update via Auth API. Kolom plaintext lama
             // sudah dimatikan (migrasi-auth-2-kunci.sql).
-            const email = emailUntukOsis(Profil.userId);
+            // Email diambil dari cache/baris terbaru (bisa <nama>@domain).
+            let email = emailUntukOsis(u);
+            if (!u.auth_email) {
+                try {
+                    const fresh = await getOsisUserById(Profil.userId);
+                    if (fresh && fresh.auth_email) email = fresh.auth_email;
+                } catch {}
+            }
             const cek = await supa.auth.signInWithPassword({ email, password: oldPw });
             if (cek.error) {
                 showToast("Password lama salah", "error");

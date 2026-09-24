@@ -287,8 +287,16 @@ function getVisitorKey() {
 // JANGAN pernah select kolom password dari client lagi.
 // =========================================================================
 
-// Email sintetis stabil untuk user OSIS (id tidak pernah berubah).
-function emailUntukOsis(id) {
+// Email login: pakai auth_email tersimpan (<nama>@domain, dari migrasi bulk).
+// Fallback deterministik osis-<id>@domain (dipakai alur klaim mandiri).
+function emailUntukOsis(row) {
+  const tersimpan = row && String(row.auth_email || "").trim();
+  if (tersimpan && tersimpan.includes("@")) return tersimpan;
+  return `osis-${row.id}@${AUTH_EMAIL_DOMAIN}`;
+}
+
+// Email fallback klaim mandiri (deterministik, anti-bentrok nama kembar).
+function emailKlaimOsis(id) {
   return `osis-${id}@${AUTH_EMAIL_DOMAIN}`;
 }
 
@@ -298,13 +306,13 @@ async function getOsisUser(username) {
   try {
     const { data, error } = await supa
       .from("osis_users")
-      .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id")
+      .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id, auth_email")
       .eq("username", username)
       .maybeSingle();
     if (error) throw error;
     return data || null;
   } catch (err) {
-    if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|column/i)) throw err;
+    if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|auth_email|column/i)) throw err;
     const { data, error } = await supa
       .from("osis_users")
       .select("id, username, nama, jabatan")
@@ -320,13 +328,13 @@ async function getOsisUserById(id) {
   try {
     const { data, error } = await supa
       .from("osis_users")
-      .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id")
+      .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id, auth_email")
       .eq("id", id)
       .maybeSingle();
     if (error) throw error;
     return data || null;
   } catch (err) {
-    if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|column/i)) throw err;
+    if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|auth_email|column/i)) throw err;
     const { data, error } = await supa
       .from("osis_users")
       .select("id, username, nama, jabatan")
@@ -343,13 +351,13 @@ async function getOsisUserByAuthId(authId) {
   try {
     const { data, error } = await supa
       .from("osis_users")
-      .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id")
+      .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id, auth_email")
       .eq("auth_id", authId)
       .maybeSingle();
     if (error) throw error;
     return data || null;
   } catch (err) {
-    if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|column/i)) throw err;
+    if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|auth_email|column/i)) throw err;
     return null;
   }
 }
