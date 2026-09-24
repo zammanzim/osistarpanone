@@ -257,9 +257,11 @@ const Absensi = {
         const kartuHari = (t) => {
             const rows = grup[t].slice().sort((a, b) => String(a.nama || "").localeCompare(String(b.nama || "")));
             const keg = (rows.map(r => String(r.kegiatan || "").trim()).find(Boolean) || "");
+            const pencatat = [...new Set(rows.map(r => String(r.pengunggah || "").trim()).filter(Boolean))].join(", ");
             return `<div class="rekap-card" style="margin-bottom:12px">
                 <h3><i class="fa-solid fa-calendar-day"></i> ${escapeHtml(Absensi.fmtTanggalPanjang(t))} <span class="jenis total" style="margin-left:auto">${rows.length} tidak hadir</span></h3>
                 ${keg ? `<div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:700; color:var(--gray); margin:-4px 0 8px 2px"><i class="fa-solid fa-bullhorn" style="color:var(--red)"></i> ${escapeHtml(keg)}</div>` : ""}
+                ${pencatat ? `<div style="font-size:0.72rem; font-weight:700; color:var(--gray); margin:-2px 0 8px 2px">Dicatat oleh ${escapeHtml(pencatat)}</div>` : ""}
                 <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Nama</th><th>Status</th><th>Alasan</th></tr></thead><tbody>
                 ${rows.map((r, i) => `<tr>
                     <td>${i + 1}</td>

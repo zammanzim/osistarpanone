@@ -318,6 +318,7 @@ const Galeri = {
                 <div class="bento-meta">
                     <h4>${judul}</h4>
                     ${deskripsi ? `<p>${deskripsi}</p>` : ""}
+                    ${olehLabel(item) ? `<div>${olehLabel(item)}</div>` : ""}
                     <button class="icon-btn gal-del" onclick="Galeri.hapus(${item.id})" title="Hapus kegiatan">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
@@ -333,7 +334,8 @@ const Galeri = {
         const gallery = item.fotos.map(path => ({
             src: getFoto(path),
             judul: item.judul || "Galeri",
-            caption: item.deskripsi || ""
+            caption: item.deskripsi || "",
+            oleh: item.pengunggah || ""
         })).filter(g => g.src);
         if (!gallery.length) return;
         const index = Math.max(0, Math.min(parseInt(fotoIdx, 10) || 0, gallery.length - 1));

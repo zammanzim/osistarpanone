@@ -287,7 +287,7 @@ const Program = {
                 <div class="prog-ico ${Program.tipe}"><i class="fa-solid fa-${Program.tipe === "bulanan" ? "calendar-days" : "calendar"}"></i></div>
                 <div class="prog-body">
                     <h4>${escapeHtml(p.nama || "Tanpa nama")}</h4>
-                    <div class="prog-meta"><b>${escapeHtml(Program.namaSekbid(p.sekbid_id))}</b> · ${escapeHtml(p.pj ? "PIC " + p.pj : "-")}</div>
+                    <div class="prog-meta"><b>${escapeHtml(Program.namaSekbid(p.sekbid_id))}</b> · ${escapeHtml(p.pj ? "PIC " + p.pj : "-")} ${olehLabel(p)}</div>
                     <div class="prog-meta">${escapeHtml(Program.rentang(p))}</div>
                     ${Program.bar(prog)}
                     <div class="prog-actions">
@@ -464,6 +464,7 @@ const Program = {
                 ${info("Lokasi", escapeHtml(p.lokasi || "-"))}
                 ${info("Target", escapeHtml(p.target_peserta || "-"))}
                 ${info("Tipe", Program.tipe === "bulanan" ? "Bulanan" : "Tahunan")}
+                ${info("Diupload oleh", escapeHtml(p.pengunggah || "-"))}
             </div>
             ${p.deskripsi ? `<div class="detail-text">${escapeHtml(p.deskripsi)}</div>` : ""}
             ${p.catatan ? `<div class="detail-text" style="margin-top:8px"><b>Catatan:</b> ${escapeHtml(p.catatan)}</div>` : ""}`;

@@ -92,7 +92,7 @@ const Poster = {
                 </div>
                 <img src="${getFoto(foto)}" alt="${judul || "Poster"}" loading="lazy" onerror="this.style.display='none'" onclick="Poster.bukaPopup(${item.id})">
                 <div class="poster-body">
-                    <p>${judul ? `<b>${judul}</b> ` : ""}${caption}</p>
+                    <p>${judul ? `<b>${judul}</b> ` : ""}${caption} ${olehLabel(item)}</p>
                 </div>
             </article>`;
     },
@@ -102,7 +102,7 @@ const Poster = {
         if (!item || !item.foto) return;
         if (typeof Home !== "undefined" && Home.bukaFotoPopup) {
             const img = document.querySelector(`.poster-card[data-poster-id="${id}"] img`);
-            Home.bukaFotoPopup(img || { src: getFoto(item.foto) }, item.judul || "Poster", item.caption || "");
+            Home.bukaFotoPopup(img || { src: getFoto(item.foto) }, item.judul || "Poster", item.caption || "", { oleh: item.pengunggah || "" });
         } else {
             window.open(getFoto(item.foto), "_blank");
         }

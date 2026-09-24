@@ -274,6 +274,7 @@ const AgendaAdmin = {
                 <div class="agenda-meta">
                     <span><i class="fa-solid fa-calendar"></i> ${tgl}</span>
                     <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(a.lokasi || "-")}</span>
+                    ${olehLabel(a)}
                 </div>
                 ${fotosHtml}
                 ${AgendaAdmin.bisaKendali(a.sekbid_id) ? `<div class="agenda-actions" onclick="event.stopPropagation()">
@@ -403,6 +404,7 @@ const AgendaAdmin = {
             <div class="agenda-meta">
                 <span><i class="fa-solid fa-calendar"></i> ${escapeHtml(tgl)}</span>
                 <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(a.lokasi || "-")}</span>
+                ${olehLabel(a)}
             </div>
             ${a.deskripsi ? `<p style="font-size:0.88rem; line-height:1.6; margin:6px 0 2px; overflow-wrap:anywhere">${escapeHtml(a.deskripsi)}</p>` : ""}
             <div class="agenda-detail-stage">

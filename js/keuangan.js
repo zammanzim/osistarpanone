@@ -531,7 +531,7 @@ const Keuangan = {
         (t) => `
             <tr data-kas-row="${t.id}">
                 <td style="white-space:nowrap">${Keuangan.fmtTanggal(t.tanggal)}</td>
-                <td><b>${escapeHtml(t.keterangan || "Tanpa keterangan")}</b><br><small style="color:var(--gray)">${escapeHtml(t.pic || "-")}</small></td>
+                <td><b>${escapeHtml(t.keterangan || "Tanpa keterangan")}</b><br><small style="color:var(--gray)">${escapeHtml(t.pic || "-")} ${olehLabel(t)}</small></td>
                 <td><span class="jenis ${t.jenis}">${t.jenis === "masuk" ? "Pemasukan" : "Pengeluaran"}</span></td>
                 <td>${escapeHtml(t.kategori || "-")}</td>
                 <td class="nominal ${t.jenis}">${t.jenis === "masuk" ? "+" : "-"} ${Keuangan.rp(t.nominal)}</td>
@@ -899,6 +899,7 @@ const Keuangan = {
                 ${info("Program Kerja", escapeHtml(t.proker_id ? Keuangan.prokerName(t.proker_id) : ""))}
                 ${info("Agenda", escapeHtml(t.agenda_id ? Keuangan.agendaName(t.agenda_id) : ""))}
                 ${info("Dibuat", Keuangan.fmtTanggalWaktu(t.created_at))}
+                ${info("Diupload oleh", escapeHtml(t.pengunggah || "-"))}
                 ${info("Diubah", Keuangan.fmtTanggalWaktu(t.updated_at))}
             </div>
             ${t.catatan ? `<div class="detail-text">${escapeHtml(t.catatan)}</div>` : ""}

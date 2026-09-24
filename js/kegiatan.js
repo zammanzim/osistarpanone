@@ -241,6 +241,7 @@ const Kegiatan = {
                 <div class="bento-meta">
                     <h4 data-kegiatan-field="judul" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="Judul Kegiatan">${judul}</h4>
                     ${deskripsi || isEdit ? `<p data-kegiatan-field="deskripsi" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="Sub judul / deskripsi singkat...">${deskripsi}</p>` : ""}
+                    ${olehLabel(item) ? `<div>${olehLabel(item)}</div>` : ""}
                     <button class="icon-btn gal-del" onclick="event.stopPropagation(); Kegiatan.hapus(${item.id})" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
                 <div class="bento-grid">${fotosHtml}</div>
@@ -268,6 +269,7 @@ const Kegiatan = {
           src: getFoto(path),
           judul: k.judul || "Kegiatan",
           caption: Kegiatan.getFotoCaption(k, idx),
+          oleh: k.pengunggah || "",
         });
       });
     });
@@ -284,6 +286,7 @@ const Kegiatan = {
       {
         gallery,
         index,
+        oleh: item.pengunggah || "",
         onChange(idx) {
           const current = gallery[idx];
           if (current)

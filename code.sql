@@ -3903,3 +3903,245 @@ SET halaman = (
 )
 WHERE jabatan = 'sekbid'
   AND NOT ('poster' = ANY(halaman));
+
+-- ============ INFORMASI HARIAN (pengganti broadcast grup) ============
+-- Halaman /osis/informasi (login OSIS). Card shareable via ?id=.
+-- Kelola butuh hak "informasi" (diatur super_admin di Akses).
+CREATE TABLE IF NOT EXISTS public.informasi (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    judul text NOT NULL DEFAULT '',
+    kepada text NOT NULL DEFAULT '',
+    pembuka text NOT NULL DEFAULT '',
+    tanggal text NOT NULL DEFAULT '',
+    jam text NOT NULL DEFAULT '',
+    tempat text NOT NULL DEFAULT '',
+    bawaan text NOT NULL DEFAULT '',
+    penutup text NOT NULL DEFAULT '',
+    created_by bigint,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_informasi_created ON public.informasi (created_at DESC);
+
+-- Kolom subjudul (teks kecil di bawah judul, cth: "Di dalam ruangan").
+ALTER TABLE public.informasi ADD COLUMN IF NOT EXISTS subjudul text NOT NULL DEFAULT '';
+
+ALTER TABLE public.informasi ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "informasi_osis_select" ON public.informasi;
+CREATE POLICY "informasi_osis_select" ON public.informasi
+    FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "informasi_public_insert" ON public.informasi;
+
+DROP FUNCTION IF EXISTS public.buat_informasi(bigint, text, text, text, text, text, text, text, text);
+CREATE OR REPLACE FUNCTION public.buat_informasi(
+    p_user_id bigint,
+    p_judul text,
+    p_subjudul text DEFAULT '',
+    p_kepada text DEFAULT '',
+    p_pembuka text DEFAULT '',
+    p_tanggal text DEFAULT '',
+    p_jam text DEFAULT '',
+    p_tempat text DEFAULT '',
+    p_bawaan text DEFAULT '',
+    p_penutup text DEFAULT ''
+)
+RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE
+    new_id bigint;
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'informasi') THEN
+        RETURN -1;
+    END IF;
+    IF p_judul IS NULL OR btrim(p_judul) = '' THEN
+        RETURN -2;
+    END IF;
+    INSERT INTO public.informasi (judul, subjudul, kepada, pembuka, tanggal, jam, tempat, bawaan, penutup, created_by)
+    VALUES (
+        left(btrim(p_judul), 80),
+        left(COALESCE(p_subjudul, ''), 80),
+        left(COALESCE(p_kepada, ''), 200),
+        left(COALESCE(p_pembuka, ''), 2000),
+        left(COALESCE(p_tanggal, ''), 80),
+        left(COALESCE(p_jam, ''), 80),
+        left(COALESCE(p_tempat, ''), 200),
+        left(COALESCE(p_bawaan, ''), 200),
+        left(COALESCE(p_penutup, ''), 2000),
+        p_user_id
+    )
+    RETURNING id INTO new_id;
+    RETURN new_id;
+END $$;
+
+DROP FUNCTION IF EXISTS public.update_informasi(bigint, bigint, text, text, text, text, text, text, text, text);
+CREATE OR REPLACE FUNCTION public.update_informasi(
+    p_user_id bigint,
+    p_id bigint,
+    p_judul text,
+    p_subjudul text DEFAULT NULL,
+    p_kepada text DEFAULT NULL,
+    p_pembuka text DEFAULT NULL,
+    p_tanggal text DEFAULT NULL,
+    p_jam text DEFAULT NULL,
+    p_tempat text DEFAULT NULL,
+    p_bawaan text DEFAULT NULL,
+    p_penutup text DEFAULT NULL
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'informasi') THEN
+        RETURN 'ERR_NO_AUTH';
+    END IF;
+    UPDATE public.informasi SET
+        judul = left(COALESCE(NULLIF(btrim(p_judul), ''), judul), 80),
+        subjudul = CASE WHEN p_subjudul IS NULL THEN subjudul ELSE left(p_subjudul, 80) END,
+        kepada = CASE WHEN p_kepada IS NULL THEN kepada ELSE left(p_kepada, 200) END,
+        pembuka = CASE WHEN p_pembuka IS NULL THEN pembuka ELSE left(p_pembuka, 2000) END,
+        tanggal = CASE WHEN p_tanggal IS NULL THEN tanggal ELSE left(p_tanggal, 80) END,
+        jam = CASE WHEN p_jam IS NULL THEN jam ELSE left(p_jam, 80) END,
+        tempat = CASE WHEN p_tempat IS NULL THEN tempat ELSE left(p_tempat, 200) END,
+        bawaan = CASE WHEN p_bawaan IS NULL THEN bawaan ELSE left(p_bawaan, 200) END,
+        penutup = CASE WHEN p_penutup IS NULL THEN penutup ELSE left(p_penutup, 2000) END
+    WHERE id = p_id;
+    IF FOUND THEN
+        RETURN 'OK';
+    END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
+CREATE OR REPLACE FUNCTION public.hapus_informasi(
+    p_user_id bigint,
+    p_id bigint
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'informasi') THEN
+        RETURN 'ERR_NO_AUTH';
+    END IF;
+    DELETE FROM public.informasi WHERE id = p_id;
+    IF FOUND THEN
+        RETURN 'OK';
+    END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
+REVOKE EXECUTE ON FUNCTION public.buat_informasi(bigint, text, text, text, text, text, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.update_informasi(bigint, bigint, text, text, text, text, text, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.hapus_informasi(bigint, bigint) FROM public;
+GRANT EXECUTE ON FUNCTION public.buat_informasi(bigint, text, text, text, text, text, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_informasi(bigint, bigint, text, text, text, text, text, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.hapus_informasi(bigint, bigint) TO anon;
+
+-- ============ UPLOADED_BY (label "diupload oleh", snapshot nama) ============
+-- Kolom `pengunggah` otomatis diisi dari osis_users.nama via trigger
+-- BEFORE INSERT (berdasarkan created_by). Tanpa ubah RPC mana pun.
+-- Update tidak menyentuh pengunggah. Baris lama di-backfill.
+-- Dikecualikan: lagu/aspirasi (anonim), polling_suara (privasi),
+-- site_content/web_foto/pimpinan (setting super), anggota/sekbid (direktori orang).
+ALTER TABLE public.gallery ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.prestasi ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.kegiatan ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.sekbid_agenda ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.rapat_notulensi ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.proker ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.program ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.osis_dokumen ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.osis_task ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.osis_kas ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.osis_evaluasi ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.osis_formulir ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.osis_absensi ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.osis_tabungan ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.polling_kandidat ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.poster ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+ALTER TABLE public.informasi ADD COLUMN IF NOT EXISTS pengunggah text NOT NULL DEFAULT '';
+
+CREATE OR REPLACE FUNCTION public.isi_pengunggah()
+RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+    IF NEW.pengunggah IS NULL OR btrim(NEW.pengunggah) = '' THEN
+        SELECT COALESCE(NULLIF(btrim(nama), ''), username, '') INTO NEW.pengunggah
+        FROM public.osis_users WHERE id = NEW.created_by;
+        IF NEW.pengunggah IS NULL THEN NEW.pengunggah := ''; END IF;
+    END IF;
+    RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.gallery;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.gallery
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.prestasi;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.prestasi
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.kegiatan;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.kegiatan
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.sekbid_agenda;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.sekbid_agenda
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.rapat_notulensi;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.rapat_notulensi
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.proker;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.proker
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.program;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.program
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.osis_dokumen;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.osis_dokumen
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.osis_task;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.osis_task
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.osis_kas;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.osis_kas
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.osis_evaluasi;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.osis_evaluasi
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.osis_formulir;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.osis_formulir
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.osis_absensi;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.osis_absensi
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.osis_tabungan;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.osis_tabungan
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.polling_kandidat;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.polling_kandidat
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.poster;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.poster
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+DROP TRIGGER IF EXISTS trg_isi_pengunggah ON public.informasi;
+CREATE TRIGGER trg_isi_pengunggah BEFORE INSERT ON public.informasi
+FOR EACH ROW EXECUTE FUNCTION public.isi_pengunggah();
+
+UPDATE public.gallery g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.prestasi g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.kegiatan g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.sekbid_agenda g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.rapat_notulensi g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.proker g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.program g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.osis_dokumen g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.osis_task g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.osis_kas g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.osis_evaluasi g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.osis_formulir g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.osis_absensi g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.osis_tabungan g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.polling_kandidat g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.poster g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';
+UPDATE public.informasi g SET pengunggah = COALESCE((SELECT NULLIF(btrim(u.nama), '') FROM public.osis_users u WHERE u.id = g.created_by), '') WHERE COALESCE(btrim(g.pengunggah), '') = '';

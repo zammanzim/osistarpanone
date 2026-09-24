@@ -278,7 +278,7 @@ const Polling = {
             kelola.innerHTML = list.length ? list.map((k) => {
                 const img = k.foto ? "<img src=\"" + escapeHtml(getFoto(k.foto)) + "\" alt=\"\">" : "";
                 return "<div class=\"pol-kelola-item\">" + img +
-                    "<span class=\"nm\">" + escapeHtml(String(k.nomor || "?")) + ". " + escapeHtml(k.nama || "-") + " &middot; " + Polling.suaraKandidat(k.id) + " suara</span>" +
+                    "<span class=\"nm\">" + escapeHtml(String(k.nomor || "?")) + ". " + escapeHtml(k.nama || "-") + " &middot; " + Polling.suaraKandidat(k.id) + " suara" + (String(k.pengunggah || "").trim() ? " &middot; oleh " + escapeHtml(String(k.pengunggah).trim()) : "") + "</span>" +
                     "<button onclick=\"Polling.editKandidat(" + k.id + ")\"><i class=\"fa-solid fa-pen\"></i></button>" +
                     "<button onclick=\"Polling.hapusKandidat(" + k.id + ")\"><i class=\"fa-solid fa-trash-can\"></i></button></div>";
             }).join("") : "<div class=\"pesan-empty\">Belum ada kandidat.</div>";

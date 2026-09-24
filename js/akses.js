@@ -17,6 +17,7 @@ const Akses = {
         ["agenda", "Agenda"],
         ["dokumen", "Dokumen"],
         ["poster", "Poster"],
+        ["informasi", "Informasi Harian"],
         ["program", "Program (Tahunan+Bulanan)"],
     ],
     HALAMAN_WEB: [

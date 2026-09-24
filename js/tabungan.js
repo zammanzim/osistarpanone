@@ -257,7 +257,7 @@ const Tabungan = {
                 <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Tanggal</th><th>Nominal</th><th>Total Semua</th><th>Ceklis</th>${boleh ? `<th style="text-align:right">Aksi</th>` : ""}</tr></thead><tbody>
                 ${g.rows.map((r, i) => `<tr data-tab-row="${r.id}">
                     <td>${i + 1}</td>
-                    <td>${escapeHtml(Tabungan.fmtTanggalPendek(r.tanggal))}</td>
+                    <td>${escapeHtml(Tabungan.fmtTanggalPendek(r.tanggal))}${olehLabel(r) ? `<br>${olehLabel(r)}` : ""}</td>
                     <td><span class="jenis ${Tabungan.isKeluar(r) ? "keluar" : "masuk"}">${Tabungan.isKeluar(r) ? "−" : "+"} ${Tabungan.rp(r.nominal)}</span></td>
                     <td class="num">${Tabungan.rp(r._total)}</td>
                     <td>${boleh
@@ -468,6 +468,7 @@ const Tabungan = {
                 ${info("Tanggal", Tabungan.fmtTanggalPendek(r.tanggal))}
                 ${info("Status", r.cek ? "Sudah diceklis ✓" : "Belum diceklis")}
                 ${info("Dibuat", Tabungan.fmtTanggalWaktu(r.created_at))}
+                ${info("Diupload oleh", escapeHtml(r.pengunggah || "-"))}
                 ${info("Diubah", Tabungan.fmtTanggalWaktu(r.updated_at))}
             </div>`;
         document.getElementById("tabDetail").classList.add("open");

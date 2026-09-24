@@ -117,6 +117,7 @@ const Home = {
         const src = current ? current.src : ((img && img.src) ? img.src : getFoto(FOTO_DEFAULT[(img && img.dataset.foto) || ""] || ""));
         const finalJudul = current ? (current.judul || judul || "") : (judul || "");
         const finalCaption = current ? (current.caption || "") : (caption || "");
+        const olehAwal = String((current && current.oleh) || opsi.oleh || "").trim();
         const canEditCaption = document.body.classList.contains("edit-mode") && (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
         const captionPill = `<span class="foto-caption-pill" ${canEditCaption ? 'contenteditable="true" spellcheck="false"' : ''}>${escapeHtml(finalCaption || "")}</span>`;
         // Caption = floating overlay di atas foto (bukan area di bawah foto)
@@ -139,6 +140,7 @@ const Home = {
                     <h4>${escapeHtml(finalJudul)}</h4>
                     <button class="struktur-close" type="button">&times;</button>
                 </div>
+                ${olehAwal ? `<div class="foto-oleh" id="fotoOleh">Diupload oleh ${escapeHtml(olehAwal)}</div>` : `<div class="foto-oleh" id="fotoOleh" style="display:none"></div>`}
                 <div class="foto-pop">
                     ${hintHtml}
                     <img src="${src}" alt="${escapeHtml(finalJudul)}" draggable="false">
@@ -175,6 +177,12 @@ const Home = {
         const canEditCaption = document.body.classList.contains("edit-mode") && (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
 
         if (title) title.textContent = item.judul || "";
+        const olehEl = modal.querySelector("#fotoOleh");
+        if (olehEl) {
+            const oleh = String(item.oleh || "").trim();
+            olehEl.style.display = oleh ? "" : "none";
+            olehEl.textContent = oleh ? "Diupload oleh " + oleh : "";
+        }
         if (img) {
             img.src = item.src || "";
             img.alt = item.judul || "";
@@ -340,6 +348,7 @@ const Home = {
             if (anggota.length > 0) {
                 chips = anggota.map(a => `
                     <div class="anggota-chip" data-anggota-id="${a.id}">
+                        <button type="button" class="chip-x" onclick="SiteEdit.hapusChipInline(event, ${a.id}, ${tahun})" title="Hapus anggota" aria-label="Hapus anggota">&times;</button>
                         <b contenteditable="true" spellcheck="false" data-field="nama" data-anggota-id="${a.id}">${escapeHtml(a.nama)}</b>
                         <span contenteditable="true" spellcheck="false" data-field="jabatan" data-anggota-id="${a.id}">${escapeHtml(a.jabatan)}</span>
                     </div>`).join("");

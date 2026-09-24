@@ -169,13 +169,15 @@ const Prestasi = {
                 id: p.id,
                 src: getFoto(cover),
                 judul: p.tag || "Prestasi",
-                caption: Prestasi.getCaption(p)
+                caption: Prestasi.getCaption(p),
+                oleh: p.pengunggah || ""
             };
         }).filter(p => p.src);
         const index = Math.max(0, gallery.findIndex(p => String(p.id) === String(id)));
         Home.bukaFotoPopup(null, item.tag || "", Prestasi.getCaption(item), {
             gallery,
             index,
+            oleh: item.pengunggah || "",
             onChange(idx) {
                 const current = gallery[idx];
                 if (current) Prestasi.bindPopupCaption(current.id);

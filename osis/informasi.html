@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Informasi Harian — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css?v=11" />
+    <link rel="stylesheet" href="../css/osis2.css?v=10" />
+    <meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      /* Kartu pengumuman: layout ikut contoh, elemen ikut ciri khas web */
+      .info-card{background:var(--white);border:3px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);padding:22px;overflow:hidden}
+      .info-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+      .info-kicker{display:inline-flex;align-items:center;gap:8px;font-size:.74rem;font-weight:800;letter-spacing:.12em;color:var(--gray)}
+      .info-kicker i{color:var(--red);font-size:.9rem}
+      .info-dots{display:inline-flex;gap:6px}
+      .info-dots i{width:9px;height:9px;border-radius:50%;background:var(--yellow);border:1.5px solid var(--ink)}
+      .info-judul{font-size:2rem;font-weight:900;letter-spacing:-.02em;line-height:1.1;margin:0}
+      .info-sub{font-size:1.02rem;font-weight:600;color:#3d3638;margin-top:2px}
+      .info-sub::after{content:"";display:block;width:52px;height:5px;border-radius:99px;background:var(--yellow);border:1.5px solid var(--ink);margin-top:10px}
+      .info-kepada{display:flex;align-items:center;gap:10px;background:#fef4e2;border:2.5px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:10px 14px;font-size:.86rem;font-weight:600;color:#3d3638;margin-top:14px}
+      .ik-ico{font-size:1.05rem;color:var(--ink)}
+      .info-text{font-size:.9rem;font-weight:500;line-height:1.65;color:#2c2728;margin:12px 0 0;white-space:pre-line;word-break:break-word}
+      .info-grid{display:grid;grid-template-columns:repeat(4,1fr);background:var(--white);border:2.5px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);margin-top:14px;overflow:hidden}
+      .ig-cell{padding:14px 12px;display:flex;flex-direction:column;gap:2px;border-left:2px dashed var(--line);min-width:0}
+      .ig-cell:first-child{border-left:none}
+      .ig-ico{width:38px;height:38px;border-radius:12px;border:2px solid var(--ink);display:grid;place-items:center;font-size:1.05rem;margin-bottom:8px}
+      .ig-blue{background:#e3edff;color:#2f6fed}
+      .ig-pink{background:#ffe3ec;color:#e8356b}
+      .ig-green{background:#def5e3;color:#1a7f37}
+      .ig-orange{background:#ffedd6;color:#e07b00}
+      .ig-lbl{font-size:.72rem;font-weight:600;color:var(--gray)}
+      .ig-cell b{font-size:.82rem;font-weight:800;line-height:1.45;word-break:break-word}
+      .info-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:2px dashed var(--line)}
+      .info-ava{width:34px;height:34px;border-radius:50%;background:var(--paper-2);border:2px solid var(--ink);color:var(--gray);display:grid;place-items:center;font-size:.9rem;flex-shrink:0}
+      .info-terbit{font-size:.72rem;font-weight:600;color:var(--gray);line-height:1.5;margin-right:auto}
+      .info-actions{display:flex;gap:8px;flex-wrap:wrap}
+      /* Daftar arsip */
+      .info-row{background:var(--white);border:2.5px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);margin-bottom:10px;overflow:hidden}
+      .info-row-main{display:flex;align-items:center;gap:10px;padding:12px 14px;text-decoration:none;color:inherit}
+      .info-row-pin{color:var(--red);font-size:1rem}
+      .info-row-judul{display:block;font-weight:900;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .info-row-sub{display:block;font-size:.72rem;font-weight:700;color:var(--gray);margin-top:2px}
+      .info-row-main .chev{margin-left:auto;color:var(--gray);font-size:.8rem}
+      .info-row-ops{display:flex;gap:8px;padding:0 14px 12px 44px}
+      /* Form: 2 kolom tanggal+jam di layar lebar */
+      .info-form-box{max-height:92vh;overflow-y:auto}
+      .info-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      @media (max-width:640px){.info-judul{font-size:1.55rem}.info-grid{grid-template-columns:1fr 1fr}.ig-cell:nth-child(3){border-left:none}.ig-cell:nth-child(n+3){border-top:2px dashed var(--line)}}
+      @media (max-width:560px){.info-form-grid{grid-template-columns:1fr}.info-card{padding:20px 18px 18px}}
+    </style>
+    <script src="../js/supabase.min.js?v=10"></script>
+    <script src="../js/config.js?v=10"></script>
+    <script src="../js/db.js?v=11" defer></script>
+    <script src="../js/app.js?v=11" defer></script>
+    <script src="../js/toast.js?v=10" defer></script>
+    <script src="../js/show-popup.js?v=11" defer></script>
+    <script src="../js/osis-auth.js?v=10" defer></script>
+    <script src="../js/osis-sidebar.js?v=13" defer></script>
+    <script src="../js/informasi.js?v=10" defer></script>
+    <script src="../js/pwa.js?v=10" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>INFORMASI</h2>
+          <p>Info Harian Pengurus</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm" style="display: inline-flex"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="osis-wrap">
+      <div class="osis-hero">
+        <div class="osis-avatar"><i class="fa-solid fa-bullhorn"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>INFORMASI HARIAN</h1>
+          <p>Pengganti broadcast grup — buat, bagikan link-nya ke grup.</p>
+          <div class="osis-meta"></div>
+        </div>
+        <button
+          class="btn btn-red"
+          id="btnTambahInfo"
+          onclick="Informasi.bukaForm()"
+          style="display: none"
+        >
+          <i class="fa-solid fa-plus"></i> Buat Informasi
+        </button>
+      </div>
+
+      <div id="infoWrap">
+        <div class="loading-block">
+          <div class="spinner"></div>
+          Memuat informasi...
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

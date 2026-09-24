@@ -51,6 +51,14 @@ const FotoWeb = {
     }
 };
 
+// Label kecil "· oleh X" dari kolom snapshot `pengunggah` (semua modul).
+// Kosong bila belum ada (cache lama / pra-migrasi) — render tetap aman.
+function olehLabel(x) {
+  const n = String((x && x.pengunggah) || "").trim();
+  if (!n) return "";
+  return `<span class="oleh-label">· oleh ${escapeHtml(n)}</span>`;
+}
+
 // Helper render
 function escapeHtml(teks) {
     return String(teks ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

@@ -8,6 +8,7 @@ const SiteEdit = {
     active: false,
     fileTarget: null, // { type: 'web_foto', key } | { type: 'pimpinan', tahun } | { type: 'pimpinan_modal', tahun, field }
     pendingModalFotos: {}, // tahun -> { ketua_foto, wakil_foto, foto_angkatan }
+    pendingHapusAnggota: {}, // tahun -> Set(id) yang di-X, dieksekusi pas popup ditutup
 
     init() {
         const wrap = document.getElementById("editToggleWrap");
@@ -377,6 +378,10 @@ const SiteEdit = {
             saves.push(tambahAnggota({ tahun: parseInt(tahun, 10), nama, jabatan, urutan: 99 }));
         });
 
+        // anggota yang di-X — dieksekusi bareng autosave pas popup ditutup
+        const hapusIds = [...(SiteEdit.pendingHapusAnggota[key] || [])];
+        const hapusPromises = hapusIds.map(id => hapusAnggota(parseInt(id, 10)));
+
         const promises = [];
         if (pimpChanged) {
             promises.push(
@@ -398,21 +403,27 @@ const SiteEdit = {
         saves.forEach(p => promises.push(p.then(() => {
             // refresh cache entry for that anggota is already handled by saves mapping? update cache manually
         })));
+        hapusPromises.forEach(p => promises.push(p));
 
         if (promises.length === 0) {
             delete SiteEdit.pendingModalFotos[key];
+            delete SiteEdit.pendingHapusAnggota[key];
             return;
         }
         try {
             await Promise.all(promises);
             // refresh anggota cache from DB biar urutan konsisten
-            if (saves.length > 0 && typeof supa !== "undefined") {
+            if ((saves.length > 0 || hapusPromises.length > 0) && typeof supa !== "undefined") {
                 try {
                     const { data } = await supa.from("anggota").select("*").eq("tahun", parseInt(tahun, 10)).order("urutan");
                     if (typeof Home !== "undefined") Home.cacheAnggota[key] = data || [];
                 } catch (e) {}
+            } else if (hapusPromises.length > 0 && typeof Home !== "undefined" && Home.cacheAnggota[key]) {
+                // fallback kalau supa tidak ada: filter cache lokal
+                Home.cacheAnggota[key] = Home.cacheAnggota[key].filter(a => !hapusIds.includes(String(a.id)) && !hapusIds.includes(a.id));
             }
             delete SiteEdit.pendingModalFotos[key];
+            delete SiteEdit.pendingHapusAnggota[key];
             showToast("Perubahan tersimpan", "success");
         } catch (err) {
             console.error(err);
@@ -571,6 +582,22 @@ const SiteEdit = {
         }
     },
 
+    // Hapus chip inline (tombol X di edit mode). Chip langsung hilang dari
+    // tampilan, hapus permanen dieksekusi bareng autosave pas popup ditutup.
+    hapusChipInline(e, id, tahun) {
+        if (e) { e.stopPropagation(); e.preventDefault(); }
+        const btn = e && e.target && e.target.closest ? e.target.closest(".chip-x") : null;
+        const chip = btn ? btn.closest(".anggota-chip") : document.querySelector(`.anggota-chip[data-anggota-id="${id}"]`);
+        if (!chip) return;
+        // chip temp (belum kesimpan) — cukup buang dari DOM
+        if (chip.dataset.temp === "true") { chip.remove(); return; }
+        const key = String(tahun);
+        if (!SiteEdit.pendingHapusAnggota[key]) SiteEdit.pendingHapusAnggota[key] = new Set();
+        SiteEdit.pendingHapusAnggota[key].add(String(id));
+        chip.remove();
+        if (typeof showToast === "function") showToast("Dihapus (tersimpan pas popup ditutup)", "info");
+    },
+
     tambahAnggotaInline(tahun) {
         const modal = document.querySelector(`.struktur-modal[data-tahun="${tahun}"]`);
         const grid = modal ? modal.querySelector(".anggota-grid") : document.querySelector(".anggota-grid");
@@ -579,9 +606,13 @@ const SiteEdit = {
         chip.className = "anggota-chip";
         chip.dataset.temp = "true";
         chip.innerHTML = `
+            <button type="button" class="chip-x" title="Batal" aria-label="Batal">×</button>
             <b contenteditable="true" spellcheck="false" data-field="nama" data-ph="Nama"></b>
             <span contenteditable="true" spellcheck="false" data-field="jabatan" data-ph="Jabatan"></span>
         `;
+        chip.querySelector(".chip-x").addEventListener("click", (ev) => {
+            ev.stopPropagation(); ev.preventDefault(); chip.remove();
+        });
         const tambahBtn = grid.querySelector(".anggota-chip.tambah");
         if (tambahBtn) grid.insertBefore(chip, tambahBtn);
         else grid.appendChild(chip);

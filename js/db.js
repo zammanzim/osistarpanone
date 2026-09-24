@@ -35,6 +35,21 @@ function cekId(data) {
   throw new Error("Gagal simpan (" + data + ")");
 }
 
+// Nama pengupload untuk kolom snapshot `pengunggah` (semua modul konten).
+// Catatan: trigger DB `isi_pengunggah` otomatis mengisi dari osis_users.nama
+// saat insert bila kolom dikosongkan, jadi helper ini opsional / eksplisit.
+function namaPengunggah() {
+  try {
+    const u = typeof OsisAuth !== "undefined" && OsisAuth.getUser ? OsisAuth.getUser() : null;
+    if (!u) return "";
+    if (typeof OsisAuth.displayName === "function") {
+      const n = String(OsisAuth.displayName(u) || "").trim();
+      if (n) return n.slice(0, 80);
+    }
+    return String(u.nama || u.username || "").trim().slice(0, 80);
+  } catch { return ""; }
+}
+
 // Bangun URL publik foto di bucket
 function getFoto(pathFoto) {
   if (!pathFoto) return "";
@@ -565,7 +580,7 @@ async function tandaiLaguSelesai(userId, id, selesai = true) {
 async function getPollingKandidat() {
   const { data, error } = await supa
     .from("polling_kandidat")
-    .select("id, nomor, nama, kelas, foto, visi, misi, display_order, created_at")
+    .select("id, nomor, nama, kelas, foto, visi, misi, display_order, pengunggah, created_at")
     .order("display_order", { ascending: true })
     .order("nomor", { ascending: true });
   if (error) throw error;
@@ -760,7 +775,7 @@ async function resetPollingSuara(userId) {
 async function getPrestasi() {
   const { data, error } = await supa
     .from("prestasi")
-    .select("id, tag, caption, fotos, display_order, created_at")
+    .select("id, tag, caption, fotos, display_order, pengunggah, created_at")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false })
     .limit(50);
@@ -809,7 +824,7 @@ async function hapusPrestasi(userId, id) {
 async function getPoster() {
   const { data, error } = await supa
     .from("poster")
-    .select("id, judul, caption, foto, created_by, created_at")
+    .select("id, judul, caption, foto, created_by, pengunggah, created_at")
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw error;
@@ -850,12 +865,81 @@ async function hapusPoster(userId, id) {
 }
 
 // =========================================================================
+// INFORMASI HARIAN - pengganti broadcast grup (/osis/informasi)
+// Card shareable via ?id=. Kelola butuh hak "informasi".
+// =========================================================================
+const INFO_KOLOM = "id, judul, subjudul, kepada, pembuka, tanggal, jam, tempat, bawaan, penutup, created_by, pengunggah, created_at";
+async function getInformasiList() {
+  const { data, error } = await supa
+    .from("informasi")
+    .select(INFO_KOLOM)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data || [];
+}
+async function getInformasi(id) {
+  const { data, error } = await supa
+    .from("informasi")
+    .select(INFO_KOLOM)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+async function buatInformasi(userId, f) {
+  const { data, error } = await supa.rpc("buat_informasi", {
+    p_user_id: userId,
+    p_judul: f.judul,
+    p_subjudul: f.subjudul || "",
+    p_kepada: f.kepada || "",
+    p_pembuka: f.pembuka || "",
+    p_tanggal: f.tanggal || "",
+    p_jam: f.jam || "",
+    p_tempat: f.tempat || "",
+    p_bawaan: f.bawaan || "",
+    p_penutup: f.penutup || "",
+  });
+  if (error) throw error;
+  cekId(data);
+  Cache.del("informasi");
+  return data;
+}
+async function updateInformasi(userId, id, f) {
+  const { data, error } = await supa.rpc("update_informasi", {
+    p_user_id: userId,
+    p_id: id,
+    p_judul: f.judul,
+    p_subjudul: f.subjudul ?? null,
+    p_kepada: f.kepada ?? null,
+    p_pembuka: f.pembuka ?? null,
+    p_tanggal: f.tanggal ?? null,
+    p_jam: f.jam ?? null,
+    p_tempat: f.tempat ?? null,
+    p_bawaan: f.bawaan ?? null,
+    p_penutup: f.penutup ?? null,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("informasi");
+}
+async function hapusInformasi(userId, id) {
+  const { data, error } = await supa.rpc("hapus_informasi", {
+    p_user_id: userId,
+    p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("informasi");
+}
+
+// =========================================================================
 // KEGIATAN HOME - DB-driven (judul, deskripsi, badge, fotos jsonb, order)
 // =========================================================================
 async function getKegiatan() {
   const { data, error } = await supa
     .from("kegiatan")
-    .select("id, judul, deskripsi, badge, fotos, display_order, created_at")
+    .select("id, judul, deskripsi, badge, fotos, display_order, pengunggah, created_at")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false })
     .limit(50);
@@ -922,7 +1006,7 @@ async function getNotulensi() {
   const { data, error } = await supa
     .from("rapat_notulensi")
     .select(
-      "id, judul, tanggal, waktu_mulai, waktu_selesai, lokasi, divisi, pimpinan, notulis, peserta, agenda_topik, isi_pembahasan, keputusan, tindak_lanjut, lampiran, status, created_at",
+      "id, judul, tanggal, waktu_mulai, waktu_selesai, lokasi, divisi, pimpinan, notulis, peserta, agenda_topik, isi_pembahasan, keputusan, tindak_lanjut, lampiran, status, pengunggah, created_at",
     )
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
@@ -994,7 +1078,7 @@ async function getProker() {
   const { data, error } = await supa
     .from("proker")
     .select(
-      "id, nama, deskripsi, divisi, pj, periode, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, agenda_ids, tugas, evaluasi_hasil, evaluasi_kendala, evaluasi_solusi, evaluasi_lanjut, dokumentasi, created_at",
+      "id, nama, deskripsi, divisi, pj, periode, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, agenda_ids, tugas, evaluasi_hasil, evaluasi_kendala, evaluasi_solusi, evaluasi_lanjut, dokumentasi, pengunggah, created_at",
     )
     .order("periode", { ascending: false })
     .order("created_at", { ascending: false });
@@ -1073,7 +1157,7 @@ async function hapusProker(userId, id) {
 async function getProgram() {
   const { data, error } = await supa
     .from("program")
-    .select("id, sekbid_id, nama, tipe, deskripsi, pj, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, created_at")
+    .select("id, sekbid_id, nama, tipe, deskripsi, pj, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, pengunggah, created_at")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data || [];
@@ -1201,7 +1285,7 @@ async function getTask() {
   const { data, error } = await supa
     .from("osis_task")
     .select(
-      "id, judul, deskripsi, pic, divisi, priority, deadline, status, proker_id, agenda_id, catatan, created_by, created_at, updated_at",
+      "id, judul, deskripsi, pic, divisi, priority, deadline, status, proker_id, agenda_id, catatan, created_by, pengunggah, created_at, updated_at",
     )
     .order("deadline", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
@@ -1273,7 +1357,7 @@ async function getKas() {
   const { data, error } = await supa
     .from("osis_kas")
     .select(
-      "id, jenis, tanggal, keterangan, kategori, nominal, divisi, pic, proker_id, agenda_id, catatan, bukti_path, created_by, created_at, updated_at",
+      "id, jenis, tanggal, keterangan, kategori, nominal, divisi, pic, proker_id, agenda_id, catatan, bukti_path, created_by, pengunggah, created_at, updated_at",
     )
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
@@ -1356,7 +1440,7 @@ async function getAbsensi() {
     const { data, error } = await supa
       .from("osis_absensi")
       .select(
-        "id, tanggal, nama, status, alasan, kegiatan, created_by, created_at, updated_at",
+        "id, tanggal, nama, status, alasan, kegiatan, created_by, pengunggah, created_at, updated_at",
       )
       .order("tanggal", { ascending: false })
       .order("created_at", { ascending: false });
@@ -1368,7 +1452,7 @@ async function getAbsensi() {
     const { data, error } = await supa
       .from("osis_absensi")
       .select(
-        "id, tanggal, nama, status, alasan, created_by, created_at, updated_at",
+        "id, tanggal, nama, status, alasan, created_by, pengunggah, created_at, updated_at",
       )
       .order("tanggal", { ascending: false })
       .order("created_at", { ascending: false });
@@ -1455,7 +1539,7 @@ async function getTabungan() {
     const { data, error } = await supa
       .from("osis_tabungan")
       .select(
-        "id, nama, tanggal, nominal, jenis, cek, created_by, created_at, updated_at",
+        "id, nama, tanggal, nominal, jenis, cek, created_by, pengunggah, created_at, updated_at",
       )
       .order("tanggal", { ascending: false })
       .order("created_at", { ascending: false });
@@ -1467,7 +1551,7 @@ async function getTabungan() {
     const { data, error } = await supa
       .from("osis_tabungan")
       .select(
-        "id, nama, tanggal, nominal, cek, created_by, created_at, updated_at",
+        "id, nama, tanggal, nominal, cek, created_by, pengunggah, created_at, updated_at",
       )
       .order("tanggal", { ascending: false })
       .order("created_at", { ascending: false });
@@ -1528,7 +1612,7 @@ async function getEvaluasi() {
   const { data, error } = await supa
     .from("osis_evaluasi")
     .select(
-      "id, nama_kegiatan, agenda_id, proker_id, tgl_kegiatan, divisi, pj, status, rating_total, r_persiapan, r_pelaksanaan, r_koordinasi, r_waktu, r_anggaran, baik, kendala, penyebab, solusi, perbaiki, rekomendasi, dokumentasi, tugas, created_by, created_at, updated_at",
+      "id, nama_kegiatan, agenda_id, proker_id, tgl_kegiatan, divisi, pj, status, rating_total, r_persiapan, r_pelaksanaan, r_koordinasi, r_waktu, r_anggaran, baik, kendala, penyebab, solusi, perbaiki, rekomendasi, dokumentasi, tugas, created_by, pengunggah, created_at, updated_at",
     )
     .order("tgl_kegiatan", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
@@ -1613,7 +1697,7 @@ async function getFormulir() {
     const { data, error } = await supa
       .from("osis_formulir")
       .select(
-        "id, judul, deskripsi, status, settings, slug, created_by, created_at, updated_at",
+        "id, judul, deskripsi, status, settings, slug, created_by, pengunggah, created_at, updated_at",
       )
       .order("updated_at", { ascending: false });
     if (error) throw error;
@@ -1623,7 +1707,7 @@ async function getFormulir() {
     const { data, error } = await supa
       .from("osis_formulir")
       .select(
-        "id, judul, deskripsi, status, settings, created_by, created_at, updated_at",
+        "id, judul, deskripsi, status, settings, created_by, pengunggah, created_at, updated_at",
       )
       .order("updated_at", { ascending: false });
     if (error) throw error;
@@ -1709,7 +1793,7 @@ async function getAgendaBySekbid(sekbidId) {
   const { data, error } = await supa
     .from("sekbid_agenda")
     .select(
-      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, created_at",
+      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, pengunggah, created_at",
     )
     .eq("sekbid_id", sekbidId)
     .order("tanggal", { ascending: false })
@@ -1721,7 +1805,7 @@ async function getAllAgenda() {
   const { data, error } = await supa
     .from("sekbid_agenda")
     .select(
-      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, created_at",
+      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, pengunggah, created_at",
     )
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
@@ -1816,7 +1900,7 @@ async function hapusAgenda(userId, id) {
 async function getGallery() {
   const { data, error } = await supa
     .from("gallery")
-    .select("id, judul, deskripsi, fotos, created_by, created_at")
+    .select("id, judul, deskripsi, fotos, created_by, pengunggah, created_at")
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw error;
