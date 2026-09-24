@@ -1119,6 +1119,27 @@ ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS angkatan text NOT NULL DE
     ALTER TABLE public.osis_akses ENABLE ROW LEVEL SECURITY;
     -- Tanpa policy anon: cuma diakses lewat function SECURITY DEFINER di bawah.
 
+    -- Super admin dinamis: tambah/hapus tinggal INSERT/DELETE, tanpa edit fungsi.
+    -- Username disimpan apa adanya, dicek case-insensitive via osis_is_super().
+    CREATE TABLE IF NOT EXISTS public.osis_super_admins (
+        username text PRIMARY KEY,
+        created_at timestamptz NOT NULL DEFAULT now()
+    );
+    ALTER TABLE public.osis_super_admins ENABLE ROW LEVEL SECURITY;
+    -- Tanpa policy anon: cuma diakses lewat function SECURITY DEFINER di bawah.
+    INSERT INTO public.osis_super_admins (username) VALUES
+        ('mizammm'), ('bintangsandirofiansyah')
+    ON CONFLICT (username) DO NOTHING;
+
+    -- Cek super admin (dipakai 4 fungsi di bawah). Case-insensitive + trim.
+    CREATE OR REPLACE FUNCTION public.osis_is_super(p_username text)
+    RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
+        SELECT EXISTS (
+            SELECT 1 FROM public.osis_super_admins s
+            WHERE lower(s.username) = lower(btrim(COALESCE(p_username, '')))
+        );
+    $$;
+
     -- Mapping jabatan -> daftar halaman. jabatan = lowercase-trim.
     -- Baris 'sekbid' = fallback untuk jabatan apapun yang mengandung kata "sekbid".
     CREATE TABLE IF NOT EXISTS public.jabatan_akses (
@@ -1157,7 +1178,7 @@ ALTER TABLE public.osis_users ADD COLUMN IF NOT EXISTS angkatan text NOT NULL DE
         SELECT username, jabatan INTO v_username, v_jabatan
         FROM public.osis_users WHERE id = p_user_id;
         IF NOT FOUND THEN RETURN false; END IF;
-        IF lower(v_username) IN ('mizammm', 'bintangsandirofiansyah') THEN RETURN true; END IF;
+        IF public.osis_is_super(v_username) THEN RETURN true; END IF;
         IF EXISTS (SELECT 1 FROM public.osis_akses
                 WHERE user_id = p_user_id AND halaman IN (p_halaman, '*')) THEN
             RETURN true;
@@ -1214,7 +1235,7 @@ END $$;
         END IF;
         -- Sekbid diturunkan otomatis dari jabatan (kolom manual tidak dipakai).
         v_sekbid := public.osis_sekbid_dari_jabatan(v_jabatan);
-        v_super := lower(v_username) IN ('mizammm', 'bintangsandirofiansyah');
+        v_super := public.osis_is_super(v_username);
         SELECT COALESCE(array_agg(DISTINCT halaman), '{}') INTO v_hal
         FROM public.osis_akses WHERE user_id = p_user_id;
         SELECT COALESCE(array_agg(DISTINCT h), '{}') INTO v_jab
@@ -1240,7 +1261,7 @@ END $$;
     DECLARE v_admin text;
     BEGIN
         SELECT username INTO v_admin FROM public.osis_users WHERE id = p_admin;
-        IF NOT FOUND OR lower(v_admin) NOT IN ('mizammm', 'bintangsandirofiansyah') THEN
+        IF NOT FOUND OR NOT public.osis_is_super(v_admin) THEN
             RETURN 'ERR_NO_AUTH';
         END IF;
         IF NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id = p_target) THEN
@@ -1260,6 +1281,7 @@ END $$;
     END $$;
 
     REVOKE EXECUTE ON FUNCTION public.osis_norm_jabatan(text) FROM public;
+    REVOKE EXECUTE ON FUNCTION public.osis_is_super(text) FROM public;
     REVOKE EXECUTE ON FUNCTION public.osis_sekbid_dari_jabatan(text) FROM public;
     REVOKE EXECUTE ON FUNCTION public.osis_hak_jabatan(text, text) FROM public;
     REVOKE EXECUTE ON FUNCTION public.osis_bisa(bigint, text) FROM public;
@@ -1267,6 +1289,7 @@ END $$;
     REVOKE EXECUTE ON FUNCTION public.akses_saya(bigint) FROM public;
     REVOKE EXECUTE ON FUNCTION public.set_akses(bigint, bigint, text[], bigint, boolean) FROM public;
     GRANT EXECUTE ON FUNCTION public.osis_norm_jabatan(text) TO anon;
+    GRANT EXECUTE ON FUNCTION public.osis_is_super(text) TO anon;
     GRANT EXECUTE ON FUNCTION public.osis_sekbid_dari_jabatan(text) TO anon;
     GRANT EXECUTE ON FUNCTION public.osis_hak_jabatan(text, text) TO anon;
     GRANT EXECUTE ON FUNCTION public.osis_bisa(bigint, text) TO anon;
@@ -1274,19 +1297,47 @@ END $$;
     GRANT EXECUTE ON FUNCTION public.akses_saya(bigint) TO anon;
     GRANT EXECUTE ON FUNCTION public.set_akses(bigint, bigint, text[], bigint, boolean) TO anon;
 
+    -- Tambah/cabut super admin (HANYA super). Dipakai biar nambah super
+    -- tinggal panggil RPC, tanpa INSERT langsung / edit fungsi.
+    -- p_jadikan_super=true -> tambah, false -> cabut (tidak bisa cabut diri sendiri).
+    CREATE OR REPLACE FUNCTION public.set_super(
+        p_admin bigint, p_target bigint, p_jadikan_super boolean DEFAULT true
+    )
+    RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+    DECLARE v_admin text; v_target text;
+    BEGIN
+        SELECT username INTO v_admin FROM public.osis_users WHERE id = p_admin;
+        IF NOT FOUND OR NOT public.osis_is_super(v_admin) THEN
+            RETURN 'ERR_NO_AUTH';
+        END IF;
+        SELECT username INTO v_target FROM public.osis_users WHERE id = p_target;
+        IF NOT FOUND THEN RETURN 'ERR_NOT_FOUND'; END IF;
+        IF p_jadikan_super IS NOT FALSE THEN
+            INSERT INTO public.osis_super_admins (username) VALUES (v_target)
+            ON CONFLICT (username) DO NOTHING;
+        ELSE
+            IF lower(v_target) = lower(btrim(v_admin)) THEN RETURN 'ERR_SELF'; END IF;
+            DELETE FROM public.osis_super_admins WHERE lower(username) = lower(v_target);
+        END IF;
+        RETURN 'OK';
+    END $$;
+    REVOKE EXECUTE ON FUNCTION public.set_super(bigint, bigint, boolean) FROM public;
+    GRANT EXECUTE ON FUNCTION public.set_super(bigint, bigint, boolean) TO anon;
+
     -- Matriks semua user + haknya (HANYA super). Password tidak ikut.
     CREATE OR REPLACE FUNCTION public.akses_matriks(p_admin bigint)
     RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
     DECLARE v_admin text;
     BEGIN
         SELECT username INTO v_admin FROM public.osis_users WHERE id = p_admin;
-        IF NOT FOUND OR lower(v_admin) NOT IN ('mizammm', 'bintangsandirofiansyah') THEN
+        IF NOT FOUND OR NOT public.osis_is_super(v_admin) THEN
             RETURN jsonb_build_object('error', 'ERR_NO_AUTH');
         END IF;
         RETURN (SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb) FROM (
             SELECT u.id, u.username, u.nama, u.jabatan, u.angkatan,
                 public.osis_sekbid_dari_jabatan(u.jabatan) AS sekbid_id,
                 (SELECT s.nama FROM public.sekbid s WHERE s.id = public.osis_sekbid_dari_jabatan(u.jabatan)) AS sekbid_nama,
+                public.osis_is_super(u.username) AS is_super,
                 COALESCE((SELECT jsonb_agg(a.halaman ORDER BY a.halaman)
                         FROM public.osis_akses a WHERE a.user_id = u.id), '[]'::jsonb) AS halaman
             FROM public.osis_users u ORDER BY u.nama
