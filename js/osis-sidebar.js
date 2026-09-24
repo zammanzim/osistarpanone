@@ -24,6 +24,7 @@ const OsisSidebar = {
     { href: "informasi", label: "Informasi", icon: "fa-solid fa-bullhorn" },
     { href: "program-tahunan", label: "Program Tahunan", icon: "fa-solid fa-calendar" },
     { href: "program-bulanan", label: "Program Bulanan", icon: "fa-solid fa-calendar-days" },
+    { href: "profil", label: "Profil Saya", icon: "fa-solid fa-circle-user" },
     { href: "akses", label: "Akses", icon: "fa-solid fa-key", super: true },
   ],
 
@@ -40,6 +41,7 @@ const OsisSidebar = {
     ["informasi", "Informasi", "fa-solid fa-bullhorn"],
     ["program-tahunan", "Program Tahunan", "fa-solid fa-calendar"],
     ["program-bulanan", "Program Bulanan", "fa-solid fa-calendar-days"],
+    ["profil", "Profil Saya", "fa-solid fa-circle-user"],
     ["akses", "Akses", "fa-solid fa-key", "super"],
   ],
 

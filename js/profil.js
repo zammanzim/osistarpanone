@@ -48,6 +48,7 @@ const Profil = {
         }
 
         Profil.muat();
+    Profil.renderAkun();
     },
 
     async muat() {
@@ -77,14 +78,14 @@ const Profil = {
             document.getElementById("profilJabatan").value = fresh.jabatan || "-";
             Profil.renderFoto();
             Profil.renderHero(fresh);
+            Profil.renderAkun(fresh);
         } catch (err) {
             console.error(err);
             showToast("Gagal memuat profil: " + err.message, "error");
         }
     },
 
-    renderHero(u) {
-        const namaEl = document.getElementById("profilHeroNama");
+    renderHero(u) {        const namaEl = document.getElementById("profilHeroNama");
         const userEl = document.getElementById("profilHeroUser");
         const jabEl = document.getElementById("profilHeroJabatan");
         const bioEl = document.getElementById("profilHeroBio");
@@ -95,6 +96,26 @@ const Profil = {
             bioEl.textContent = u.bio || "Belum ada bio.";
             bioEl.style.opacity = u.bio ? "1" : "0.55";
         }
+    },
+
+    // Panel "Akun Saya": email login (readonly) + daftar hak kelola.
+    renderAkun(u) {
+        const user = u || OsisAuth.getUser() || {};
+        const em = document.getElementById("akunEmail");
+        if (em) em.value = user.auth_email || "";
+        const box = document.getElementById("akunHak");
+        if (!box) return;
+        const a = (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) ? OsisAuth.getAkses() : null;
+        if (a && a.super) {
+            box.innerHTML = `<span class="hak-chip super"><i class="fa-solid fa-crown"></i> Super Admin — semua halaman</span>`;
+            return;
+        }
+        const list = a && Array.isArray(a.halaman) ? a.halaman : [];
+        if (!list.length) {
+            box.innerHTML = `<span class="hak-chip">Anggota — tanpa hak kelola khusus</span>`;
+            return;
+        }
+        box.innerHTML = list.map(h => `<span class="hak-chip">${escapeHtml(h)}</span>`).join("");
     },
 
     renderFoto() {
