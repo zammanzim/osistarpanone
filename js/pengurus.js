@@ -116,12 +116,9 @@ const Pengurus = {
 
     const semuaThn = new Set();
     const thnNyata = new Set();
-    // Periode masa depan (mis. 2027/2028 saat datanya belum fix) disembunyikan
-    // dari dropdown sampai tahunnya tiba.
-    const maksThn = new Date().getFullYear();
     pimp.forEach((p) => {
       const t = parseInt(p.tahun, 10);
-      if (!Number.isFinite(t) || t > maksThn) return;
+      if (!Number.isFinite(t)) return;
       semuaThn.add(t);
       if (Pengurus.namaAsli(p.ketua_nama) || Pengurus.namaAsli(p.wakil_nama)) {
         thnNyata.add(t);
@@ -129,7 +126,7 @@ const Pengurus = {
     });
     agg.forEach((a) => {
       const t = parseInt(a.tahun, 10);
-      if (!Number.isFinite(t) || t > maksThn) return;
+      if (!Number.isFinite(t)) return;
       semuaThn.add(t);
       if (String(a.nama || "").trim()) thnNyata.add(t);
     });
