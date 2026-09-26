@@ -135,7 +135,7 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="css/style.css?v=15" />
+    <link rel="stylesheet" href="css/style.css?v=17" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -419,7 +419,7 @@
     <script src="js/supabase.min.js?v=10"></script>
     <script src="js/config.js?v=13"></script>
     <script src="js/db.js?v=13" defer></script>
-    <script src="js/app.js?v=12" defer></script>
+    <script src="js/app.js?v=14" defer></script>
     <script src="js/toast.js?v=10" defer></script>
     <script src="js/notice.js?v=10" defer></script>
     <script src="js/show-popup.js?v=11" defer></script>
@@ -1254,6 +1254,14 @@
               >osisrinyuh10@gmail.com</span
             >
           </a>
+
+          <a class="social-card" href="changelog.html">
+            <span class="social-ico sc-mail"
+              ><i class="fa-solid fa-clock-rotate-left"></i
+            ></span>
+            <span class="social-name">Changelog</span>
+            <span class="social-handle">Riwayat versi aplikasi</span>
+          </a>
         </div>
       </div>
     </section>
@@ -1420,9 +1428,16 @@
             >&copy; 2026 OSIS TARPAN ONE &bull; SMK Taruna Harapan 1
             Cipatat</span
           >
-          <span class="site-footer-motto" data-edit-key="footer_version"
-            >V1.0</span
-          >
+          <span style="display: inline-flex; gap: 8px; align-items: center">
+            <span class="site-footer-motto" data-edit-key="footer_version"
+              >v6.3.0</span
+            >
+            <a
+              href="changelog.html"
+              style="color: inherit; font-size: 0.72rem; font-weight: 800; opacity: 0.85"
+              >Changelog</a
+            >
+          </span>
         </div>
       </div>
     </footer>
@@ -1446,6 +1461,7 @@
         aria-controls="navSheet"
       >
         <i class="fa-solid fa-bars" id="navMoreIcon"></i>
+        <small id="navMoreLabel"></small>
       </button>
       <a href="#/galeri" class="tab-item" data-route="galeri"
         ><span class="ico"><i class="fa-solid fa-images"></i></span>Galeri</a
@@ -1480,26 +1496,26 @@
         </button>
       </div>
       <div class="nav-sheet-grid">
-        <a href="#/pengurus" class="nav-sheet-item" data-route="pengurus"
+        <a href="#/pengurus" class="nav-sheet-item" data-route="pengurus" data-short="Pengurus"
           ><span class="nsi-ico"
             ><i class="fa-solid fa-users"></i></span
           ><span class="nsi-text"
             ><b>Pengurus</b><small>Struktur OSIS</small></span
           ></a
         >
-        <a href="#/aspirasi" class="nav-sheet-item" data-route="aspirasi"
+        <a href="#/aspirasi" class="nav-sheet-item" data-route="aspirasi" data-short="Aspirasi"
           ><span class="nsi-ico"><i class="fa-solid fa-inbox"></i></span
           ><span class="nsi-text"
             ><b>Aspirasi</b><small>Suara siswa</small></span
           ></a
         >
-        <a href="#/musik" class="nav-sheet-item" data-route="musik"
+        <a href="#/musik" class="nav-sheet-item" data-route="musik" data-short="Musik"
           ><span class="nsi-ico"><i class="fa-solid fa-music"></i></span
           ><span class="nsi-text"
             ><b>Request Lagu</b><small>Radio jam istirahat</small></span
           ></a
         >
-        <a href="#/arsip" class="nav-sheet-item" data-route="arsip"
+        <a href="#/arsip" class="nav-sheet-item" data-route="arsip" data-short="Arsip"
           ><span class="nsi-ico"
             ><i class="fa-solid fa-box-archive"></i></span
           ><span class="nsi-text"

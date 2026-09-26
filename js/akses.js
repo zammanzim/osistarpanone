@@ -19,6 +19,7 @@ const Akses = {
         ["poster", "Poster"],
         ["informasi", "Informasi Harian"],
         ["program", "Program (Tahunan+Bulanan)"],
+        ["changelog", "Changelog"],
     ],
     HALAMAN_WEB: [
         ["galeri", "Galeri"],

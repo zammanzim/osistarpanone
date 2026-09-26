@@ -124,7 +124,8 @@ const Router = {
         document.querySelectorAll(".nav-sheet-item").forEach(t =>
             t.classList.toggle("active", t.dataset.route === nama)
         );
-        // kalau rute dari sheet (pengurus/aspirasi), tombol tengah ikut aktif
+        // kalau rute dari sheet (pengurus/aspirasi/arsip/musik), tombol
+        // tengah ikut aktif (hitam + ikon halaman, lihat NavMore.setIcon)
         const moreBtn = document.getElementById("navMoreBtn");
         if (moreBtn) moreBtn.classList.toggle("is-in-sheet",
             !!document.querySelector(`.nav-sheet-item[data-route="${nama}"]`));
@@ -188,7 +189,46 @@ const NavMore = {
     setIcon(open) {
         const ic = document.getElementById("navMoreIcon");
         if (!ic) return;
-        ic.className = open ? "fa-solid fa-xmark" : "fa-solid fa-bars";
+        // Prioritas ikon: sheet kebuka = X | lagi di halaman sheet = ikon
+        // halaman itu (biar tombol tengah nunjukin posisi) | default = bars.
+        if (open) {
+            ic.className = "fa-solid fa-xmark";
+            NavMore.setLabel();
+            return;
+        }
+        ic.className = NavMore.iconRoute() || "fa-solid fa-bars";
+        NavMore.setLabel();
+    },
+    // Label nama menu di tombol tengah — dari data-short item sheet
+    // (fallback ke teks <b>), dikosongkan kalau bukan halaman sheet.
+    setLabel() {
+        const lb = document.getElementById("navMoreLabel");
+        if (!lb) return;
+        try {
+            const r = (typeof Router !== "undefined" && Router.current) || "";
+            const item = r && document.querySelector('.nav-sheet-item[data-route="' + r + '"]');
+            if (item) {
+                lb.textContent = (item.dataset && item.dataset.short) ||
+                    (item.querySelector(".nsi-text b") || {}).textContent || "";
+                return;
+            }
+        } catch (e) {}
+        lb.textContent = "";
+    },
+    // Ikon halaman sheet yang sedang aktif — diambil dari item sheet di DOM
+    // (sumber tunggal, otomatis ikut kalau nambah menu baru di index.html).
+    iconRoute() {
+        try {
+            const r = (typeof Router !== "undefined" && Router.current) || "";
+            if (!r) return "";
+            const item = document.querySelector('.nav-sheet-item[data-route="' + r + '"] .nsi-ico i');
+            if (item && item.className && /fa-/.test(item.className)) return item.className;
+        } catch (e) {}
+        return "";
+    },
+    refreshIcon() {
+        const sheet = document.getElementById("navSheet");
+        NavMore.setIcon(!!(sheet && sheet.classList.contains("open")));
     },
     buka() {
         const sheet = document.getElementById("navSheet");

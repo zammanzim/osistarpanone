@@ -1016,6 +1016,75 @@ async function hapusInformasi(userId, id) {
 }
 
 // =========================================================================
+// CHANGELOG DB-DRIVEN - halaman /changelog.html (publik) + /osis/changelog (hak "changelog")
+// Baca bebas tanpa login. Tulis cuma lewat RPC (cek hak).
+// =========================================================================
+const CHANGELOG_KOLOM = "id, versi, tanggal, tipe, judul, deskripsi, komit, pesan, files, tambah, kurang, created_at";
+async function getChangelogList() {
+  const { data, error } = await supa
+    .from("changelog")
+    .select(CHANGELOG_KOLOM)
+    .order("tanggal", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return (data || []).map((r) => ({
+    version: r.versi,
+    date: r.tanggal,
+    type: r.tipe,
+    commit: r.komit || "",
+    message: r.pesan || "",
+    title: r.judul || "",
+    description: r.deskripsi || "",
+    filesChanged: r.files || 0,
+    insertions: r.tambah || 0,
+    deletions: r.kurang || 0,
+    _id: r.id,
+  }));
+}
+async function buatChangelog(userId, f) {
+  const { data, error } = await supa.rpc("buat_changelog", {
+    p_user_id: userId,
+    p_versi: f.versi,
+    p_tipe: f.tipe || "patch",
+    p_judul: f.judul,
+    p_deskripsi: f.deskripsi || "",
+    p_komit: f.komit || "",
+    p_pesan: f.pesan || "",
+    p_files: f.filesChanged || 0,
+    p_tambah: f.insertions || 0,
+    p_kurang: f.deletions || 0,
+    p_tanggal: f.date || null,
+  });
+  if (error) throw error;
+  cekId(data);
+  Cache.del("changelog");
+  return data;
+}
+async function updateChangelog(userId, id, f) {
+  const { data, error } = await supa.rpc("update_changelog", {
+    p_user_id: userId,
+    p_id: id,
+    p_tipe: f.type ?? null,
+    p_judul: f.title ?? null,
+    p_deskripsi: f.description ?? null,
+    p_tanggal: f.date ?? null,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("changelog");
+}
+async function hapusChangelog(userId, id) {
+  const { data, error } = await supa.rpc("hapus_changelog", {
+    p_user_id: userId,
+    p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("changelog");
+}
+
+// =========================================================================
 // KEGIATAN HOME - DB-driven (judul, deskripsi, badge, fotos jsonb, order)
 // =========================================================================
 async function getKegiatan() {

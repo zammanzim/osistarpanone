@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Changelog — OSIS TARPAN ONE</title>
+    <meta
+      name="description"
+      content="Riwayat versi aplikasi OSIS TARPAN ONE SMK Taruna Harapan 1 Cipatat: major, minor, dan patch dari v1.0.0 sampai versi berjalan."
+    />
+    <meta name="theme-color" content="#e11d2e" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link rel="canonical" href="https://osistarpanone.my.id/changelog.html" />
+    <link rel="stylesheet" href="css/style.css?v=13" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .cl-wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .cl-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .cl-card.accent-top {
+        border-top: 10px solid var(--red);
+      }
+      .cl-hero h1 {
+        font-size: 1.35rem;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        margin: 6px 0 4px;
+      }
+      .cl-desc {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--gray);
+        line-height: 1.55;
+        margin: 0;
+      }
+      .cl-meta-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .cl-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 999px;
+        padding: 5px 12px;
+      }
+      .cl-chip b {
+        font-size: 0.95rem;
+        color: var(--red);
+      }
+      .cl-filter {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .cl-seg {
+        display: inline-flex;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .cl-seg button {
+        border: none;
+        background: var(--white);
+        font-family: inherit;
+        font-size: 0.76rem;
+        font-weight: 900;
+        padding: 8px 14px;
+        cursor: pointer;
+      }
+      .cl-seg button.on {
+        background: var(--ink);
+        color: #fff;
+      }
+      .cl-search {
+        flex: 1;
+        min-width: 180px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        padding: 8px 12px;
+        background: var(--white);
+      }
+      .cl-search input {
+        border: none;
+        outline: none;
+        flex: 1;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 700;
+        background: transparent;
+        min-width: 0;
+      }
+      .cl-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .cl-ver {
+        font-size: 1rem;
+        font-weight: 900;
+        background: var(--ink);
+        color: #fff;
+        border-radius: 10px;
+        padding: 3px 10px;
+      }
+      .cl-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.68rem;
+        font-weight: 900;
+        border-radius: 999px;
+        padding: 4px 10px;
+        border: 2px solid var(--ink);
+      }
+      .cl-major {
+        background: var(--red);
+        color: #fff;
+      }
+
+      .cl-major .cl-desc {
+        color: rgb(220, 220, 220);
+      }
+
+      .cl-major .cl-date {
+        color: rgb(220, 220, 220);
+      }
+
+      .cl-major .cl-meta {
+        color: rgb(220, 220, 220);
+      }
+
+      .cl-minor {
+        background: var(--yellow);
+        color: var(--ink);
+      }
+      .cl-patch {
+        background: var(--paper);
+        color: var(--ink);
+      }
+      .cl-date {
+        margin-left: auto;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--gray);
+      }
+      .cl-title {
+        font-size: 1.02rem;
+        font-weight: 900;
+        margin: 10px 0 4px;
+      }
+      .cl-card .cl-desc {
+        margin-bottom: 8px;
+      }
+      .cl-meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--gray);
+        border-top: 2px dashed var(--line);
+        padding-top: 8px;
+      }
+      .cl-commit {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+      }
+      .cl-legend {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--gray);
+        line-height: 1.6;
+      }
+      .cl-ops {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 2px dashed var(--line);
+      }
+      .cl-ver-preview {
+        font-size: 0.82rem;
+        font-weight: 800;
+        background: var(--paper);
+        border: 2px dashed var(--line);
+        border-radius: 10px;
+        padding: 8px 12px;
+        margin-top: 8px;
+      }
+      .cl-ver-preview b {
+        color: var(--red);
+        font-size: 1rem;
+      }
+      .cl-ver-preview span {
+        font-weight: 600;
+        color: var(--gray);
+        font-size: 0.72rem;
+      }
+    </style>
+    <script src="js/supabase.min.js?v=10"></script>
+    <script src="js/config.js?v=13"></script>
+    <script src="js/db.js?v=14" defer></script>
+    <script src="js/app.js?v=10" defer></script>
+    <script src="js/toast.js?v=10" defer></script>
+    <script src="js/notice.js?v=10" defer></script>
+    <script src="js/show-popup.js?v=10" defer></script>
+    <script src="js/osis-auth.js?v=14" defer></script>
+    <script src="js/changelog.js?v=2" defer></script>
+    <script src="js/pwa.js?v=10" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="index" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo OSIS" /></div>
+        <div class="brand-text">
+          <h2>OSIS TARPAN ONE</h2>
+          <p>SMK Taruna Harapan 1 Cipatat</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <span
+          class="status-badge"
+          style="
+            font-size: 0.64rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 2px solid var(--ink);
+            background: var(--yellow);
+            color: var(--ink);
+          "
+          >Changelog</span
+        >
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <main class="cl-wrap">
+      <section class="cl-card accent-top cl-hero">
+        <div class="sec-tag">Riwayat Versi</div>
+        <h1>Changelog <span id="clVersi">…</span></h1>
+        <p class="cl-desc">
+          Semua perubahan aplikasi dari rilis awal sampai versi berjalan. Major
+          = perubahan besar, minor = fitur sedang, patch = fix kecil.
+        </p>
+        <div class="cl-meta-row">
+          <span class="cl-chip"
+            ><b id="clHitung">…</b>&nbsp;<span id="clInfo">Memuat…</span></span
+          >
+          <button class="btn btn-white btn-sm" onclick="Changelog.muat(true)">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+          <button
+            class="btn btn-red btn-sm"
+            id="btnTambahCl"
+            onclick="Changelog.bukaForm()"
+            style="display: none"
+          >
+            <i class="fa-solid fa-plus"></i> Tambah
+          </button>
+        </div>
+      </section>
+
+      <section class="cl-card">
+        <div class="cl-filter">
+          <span class="cl-seg" id="clFilterSeg">
+            <button
+              type="button"
+              data-f="semua"
+              class="on"
+              onclick="Changelog.filter('semua')"
+            >
+              Semua
+            </button>
+            <button
+              type="button"
+              data-f="major"
+              onclick="Changelog.filter('major')"
+            >
+              Major
+            </button>
+            <button
+              type="button"
+              data-f="minor"
+              onclick="Changelog.filter('minor')"
+            >
+              Minor
+            </button>
+            <button
+              type="button"
+              data-f="patch"
+              onclick="Changelog.filter('patch')"
+            >
+              Patch
+            </button>
+          </span>
+          <label class="cl-search"
+            ><i class="fa-solid fa-magnifying-glass"></i
+            ><input
+              type="search"
+              id="clCari"
+              placeholder="Cari versi / fitur…"
+              autocomplete="off"
+          /></label>
+        </div>
+        <p class="cl-legend" style="margin: 10px 0 0">
+          Aturan: <b>vX.0.0</b> naik kalau perubahan gede/breaking ·
+          <b>vX.1.0</b> naik kalau fitur sedang · <b>vX.X.1</b> naik kalau fix
+          kecil.
+        </p>
+      </section>
+
+      <div id="clList" style="display: flex; flex-direction: column; gap: 14px">
+        <div class="cl-card">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat changelog...
+          </div>
+        </div>
+      </div>
+
+      <a class="login-back login-center" href="index"
+        ><i class="fa-solid fa-house"></i> Kembali ke beranda</a
+      >
+    </main>
+  </body>
+</html>

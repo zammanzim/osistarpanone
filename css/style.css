@@ -2361,8 +2361,11 @@ body.edit-mode .bento-meta .gal-del {
   background: var(--red);
   color: #fff;
   font-size: 1.35rem;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
   cursor: pointer;
   box-shadow: 3px 3px 0 var(--ink);
   transition:
@@ -2382,12 +2385,33 @@ body.edit-mode .bento-meta .gal-del {
 .nav-more-btn i {
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
   font-size: 1.25rem;
+  line-height: 1;
+}
+/* Label nama menu — cuma muncul pas lagi di halaman sheet */
+#navMoreLabel {
+  display: none;
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.52rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+.nav-more-btn.is-in-sheet i {
+  font-size: 1.05rem;
+}
+.nav-more-btn.is-in-sheet #navMoreLabel {
+  display: block;
 }
 .nav-more-btn.active,
 .nav-more-btn[aria-expanded="true"] {
   background: var(--ink);
 }
 .nav-more-btn.is-in-sheet {
+  /* Lagi di halaman sheet (pengurus/aspirasi/arsip/musik): hitam = aktif,
+     beda dari default merah. Ikon ikut ganti jadi ikon halaman (diatur JS). */
   background: var(--red);
 }
 
