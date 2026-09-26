@@ -5,9 +5,14 @@ Aturan versi (SemVer sederhana):
 - `vX.1.0` (minor) — fitur sedang, non-breaking: 1 halaman / 1 modul baru, migrasi SQL non-breaking.
 - `vX.0.0` (major) — perubahan besar / breaking: restruktur direktori, ganti sistem auth, hapus kode duplikat, modul inti baru.
 
-Versi berjalan: **v6.2.0** (2026-09-26). Total 41 commit, 41 tag (v1.0.0 → v6.2.0).
+Versi berjalan: **v6.3.0** (2026-09-27). Total 42 entri (v1.0.0 → v6.3.0).
 
 > Catatan: pesan commit asli banyak yang singkat (`mmm`, `serius`, `112`), jadi ringkasan di bawah diambil dari diff stat + daftar file, bukan cuma pesan commit.
+
+## [v6.3.0] — 2026-09-27 — minor
+- Commit: `15e8600` — `Changelog DB + kelola inline di halaman publik`
+- 13 files, +1919 / -14
+- Changelog pindah ke DB (`migrasi-changelog.sql` + seed 41 versi) + kelola inline di `changelog.html` (hak `changelog`). Halaman publik baca DB + fallback JSON offline, link footer/kontak/sitemap, SW `v21`.
 
 ## [v6.2.0] — 2026-09-26 — minor
 - Commit: `1c63574` — `unreleased`

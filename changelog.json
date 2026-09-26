@@ -1,5 +1,17 @@
 [
   {
+    "version": "v6.3.0",
+    "date": "2026-09-27",
+    "type": "minor",
+    "commit": "15e8600f8329e352a5a5ba6b1ae7a3bc0126fcd6",
+    "message": "Changelog DB + kelola inline di halaman publik",
+    "title": "Changelog DB + kelola inline",
+    "description": "Riwayat versi pindah ke database + bisa ditambah/ubah/hapus langsung di halaman changelog (hak changelog). Termasuk halaman publik, migrasi seed 41 versi, dan precache offline.",
+    "filesChanged": 13,
+    "insertions": 1919,
+    "deletions": 14
+  },
+  {
     "version": "v6.2.0",
     "date": "2026-09-26",
     "type": "minor",

@@ -201,5 +201,6 @@ INSERT INTO public.changelog (versi, tanggal, tipe, judul, deskripsi, komit, pes
 ('v6.1.2','2026-09-24','patch','Chip user ke profil','Chip user di header sekarang bisa diklik menuju halaman profil.','0fed47b7023d3f4d741824897efccf974218c047','Chip user header klik ke profil',19,26,20),
 ('v6.1.3','2026-09-25','patch','Filter periode pengurus','Dropdown pengurus kini menyembunyikan periode masa depan.','c232fab6e081d891fd24bc35247c8a717b5ee671','Sembunyikan periode masa depan di dropdown pengurus',3,7,4),
 ('v6.1.4','2026-09-25','patch','Fix kecil pengurus','Perbaikan kecil index.html, js/pengurus.js, dan sw.js.','9cf91b7a8644b5efc77bd478ea7c0763961c5f55','ee',3,4,7),
-('v6.2.0','2026-09-26','minor','Fitur Arsip + Notifikasi','Modul Arsip baru (js/arsip.js, migrasi-arsip.sql) dan sistem notice (js/notice.js). Update agenda, galeri, kegiatan, prestasi.','1c63574e2bd81df5ba673587fa7a300a47d411c5','unreleased',32,1944,132)
+('v6.2.0','2026-09-26','minor','Fitur Arsip + Notifikasi','Modul Arsip baru (js/arsip.js, migrasi-arsip.sql) dan sistem notice (js/notice.js). Update agenda, galeri, kegiatan, prestasi.','1c63574e2bd81df5ba673587fa7a300a47d411c5','unreleased',32,1944,132),
+('v6.3.0','2026-09-27','minor','Changelog DB + kelola inline','Riwayat versi pindah ke database + bisa ditambah/ubah/hapus langsung di halaman changelog (hak changelog). Termasuk halaman publik, migrasi seed 41 versi, dan precache offline.','15e8600f8329e352a5a5ba6b1ae7a3bc0126fcd6','Changelog DB + kelola inline di halaman publik',13,1919,14)
 ON CONFLICT (versi) DO NOTHING;
