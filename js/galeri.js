@@ -332,6 +332,7 @@ const Galeri = {
         const item = Galeri.cache.find(g => String(g.id) === String(id));
         if (!item || !Array.isArray(item.fotos)) return;
         const gallery = item.fotos.map(path => ({
+            id: item.id,
             src: getFoto(path),
             judul: item.judul || "Galeri",
             caption: item.deskripsi || "",
@@ -339,7 +340,76 @@ const Galeri = {
         })).filter(g => g.src);
         if (!gallery.length) return;
         const index = Math.max(0, Math.min(parseInt(fotoIdx, 10) || 0, gallery.length - 1));
-        Home.bukaFotoPopup(null, gallery[index].judul, gallery[index].caption, { gallery, index });
+        Home.bukaFotoPopup(null, gallery[index].judul, gallery[index].caption, {
+            gallery,
+            index,
+            onChange(idx) {
+                const current = gallery[idx];
+                if (current) Galeri.bindPopupCaption(current.id);
+            }
+        });
+    },
+
+    // Caption popup = deskripsi kegiatan (sama untuk semua foto di popup).
+    // Pola sama kayak Prestasi.bindPopupCaption: hak dicek pas simpan.
+    bindPopupCaption(id) {
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!u || u.mode !== "osis") return;
+
+        try {
+            const akses = OsisAuth.getAkses && OsisAuth.getAkses();
+            if (akses && !(OsisAuth.bisa && OsisAuth.bisa("galeri"))) return;
+        } catch {}
+
+        const modal = document.querySelector(".struktur-modal");
+        const pill = modal ? modal.querySelector(".foto-caption-pill") : null;
+        const captionEl = pill || (modal ? modal.querySelector(".foto-caption") : null);
+        if (!captionEl) return;
+
+        captionEl.contentEditable = "true";
+        captionEl.spellcheck = false;
+        if (pill) pill.dataset.galeriCaptionPopup = String(id);
+        else captionEl.dataset.galeriCaptionPopup = String(id);
+        captionEl.onclick = (e) => e.stopPropagation();
+        // Flush ganda: blur + tutup modal/pindah foto (lihat Prestasi).
+        const simpan = async () => {
+            const item = Galeri.cache.find(g => String(g.id) === String(id));
+            if (!item) return;
+            const nextDesk = captionEl.textContent.trim();
+            if (nextDesk === (item.deskripsi || "")) return;
+            try {
+                if (typeof OsisAuth.refreshAkses === "function" && !(OsisAuth.getAkses && OsisAuth.getAkses())) {
+                    await OsisAuth.refreshAkses();
+                }
+            } catch {}
+            if (!OsisAuth.bisa || !OsisAuth.bisa("galeri")) {
+                captionEl.textContent = item.deskripsi || "";
+                showToast("Kamu tidak punya kendali atas halaman ini.", "error");
+                return;
+            }
+            Galeri.updateDeskripsi(id, nextDesk);
+        };
+        captionEl.onfocusout = simpan;
+        modal._flushCaption = simpan;
+    },
+
+    async updateDeskripsi(id, deskripsi) {
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!u || u.mode !== "osis") return;
+        const item = Galeri.cache.find(g => String(g.id) === String(id));
+        if (!item) return;
+        try {
+            await galeriUpdateMeta(u.id, id, item.judul, deskripsi);
+            item.deskripsi = deskripsi;
+            Cache.set("gallery", Galeri.cache);
+            Galeri.render();
+            showToast("Deskripsi galeri tersimpan", "success");
+        } catch (err) {
+            console.error(err);
+            showPopup("Gagal simpan deskripsi: " + err.message, "error");
+            Cache.del("gallery");
+            await Galeri.muat();
+        }
     },
 
     formatTanggal(t) {

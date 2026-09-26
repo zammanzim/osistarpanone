@@ -313,79 +313,68 @@ const AgendaAdmin = {
         listEl.innerHTML = AgendaAdmin.renderSekbid(tampil, isEditing);
     },
 
-    // ===== TAMPILAN: per sekbid, di dalamnya dikelompokkan per hari (newest -> oldest) =====
+    // ===== TAMPILAN: per hari (newest -> oldest), di dalamnya dipisah per sekbid =====
     renderSekbid(tampil, isEditing) {
         const urut = AgendaAdmin.urutkan(tampil);
-        let grupSekbid = AgendaAdmin.sekbidList || [];
-        if (AgendaAdmin.filterSekbid) {
-            grupSekbid = grupSekbid.filter(s => String(s.id) === String(AgendaAdmin.filterSekbid));
-        }
-        // Sekbid yang punya agenda tapi tidak ada di list (misal sudah dihapus) tetap tampil
-        const idDikenal = new Set(grupSekbid.map(s => String(s.id)));
-        const yatim = urut.filter(a => !idDikenal.has(String(a.sekbid_id)));
-        if (!grupSekbid.length && !yatim.length) {
+        if (!urut.length) {
             if (isEditing) return `<div class="pesan-empty" style="font-size:0.82rem;color:var(--gray)"><i class="fa-solid fa-pen"></i> Sedang mengedit — lihat form di atas.</div>`;
             return `<div class="pesan-empty"><i class="fa-solid fa-calendar"></i> Belum ada agenda.</div>`;
         }
-        const renderIsiPerHari = (isi) => {
-            // isi sudah urut newest -> oldest; kelompokkan per tanggal
-            const grupHari = {};
-            isi.forEach(a => {
-                const k = AgendaAdmin.kunciTanggal(a);
-                (grupHari[k] = grupHari[k] || []).push(a);
+        // Urutan sekbid ikut master list biar konsisten tiap hari
+        const orderSekbid = {};
+        (AgendaAdmin.sekbidList || []).forEach((s, i) => { orderSekbid[String(s.id)] = i; });
+        const namaGrupSekbid = (sid) => {
+            const s = (AgendaAdmin.sekbidList || []).find(x => String(x.id) === String(sid));
+            return s ? s.nama : "Sekbid lain";
+        };
+        // Kelompokkan per tanggal dulu
+        const grupHari = {};
+        urut.forEach(a => {
+            const k = AgendaAdmin.kunciTanggal(a);
+            (grupHari[k] = grupHari[k] || []).push(a);
+        });
+        const kunciUrut = Object.keys(grupHari).sort((x, y) => {
+            if (x === "" && y !== "") return 1;
+            if (y === "" && x !== "") return -1;
+            return y.localeCompare(x); // YYYY-MM-DD: string desc = newest dulu
+        });
+        return kunciUrut.map(k => {
+            const isiHari = grupHari[k];
+            // Pecah isi satu hari per sekbid
+            const perSekbid = {};
+            isiHari.forEach(a => {
+                const sid = String(a.sekbid_id ?? "");
+                (perSekbid[sid] = perSekbid[sid] || []).push(a);
             });
-            const kunciUrut = Object.keys(grupHari).sort((x, y) => {
-                if (x === "" && y !== "") return 1;
-                if (y === "" && x !== "") return -1;
-                return y.localeCompare(x); // YYYY-MM-DD: string desc = newest dulu
+            const sidUrut = Object.keys(perSekbid).sort((x, y) => {
+                const ox = orderSekbid[x], oy = orderSekbid[y];
+                if (ox == null && oy == null) return x.localeCompare(y);
+                if (ox == null) return 1;
+                if (oy == null) return -1;
+                return ox - oy;
             });
-            return kunciUrut.map(k => `
+            const isiHtml = sidUrut.map(sid => {
+                const list = perSekbid[sid];
+                const kartuHtml = `<div class="agenda-grid">${list.map(a => AgendaAdmin.kartu(a, false)).join("")}</div>`;
+                // Satu sekbid aja dalam hari ini = tanpa divider biar ringkas
+                if (sidUrut.length === 1) return kartuHtml;
+                return `
+                    <div class="agenda-sekbid-sub">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <span>${escapeHtml(namaGrupSekbid(sid))}</span>
+                        <span class="agenda-grup-count">${list.length}</span>
+                    </div>
+                    ${kartuHtml}`;
+            }).join("");
+            return `
                 <div class="agenda-hari">
                     <div class="agenda-hari-head">
                         <span><i class="fa-solid fa-calendar-day"></i> ${escapeHtml(AgendaAdmin.labelTanggal(k))}</span>
-                        <span class="agenda-grup-count">${grupHari[k].length} agenda</span>
+                        <span class="agenda-grup-count">${isiHari.length} agenda</span>
                     </div>
-                    <div class="agenda-grid">${grupHari[k].map(a => AgendaAdmin.kartu(a, false)).join("")}</div>
-                </div>`).join("");
-        };
-        let html = "";
-        grupSekbid.forEach(s => {
-            const isi = urut.filter(a => String(a.sekbid_id) === String(s.id));
-            if (!isi.length) return;
-            // Ringkasan per orang di sekbid ini (biar adil kelihatan siapa ngerjain apa)
-            const perOrang = {};
-            isi.forEach(a => {
-                const k = AgendaAdmin.kunciOrang(a);
-                perOrang[k] = perOrang[k] || { nama: AgendaAdmin.labelOrang(k), jum: 0 };
-                perOrang[k].jum++;
-            });
-            const chips = Object.values(perOrang)
-                .sort((x, y) => y.jum - x.jum)
-                .map(o => `<span class="pchip">${escapeHtml(o.nama)} <b>×${o.jum}</b></span>`).join("");
-            html += `
-                <div class="agenda-grup">
-                    <div class="agenda-grup-head">
-                        <h3>${escapeHtml(s.nama)}</h3>
-                        <span class="agenda-grup-count">${isi.length} agenda</span>
-                    </div>
-                    <div class="pelaksana-chips">${chips}</div>
-                    ${renderIsiPerHari(isi)}
+                    ${isiHtml}
                 </div>`;
-        });
-        if (yatim.length) {
-            html += `
-                <div class="agenda-grup">
-                    <div class="agenda-grup-head">
-                        <h3>Sekbid lain</h3>
-                        <span class="agenda-grup-count">${yatim.length} agenda</span>
-                    </div>
-                    ${renderIsiPerHari(yatim)}
-                </div>`;
-        }
-        if (!html && isEditing) {
-            return `<div class="pesan-empty" style="font-size:0.82rem;color:var(--gray)"><i class="fa-solid fa-pen"></i> Sedang mengedit — lihat form di atas.</div>`;
-        }
-        return html;
+        }).join("");
     },
 
     // ============ DETAIL (klik foto — tampilkan agenda lebih jelas) ============
@@ -645,7 +634,9 @@ const AgendaAdmin = {
             : AgendaAdmin.namaSaya();
         // Tanpa urutan manual: tampilan selalu tanggal terbaru -> terlama.
         // Kolom display_order tetap diisi default agar RPC lama tetap valid.
-        const order = (itemEdit && parseInt(itemEdit.display_order, 10)) || 99;
+        // (0 itu order valid, jangan pakai || 99)
+        const _ord = parseInt(itemEdit && itemEdit.display_order, 10);
+        const order = Number.isFinite(_ord) ? _ord : 99;
 
         if (!judul) { showToast("Judul wajib diisi", "error"); return; }
         if (!sekbidId) { showToast("Jabatanmu tidak cocok sekbid manapun — hubungi admin.", "error"); return; }

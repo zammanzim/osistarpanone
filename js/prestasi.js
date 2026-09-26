@@ -187,8 +187,16 @@ const Prestasi = {
 
     bindPopupCaption(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
-        const isEdit = u && u.mode === "osis" && OsisAuth.bisa && OsisAuth.bisa("prestasi");
-        if (!isEdit) return;
+        if (!u || u.mode !== "osis") return;
+
+        // Jangan tolak mentah-mentah kalau cache akses belum termuat
+        // (refreshAkses jalan async tiap load). Dulu `bisa()` false di sini
+        // bikin handler tidak kepasang → edit hilang diam-diam.
+        // Hak final dicek lagi pas simpan (di bawah).
+        try {
+            const akses = OsisAuth.getAkses && OsisAuth.getAkses();
+            if (akses && !(OsisAuth.bisa && OsisAuth.bisa("prestasi"))) return;
+        } catch {}
 
         const modal = document.querySelector(".struktur-modal");
         const pill = modal ? modal.querySelector(".foto-caption-pill") : null;
@@ -200,12 +208,31 @@ const Prestasi = {
         if (pill) pill.dataset.prestasiCaptionPopup = String(id);
         else captionEl.dataset.prestasiCaptionPopup = String(id);
         captionEl.onclick = (e) => e.stopPropagation();
-        captionEl.onfocusout = () => {
+        // Disimpan via blur DAN via flush saat modal ditutup/pindah foto
+        // (Home.tutupModal/geserFotoPopup manggil modal._flushCaption).
+        // WAJIB dua-duanya: di HP tap X/backdrop/back tidak memindah fokus
+        // → focusout tidak pernah fires → tanpa flush edit hilang.
+        const simpan = async () => {
             const item = Prestasi.cache.find(p => String(p.id) === String(id));
             if (!item) return;
             const nextCaption = captionEl.textContent.trim();
-            if (nextCaption !== Prestasi.getCaption(item)) Prestasi.updateCaption(id, nextCaption);
+            if (nextCaption === Prestasi.getCaption(item)) return;
+            // Tunggu cache akses kalau kosong, tolak + balikin teks semula
+            // kalau ternyata tidak berhak (biar tidak hilang diam-diam).
+            try {
+                if (typeof OsisAuth.refreshAkses === "function" && !(OsisAuth.getAkses && OsisAuth.getAkses())) {
+                    await OsisAuth.refreshAkses();
+                }
+            } catch {}
+            if (!OsisAuth.bisa || !OsisAuth.bisa("prestasi")) {
+                captionEl.textContent = Prestasi.getCaption(item);
+                showToast("Kamu tidak punya kendali atas halaman ini.", "error");
+                return;
+            }
+            Prestasi.updateCaption(id, nextCaption);
         };
+        captionEl.onfocusout = simpan;
+        modal._flushCaption = simpan;
     },
 
     // ============ FORM POPUP ============

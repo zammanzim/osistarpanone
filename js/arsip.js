@@ -1,33 +1,65 @@
 // =========================================================================
-// KEGIATAN — DB-driven home bento (judul, deskripsi, badge, fotos jsonb)
-// Container kosong #kegiatanGrid di index, render via SWR.
-// Edit via toggle header (SiteEdit) — draft inline kayak Galeri.
+// ARSIP GALERI — arsip semua dokumentasi kegiatan, pagination server-side.
+// EXACT kayak Dokumentasi Kegiatan (home): draft inline, edit teks langsung,
+// badge, hapus foto, hapus kegiatan, caption popup. Bedanya: paginasi +
+// read di halaman sendiri biar home tetap ringan (highlight doang).
+// Sumber: tabel arsip. Hak akses: "kegiatan" (dipakai bareng home).
 // =========================================================================
 
-const Kegiatan = {
-  cache: [],
-  draft: null, // { judul, deskripsi, badge, fotos:[{path,caption}], files:[File] }
+const Arsip = {
+  rows: [], // baris halaman aktif (page-scoped, urutan dari server)
+  draft: null, // { judul, deskripsi, badge, fotos:[], files:[File] }
+  page: 1,
+  perPage: 6,
+  total: 0,
   terinisialisasi: false,
+  token: 0,
+
+  // 0 itu order valid, jangan || 99
+  ord(k) {
+    const o = parseInt(k && k.display_order, 10);
+    return Number.isFinite(o) ? o : 99;
+  },
+
+  // order global terkecil - 1 biar insert baru selalu paling atas (hal 1)
+  async nextOrderGlobal() {
+    try {
+      const m = await getArsipMinOrder();
+      return m - 1;
+    } catch {
+      const rows = Arsip.rows || [];
+      if (!rows.length) return 99;
+      try {
+        return Math.min(...rows.map(Arsip.ord)) - 1;
+      } catch {
+        return 99;
+      }
+    }
+  },
+
+  totalHal() {
+    return Math.max(1, Math.ceil((Arsip.total || 0) / Arsip.perPage));
+  },
 
   init() {
-    if (Kegiatan.terinisialisasi) return;
-    Kegiatan.terinisialisasi = true;
+    if (Arsip.terinisialisasi) return;
+    Arsip.terinisialisasi = true;
     // Segarkan hak kendali lalu sesuaikan tombol
     if (typeof OsisAuth.refreshAkses === "function") {
       OsisAuth.refreshAkses()
         .then(() => {
-          Kegiatan.cekLogin();
-          Kegiatan.render();
+          Arsip.cekLogin();
+          Arsip.render();
         })
         .catch(() => {});
     }
-    Kegiatan.cekLogin();
-    Kegiatan.muat();
-    const grid = document.getElementById("kegiatanGrid");
+    Arsip.cekLogin();
+    Arsip.muat(1);
+    const grid = document.getElementById("arsipGrid");
     if (grid)
       grid.addEventListener("click", (e) => {
         if (e.target.closest(".up-slot")) {
-          document.getElementById("kegiatanFileInput")?.click();
+          document.getElementById("arsipFileInput")?.click();
         }
       });
     if (grid) {
@@ -51,16 +83,16 @@ const Kegiatan = {
         const slot = e.target.closest(".up-slot");
         if (!slot) return;
         const file = e.dataTransfer.files && e.dataTransfer.files[0];
-        Kegiatan.tambahFileDraft(file);
+        Arsip.tambahFileDraft(file);
       });
     }
-    if (!document.getElementById("kegiatanFileInput")) {
+    if (!document.getElementById("arsipFileInput")) {
       const fi2 = document.createElement("input");
       fi2.type = "file";
-      fi2.id = "kegiatanFileInput";
+      fi2.id = "arsipFileInput";
       fi2.accept = "image/*";
       fi2.style.display = "none";
-      fi2.addEventListener("change", () => Kegiatan.tambahFotoDraft(fi2));
+      fi2.addEventListener("change", () => Arsip.tambahFotoDraft(fi2));
       document.body.appendChild(fi2);
     }
     if (grid)
@@ -68,22 +100,22 @@ const Kegiatan = {
         if (e.target.closest(".up-slot, .foto-del-btn")) return;
         if (
           e.target.closest(
-            "[data-kegiatan-field][contenteditable='true'], .bento-badge[contenteditable='true']",
+            "[data-arsip-field][contenteditable='true'], .bento-badge[contenteditable='true']",
           )
         )
           return;
         const item = e.target.closest(".item");
         if (!item) return;
         const block = item.closest(".bento-block");
-        const id = block ? block.dataset.kegiatanId : null;
+        const id = block ? block.dataset.arsipId : null;
         const fotoIdx = Number(item.dataset.fotoIdx || 0);
-        if (id) Kegiatan.bukaPopup(id, fotoIdx);
+        if (id) Arsip.bukaPopup(id, fotoIdx);
       });
     if (grid && !grid._textEditBound) {
       grid._textEditBound = true;
       grid.addEventListener("focusout", (e) => {
         const el = e.target.closest(
-          "[data-kegiatan-field][contenteditable='true']",
+          "[data-arsip-field][contenteditable='true']",
         );
         const badgeEl = e.target.closest(
           ".bento-badge[contenteditable='true']",
@@ -91,16 +123,16 @@ const Kegiatan = {
         if (!el && !badgeEl) return;
         const targetEl = badgeEl || el;
         const targetBlock = targetEl.closest(".bento-block");
-        const id = targetBlock ? targetBlock.dataset.kegiatanId : null;
-        const field = badgeEl ? "badge" : el.dataset.kegiatanField;
+        const id = targetBlock ? targetBlock.dataset.arsipId : null;
+        const field = badgeEl ? "badge" : el.dataset.arsipField;
         if (!id || !field) return;
 
-        const item = Kegiatan.cache.find((k) => String(k.id) === String(id));
+        const item = Arsip.rows.find((k) => String(k.id) === String(id));
         if (!item) return;
         const value = targetEl.textContent.trim();
         if (field === "badge" && value.length > 12) {
           targetEl.textContent = value.slice(0, 12);
-          Kegiatan.updateText(id, field, value.slice(0, 12));
+          Arsip.updateText(id, field, value.slice(0, 12));
           return;
         }
         if (field === "judul" && !value) {
@@ -109,112 +141,74 @@ const Kegiatan = {
           return;
         }
         if (value !== (item[field] || ""))
-          Kegiatan.updateText(id, field, value);
+          Arsip.updateText(id, field, value);
       });
     }
   },
+
   cekLogin() {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     const osis = !!(u && u.mode === "osis");
     const boleh = osis && OsisAuth.bisa && OsisAuth.bisa("kegiatan");
-    const grid = document.getElementById("kegiatanGrid");
+    const grid = document.getElementById("arsipGrid");
     if (grid) grid.classList.toggle("mode-osis", !!boleh);
-    const btn = document.getElementById("btnTambahKegiatan");
+    const btn = document.getElementById("btnTambahArsip");
     if (btn)
       btn.style.display =
         osis && OsisAuth.bisa && OsisAuth.bisa("kegiatan") ? "" : "none";
   },
 
-  async muat() {
-    const grid = document.getElementById("kegiatanGrid");
+  async muat(page) {
+    const grid = document.getElementById("arsipGrid");
     if (!grid) return;
-    const cached = Cache.get("kegiatan");
-    if (cached) {
-      Kegiatan.cache = cached;
-      Kegiatan.render();
-      getKegiatan()
-        .then((fresh) => {
-          // auto-hapus yang kosong di fresh juga
-          const emptyFresh = (fresh || []).filter(
-            (k) => !Array.isArray(k.fotos) || k.fotos.length === 0,
-          );
-          if (emptyFresh.length) {
-            const u = OsisAuth.getUser && OsisAuth.getUser();
-            if (u && u.mode === "osis") {
-              emptyFresh.forEach(async (it) => {
-                try {
-                  await hapusKegiatan(u.id, it.id);
-                } catch {}
-              });
-              fresh = fresh.filter(
-                (k) => Array.isArray(k.fotos) && k.fotos.length > 0,
-              );
-              Cache.set("kegiatan", fresh);
-            }
-          } else {
-            Cache.set("kegiatan", fresh);
-          }
-          if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-            Kegiatan.cache = fresh;
-            Kegiatan.render();
-          }
-        })
-        .catch(() => {});
-      return;
-    }
-    grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat kegiatan...</div>`;
+    Arsip.page = Math.max(1, parseInt(page, 10) || 1);
+    const token = ++Arsip.token;
+    grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat arsip...</div>`;
+    Arsip.renderBar();
     try {
-      let data = await getKegiatan();
-      // otomatis hapus kegiatan tanpa foto
-      const empty = (data || []).filter(
-        (k) => !Array.isArray(k.fotos) || k.fotos.length === 0,
-      );
-      if (empty.length) {
-        const u = OsisAuth.getUser && OsisAuth.getUser();
-        if (u && u.mode === "osis") {
-          // hapus di background, jangan block render
-          empty.forEach(async (it) => {
-            try {
-              await hapusKegiatan(u.id, it.id);
-            } catch {}
-          });
-          data = data.filter(
-            (k) => Array.isArray(k.fotos) && k.fotos.length > 0,
-          );
-          Cache.set("kegiatan", data);
-        }
-      } else {
-        Cache.set("kegiatan", data);
+      const [total, rows] = await Promise.all([
+        getArsipCount(),
+        getArsipPage(Arsip.page, Arsip.perPage),
+      ]);
+      if (token !== Arsip.token) return;
+      const maxHal = Math.max(1, Math.ceil((total || 0) / Arsip.perPage));
+      if (Arsip.page > maxHal) {
+        Arsip.muat(maxHal);
+        return;
       }
-      Kegiatan.cache = data || [];
-      Kegiatan.render();
+      Arsip.total = total || 0;
+      Arsip.rows = rows || [];
+      Arsip.render();
     } catch (err) {
       console.error(err);
-      grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat kegiatan.</div>`;
+      if (token !== Arsip.token) return;
+      grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat arsip. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Arsip.muat(Arsip.page)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
     }
+    Arsip.renderBar();
+  },
+
+  go(p) {
+    const maxHal = Arsip.totalHal();
+    const next = Math.min(maxHal, Math.max(1, parseInt(p, 10) || 1));
+    const view = document.querySelector('.view[data-view="arsip"]');
+    if (view) view.scrollIntoView({ behavior: "smooth", block: "start" });
+    else window.scrollTo(0, 0);
+    Arsip.muat(next);
   },
 
   render() {
-    const grid = document.getElementById("kegiatanGrid");
+    const grid = document.getElementById("arsipGrid");
     if (!grid) return;
     let html = "";
-    if (Kegiatan.draft) html += Kegiatan.kartuDraft();
-    const raw = Kegiatan.cache || [];
-    // terbaru di atas — display_order terkecil dulu, tie-break created_at terbaru dulu
-    const data = [...raw].sort((a, b) => {
-      const oa = parseInt(a.display_order, 10);
-      const ob = parseInt(b.display_order, 10);
-      const va = Number.isFinite(oa) ? oa : 99;
-      const vb = Number.isFinite(ob) ? ob : 99;
-      if (va !== vb) return va - vb;
-      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-    });
-    if (data.length === 0 && !Kegiatan.draft) {
-      html += `<div class="pesan-empty"><i class="fa-solid fa-images"></i> Belum ada kegiatan.</div>`;
+    if (Arsip.draft) html += Arsip.kartuDraft();
+    const rows = Arsip.rows || [];
+    if (rows.length === 0 && !Arsip.draft) {
+      html += `<div class="pesan-empty"><i class="fa-solid fa-images"></i> Belum ada arsip.</div>`;
     } else {
-      html += data.map((item) => Kegiatan.kartu(item)).join("");
+      html += rows.map((item) => Arsip.kartu(item)).join("");
     }
     grid.innerHTML = html;
+    Arsip.renderBar();
   },
 
   kartu(item) {
@@ -226,23 +220,24 @@ const Kegiatan = {
       typeof OsisAuth !== "undefined" &&
       OsisAuth.bisa &&
       OsisAuth.bisa("kegiatan");
-    let fotosHtml = fotos
+    const fotosHtml = fotos
       .map((f, idx) => {
         const path = typeof f === "string" ? f : f.path;
+        if (!path) return "";
         const badgeHtml =
           idx === 0 && (badge || isEdit)
             ? `<span class="bento-badge" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="BADGE">${badge}</span>`
             : "";
-        return `<div class="item" data-foto-idx="${idx}"><img src="${getFoto(path)}" alt="${judul}" loading="lazy" onerror="this.style.display='none'">${badgeHtml}<button class="foto-del-btn" onclick="event.stopPropagation(); Kegiatan.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button></div>`;
+        return `<div class="item" data-foto-idx="${idx}"><img src="${getFoto(path)}" alt="${judul}" loading="lazy" onerror="this.style.display='none'">${badgeHtml}<button class="foto-del-btn" onclick="event.stopPropagation(); Arsip.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button></div>`;
       })
       .join("");
     return `
-            <div class="bento-block" data-kegiatan-id="${item.id}">
+            <div class="bento-block" data-arsip-id="${item.id}">
                 <div class="bento-meta">
-                    <h4 data-kegiatan-field="judul" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="Judul Kegiatan">${judul}</h4>
-                    ${deskripsi || isEdit ? `<p data-kegiatan-field="deskripsi" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="Sub judul / deskripsi singkat...">${deskripsi}</p>` : ""}
+                    <h4 data-arsip-field="judul" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="Judul Kegiatan">${judul}</h4>
+                    ${deskripsi || isEdit ? `<p data-arsip-field="deskripsi" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="Sub judul / deskripsi singkat...">${deskripsi}</p>` : ""}
                     ${olehLabel(item) ? `<div>${olehLabel(item)}</div>` : ""}
-                    <button class="icon-btn gal-del" onclick="event.stopPropagation(); Kegiatan.hapus(${item.id})" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>
+                    <button class="icon-btn gal-del" onclick="event.stopPropagation(); Arsip.hapus(${item.id})" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
                 <div class="bento-grid">${fotosHtml}</div>
             </div>`;
@@ -255,10 +250,10 @@ const Kegiatan = {
   },
 
   bukaPopup(id, fotoIdx) {
-    const item = Kegiatan.cache.find((k) => String(k.id) === String(id));
+    const item = Arsip.rows.find((k) => String(k.id) === String(id));
     if (!item || !Array.isArray(item.fotos) || !item.fotos[fotoIdx]) return;
     const gallery = [];
-    Kegiatan.cache.forEach((k) => {
+    Arsip.rows.forEach((k) => {
       const fotos = Array.isArray(k.fotos) ? k.fotos : [];
       fotos.forEach((foto, idx) => {
         const path = typeof foto === "string" ? foto : foto.path;
@@ -267,8 +262,8 @@ const Kegiatan = {
           kegiatanId: k.id,
           fotoIdx: idx,
           src: getFoto(path),
-          judul: k.judul || "Kegiatan",
-          caption: Kegiatan.getFotoCaption(k, idx),
+          judul: k.judul || "Arsip",
+          caption: Arsip.getFotoCaption(k, idx),
           oleh: k.pengunggah || "",
         });
       });
@@ -281,8 +276,8 @@ const Kegiatan = {
     );
     Home.bukaFotoPopup(
       null,
-      item.judul || "Kegiatan",
-      Kegiatan.getFotoCaption(item, fotoIdx),
+      item.judul || "Arsip",
+      Arsip.getFotoCaption(item, fotoIdx),
       {
         gallery,
         index,
@@ -290,7 +285,7 @@ const Kegiatan = {
         onChange(idx) {
           const current = gallery[idx];
           if (current)
-            Kegiatan.bindPopupCaption(current.kegiatanId, current.fotoIdx);
+            Arsip.bindPopupCaption(current.kegiatanId, current.fotoIdx);
         },
       },
     );
@@ -320,28 +315,28 @@ const Kegiatan = {
     captionEl.onclick = (e) => e.stopPropagation();
     // Flush ganda: blur + tutup modal/pindah foto (lihat Prestasi).
     const simpan = async () => {
-      const item = Kegiatan.cache.find((k) => String(k.id) === String(id));
+      const item = Arsip.rows.find((k) => String(k.id) === String(id));
       if (!item) return;
       const nextCaption = captionEl.textContent.trim();
-      if (nextCaption === Kegiatan.getFotoCaption(item, fotoIdx)) return;
+      if (nextCaption === Arsip.getFotoCaption(item, fotoIdx)) return;
       try {
         if (typeof OsisAuth.refreshAkses === "function" && !(OsisAuth.getAkses && OsisAuth.getAkses())) {
           await OsisAuth.refreshAkses();
         }
       } catch {}
       if (!OsisAuth.bisa || !OsisAuth.bisa("kegiatan")) {
-        captionEl.textContent = Kegiatan.getFotoCaption(item, fotoIdx);
+        captionEl.textContent = Arsip.getFotoCaption(item, fotoIdx);
         showToast("Kamu tidak punya kendali atas halaman ini.", "error");
         return;
       }
-      Kegiatan.updateFotoCaption(id, fotoIdx, nextCaption);
+      Arsip.updateFotoCaption(id, fotoIdx, nextCaption);
     };
     captionEl.onfocusout = simpan;
     modal._flushCaption = simpan;
   },
 
   kartuDraft() {
-    const d = Kegiatan.draft || {
+    const d = Arsip.draft || {
       judul: "",
       deskripsi: "",
       badge: "",
@@ -349,7 +344,6 @@ const Kegiatan = {
       files: [],
     };
     let fotosHtml = "";
-    // existing fotos (if editing, not needed for new)
     if (d.fotos && d.fotos.length) {
       fotosHtml += d.fotos
         .map((f) => {
@@ -358,7 +352,6 @@ const Kegiatan = {
         })
         .join("");
     }
-    // files preview
     (d.files || []).forEach((f) => {
       const url = URL.createObjectURL(f);
       fotosHtml += `<div class="item"><img src="${url}" alt=""></div>`;
@@ -371,10 +364,10 @@ const Kegiatan = {
                     <p class="draft-desk" contenteditable="true" spellcheck="false" data-ph="Sub judul / deskripsi singkat...">${escapeHtml(d.deskripsi || "")}</p>
                     <input type="text" class="admin-input draft-badge" placeholder="Badge (cth: MAKRAB)" value="${escapeHtml(d.badge || "")}" maxlength="12">
                     <div class="gal-actions">
-                        <button class="icon-btn gal-save" onclick="Kegiatan.simpanDraft()" title="Simpan kegiatan">
+                        <button class="icon-btn gal-save" onclick="Arsip.simpanDraft()" title="Simpan kegiatan">
                             <i class="fa-solid fa-check"></i>
                         </button>
-                        <button class="icon-btn gal-del" onclick="Kegiatan.buangDraft()" title="Buang draft">
+                        <button class="icon-btn gal-del" onclick="Arsip.buangDraft()" title="Buang draft">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -385,59 +378,60 @@ const Kegiatan = {
 
   buatDraft() {
     if (!OsisAuth.butuh("kegiatan")) return;
-    if (Kegiatan.draft) {
-      const j = document.querySelector("#kegiatanGrid .draft-judul");
+    if (Arsip.draft) {
+      const j = document.querySelector("#arsipGrid .draft-judul");
       if (j) j.focus();
       return;
     }
-    Kegiatan.draft = {
+    Arsip.draft = {
       judul: "",
       deskripsi: "",
       badge: "",
       fotos: [],
       files: [],
     };
-    Kegiatan.render();
-    const j = document.querySelector("#kegiatanGrid .draft-judul");
+    Arsip.render();
+    const j = document.querySelector("#arsipGrid .draft-judul");
     if (j) j.focus();
-    const card = document.querySelector("#kegiatanGrid .bento-block.draft");
+    const card = document.querySelector("#arsipGrid .bento-block.draft");
     if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
   },
 
   bacaTeksDraft() {
-    if (!Kegiatan.draft) return;
-    const jEl = document.querySelector("#kegiatanGrid .draft-judul");
-    const dEl = document.querySelector("#kegiatanGrid .draft-desk");
-    const bEl = document.querySelector("#kegiatanGrid .draft-badge");
-    if (jEl) Kegiatan.draft.judul = jEl.textContent.trim();
-    if (dEl) Kegiatan.draft.deskripsi = dEl.textContent.trim();
-    if (bEl) Kegiatan.draft.badge = bEl.value.trim();
+    if (!Arsip.draft) return;
+    const jEl = document.querySelector("#arsipGrid .draft-judul");
+    const dEl = document.querySelector("#arsipGrid .draft-desk");
+    const bEl = document.querySelector("#arsipGrid .draft-badge");
+    if (jEl) Arsip.draft.judul = jEl.textContent.trim();
+    if (dEl) Arsip.draft.deskripsi = dEl.textContent.trim();
+    if (bEl) Arsip.draft.badge = bEl.value.trim();
   },
 
   tambahFotoDraft(input) {
-    if (!Kegiatan.draft) return;
+    if (!Arsip.draft) return;
     const file = input.files && input.files[0];
     input.value = "";
-    Kegiatan.tambahFileDraft(file);
+    Arsip.tambahFileDraft(file);
   },
 
   tambahFileDraft(file) {
-    if (!Kegiatan.draft) return;
-    Kegiatan.bacaTeksDraft();
+    if (!Arsip.draft) return;
+    Arsip.bacaTeksDraft();
     if (!file || !file.type.startsWith("image/")) {
       if (file) showToast("File harus gambar", "error");
       return;
     }
-    if (!Kegiatan.draft.files) Kegiatan.draft.files = [];
-    Kegiatan.draft.files.push(file);
-    Kegiatan.render();
-    const draftEl = document.querySelector("#kegiatanGrid .bento-block.draft");
+    if (!Arsip.draft.files) Arsip.draft.files = [];
+    Arsip.draft.files.push(file);
+    Arsip.render();
+    const draftEl = document.querySelector("#arsipGrid .bento-block.draft");
     if (draftEl)
       draftEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
   },
+
   buangDraft() {
-    Kegiatan.draft = null;
-    Kegiatan.render();
+    Arsip.draft = null;
+    Arsip.render();
   },
 
   async simpanDraft() {
@@ -447,8 +441,8 @@ const Kegiatan = {
       return;
     }
     if (!OsisAuth.butuh("kegiatan")) return;
-    Kegiatan.bacaTeksDraft();
-    const d = Kegiatan.draft;
+    Arsip.bacaTeksDraft();
+    const d = Arsip.draft;
     if (!d || !d.judul || !d.judul.trim()) {
       showToast("Judul wajib diisi", "error");
       return;
@@ -460,38 +454,28 @@ const Kegiatan = {
       showToast("Tambah minimal 1 foto", "error");
       return;
     }
-    const __ord = (k) => {
-      const o = parseInt(k && k.display_order, 10);
-      return Number.isFinite(o) ? o : 99; // 0 itu order valid, jangan || 99
-    };
-    const __kegOrder = (() => {
-      const list = Kegiatan.cache || [];
-      if (!list.length) return 99;
-      try {
-        return Math.min(...list.map(__ord)) - 1;
-      } catch { return 99; }
-    })();
-    const __spec = () => ({ modul: "kegiatan", op: "create",
-      label: "Kegiatan: " + String(d.judul || "").trim().slice(0, 42),
+    // order dari MIN GLOBAL (bukan halaman aktif) biar selalu paling atas
+    const __order = await Arsip.nextOrderGlobal();
+    const __spec = () => ({ modul: "arsip", op: "create",
+      label: "Arsip: " + String(d.judul || "").trim().slice(0, 42),
       payload: { judul: d.judul.trim(), deskripsi: d.deskripsi || "", badge: d.badge || "",
-        order: __kegOrder,
+        order: __order,
         fotosExisting: (d.fotos || []).map((fl) => ({
           path: typeof fl === "string" ? fl : fl.path,
           caption: typeof fl === "string" ? "" : fl.caption || "",
         })) },
       files: (d.files || []).map((fl, i) => ({ slot: "foto" + i, file: fl, name: fl.name, type: fl.type })),
-      cacheKeys: ["kegiatan"] });
-    const __sesudahAntre = () => { Kegiatan.draft = null; Kegiatan.render(); };
+      cacheKeys: ["arsip"] });
+    const __sesudahAntre = () => { Arsip.draft = null; Arsip.render(); };
     if (typeof Outbox !== "undefined" && Outbox.offline()) {
       try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
       Outbox.sesudahAntre(__sesudahAntre);
       return;
     }
-    const btn = document.querySelector("#kegiatanGrid .gal-save");
+    const btn = document.querySelector("#arsipGrid .gal-save");
     if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     try {
       const paths = [];
-      // keep existing fotos (if any)
       if (d.fotos) {
         for (const f of d.fotos) {
           const p = typeof f === "string" ? f : f.path;
@@ -502,31 +486,22 @@ const Kegiatan = {
       for (let i = 0; i < (d.files || []).length; i++) {
         const f = d.files[i];
         const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-        const path = `kegiatan/kegiatan-${u.id}-${Date.now()}-${i}.${ext}`;
+        const path = `arsip/arsip-${u.id}-${Date.now()}-${i}.${ext}`;
         await uploadFotoStorage(f, path);
         paths.push({ path, caption: "" });
       }
-      // terbaru di atas — pakai min display_order -1 kayak agenda/prestasi
-      // (0 itu order valid, jangan pakai || 99)
-      let nextOrder = 99;
-      const list = Kegiatan.cache || [];
-      if (list.length) {
-        const minOrder = Math.min(...list.map(__ord));
-        nextOrder = minOrder - 1;
-      }
-      const newId = await buatKegiatan(
+      const newId = await buatArsip(
         u.id,
         d.judul.trim(),
         d.deskripsi || "",
         d.badge || "",
         paths,
-        nextOrder,
+        __order,
       );
       if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
-      showToast("Kegiatan ditambah!", "success");
-      Kegiatan.draft = null;
-      Cache.del("kegiatan");
-      await Kegiatan.muat();
+      showToast("Arsip ditambah!", "success");
+      Arsip.draft = null;
+      Arsip.go(1);
     } catch (err) {
       console.error(err);
       if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
@@ -541,7 +516,7 @@ const Kegiatan = {
   async updateFotoCaption(kegiatanId, fotoIdx, caption) {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     if (!u || u.mode !== "osis") return;
-    const item = Kegiatan.cache.find(
+    const item = Arsip.rows.find(
       (k) => String(k.id) === String(kegiatanId),
     );
     if (!item || !Array.isArray(item.fotos) || !item.fotos[fotoIdx]) return;
@@ -552,7 +527,7 @@ const Kegiatan = {
       typeof foto === "string" ? { path: foto, caption } : { ...foto, caption };
 
     try {
-      await updateKegiatan(
+      await updateArsip(
         u.id,
         kegiatanId,
         item.judul,
@@ -561,19 +536,15 @@ const Kegiatan = {
         newFotos,
         item.display_order,
       );
-      const idx = Kegiatan.cache.findIndex(
+      const idx = Arsip.rows.findIndex(
         (k) => String(k.id) === String(kegiatanId),
       );
-      if (idx >= 0) {
-        Kegiatan.cache[idx] = { ...Kegiatan.cache[idx], fotos: newFotos };
-        Cache.set("kegiatan", Kegiatan.cache);
-      }
-      showToast("Caption kegiatan tersimpan", "success");
+      if (idx >= 0) Arsip.rows[idx] = { ...Arsip.rows[idx], fotos: newFotos };
+      showToast("Caption arsip tersimpan", "success");
     } catch (err) {
       console.error(err);
       showPopup("Gagal simpan caption: " + err.message, "error");
-      Cache.del("kegiatan");
-      await Kegiatan.muat();
+      await Arsip.muat(Arsip.page);
     }
   },
 
@@ -581,14 +552,14 @@ const Kegiatan = {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     if (!u || u.mode !== "osis") return;
     if (!OsisAuth.butuh("kegiatan")) return;
-    const item = Kegiatan.cache.find(
+    const item = Arsip.rows.find(
       (k) => String(k.id) === String(kegiatanId),
     );
     if (!item || !["judul", "deskripsi", "badge"].includes(field)) return;
 
     const next = { ...item, [field]: value };
     try {
-      await updateKegiatan(
+      await updateArsip(
         u.id,
         kegiatanId,
         next.judul,
@@ -597,19 +568,15 @@ const Kegiatan = {
         next.fotos,
         next.display_order,
       );
-      const idx = Kegiatan.cache.findIndex(
+      const idx = Arsip.rows.findIndex(
         (k) => String(k.id) === String(kegiatanId),
       );
-      if (idx >= 0) {
-        Kegiatan.cache[idx] = next;
-        Cache.set("kegiatan", Kegiatan.cache);
-      }
-      showToast("Kegiatan tersimpan", "success");
+      if (idx >= 0) Arsip.rows[idx] = next;
+      showToast("Arsip tersimpan", "success");
     } catch (err) {
       console.error(err);
       showPopup("Gagal simpan kegiatan: " + err.message, "error");
-      Cache.del("kegiatan");
-      await Kegiatan.muat();
+      await Arsip.muat(Arsip.page);
     }
   },
 
@@ -623,8 +590,8 @@ const Kegiatan = {
     );
     if (!yakin) return;
     try {
-      const item = Kegiatan.cache.find((k) => String(k.id) === String(id));
-      await hapusKegiatan(u.id, id);
+      const item = Arsip.rows.find((k) => String(k.id) === String(id));
+      await hapusArsip(u.id, id);
       if (item && Array.isArray(item.fotos)) {
         for (const f of item.fotos) {
           const p = typeof f === "string" ? f : f.path;
@@ -634,9 +601,8 @@ const Kegiatan = {
             } catch {}
         }
       }
-      showToast("Kegiatan dihapus", "success");
-      Cache.del("kegiatan");
-      await Kegiatan.muat();
+      showToast("Arsip dihapus", "success");
+      await Arsip.muat(Arsip.page);
     } catch (err) {
       console.error(err);
       showPopup("Gagal hapus: " + err.message, "error");
@@ -647,7 +613,7 @@ const Kegiatan = {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     if (!u || u.mode !== "osis") return;
     if (!OsisAuth.butuh("kegiatan")) return;
-    const item = Kegiatan.cache.find(
+    const item = Arsip.rows.find(
       (k) => String(k.id) === String(kegiatanId),
     );
     if (!item || !Array.isArray(item.fotos) || !item.fotos[fotoIdx]) return;
@@ -664,16 +630,14 @@ const Kegiatan = {
     try {
       const newFotos = item.fotos.filter((_, i) => i !== fotoIdx);
       if (newFotos.length === 0) {
-        // otomatis hapus kegiatan kalau tidak ada foto tersisa
-        await hapusKegiatan(u.id, kegiatanId);
+        await hapusArsip(u.id, kegiatanId);
         if (path)
           try {
             await hapusFotoStorage(path);
           } catch {}
-        // hapus sisa foto lain kalau ada (seharusnya sudah kosong)
-        showToast("Kegiatan terhapus (tidak ada foto)", "success");
+        showToast("Arsip terhapus (tidak ada foto)", "success");
       } else {
-        await updateKegiatan(
+        await updateArsip(
           u.id,
           kegiatanId,
           item.judul,
@@ -688,21 +652,33 @@ const Kegiatan = {
           } catch {}
         showToast("Foto dihapus", "success");
       }
-      Cache.del("kegiatan");
-      await Kegiatan.muat();
+      await Arsip.muat(Arsip.page);
     } catch (err) {
       console.error(err);
       showPopup("Gagal hapus foto: " + err.message, "error");
     }
   },
+
+  renderBar() {
+    const bar = document.getElementById("arsipBar");
+    if (!bar) return;
+    const hal = Arsip.page;
+    const maxHal = Arsip.totalHal();
+    bar.innerHTML = `
+      <button class="btn btn-white btn-sm" onclick="Arsip.go(${hal - 1})" ${hal <= 1 ? "disabled" : ""}>
+        <i class="fa-solid fa-chevron-left"></i> Prev
+      </button>
+      <span class="arsip-pageinfo">Hal <b>${hal}</b> dari <b>${maxHal}</b> &bull; ${Arsip.total} kegiatan</span>
+      <button class="btn btn-white btn-sm" onclick="Arsip.go(${hal + 1})" ${hal >= maxHal ? "disabled" : ""}>
+        Next <i class="fa-solid fa-chevron-right"></i>
+      </button>`;
+  },
 };
 
-// hook ke Home init
-if (typeof Home !== "undefined") {
-  const _origHomeInit = Home.init.bind(Home);
-  Home.init = async function () {
-    await _origHomeInit();
-    Kegiatan.init();
-  };
-  if (Home.terinisialisasi) Kegiatan.init();
+if (typeof Router !== "undefined") {
+  Router.register("arsip", () => Arsip.init());
+} else if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => Arsip.init());
+} else {
+  Arsip.init();
 }

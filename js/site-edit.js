@@ -33,6 +33,7 @@ const SiteEdit = {
         SiteEdit.active = false;
         document.body.classList.remove("edit-mode");
         toggle.checked = false;
+        try { if (window.Notice && Notice.hide) Notice.hide("editmode"); } catch {}
         const moreEdit = document.getElementById("headerMoreEditToggle");
         if (moreEdit) moreEdit.checked = false;
         document.querySelectorAll("[data-edit-key]").forEach(el => el.contentEditable = "false");
@@ -127,6 +128,13 @@ const SiteEdit = {
         if (SiteEdit.active) {
             SiteEdit.injectPhotoButtons();
             showToast("Edit mode aktif — klik teks/foto buat ubah", "info");
+            try {
+                if (window.Notice && Notice.show) Notice.show("editmode", {
+                    text: "Sedang edit mode — klik teks/foto buat ubah",
+                    icon: "fa-solid fa-pen",
+                    type: "yellow",
+                });
+            } catch {}
             // Kabari kalau user sama sekali tidak punya hak kendali edit
             try {
                 const adaHak = ["site", "anggota", "prestasi", "kegiatan", "galeri", "poster"]
@@ -135,6 +143,7 @@ const SiteEdit = {
             } catch {}
         } else {
             SiteEdit.removePhotoButtons();
+            try { if (window.Notice && Notice.hide) Notice.hide("editmode"); } catch {}
         }
         HeaderMore.refresh();
         if (typeof Prestasi !== "undefined" && Prestasi.render) Prestasi.render();
@@ -755,12 +764,16 @@ document.addEventListener("focusout", (e) => {
 const HeaderMore = {
     toggle() {
         const menu = document.getElementById("headerMoreMenu");
+        const btn = document.getElementById("headerMoreBtn");
         if (!menu) return;
         menu.classList.toggle("open");
+        if (btn) btn.classList.toggle("active", menu.classList.contains("open"));
     },
     close() {
         const menu = document.getElementById("headerMoreMenu");
+        const btn = document.getElementById("headerMoreBtn");
         if (menu) menu.classList.remove("open");
+        if (btn) btn.classList.remove("active");
     },
     onEditToggle(checked) {
         const main = document.getElementById("editToggle");
@@ -831,6 +844,7 @@ OsisAuth.renderHeader = function() {
     HeaderMore.refresh();
     if (!u || u.mode !== "osis") {
         document.body.classList.remove("edit-mode");
+        try { if (window.Notice && Notice.hide) Notice.hide("editmode"); } catch {}
         const t = document.getElementById("editToggle");
         if (t) t.checked = false;
         if (moreEdit) moreEdit.checked = false;

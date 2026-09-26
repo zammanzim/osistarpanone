@@ -44,6 +44,7 @@
     agenda: "Agenda",
     galeri: "Galeri",
     kegiatan: "Kegiatan",
+    arsip: "Arsip Galeri",
     prestasi: "Prestasi",
     poster: "Poster",
     notulensi: "Notulensi",
@@ -733,6 +734,14 @@
     );
     await buatKegiatan(uid, p.judul, p.deskripsi || "", p.badge || "", fotos, p.order == null ? 99 : p.order);
   };
+  Outbox.handlers.arsip = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    var fotos = (p.fotosExisting || []).concat(
+      await uploadBanyak(op, uid, "arsip", "arsip-"),
+    );
+    await buatArsip(uid, p.judul, p.deskripsi || "", p.badge || "", fotos, p.order == null ? 99 : p.order);
+  };
   Outbox.handlers.prestasi = async function (op) {
     var uid = Outbox.butuhLogin(op);
     var p = op.payload || {};
@@ -979,6 +988,9 @@
   Outbox.refreshers.kegiatan = coba(function () {
     return Kegiatan.muat();
   });
+  Outbox.refreshers.arsip = coba(function () {
+    if (typeof Arsip !== "undefined" && Arsip.terinisialisasi) return Arsip.muat(Arsip.page || 1);
+  });
   Outbox.refreshers.prestasi = coba(function () {
     return Prestasi.muat();
   });
@@ -1113,19 +1125,41 @@
           Outbox.processQueue({ manual: true });
         });
     }
-    if (!pill) {
+    // Fallback lama kalau notice.js belum dimuat — pill dibuat manual.
+    // Kalau Notice ada, offline tampil lewat Notice.show("offline") di bawah.
+    if (!pill && !(window.Notice && Notice.show)) {
       pill = document.createElement("div");
       pill.id = "offlinePill";
       pill.innerHTML =
         '<i class="fa-solid fa-cloud"></i><span>Offline — menampilkan data terakhir</span>';
       document.body.appendChild(pill);
       Outbox.tampilkanPill();
+    } else if (window.Notice && Notice.show) {
+      Outbox.tampilkanPill();
     }
   }
 
-  // Pill "offline" global — muncul di semua halaman saat tanpa koneksi.
+  // Status offline global — lewat Notice universal ("offline"), muncul di
+  // semua halaman saat tanpa koneksi. Fallback ke pill lama bila Notice
+  // belum dimuat (cth: notice.js gagal di-cache).
   Outbox.tampilkanPill = function () {
-    if (pill) pill.style.display = Outbox.offline() ? "inline-flex" : "none";
+    var off = Outbox.offline();
+    try {
+      if (window.Notice && Notice.show && Notice.hide) {
+        if (off) {
+          Notice.show("offline", {
+            text: "Offline — menampilkan data terakhir",
+            icon: "fa-solid fa-cloud",
+            type: "dark",
+          });
+        } else {
+          Notice.hide("offline");
+        }
+        if (pill) pill.style.display = "none";
+        return;
+      }
+    } catch (e) {}
+    if (pill) pill.style.display = off ? "inline-flex" : "none";
   };
 
   Outbox.bukaPanel = async function () {

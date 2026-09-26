@@ -1040,6 +1040,10 @@ img {
   flex: 1;
   overflow-y: auto;
   padding: 14px;
+  /* WAJIB: swipe horizontal (ganti angkatan) dipasang di elemen ini
+     (lihat Home.pasangSwipe). Tanpa pan-y, browser di HP merebut drag
+     diagonal buat native scroll → pointercancel → swipe mati. */
+  touch-action: pan-y;
 }
 .struktur-modal-body .struktur-foto {
   margin: -14px -14px 14px -14px;
@@ -1999,6 +2003,84 @@ body.edit-mode .bento-meta .gal-del {
 }
 
 /* ============================================================
+   NOTICE - pemberitahuan universal (persistent, kanan atas)
+   Dipakai bareng: toast (transient bawah) & popup (modal).
+   Satu id = satu pill, menumpuk ke bawah kalau >1.
+   ============================================================ */
+#notice-stack {
+  position: fixed;
+  top: 84px;
+  right: 16px;
+  /* Di bawah header (z-80): dropdown more-menu di dalam header harus
+     selalu di atas notice. Tetap di atas konten & bottom-sheet (88/89
+     ada di bawah layar, tidak overlap). */
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: min(92vw, 360px);
+  pointer-events: none;
+}
+.notice-pill {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  font-family: Outfit, system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.3;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transform: translateX(16px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.25s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+.notice-pill span {
+  overflow-wrap: anywhere;
+}
+.notice-pill.notice-show {
+  opacity: 1;
+  transform: none;
+}
+.notice-pill.notice-hide {
+  opacity: 0;
+  transform: translateX(16px);
+}
+.notice-dark {
+  background: #1a1314;
+  color: #ffd43b;
+}
+.notice-yellow {
+  background: var(--yellow);
+  color: var(--ink);
+}
+.notice-red {
+  background: var(--red);
+  color: #fff;
+}
+.notice-white {
+  background: var(--white);
+  color: var(--ink);
+}
+.notice-green {
+  background: #d6f5d6;
+  color: #146314;
+}
+@media (prefers-reduced-motion: reduce) {
+  .notice-pill {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ============================================================
    POPUP - universal (pengganti alert/confirm)
    ============================================================ */
 .uni-overlay {
@@ -2264,6 +2346,225 @@ body.edit-mode .bento-meta .gal-del {
 }
 
 /* ============================================================
+   BOTTOM NAV — tombol tengah + sheet "Menu Lainnya"
+   ============================================================ */
+.nav-more-btn {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+  width: 56px;
+  height: 56px;
+  margin: -28px 2px 0;
+  align-self: flex-start;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: var(--red);
+  color: #fff;
+  font-size: 1.35rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s,
+    background 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-more-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.nav-more-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.nav-more-btn i {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  font-size: 1.25rem;
+}
+.nav-more-btn.active,
+.nav-more-btn[aria-expanded="true"] {
+  background: var(--ink);
+}
+.nav-more-btn.is-in-sheet {
+  background: var(--red);
+}
+
+/* backdrop + sheet */
+.nav-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 88;
+  background: rgba(26, 19, 20, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.nav-sheet-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.nav-sheet {
+  position: fixed;
+  z-index: 89;
+  left: 14px;
+  right: 14px;
+  bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: 5px 5px 0 var(--ink);
+  padding: 10px 12px 14px;
+  transform: translateY(24px) scale(0.98);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.22s;
+}
+.nav-sheet.open {
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+.nav-sheet-handle {
+  width: 44px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--line);
+  border: 2px solid var(--ink);
+  margin: 0 auto 8px;
+}
+.nav-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 10px;
+}
+.nav-sheet-head b {
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+.nav-sheet-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 2.5px solid var(--ink);
+  background: var(--paper-2);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.nav-sheet-close:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.nav-sheet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.nav-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  background: var(--paper-2);
+  text-decoration: none;
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s,
+    background 0.12s;
+}
+.nav-sheet-item:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.nav-sheet-item.active {
+  background: var(--red);
+  color: #fff;
+}
+.nav-sheet-item.active .nsi-text small {
+  color: rgba(255, 255, 255, 0.85);
+}
+.nsi-ico {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 2.5px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+}
+.nav-sheet-item.active .nsi-ico {
+  background: #fff;
+  color: var(--red);
+}
+.nsi-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+.nsi-text b {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+.nsi-text small {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+
+/* ============================================================
+   ARSIP GALERI — pagination bar
+   ============================================================ */
+.arsip-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 12px;
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: var(--shadow-hard);
+}
+.arsip-bar .btn[disabled] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.arsip-pageinfo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  text-align: center;
+  white-space: nowrap;
+}
+.arsip-pageinfo b {
+  color: var(--ink);
+}
+@media (max-width: 480px) {
+  .arsip-bar {
+    padding: 10px;
+  }
+  .arsip-pageinfo {
+    font-size: 0.64rem;
+  }
+}
+
+/* ============================================================
    LOADING & KOSONG
    ============================================================ */
 .loading-block {
@@ -2504,6 +2805,17 @@ body.edit-mode .bento-meta .gal-del {
     gap: 5px;
     font-size: 0.68rem;
     padding: 8px 10px;
+    justify-content: center;
+  }
+  .nav-sheet {
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, 24px) scale(0.98);
+    width: min(560px, calc(100vw - 40px));
+    bottom: 96px;
+  }
+  .nav-sheet.open {
+    transform: translate(-50%, 0) scale(1);
   }
 }
 
@@ -2985,8 +3297,6 @@ body.edit-mode #kegiatanGrid:not(.mode-osis) .item .foto-del-btn {
 .edit-slider::after {
   content: "";
   position: absolute;
-  top: 1px;
-  left: 1px;
   width: 14px;
   height: 14px;
   background: var(--white);
@@ -2994,6 +3304,7 @@ body.edit-mode #kegiatanGrid:not(.mode-osis) .item .foto-del-btn {
   border-radius: 50%;
   transition: transform 0.2s;
 }
+
 .edit-toggle-wrap input:checked + .edit-slider {
   background: var(--red);
 }
@@ -3112,6 +3423,12 @@ body.edit-mode {
   display: none;
   position: relative;
 }
+#headerMoreBtn {
+  transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1), background 0.15s;
+}
+#headerMoreBtn.active {
+  transform: rotate(90deg);
+}
 .header-more-menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -3122,13 +3439,54 @@ body.edit-mode {
   border-radius: 14px;
   box-shadow: 4px 4px 0 var(--ink);
   padding: 6px;
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 4px;
   z-index: 95;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.96);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1),
+    visibility 0.18s;
 }
 .header-more-menu.open {
-  display: flex;
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+}
+.header-more-menu .header-more-item {
+  opacity: 0;
+  transform: translateX(10px);
+  transition:
+    opacity 0.16s ease,
+    transform 0.2s ease,
+    background 0.12s;
+}
+.header-more-menu.open .header-more-item {
+  opacity: 1;
+  transform: none;
+}
+.header-more-menu.open .header-more-item:nth-child(1) {
+  transition-delay: 0.03s;
+}
+.header-more-menu.open .header-more-item:nth-child(2) {
+  transition-delay: 0.07s;
+}
+.header-more-menu.open .header-more-item:nth-child(3) {
+  transition-delay: 0.11s;
+}
+@media (prefers-reduced-motion: reduce) {
+  #headerMoreBtn,
+  .header-more-menu,
+  .header-more-menu .header-more-item {
+    transition: none;
+    transform: none;
+  }
 }
 .header-more-item {
   display: flex;
@@ -5156,20 +5514,34 @@ body.edit-mode .prestasi-card .foto-del-btn {
 /* ============================================================
    BOTTOM-NAV MOBILE FIX
    1. safe-area: gesture bar Android/iPhone tidak lagi motong nav.
-   2. tab ramping <=480px: 6 label (Pengurus/Aspirasi) muat tanpa wrap.
+   2. tab ramping <=480px: 4 label utama muat lega.
    ============================================================ */
 .bottom-nav {
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
 }
 @media (max-width: 480px) {
   .tab-item {
-    padding: 8px 4px;
-    font-size: 0.58rem;
+    padding: 8px 6px;
+    font-size: 0.6rem;
     gap: 1px;
     min-width: 0;
     white-space: nowrap;
   }
   .tab-item .ico {
-    font-size: 1rem;
+    font-size: 1.05rem;
+  }
+  .nav-more-btn {
+    width: 52px;
+    height: 52px;
+    margin-top: -26px;
+    font-size: 1.25rem;
+  }
+  .nav-sheet-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 360px) {
+  .nav-sheet-grid {
+    grid-template-columns: 1fr;
   }
 }

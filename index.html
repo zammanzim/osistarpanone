@@ -135,7 +135,7 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="css/style.css?v=11" />
+    <link rel="stylesheet" href="css/style.css?v=15" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -419,20 +419,22 @@
     <script src="js/supabase.min.js?v=10"></script>
     <script src="js/config.js?v=13"></script>
     <script src="js/db.js?v=13" defer></script>
-    <script src="js/app.js?v=11" defer></script>
+    <script src="js/app.js?v=12" defer></script>
     <script src="js/toast.js?v=10" defer></script>
+    <script src="js/notice.js?v=10" defer></script>
     <script src="js/show-popup.js?v=11" defer></script>
     <script src="js/visitor.js?v=10" defer></script>
-    <script src="js/home.js?v=10" defer></script>
-    <script src="js/prestasi.js?v=10" defer></script>
-    <script src="js/kegiatan.js?v=10" defer></script>
+    <script src="js/home.js?v=12" defer></script>
+    <script src="js/prestasi.js?v=12" defer></script>
+    <script src="js/kegiatan.js?v=12" defer></script>
     <script src="js/sekbid.js?v=11" defer></script>
     <script src="js/pengurus.js?v=10" defer></script>
     <script src="js/aspirasi.js?v=10" defer></script>
-    <script src="js/lagu.js?v=10" defer></script>
-    <script src="js/galeri.js?v=10" defer></script>
+    <script src="js/lagu.js?v=11" defer></script>
+    <script src="js/galeri.js?v=12" defer></script>
+    <script src="js/arsip.js?v=12" defer></script>
     <script src="js/osis-auth.js?v=14" defer></script>
-    <script src="js/site-edit.js?v=11" defer></script>
+    <script src="js/site-edit.js?v=13" defer></script>
     <script src="js/pwa.js?v=10" defer></script>
   </head>
   <body>
@@ -1001,6 +1003,39 @@
     </section>
 
     <!-- ============================================================
+         VIEW: ARSIP GALERI (paginasi, read-only)
+         ============================================================ -->
+    <section class="view" data-view="arsip">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Arsip</div>
+            <h2 class="sec-title">Arsip <span class="red">Galeri</span></h2>
+            <p class="sec-sub">
+              Semua dokumentasi kegiatan OSIS Tarpan One, halaman per halaman.
+            </p>
+          </div>
+          <button
+            class="btn btn-red"
+            id="btnTambahArsip"
+            onclick="Arsip.buatDraft()"
+            style="display: none"
+          >
+            <i class="fa-solid fa-plus"></i> Tambah
+          </button>
+        </div>
+
+        <div class="bento-stack" id="arsipGrid">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat arsip...
+          </div>
+        </div>
+        <div class="arsip-bar" id="arsipBar"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
          VIEW: ASPIRASI
          ============================================================ -->
     <section class="view" data-view="aspirasi">
@@ -1220,6 +1255,23 @@
             >
           </a>
         </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         VIEW: MUSIK (request lagu radio jam istirahat)
+         ============================================================ -->
+    <section class="view" data-view="musik">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Radio Tarpan</div>
+            <h2 class="sec-title">Request <span class="red">Lagu</span></h2>
+            <p class="sec-sub">
+              Request lagu favoritmu buat diputar pas jam istirahat!
+            </p>
+          </div>
+        </div>
 
         <div class="kontak-grid">
           <div class="form-card">
@@ -1375,29 +1427,88 @@
       </div>
     </footer>
 
-    <!-- ===== BOTTOM NAV ===== -->
+    <!-- ===== BOTTOM NAV : 4 utama + tombol tengah ===== -->
     <nav class="bottom-nav" id="bottomNav">
       <span class="nav-pill" id="navPill"></span>
       <a href="#/" class="tab-item" data-route="home"
         ><span class="ico"><i class="fa-solid fa-house"></i></span>Home</a
       >
-      <a href="#/pengurus" class="tab-item" data-route="pengurus"
-        ><span class="ico"><i class="fa-solid fa-users"></i></span>Pengurus</a
-      >
       <a href="#/sekbid" class="tab-item" data-route="sekbid"
         ><span class="ico"><i class="fa-solid fa-folder-open"></i></span
         >Sekbid</a
       >
+      <button
+        class="nav-more-btn"
+        id="navMoreBtn"
+        onclick="NavMore.toggle()"
+        aria-label="Menu lainnya"
+        aria-expanded="false"
+        aria-controls="navSheet"
+      >
+        <i class="fa-solid fa-bars" id="navMoreIcon"></i>
+      </button>
       <a href="#/galeri" class="tab-item" data-route="galeri"
         ><span class="ico"><i class="fa-solid fa-images"></i></span>Galeri</a
       >
       <a href="#/kontak" class="tab-item" data-route="kontak"
         ><span class="ico"><i class="fa-solid fa-phone"></i></span>Kontak</a
       >
-      <a href="#/aspirasi" class="tab-item" data-route="aspirasi"
-        ><span class="ico"><i class="fa-solid fa-inbox"></i></span>Aspirasi</a
-      >
     </nav>
+
+    <!-- ===== NAV SHEET : menu lain (Pengurus, Aspirasi, menu baru nanti) ===== -->
+    <div
+      class="nav-sheet-backdrop"
+      id="navSheetBackdrop"
+      onclick="NavMore.tutup()"
+    ></div>
+    <div
+      class="nav-sheet"
+      id="navSheet"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Menu lainnya"
+    >
+      <div class="nav-sheet-handle" aria-hidden="true"></div>
+      <div class="nav-sheet-head">
+        <b>Menu Lainnya</b>
+        <button
+          class="nav-sheet-close"
+          onclick="NavMore.tutup()"
+          aria-label="Tutup menu"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="nav-sheet-grid">
+        <a href="#/pengurus" class="nav-sheet-item" data-route="pengurus"
+          ><span class="nsi-ico"
+            ><i class="fa-solid fa-users"></i></span
+          ><span class="nsi-text"
+            ><b>Pengurus</b><small>Struktur OSIS</small></span
+          ></a
+        >
+        <a href="#/aspirasi" class="nav-sheet-item" data-route="aspirasi"
+          ><span class="nsi-ico"><i class="fa-solid fa-inbox"></i></span
+          ><span class="nsi-text"
+            ><b>Aspirasi</b><small>Suara siswa</small></span
+          ></a
+        >
+        <a href="#/musik" class="nav-sheet-item" data-route="musik"
+          ><span class="nsi-ico"><i class="fa-solid fa-music"></i></span
+          ><span class="nsi-text"
+            ><b>Request Lagu</b><small>Radio jam istirahat</small></span
+          ></a
+        >
+        <a href="#/arsip" class="nav-sheet-item" data-route="arsip"
+          ><span class="nsi-ico"
+            ><i class="fa-solid fa-box-archive"></i></span
+          ><span class="nsi-text"
+            ><b>Arsip Galeri</b><small>Semua dokumentasi</small></span
+          ></a
+        >
+        <!-- Tambah menu baru tinggal copy <a class="nav-sheet-item"> di sini -->
+      </div>
+    </div>
 
     <!-- ===== POPUP VISITOR ===== -->
     <div class="visitor-overlay" id="visitorOverlay">

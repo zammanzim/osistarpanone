@@ -1082,6 +1082,94 @@ async function hapusKegiatan(userId, id) {
 }
 
 // =========================================================================
+// ARSIP GALERI - tabel sendiri (struktur persis kegiatan), pagination
+// =========================================================================
+async function getArsipCount() {
+  const { count, error } = await supa
+    .from("arsip")
+    .select("id", { count: "exact", head: true });
+  if (error) throw error;
+  return count || 0;
+}
+async function getArsipPage(page = 1, perPage = 6) {
+  const p = Math.max(1, parseInt(page, 10) || 1);
+  const n = Math.min(24, Math.max(1, parseInt(perPage, 10) || 6));
+  const from = (p - 1) * n;
+  const to = from + n - 1;
+  const { data, error } = await supa
+    .from("arsip")
+    .select("id, judul, deskripsi, badge, fotos, display_order, pengunggah, created_at")
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+  if (error) throw error;
+  return data || [];
+}
+// Order global terkecil — buat insert baru selalu paling atas (0 itu valid)
+async function getArsipMinOrder() {
+  const { data, error } = await supa
+    .from("arsip")
+    .select("display_order")
+    .order("display_order", { ascending: true })
+    .limit(1);
+  if (error) throw error;
+  const o = parseInt(data && data[0] && data[0].display_order, 10);
+  return Number.isFinite(o) ? o : 99;
+}
+async function buatArsip(
+  userId,
+  judul,
+  deskripsi,
+  badge,
+  fotos,
+  order = 99,
+) {
+  const { data, error } = await supa.rpc("buat_arsip", {
+    p_user_id: userId,
+    p_judul: judul,
+    p_deskripsi: deskripsi,
+    p_badge: badge,
+    p_fotos: fotos,
+    p_display_order: order,
+  });
+  if (error) throw error;
+  cekId(data);
+  Cache.del("arsip");
+  return data;
+}
+async function updateArsip(
+  userId,
+  id,
+  judul,
+  deskripsi,
+  badge,
+  fotos,
+  order,
+) {
+  const { data, error } = await supa.rpc("update_arsip", {
+    p_user_id: userId,
+    p_id: id,
+    p_judul: judul,
+    p_deskripsi: deskripsi,
+    p_badge: badge,
+    p_fotos: fotos,
+    p_display_order: order,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("arsip");
+}
+async function hapusArsip(userId, id) {
+  const { data, error } = await supa.rpc("hapus_arsip", {
+    p_user_id: userId,
+    p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("arsip");
+}
+
+// =========================================================================
 // NOTULENSI RAPAT - DB-driven (halaman osis/notulensi)
 // =========================================================================
 async function getNotulensi() {

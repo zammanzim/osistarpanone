@@ -112,13 +112,19 @@ const Home = {
         const gallery = Array.isArray(opsi.gallery) ? opsi.gallery : null;
         const startIndex = gallery ? Math.max(0, Math.min(opsi.index || 0, gallery.length - 1)) : 0;
         const current = gallery ? gallery[startIndex] : null;
-        Home.fotoPopup = gallery ? { gallery, index: startIndex, onChange: opsi.onChange || null } : null;
+        // Pill cuma boleh editable kalau pemanggil pasang onChange (= ada
+        // jalur simpan, mis. Prestasi/Kegiatan/Arsip/Galeri.bindPopupCaption).
+        // Tanpa ini, popup tanpa jalur simpan (angkatan, bukti, lampiran)
+        // pill-nya kelihatan bisa diketik tapi editnya hilang percuma.
+        const adaPenyimpan = typeof opsi.onChange === "function";
+        Home.fotoPopup = gallery ? { gallery, index: startIndex, onChange: opsi.onChange || null, bisaEditCaption: false } : null;
 
         const src = current ? current.src : ((img && img.src) ? img.src : getFoto(FOTO_DEFAULT[(img && img.dataset.foto) || ""] || ""));
         const finalJudul = current ? (current.judul || judul || "") : (judul || "");
         const finalCaption = current ? (current.caption || "") : (caption || "");
         const olehAwal = String((current && current.oleh) || opsi.oleh || "").trim();
-        const canEditCaption = document.body.classList.contains("edit-mode") && (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
+        const canEditCaption = adaPenyimpan && document.body.classList.contains("edit-mode") && (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
+        if (Home.fotoPopup) Home.fotoPopup.bisaEditCaption = canEditCaption;
         const captionPill = `<span class="foto-caption-pill" ${canEditCaption ? 'contenteditable="true" spellcheck="false"' : ''}>${escapeHtml(finalCaption || "")}</span>`;
         // Caption = floating overlay di atas foto (bukan area di bawah foto)
         const captionHtml = finalCaption || canEditCaption ? `<div class="foto-caption">${captionPill}</div>` : "";
@@ -168,13 +174,18 @@ const Home = {
         if (!Home.fotoPopup || !Array.isArray(Home.fotoPopup.gallery) || Home.fotoPopup.gallery.length < 2) return;
         const modal = document.querySelector(".struktur-modal");
         if (!modal || !modal.querySelector(".foto-pop")) return;
+        // Flush dulu: DOM pill bakal ditimpa foto berikut, jadi baca teks
+        // yang sedang diketik SEBELUM kehapus. Idempoten, aman double-save.
+        if (typeof modal._flushCaption === "function") {
+            try { modal._flushCaption(); } catch (e) {}
+        }
         const total = Home.fotoPopup.gallery.length;
         Home.fotoPopup.index = (Home.fotoPopup.index + arah + total) % total;
         const item = Home.fotoPopup.gallery[Home.fotoPopup.index];
         const title = modal.querySelector(".struktur-head h4");
         const img = modal.querySelector(".foto-pop img");
         let captionEl = modal.querySelector(".foto-caption");
-        const canEditCaption = document.body.classList.contains("edit-mode") && (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
+        const canEditCaption = !!(Home.fotoPopup && Home.fotoPopup.bisaEditCaption);
 
         if (title) title.textContent = item.judul || "";
         const olehEl = modal.querySelector("#fotoOleh");
@@ -297,6 +308,14 @@ const Home = {
 
     tutupModal(dariBack = false) {
         const modal = document.querySelector(".struktur-modal");
+        // Flush caption popup foto yang belum ke-save (mis. user ketik lalu
+        // langsung tap X/backdrop/back). Di HP tap itu tidak memindah fokus
+        // → focusout tidak fires → tanpa flush edit hilang. Fire-and-forget:
+        // RPC jalan walau modal sudah dilepas.
+        if (modal && typeof modal._flushCaption === "function") {
+            try { modal._flushCaption(); } catch (e) {}
+            modal._flushCaption = null;
+        }
         // auto-save kalau lagi edit mode (tanpa ubah layout, tanpa tombol)
         if (modal && document.body.classList.contains("edit-mode") && typeof SiteEdit !== "undefined" && SiteEdit.savePopup) {
             const t = parseInt(modal.dataset.tahun, 10);

@@ -71,11 +71,11 @@ function labelTahun(thn) {
 
 // =========================================================================
 // ROUTER — SPA hash routing (index)
-// Rute: #/ #/sekbid #/aspirasi #/kontak
+// Rute: #/ #/sekbid #/aspirasi #/kontak #/musik
 // =========================================================================
 
 const Router = {
-    daftarView: ["home", "pengurus", "sekbid", "galeri", "aspirasi", "kontak"],
+    daftarView: ["home", "pengurus", "sekbid", "galeri", "arsip", "aspirasi", "kontak", "musik"],
     initFns: {},       // init lazy per view
     selesai: {},       // flag view sudah pernah di-init
     current: "home",
@@ -121,7 +121,16 @@ const Router = {
         document.querySelectorAll(".tab-item").forEach(t =>
             t.classList.toggle("active", t.dataset.route === nama)
         );
+        document.querySelectorAll(".nav-sheet-item").forEach(t =>
+            t.classList.toggle("active", t.dataset.route === nama)
+        );
+        // kalau rute dari sheet (pengurus/aspirasi), tombol tengah ikut aktif
+        const moreBtn = document.getElementById("navMoreBtn");
+        if (moreBtn) moreBtn.classList.toggle("is-in-sheet",
+            !!document.querySelector(`.nav-sheet-item[data-route="${nama}"]`));
         Router.geserPill(true);
+
+        if (typeof NavMore !== "undefined") NavMore.tutup();
 
         if (typeof Home !== "undefined" && Home.tutupModal) Home.tutupModal(true);
     },
@@ -137,19 +146,74 @@ const Router = {
     },
 
     // Indikator slide di bottom nav
+    // - rute utama: pill nempel di tab-nya
+    // - rute sheet (pengurus/aspirasi): pill nempel di tombol tengah
     geserPill(animasi) {
         const nav = document.getElementById("bottomNav");
         const pill = document.getElementById("navPill");
         if (!nav || !pill) return;
-        const tab = nav.querySelector(`.tab-item[data-route="${Router.current}"]`);
+        let tab = nav.querySelector(`.tab-item[data-route="${Router.current}"]`);
+        if (!tab) tab = document.getElementById("navMoreBtn");
         if (!tab) return;
 
         if (!animasi) pill.classList.add("no-anim");
         // offsetLeft/offsetWidth relatif ke nav (offsetParent) -> pas dengan border+padding nav,
         // kebal terhadap scroll, zoom, dan transform centering di desktop.
-        pill.style.width = tab.offsetWidth + "px";
+        // tombol tengah bulet: pill jadi bulet ngikutin.
+        if (tab.id === "navMoreBtn") {
+            const s = Math.min(tab.offsetWidth, tab.offsetHeight) || 56;
+            pill.style.width = s + "px";
+            pill.style.height = s + "px";
+            pill.style.top = tab.offsetTop + "px";
+            pill.style.bottom = "auto";
+            pill.style.borderRadius = "50%";
+        } else {
+            pill.style.height = "";
+            pill.style.top = "";
+            pill.style.bottom = "";
+            pill.style.borderRadius = "";
+            pill.style.width = tab.offsetWidth + "px";
+        }
         pill.style.transform = `translateX(${tab.offsetLeft}px)`;
         requestAnimationFrame(() => pill.classList.remove("no-anim"));
+    }
+};
+
+// =========================================================================
+// NAVMORE — bottom sheet "Menu Lainnya" (tombol bulet tengah)
+// Tambah menu baru: tinggal tambah <a class="nav-sheet-item"> di index.html,
+// otomatis ikut active-state + pill pindah ke tombol tengah.
+// =========================================================================
+const NavMore = {
+    setIcon(open) {
+        const ic = document.getElementById("navMoreIcon");
+        if (!ic) return;
+        ic.className = open ? "fa-solid fa-xmark" : "fa-solid fa-bars";
+    },
+    buka() {
+        const sheet = document.getElementById("navSheet");
+        const bg = document.getElementById("navSheetBackdrop");
+        const btn = document.getElementById("navMoreBtn");
+        if (!sheet) return;
+        sheet.classList.add("open");
+        if (bg) bg.classList.add("open");
+        if (btn) btn.setAttribute("aria-expanded", "true");
+        NavMore.setIcon(true);
+    },
+    tutup() {
+        const sheet = document.getElementById("navSheet");
+        const bg = document.getElementById("navSheetBackdrop");
+        const btn = document.getElementById("navMoreBtn");
+        if (sheet && !sheet.classList.contains("open")) { NavMore.setIcon(false); return; }
+        if (sheet) sheet.classList.remove("open");
+        if (bg) bg.classList.remove("open");
+        if (btn) btn.setAttribute("aria-expanded", "false");
+        NavMore.setIcon(false);
+    },
+    toggle() {
+        const sheet = document.getElementById("navSheet");
+        if (sheet && sheet.classList.contains("open")) NavMore.tutup();
+        else NavMore.buka();
     }
 };
 
@@ -164,3 +228,8 @@ function onReady(fn) {
 
 onReady(() => FotoWeb.init());
 onReady(() => Router.init());
+onReady(() => {
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && typeof NavMore !== "undefined") NavMore.tutup();
+    });
+});

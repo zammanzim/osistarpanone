@@ -355,7 +355,7 @@ const Lagu = {
 };
 
 if (typeof Router !== "undefined") {
-    Router.register("kontak", () => Lagu.init());
+    Router.register("musik", () => Lagu.init());
 } else if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => Lagu.init());
 } else {
