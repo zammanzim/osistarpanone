@@ -19,6 +19,8 @@ const Bottomnav = {
       { route: "kontak", label: "Kontak", icon: "fa-solid fa-phone" },
     ],
     sheet: [
+      { route: "informasi", label: "Informasi", sub: "Pengumuman & acara", icon: "fa-solid fa-bullhorn", short: "Info" },
+      { route: "moments", label: "Moments", sub: "Foto & video seru", icon: "fa-solid fa-clapperboard", short: "Moments" },
       { route: "pengurus", label: "Pengurus", sub: "Struktur OSIS", icon: "fa-solid fa-users", short: "Pengurus" },
       { route: "aspirasi", label: "Aspirasi", sub: "Suara siswa", icon: "fa-solid fa-inbox", short: "Aspirasi" },
       { route: "musik", label: "Request Lagu", sub: "Radio jam istirahat", icon: "fa-solid fa-music", short: "Musik" },

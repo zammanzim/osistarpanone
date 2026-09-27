@@ -14,16 +14,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE">
-    <link rel="stylesheet" href="css/style.css?v=13">
+    <link rel="stylesheet" href="css/style.css?v=18">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="js/supabase.min.js?v=10"></script>
     <script src="js/config.js?v=13"></script>
-    <script src="js/db.js?v=13" defer></script>
+    <script src="js/db.js?v=17" defer></script>
     <script src="js/app.js?v=10" defer></script>
     <script src="js/notice.js?v=10" defer></script>
-    <script src="js/osis-auth.js?v=14" defer></script>
-    <script src="js/login.js?v=13" defer></script>
+    <script src="js/osis-auth.js?v=17" defer></script>
+    <script src="js/login.js?v=15" defer></script>
     <script src="js/pwa.js?v=10" defer></script>
 </head>
 <body class="login-body">
@@ -39,23 +39,27 @@
             <div class="slider-window">
                 <div class="slider-content" id="mainSlider">
 
-                    <!-- STEP 1: form guest (default) -->
-                    <div class="slide-step">
-                        <label class="lbl">Nama Panggilan</label>
-                        <input type="text" id="guestNickname" class="admin-input" placeholder="Nama" maxlength="30" autocomplete="off">
-                        <button class="btn btn-red btn-block" onclick="Login.masukGuest()"><i class="fa-solid fa-arrow-right"></i> Masuk</button>
-                        <div class="login-or"><span>atau</span></div>
-                        <a class="login-back login-center" onclick="Login.pilih('osis')"><i class="fa-solid fa-id-card"></i> Masuk sebagai OSIS</a>
-                    </div>
-
-                    <!-- STEP 2: osis -->
+                    <!-- STEP 1: form masuk (OSIS / akun biasa, otomatis) -->
                     <div class="slide-step">
                         <label class="lbl">Username</label>
-                        <input type="text" id="osisUsername" class="admin-input" placeholder="Username akun OSIS" autocomplete="off">
+                        <input type="text" id="loginUsername" class="admin-input" placeholder="Username" maxlength="30" autocomplete="username">
                         <label class="lbl">Password</label>
-                        <input type="password" id="osisPassword" class="admin-input" placeholder="Password" autocomplete="off">
-                        <button class="btn btn-red btn-block" onclick="Login.masukOsis()"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>
-                        <a class="login-back login-center" onclick="Login.pilih('')"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
+                        <input type="password" id="loginPassword" class="admin-input" placeholder="Password" autocomplete="current-password">
+                        <button class="btn btn-red btn-block" id="btnMasuk" onclick="Login.masuk()"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>
+                        <div class="login-or"><span>atau</span></div>
+                        <a class="login-back login-center" onclick="Login.pilih('daftar')"><i class="fa-solid fa-user-plus"></i> Belum punya akun? Daftar dulu sini</a>
+                    </div>
+
+                    <!-- STEP 2: daftar akun biasa (tanpa hak OSIS) -->
+                    <div class="slide-step">
+                        <label class="lbl">Username</label>
+                        <input type="text" id="daftarUsername" class="admin-input" placeholder="Username (3-30 karakter)" maxlength="30" autocomplete="off">
+                        <label class="lbl">Nama</label>
+                        <input type="text" id="daftarNama" class="admin-input" placeholder="Nama kamu" maxlength="80" autocomplete="off">
+                        <label class="lbl">Password</label>
+                        <input type="password" id="daftarPassword" class="admin-input" placeholder="Password (min. 6 karakter)" autocomplete="new-password">
+                        <button class="btn btn-red btn-block" id="btnDaftar" onclick="Login.daftar()"><i class="fa-solid fa-user-plus"></i> Daftar</button>
+                        <a class="login-back login-center" onclick="Login.pilih('')"><i class="fa-solid fa-arrow-left"></i> Sudah punya akun? Masuk</a>
                     </div>
 
                 </div>

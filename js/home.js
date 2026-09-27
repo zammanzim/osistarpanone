@@ -146,10 +146,10 @@ const Home = {
                     <h4>${escapeHtml(finalJudul)}</h4>
                     <button class="struktur-close" type="button">&times;</button>
                 </div>
-                ${olehAwal ? `<div class="foto-oleh" id="fotoOleh">Diupload oleh ${escapeHtml(olehAwal)}</div>` : `<div class="foto-oleh" id="fotoOleh" style="display:none"></div>`}
                 <div class="foto-pop">
                     ${hintHtml}
                     <img src="${src}" alt="${escapeHtml(finalJudul)}" draggable="false">
+                    ${olehAwal ? `<div class="foto-oleh" id="fotoOleh">Diupload oleh ${escapeHtml(olehAwal)}</div>` : `<div class="foto-oleh" id="fotoOleh" style="display:none"></div>`}
                     ${captionHtml}
                 </div>
             </div>`;

@@ -150,10 +150,12 @@ const SiteEdit = {
         if (typeof Kegiatan !== "undefined" && Kegiatan.render) Kegiatan.render();
         if (typeof Galeri !== "undefined" && Galeri.render) Galeri.render();
         if (typeof Poster !== "undefined" && Poster.render) Poster.render();
+        if (typeof Arsip !== "undefined" && Arsip.render) Arsip.render();
         if (typeof Prestasi !== "undefined" && Prestasi.cekLogin) Prestasi.cekLogin();
         if (typeof Kegiatan !== "undefined" && Kegiatan.cekLogin) Kegiatan.cekLogin();
         if (typeof Galeri !== "undefined" && Galeri.cekLogin) Galeri.cekLogin();
         if (typeof Poster !== "undefined" && Poster.cekLogin) Poster.cekLogin();
+        if (typeof Arsip !== "undefined" && Arsip.cekLogin) Arsip.cekLogin();
         // Aspirasi & lagu: tombol edit/hapus admin cuma tampil pas edit mode,
         // jadi daftarnya harus di-render ulang tiap toggle.
         if (typeof Aspirasi !== "undefined" && Aspirasi.muatPesan) Aspirasi.muatPesan();
@@ -783,6 +785,13 @@ const HeaderMore = {
     },
     async logout() {
         HeaderMore.close();
+        // Samakan dengan tombol keluar di header (akun biasa = hapus akun).
+        try {
+            if (typeof OsisAuth !== "undefined" && OsisAuth.confirmLogout) {
+                await OsisAuth.confirmLogout();
+                return;
+            }
+        } catch (e) {}
         const yakin = await showPopup("Yakin mau logout?", "confirm");
         if (!yakin) return;
         OsisAuth.logout();
@@ -797,7 +806,7 @@ const HeaderMore = {
         const moreOsisDash = document.getElementById("headerMoreOsisDash");
         const u = OsisAuth.getUser && OsisAuth.getUser();
         const isOsis = !!(u && u.mode === "osis");
-        const isLogged = !!(u && (u.mode === "osis" || u.mode === "guest" || u.mode === "tamu"));
+        const isLogged = !!(u && (u.mode === "osis" || u.mode === "biasa" || u.mode === "guest" || u.mode === "tamu"));
         const narrow = window.innerWidth <= 700;
         if (wrap) {
             const showWrap = narrow && isLogged;

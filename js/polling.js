@@ -1,5 +1,5 @@
 // =========================================================================
-// POLLING WAKETOS - vote 1x (wajib login guest/OSIS) + hasil live
+// POLLING WAKETOS - vote 1x (wajib login akun biasa/OSIS) + hasil live
 // Halaman standalone: polling.html. Kelola kandidat butuh hak "polling".
 // Vote wajib online (tidak masuk Outbox) biar tidak dobel.
 // =========================================================================
@@ -42,6 +42,13 @@ const Polling = {
             link._bound = true;
             link.addEventListener("click", () => {
                 try { sessionStorage.setItem("osis_login_back", "polling"); } catch (e) {}
+            });
+        }
+        const linkDaftar = document.getElementById("polKeDaftar");
+        if (linkDaftar && !linkDaftar._bound) {
+            linkDaftar._bound = true;
+            linkDaftar.addEventListener("click", () => {
+                try { sessionStorage.setItem("osis_login_back", "polling#daftar"); } catch (e) {}
             });
         }
         const fi = document.getElementById("polFileInput");
@@ -175,19 +182,18 @@ const Polling = {
         if (!u) {
             if (title) title.textContent = "Masuk dulu untuk vote";
             body.innerHTML =
-                "<label class=\"lbl\">Nama Panggilan</label>" +
+                "<p class=\"pol-desc\" style=\"margin:0 0 4px\">Satu akun = satu suara. Masuk pakai akun OSIS atau akun biasa.</p>" +
                 "<div class=\"pol-gate-row\">" +
-                "<input id=\"polNickname\" class=\"admin-input\" maxlength=\"30\" placeholder=\"Nama kamu\" autocomplete=\"off\">" +
-                "<button class=\"btn btn-red\" onclick=\"Polling.masukGuest()\"><i class=\"fa-solid fa-arrow-right\"></i> Masuk & Vote</button>" +
+                "<a class=\"btn btn-red\" id=\"polKeLoginOsis\" href=\"login\"><i class=\"fa-solid fa-right-to-bracket\"></i> Masuk</a>" +
                 "</div>" +
-                "<a class=\"login-back login-center\" id=\"polKeLoginOsis\" href=\"login\"><i class=\"fa-solid fa-id-card\"></i> Masuk sebagai OSIS</a>";
-            const nick = document.getElementById("polNickname");
-            if (nick) nick.addEventListener("keydown", (e) => { if (e.key === "Enter") Polling.masukGuest(); });
+                "<a class=\"login-back login-center\" id=\"polKeDaftar\" href=\"login#daftar\"><i class=\"fa-solid fa-user-plus\"></i> Belum punya akun? Daftar dulu sini</a>";
             Polling.bind();
             return;
         }
         const nama = escapeHtml(OsisAuth.displayName(u) || "-");
-        const peran = OsisAuth.isGuest(u) ? "Tamu" : escapeHtml(u.jabatan || "Anggota OSIS");
+        const peran = (typeof OsisAuth.isBiasa === "function" && OsisAuth.isBiasa(u))
+            ? "Akun Biasa"
+            : (OsisAuth.isGuest(u) ? "Tamu" : escapeHtml(u.jabatan || "Anggota OSIS"));
         if (title) title.textContent = "Kamu sudah masuk";
         body.innerHTML =
             "<div class=\"pol-login-info\"><i class=\"fa-solid fa-circle-check\" style=\"color:#146314\"></i>" +
@@ -292,35 +298,23 @@ const Polling = {
     },
 
     // ============ AUTH GATE ============
-    masukGuest() {
-        const el = document.getElementById("polNickname");
-        const nick = ((el && el.value) || "").trim();
-        if (!nick) {
-            showToast("Nama panggilan diisi dulu yaa.", "error");
-            if (el) el.focus();
-            return;
-        }
-        try { OsisAuth.loginGuest(nick); } catch (e) { showToast("Gagal masuk. Coba lagi.", "error"); return; }
-        try { OsisAuth.renderHeader(); } catch (e) {}
-        Polling.render();
-        Polling.muatHasil().catch(() => {});
-        showToast("Masuk sebagai " + nick + ". Silakan vote!", "success");
-    },
-
     perluLogin() {
         showToast("Masuk dulu yaa sebelum vote.", "error");
-        const nick = document.getElementById("polNickname");
-        if (nick) {
-            nick.focus();
-            nick.scrollIntoView({ behavior: "smooth", block: "center" });
+        const gate = document.getElementById("polGateCard");
+        if (gate && gate.scrollIntoView) {
+            gate.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     },
 
     async keluar() {
-        let yakin = true;
-        try { yakin = await showPopup("Keluar? Suaramu yang sudah masuk tetap tercatat.", "confirm"); }
-        catch (e) { yakin = true; }
-        if (!yakin) return;
+        // Samakan dengan tombol keluar di header: akun biasa = hapus akun,
+        // habis itu reload biar gate + hasil ikut ke-reset.
+        try {
+            if (typeof OsisAuth !== "undefined" && OsisAuth.confirmLogout) {
+                await OsisAuth.confirmLogout();
+                return;
+            }
+        } catch (e) {}
         try { OsisAuth.logout(); OsisAuth.renderHeader(); } catch (e) {}
         Polling.saya = null;
         Polling.render();
@@ -365,7 +359,7 @@ const Polling = {
             Polling.status = "TUTUP";
             Polling.render();
         }
-        else if (m === "ERR_VOTED") showPopup("Nickname ini sudah dipakai vote di perangkat lain. Pakai nickname lain.", "error");
+        else if (m === "ERR_VOTED") showPopup("Akunmu sudah dipakai vote dari perangkat lain.", "error");
         else if (m === "ERR_NOT_FOUND") showToast("Kandidat tidak ditemukan.", "error");
         else showToast("Gagal vote. Cek koneksi lalu coba lagi.", "error");
     },

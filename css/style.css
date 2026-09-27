@@ -2973,12 +2973,28 @@ body.edit-mode .bento-meta .gal-del {
   color: var(--gray);
   white-space: nowrap;
 }
-/* Baris "diupload oleh" di popup foto */
+/* Baris "diupload oleh" di popup foto — overlay di atas foto (kiri atas),
+   tidak makan ruang layout */
 .foto-oleh {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--gray);
-  padding: 8px 18px 0;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 11;
+  max-width: calc(100% - 20px);
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.4;
+  box-shadow: 2px 2px 0 var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
 }
 .pesan-empty {
   font-size: 0.8rem;
@@ -3043,9 +3059,7 @@ body.edit-mode .bento-meta .gal-del {
 .login-card .admin-input {
   text-align: left;
 }
-.login-card #loginPassword {
-  text-align: center;
-}
+
 .login-error {
   color: var(--red);
   font-size: 0.78rem;
@@ -3085,9 +3099,12 @@ body.edit-mode .bento-meta .gal-del {
   overflow: hidden;
   margin: 0 -4px;
 }
+/* Tinggi window dikunci via JS (Login.aturTinggi) ngikutin step aktif,
+   biar step yang pendek tidak nyisain ruang kosong. */
 .login-card .slider-content {
   display: flex;
   width: 200%;
+  align-items: flex-start;
   transition: transform 0.55s cubic-bezier(0.34, 1.2, 0.64, 1);
 }
 .login-card .slide-step {
@@ -3157,7 +3174,8 @@ body.edit-mode .bento-meta .gal-del {
   padding-right: 82px;
 }
 #kegiatanGrid .bento-block.draft .bento-meta,
-#galGrid .bento-block.draft .bento-meta {
+#galGrid .bento-block.draft .bento-meta,
+#arsipGrid .bento-block.draft .bento-meta {
   position: relative;
   padding-right: 82px;
 }
@@ -3265,8 +3283,11 @@ p[contenteditable]:empty::before {
 body.edit-mode #galGrid.mode-osis .bento-block:not(.draft) .gal-del,
 #kegiatanGrid .bento-block.draft .gal-save,
 #kegiatanGrid .bento-block.draft .gal-del,
+#arsipGrid .bento-block.draft .gal-save,
+#arsipGrid .bento-block.draft .gal-del,
 #prestasiGrid.mode-osis .gal-del,
 body.edit-mode #kegiatanGrid.mode-osis .bento-block:not(.draft) .gal-del,
+body.edit-mode #arsipGrid.mode-osis .bento-block:not(.draft) .gal-del,
 body.edit-mode .gal-del,
 body.edit-mode .prestasi-card .gal-del {
   display: inline-flex !important;
@@ -3285,7 +3306,9 @@ body.edit-mode .prestasi-card .gal-del {
 body.edit-mode #galGrid:not(.mode-osis) .bento-block:not(.draft) .gal-del,
 body.edit-mode #galGrid:not(.mode-osis) .item .foto-del-btn,
 body.edit-mode #kegiatanGrid:not(.mode-osis) .bento-block:not(.draft) .gal-del,
-body.edit-mode #kegiatanGrid:not(.mode-osis) .item .foto-del-btn {
+body.edit-mode #kegiatanGrid:not(.mode-osis) .item .foto-del-btn,
+body.edit-mode #arsipGrid:not(.mode-osis) .bento-block:not(.draft) .gal-del,
+body.edit-mode #arsipGrid:not(.mode-osis) .item .foto-del-btn {
   display: none !important;
 }
 /* ============================================================
@@ -3544,7 +3567,10 @@ body.edit-mode {
   #editToggleWrap {
     display: none !important;
   }
-  #areaAuth .icon-btn {
+  /* Tombol logout icon disembunyikan HANYA kalau menu titik-tiga aktif
+     (ada di index). Di halaman tanpa menu itu (polling, changelog, /osis),
+     tombol icon tetap tampil biar logout tetap bisa di HP. */
+  .top-nav:has(#headerMoreWrap.show) #areaAuth .icon-btn {
     display: none !important;
   }
   #headerMoreWrap.show {
@@ -3724,11 +3750,16 @@ body.edit-mode [data-kegiatan-field][contenteditable="true"] {
   cursor: text;
   outline: none;
 }
+body.edit-mode [data-galeri-field][contenteditable="true"] {
+  cursor: text;
+  outline: none;
+}
 body.edit-mode .bento-badge[contenteditable="true"] {
   cursor: text;
   outline: none;
 }
 body.edit-mode [data-kegiatan-field][contenteditable="true"]:focus,
+body.edit-mode [data-galeri-field][contenteditable="true"]:focus,
 body.edit-mode .bento-badge[contenteditable="true"]:focus {
   box-shadow: 0 2.5px 0 var(--red);
 }
@@ -4204,7 +4235,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
     "logo logo"
     "padi kapas"
     "obor obor"
-    "sekolah sekolah";
+    "sekolah sekolah"
+    "sayap sayap";
   column-gap: 10px;
   row-gap: 26px;
   align-items: start;
@@ -4262,10 +4294,14 @@ body.edit-mode .prestasi-card .foto-del-btn {
 .logo-makna-card[data-area="sekolah"] {
   grid-area: sekolah;
 }
+.logo-makna-card[data-area="sayap"] {
+  grid-area: sayap;
+}
 /* card tengah (atas/bawah logo): compact, tidak full-width ala list */
 .logo-makna-card[data-area="perisai"],
 .logo-makna-card[data-area="obor"],
-.logo-makna-card[data-area="sekolah"] {
+.logo-makna-card[data-area="sekolah"],
+.logo-makna-card[data-area="sayap"] {
   width: min(240px, 100%);
 }
 /* card samping logo: setengah kolom grid */
@@ -4354,7 +4390,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
 .logo-makna-card[data-area="padi"]::after,
 .logo-makna-card[data-area="kapas"]::after,
 .logo-makna-card[data-area="obor"]::after,
-.logo-makna-card[data-area="sekolah"]::after {
+.logo-makna-card[data-area="sekolah"]::after,
+.logo-makna-card[data-area="sayap"]::after {
   content: "";
   position: absolute;
   bottom: calc(100% + 1px);
@@ -4369,7 +4406,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
 .logo-makna-card[data-area="padi"]::before,
 .logo-makna-card[data-area="kapas"]::before,
 .logo-makna-card[data-area="obor"]::before,
-.logo-makna-card[data-area="sekolah"]::before {
+.logo-makna-card[data-area="sekolah"]::before,
+.logo-makna-card[data-area="sayap"]::before {
   content: "";
   position: absolute;
   bottom: calc(100% + 15px);
@@ -4392,7 +4430,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
       "osis logo bintang"
       "padi logo kapas"
       ". obor ."
-      ". sekolah .";
+      ". sekolah ."
+      ". sayap .";
     gap: 26px 52px;
     align-items: center;
     max-width: 1080px;
@@ -4425,7 +4464,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
   }
   .logo-makna-card[data-area="perisai"],
   .logo-makna-card[data-area="obor"],
-  .logo-makna-card[data-area="sekolah"] {
+  .logo-makna-card[data-area="sekolah"],
+  .logo-makna-card[data-area="sayap"] {
     max-width: 400px;
     justify-self: center;
     width: 100%;
@@ -4545,7 +4585,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
     pointer-events: none;
   }
   .logo-makna-card[data-area="obor"]::after,
-  .logo-makna-card[data-area="sekolah"]::after {
+  .logo-makna-card[data-area="sekolah"]::after,
+  .logo-makna-card[data-area="sayap"]::after {
     content: "";
     position: absolute;
     bottom: calc(100% + 1px);
@@ -4560,7 +4601,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
     pointer-events: none;
   }
   .logo-makna-card[data-area="obor"]::before,
-  .logo-makna-card[data-area="sekolah"]::before {
+  .logo-makna-card[data-area="sekolah"]::before,
+  .logo-makna-card[data-area="sayap"]::before {
     content: "";
     position: absolute;
     bottom: calc(100% + 13px);
@@ -4583,7 +4625,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
   }
   .logo-makna-card[data-area="perisai"]:hover::after,
   .logo-makna-card[data-area="obor"]:hover::after,
-  .logo-makna-card[data-area="sekolah"]:hover::after {
+  .logo-makna-card[data-area="sekolah"]:hover::after,
+  .logo-makna-card[data-area="sayap"]:hover::after {
     background: var(--red);
   }
   .logo-makna-card:hover::before {

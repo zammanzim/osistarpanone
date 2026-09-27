@@ -54,6 +54,31 @@ const Galeri = {
         const fileInput = document.getElementById("galFileInput");
         if (fileInput) fileInput.addEventListener("change", () => Galeri.tambahFotoDraft(fileInput));
 
+        // Autosave judul/deskripsi inline — elemen editable-nya cuma ada pas state edit nyala
+        if (grid && !grid._textEditBound) {
+            grid._textEditBound = true;
+            grid.addEventListener("focusout", (e) => {
+                const el = e.target.closest(
+                    "[data-galeri-field][contenteditable='true']",
+                );
+                if (!el) return;
+                const targetBlock = el.closest(".bento-block");
+                const id = targetBlock ? targetBlock.dataset.galeriId : null;
+                const field = el.dataset.galeriField;
+                if (!id || !field) return;
+
+                const item = Galeri.cache.find((g) => String(g.id) === String(id));
+                if (!item) return;
+                const value = el.textContent.trim();
+                if (field === "judul" && !value) {
+                    el.textContent = item.judul || "Judul Kegiatan";
+                    showToast("Judul gak boleh kosong", "error");
+                    return;
+                }
+                if (value !== (item[field] || ""))
+                    Galeri.updateText(id, field, value);
+            });
+        }
 
     },
 
@@ -302,10 +327,16 @@ const Galeri = {
         const judul = escapeHtml(item.judul);
         const deskripsi = escapeHtml(item.deskripsi || "");
         const fotos = Array.isArray(item.fotos) ? item.fotos : [];
+        // Editable HANYA pas state edit nyala + punya hak galeri (kayak dok kegiatan).
+        // Di luar itu kartu statis.
+        const isEdit =
+            document.body.classList.contains("edit-mode") &&
+            typeof OsisAuth !== "undefined" &&
+            OsisAuth.bisa &&
+            OsisAuth.bisa("galeri");
 
         let fotoHtml = "";
         fotos.forEach((path, idx) => {
-            const isEdit = document.body.classList.contains("edit-mode") || document.getElementById("galGrid")?.classList.contains("mode-osis");
             fotoHtml += `
                 <div class="item" data-foto-idx="${idx}" onclick="Galeri.bukaPopup(${item.id}, ${idx})">
                     <img src="${getFoto(path)}" alt="${judul}" loading="lazy">
@@ -314,10 +345,10 @@ const Galeri = {
         });
 
         return `
-            <div class="bento-block">
+            <div class="bento-block" data-galeri-id="${item.id}">
                 <div class="bento-meta">
-                    <h4>${judul}</h4>
-                    ${deskripsi ? `<p>${deskripsi}</p>` : ""}
+                    <h4 data-galeri-field="judul" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="Judul Kegiatan">${judul}</h4>
+                    ${deskripsi || isEdit ? `<p data-galeri-field="deskripsi" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="Sub judul / deskripsi singkat...">${deskripsi}</p>` : ""}
                     ${olehLabel(item) ? `<div>${olehLabel(item)}</div>` : ""}
                     <button class="icon-btn gal-del" onclick="Galeri.hapus(${item.id})" title="Hapus kegiatan">
                         <i class="fa-solid fa-trash-can"></i>
@@ -391,6 +422,27 @@ const Galeri = {
         };
         captionEl.onfocusout = simpan;
         modal._flushCaption = simpan;
+    },
+
+    async updateText(id, field, value) {
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!u || u.mode !== "osis") return;
+        if (!OsisAuth.butuh("galeri")) return;
+        const item = Galeri.cache.find(g => String(g.id) === String(id));
+        if (!item || !["judul", "deskripsi"].includes(field)) return;
+        const next = { ...item, [field]: value };
+        try {
+            await galeriUpdateMeta(u.id, id, next.judul, next.deskripsi);
+            const idx = Galeri.cache.findIndex(g => String(g.id) === String(id));
+            if (idx >= 0) Galeri.cache[idx] = next;
+            Cache.set("gallery", Galeri.cache);
+            showToast("Galeri tersimpan", "success");
+        } catch (err) {
+            console.error(err);
+            showPopup("Gagal simpan galeri: " + err.message, "error");
+            Cache.del("gallery");
+            await Galeri.muat();
+        }
     },
 
     async updateDeskripsi(id, deskripsi) {

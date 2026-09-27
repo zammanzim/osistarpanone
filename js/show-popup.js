@@ -291,7 +291,8 @@ window.closePopup = function () {
 
 // =========================================================================
 // ModalNav — penutup universal untuk SEMUA popup non-uni & non-struktur:
-//   #visitorOverlay, #prestasiFormOverlay, dan form/detail admin OSIS
+//   #visitorOverlay, #prestasiFormOverlay, #posterFormOverlay,
+//   dan form/detail admin OSIS
 //   (#agendaForm, #absensiForm, #absenLangsung, #kasForm, #kasDetail,
 //    #tabForm, #tabDetail, #dokumenForm, #dokumenDetail, #evaluasiForm,
 //    #evaluasiDetail, #notulensiForm, #notulensiDetail, #prokerForm,

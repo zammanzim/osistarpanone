@@ -476,11 +476,11 @@ const Pengurus = {
           </div>
           <div class="pg-pop-tiles pg-pop-tiles-mobile">${tiles}</div>
           ${vmHtml}
-          <div class="pg-pop-motto"><i class="fa-solid fa-quote-left"></i>${
+          ${
             motto
-              ? `<p data-f="motto">"${escapeHtml(motto)}"</p>`
-              : `<p class="pg-belum" data-f="motto">Belum diatur</p>`
-          }</div>`;
+              ? `<div class="pg-pop-motto"><i class="fa-solid fa-quote-left"></i><p data-f="motto">"${escapeHtml(motto)}"</p></div>`
+              : ""
+          }`;
     const btnEdit = document.getElementById("pgHeadEdit");
     if (btnEdit) btnEdit.style.display = Pengurus.bolehEdit(k) ? "" : "none";
   },
@@ -542,8 +542,7 @@ const Pengurus = {
     });
     // Medsos jadi input langsung di pilnya
     const val = (x) => String(x ?? "");
-    body.querySelectorAll(".pg-pop-medsos").forEach((box) => {
-      box.innerHTML = `
+    body.querySelectorAll(".pg-pop-medsos").forEach((box) => {      box.innerHTML = `
         <span class="pg-pop-sos-in"><i class="fa-brands fa-whatsapp"></i><input data-sos="wa" maxlength="40" placeholder="Nomor WA" value="${escapeHtml(val(d.wa))}"></span>
         <span class="pg-pop-sos-in"><i class="fa-brands fa-tiktok"></i><input data-sos="tiktok" maxlength="120" placeholder="Username" value="${escapeHtml(val(d.tiktok))}"></span>
         <span class="pg-pop-sos-in"><i class="fa-brands fa-instagram"></i><input data-sos="ig" maxlength="120" placeholder="Username" value="${escapeHtml(val(d.ig))}"></span>`;
@@ -563,6 +562,16 @@ const Pengurus = {
       inp.addEventListener("change", (e) => Pengurus.pilihFotoEdit(e.target));
       cam.appendChild(inp);
       fotoWrap.appendChild(cam);
+    }
+    // Kalau motto belum diatur (disembunyikan di view), munculkan kolom isiannya pas edit
+    if (!body.querySelector('[data-f="motto"]')) {
+      const mottoDiv = document.createElement("div");
+      mottoDiv.className = "pg-pop-motto";
+      mottoDiv.innerHTML =
+        '<i class="fa-solid fa-quote-left"></i><p data-f="motto" contenteditable="true" spellcheck="false" data-ph="Tulis motto..."></p>';
+      const vm = body.querySelector(".pg-pop-vm");
+      if (vm) vm.after(mottoDiv);
+      else body.appendChild(mottoDiv);
     }
     // Bar simpan
     if (!body.querySelector("#pgEditBar")) {

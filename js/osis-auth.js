@@ -1,9 +1,12 @@
 // =========================================================================
-// AUTH OSIS — login 2 mode: Guest (nickname, lokal saja) / OSIS (Supabase Auth)
-// OSIS: session JWT di supa.auth = sumber kebenaran; baris osis_users dipetakan
-// via kolom auth_id. localStorage.osis_user hanya CACHE (offline + cepat) dan
-// disinkronkan tiap halaman dimuat (syncAuth): session hilang -> cache dibuang,
-// session ada tapi cache kosong/basi -> diambil ulang dari server.
+// AUTH — login 2 tipe: OSIS (hak penuh) / BIASA (publik terdaftar, tanpa hak).
+// Keduanya via Supabase Auth (JWT = sumber kebenaran); baris user dipetakan
+// via kolom auth_id (osis_users / biasa_users). localStorage.osis_user hanya
+// CACHE (offline + cepat) dan disinkronkan tiap halaman dimuat (syncAuth):
+// session hilang -> cache dibuang, session ada tapi cache kosong/basi ->
+// diambil ulang dari server.
+// Guest nickname (mode "guest"/"tamu") = LEGACY yang sudah dihapus: cache-nya
+// dibuang paksa di syncAuth biar pemiliknya daftar/masuk ulang.
 // =========================================================================
 
 const OsisAuth = {
@@ -64,17 +67,22 @@ const OsisAuth = {
         return false;
     },
 
-    // Cek user itu guest (mode "guest" baru, "tamu" = sisa sesi lama)
+    // Cek user itu guest LEGACY (mode "guest" baru, "tamu" = sisa sesi lama).
+    // Guest sudah dihapus — sisa cache-nya dibuang paksa di syncAuth.
     isGuest(user) {
         return !!user && (user.mode === "guest" || user.mode === "tamu");
     },
 
-    // Masuk sebagai guest (tanpa akun, cuma nickname)
+    // Cek user itu akun biasa (publik terdaftar, tanpa hak OSIS).
+    isBiasa(user) {
+        return !!user && user.mode === "biasa";
+    },
+
+    // Masuk sebagai guest LEGACY — SUDAH DIHAPUS, jangan dipakai kode baru.
+    // Dipertahankan biar file lama yang manggil tidak pecah; isinya langsung
+    // dibuang (syncAuth juga membuang cache guest saat halaman dimuat).
     loginGuest(nickname) {
-        localStorage.setItem(OsisAuth.KEY, JSON.stringify({
-            mode: "guest",
-            nickname: nickname
-        }));
+        OsisAuth.buangCacheOsis();
     },
 
     // Masuk sebagai anggota OSIS (dipanggil setelah signIn Auth sukses).
@@ -83,6 +91,15 @@ const OsisAuth = {
         const aman = { ...userObj };
         delete aman.password;
         aman.mode = "osis";
+        localStorage.setItem(OsisAuth.KEY, JSON.stringify(aman));
+    },
+
+    // Masuk sebagai akun biasa (dipanggil setelah signIn Auth sukses).
+    // userObj = baris biasa_users. Tanpa hak OSIS apa pun.
+    loginBiasa(userObj) {
+        const aman = { ...userObj };
+        delete aman.password;
+        aman.mode = "biasa";
         localStorage.setItem(OsisAuth.KEY, JSON.stringify(aman));
     },
 
@@ -103,26 +120,41 @@ const OsisAuth = {
         }
         const cached = OsisAuth.getUser();
         if (!session) {
-            // Tidak ada session tapi cache bilang OSIS = basi (logout di tab
-            // lain / token dicabut) -> buang biar tidak dikira login.
-            if (cached && cached.mode === "osis") OsisAuth.buangCacheOsis();
+            // Tidak ada session tapi cache bilang login (OSIS/biasa = basi:
+            // logout di tab lain / token dicabut; guest = legacy dihapus) ->
+            // buang biar tidak dikira login.
+            if (cached && (cached.mode === "osis" || cached.mode === "biasa" || OsisAuth.isGuest(cached))) {
+                OsisAuth.buangCacheOsis();
+            }
             return;
         }
         if (cached && cached.mode === "osis" && cached.auth_id === session.user.id && cached.id && cached.auth_email) {
             return; // sudah sinkron
         }
-        if (cached && OsisAuth.isGuest(cached)) return; // guest: lokal saja
+        if (cached && cached.mode === "biasa" && cached.auth_id === session.user.id && cached.id) {
+            return; // sudah sinkron
+        }
+        // Cache guest legacy: buang lalu lanjut resolve session di bawah
+        // (biar tidak return dini).
+        if (cached && OsisAuth.isGuest(cached)) OsisAuth.buangCacheOsis();
         try {
-            const row = await getOsisUserByAuthId(session.user.id);
-            if (row) {
-                OsisAuth.loginOsis(row);
+            const rowOsis = (typeof getOsisUserByAuthId === "function")
+                ? await getOsisUserByAuthId(session.user.id) : null;
+            if (rowOsis) {
+                OsisAuth.loginOsis(rowOsis);
                 try { await OsisAuth.refreshAkses(); } catch {}
-            } else {
-                // Session valid tapi tidak terlink ke akun OSIS (pendaftar liar)
-                // -> keluar paksa, bukan anggota.
-                try { await supa.auth.signOut(); } catch {}
-                OsisAuth.buangCacheOsis();
+                return;
             }
+            const rowBiasa = (typeof getBiasaUserByAuthId === "function")
+                ? await getBiasaUserByAuthId(session.user.id) : null;
+            if (rowBiasa) {
+                OsisAuth.loginBiasa(rowBiasa);
+                return;
+            }
+            // Session valid tapi tidak terlink ke akun mana pun (pendaftar liar)
+            // -> keluar paksa.
+            try { await supa.auth.signOut(); } catch {}
+            OsisAuth.buangCacheOsis();
         } catch {
             // Offline saat fetch baris: pertahankan cache lama apa adanya.
         }
@@ -136,16 +168,31 @@ const OsisAuth = {
     },
 
     async confirmLogout() {
-        const yakin = await showPopup("Yakin mau logout?", "confirm");
+        const yakin = await OsisAuth.tanya("Yakin mau logout?");
         if (!yakin) return;
         OsisAuth.logout();
         OsisAuth.renderHeader();
+        // Reload biar tidak ada tampilan basi (gate polling, form terisi nama, dsb.).
+        try { location.reload(); } catch {}
     },
 
-    // Nama buat ditampilin: guest -> nickname, OSIS -> nama anggota
+    // Konfirmasi universal: showPopup kalau ada, fallback native confirm.
+    // (Semua halaman areaAuth memuat show-popup.js — fallback cuma jaga-jaga.)
+    async tanya(pesan) {
+        try {
+            if (typeof showPopup === "function") return !!(await showPopup(pesan, "confirm"));
+        } catch {}
+        try {
+            if (typeof confirm === "function") return confirm(pesan);
+        } catch {}
+        return true;
+    },
+
+    // Nama buat ditampilin: OSIS -> nama anggota, biasa -> nama akun.
     displayName(user) {
         if (!user) return "";
         if (user.mode === "osis") return String(user.nama || user.username || "").trim();
+        if (user.mode === "biasa") return String(user.nama || user.username || "").trim();
         return String(user.nickname || "").trim();
     },
 
@@ -166,24 +213,36 @@ const OsisAuth = {
             return;
         }
 
-        const guest = OsisAuth.isGuest(user);
-        const ikon = guest ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-id-card"></i>';
-        const judul = guest ? "Tamu" : (user.jabatan || "Anggota OSIS");
-        // Link relatif terhadap posisi halaman: root -> osis/profil,
-        // dalam /osis/* -> profil. Guest diarahkan ke login.
-        const diSub = /(^|\/)osis\//.test(String(location.pathname || "").replace(/\\/g, "/"));
-        const hrefChip = guest
-            ? ((diSub ? "../" : "") + "login")
-            : ((diSub ? "" : "osis/") + "profil");
-
-        area.innerHTML = `
-            <a href="${hrefChip}" class="user-chip ${guest ? "chip-guest" : ""}" title="${escapeHtml(judul)} — klik untuk ${guest ? "masuk" : "buka profil"}" style="text-decoration:none;color:inherit;cursor:pointer">
-                ${ikon}
-                ${escapeHtml(OsisAuth.displayName(user))}
-            </a>
+        const isOsis = user.mode === "osis";
+        const isBiasa = user.mode === "biasa";
+        const ikon = isOsis ? '<i class="fa-solid fa-id-card"></i>' : '<i class="fa-solid fa-user"></i>';
+        const judul = isOsis ? (user.jabatan || "Anggota OSIS") : (isBiasa ? "Akun Biasa" : "Tamu");
+        const namaChip = escapeHtml(OsisAuth.displayName(user)) || escapeHtml(user.username || "Akun");
+        const tombolKeluar = `
             <button class="icon-btn" title="Keluar" onclick="OsisAuth.confirmLogout()">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
             </button>`;
+        // OSIS: chip link ke profil. Akun biasa: chip teks saja (tanpa halaman
+        // profil) + tombol keluar. Guest legacy: sama, tinggal dipurge.
+        if (isOsis) {
+            // Link relatif terhadap posisi halaman: root -> osis/profil,
+            // dalam /osis/* -> profil.
+            const diSub = /(^|\/)osis\//.test(String(location.pathname || "").replace(/\\/g, "/"));
+            const hrefChip = ((diSub ? "" : "osis/") + "profil");
+            area.innerHTML = `
+                <a href="${hrefChip}" class="user-chip" title="${escapeHtml(judul)} — klik untuk buka profil" style="text-decoration:none;color:inherit;cursor:pointer">
+                    ${ikon}
+                    ${namaChip}
+                </a>
+                ${tombolKeluar}`;
+            return;
+        }
+        area.innerHTML = `
+            <span class="user-chip ${isBiasa ? "" : "chip-guest"}" title="${escapeHtml(judul)}">
+                ${ikon}
+                ${namaChip}
+            </span>
+            ${tombolKeluar}`;
     },
 
     // Simpan halaman sekarang biar login bisa balik ke sini (URL login tetap bersih)

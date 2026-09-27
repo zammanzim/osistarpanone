@@ -135,7 +135,8 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="css/style.css?v=17" />
+    <link rel="stylesheet" href="css/style.css?v=18" />
+    <link rel="stylesheet" href="css/moments.css?v=10" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -415,10 +416,588 @@
           gap: 4px;
         }
       }
+      /* ===== VIEW INFORMASI — hero gradien + kartu (gaya ip3) ===== */
+      .infv-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .infv-hero {
+        background: linear-gradient(135deg, var(--red) 0%, #b90e22 100%);
+        border: 3px solid var(--ink);
+        border-radius: 20px;
+        padding: 22px;
+        box-shadow: 5px 5px 0 var(--ink);
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+      }
+      .infv-hero::before {
+        content: "";
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        border: 3px solid rgba(255, 255, 255, 0.15);
+      }
+      .infv-hero-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 999px;
+        padding: 5px 12px;
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 1;
+      }
+      .infv-hero h2 {
+        font-size: 1.5rem;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        margin: 0 0 4px;
+        position: relative;
+        z-index: 1;
+      }
+      .infv-hero p {
+        font-size: 0.84rem;
+        font-weight: 500;
+        opacity: 0.9;
+        line-height: 1.55;
+        margin: 0;
+        max-width: 55ch;
+        position: relative;
+        z-index: 1;
+      }
+      .infv-hero-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        position: relative;
+        z-index: 1;
+      }
+      .infv-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 999px;
+        padding: 6px 13px;
+      }
+      .infv-count b {
+        font-size: 0.95rem;
+      }
+      .infv-sorotan-wrap {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        padding: 14px;
+      }
+      .infv-sorotan-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.74rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 10px;
+      }
+      .infv-sorotan-head i {
+        color: var(--red);
+      }
+      .infv-sorotan {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        scroll-snap-type: x mandatory;
+      }
+      .infv-spot {
+        scroll-snap-align: start;
+        flex: 0 0 min(300px, 82vw);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        background: #fffdf4;
+        border-top: 8px solid var(--yellow);
+        padding: 12px 14px;
+        cursor: pointer;
+        text-align: left;
+        font-family: inherit;
+        box-shadow: 3px 3px 0 var(--ink);
+        color: var(--ink);
+      }
+      .infv-spot b {
+        display: block;
+        font-size: 0.84rem;
+        font-weight: 900;
+        line-height: 1.35;
+        margin: 4px 0;
+      }
+      .infv-spot small {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+      .infv-toolbar {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .infv-chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .infv-chips button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: inherit;
+        font-size: 0.76rem;
+        font-weight: 800;
+        padding: 8px 13px;
+        border-radius: 999px;
+        border: 2.5px solid var(--ink);
+        background: var(--white);
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .infv-chips button.on {
+        background: var(--ink);
+        color: #fff;
+      }
+      .infv-tools {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .infv-cari {
+        flex: 1;
+        min-width: 200px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--paper);
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        padding: 7px 12px;
+      }
+      .infv-cari i {
+        color: var(--gray);
+        font-size: 0.85rem;
+      }
+      .infv-cari input {
+        border: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        width: 100%;
+        outline: none;
+        color: var(--ink);
+      }
+      .infv-urut {
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        background: var(--white);
+        font-family: inherit;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 8px 10px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .infv-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .infv-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .infv-card:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0 var(--ink);
+      }
+      .infv-card.pin {
+        border-top: 8px solid var(--yellow);
+        background: #fffef5;
+      }
+      .infv-card.fokus {
+        border-color: var(--red);
+        box-shadow: 6px 6px 0 var(--red);
+      }
+      .infv-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .infv-badges {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .infv-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 5px 11px;
+        border-radius: 999px;
+        border: 2px solid var(--ink);
+      }
+      .infv-badge.k-pengumuman {
+        background: #eaf2ff;
+        color: #1a5bb8;
+      }
+      .infv-badge.k-libur {
+        background: #def5e3;
+        color: #1a7f37;
+      }
+      .infv-badge.k-acara {
+        background: #fdf0e6;
+        color: #d96300;
+      }
+      .infv-badge.k-penting {
+        background: #ffe3ec;
+        color: #d11244;
+      }
+      .infv-pin {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.66rem;
+        font-weight: 900;
+        background: var(--yellow);
+        color: var(--ink);
+        padding: 5px 11px;
+        border-radius: 999px;
+        border: 2px solid var(--ink);
+      }
+      .infv-tgl {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--gray);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .infv-judul {
+        font-size: 1.2rem;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        line-height: 1.25;
+        margin: 0;
+      }
+      .infv-ringkas {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #3b3335;
+        line-height: 1.55;
+        margin: 0;
+      }
+      .infv-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 10px;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 14px;
+        padding: 12px 14px;
+      }
+      .infv-meta-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 0.78rem;
+        min-width: 0;
+      }
+      .infv-meta-ico {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: var(--white);
+        border: 2px solid var(--ink);
+        display: grid;
+        place-items: center;
+        font-size: 0.78rem;
+        color: var(--ink);
+        flex-shrink: 0;
+      }
+      .infv-meta-item small {
+        display: block;
+        font-size: 0.66rem;
+        font-weight: 700;
+        color: var(--gray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .infv-meta-item b {
+        font-size: 0.82rem;
+        font-weight: 800;
+        line-height: 1.35;
+        display: block;
+      }
+      .infv-isi {
+        font-size: 0.86rem;
+        font-weight: 500;
+        color: #2b2425;
+        line-height: 1.65;
+        word-break: break-word;
+      }
+      .infv-isi p {
+        margin: 0;
+      }
+      .infv-isi.lipat {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .infv-baca {
+        background: none;
+        border: none;
+        color: var(--red);
+        font-family: inherit;
+        font-size: 0.78rem;
+        font-weight: 800;
+        cursor: pointer;
+        padding: 0;
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .infv-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        border-top: 2px dashed var(--line);
+        padding-top: 14px;
+      }
+      .infv-oleh {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+      .infv-oleh i {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--paper-2);
+        border: 2px solid var(--ink);
+        display: grid;
+        place-items: center;
+        font-size: 0.74rem;
+        color: var(--ink);
+      }
+      .infv-oleh small {
+        display: block;
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .infv-oleh b {
+        font-size: 0.78rem;
+        font-weight: 900;
+        color: var(--ink);
+      }
+      .infv-aksi {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .infv-fokusbar {
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 14px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+      .infv-flabel {
+        font-weight: 800;
+        font-size: 0.78rem;
+        display: block;
+        margin-bottom: 5px;
+      }
+      /* Mode ubah inline: ketik langsung di kartu kayak site-content */
+      .infv-card.editing {
+        border-color: var(--red);
+        box-shadow: 6px 6px 0 var(--red);
+      }
+      .infv-card.editing:hover {
+        transform: none;
+        box-shadow: 6px 6px 0 var(--red);
+      }
+      .infv-card.editing [contenteditable="true"] {
+        outline: 2px dashed var(--red);
+        outline-offset: 3px;
+        border-radius: 6px;
+        min-height: 1.2em;
+        cursor: text;
+      }
+      .infv-card.editing [contenteditable="true"]:focus {
+        outline-style: solid;
+        background: #fff8f8;
+      }
+      .infv-card.editing [data-field]:empty::before {
+        content: attr(data-ph);
+        color: var(--gray);
+        opacity: 0.65;
+        font-weight: 600;
+      }
+      .infv-badge.off,
+      .infv-pin.off {
+        opacity: 0.28;
+        filter: grayscale(1);
+      }
+      .infv-head .infv-badge,
+      .infv-head .infv-pin {
+        cursor: default;
+      }
+      .infv-card.editing .infv-head .infv-badge,
+      .infv-card.editing .infv-head .infv-pin {
+        cursor: pointer;
+      }
+      .infv-slugrow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: var(--gray);
+        background: var(--paper);
+        border: 2px dashed var(--line);
+        border-radius: 10px;
+        padding: 6px 10px;
+      }
+      .infv-slugrow input {
+        border: none;
+        background: transparent;
+        font-family: ui-monospace, monospace;
+        font-size: 0.76rem;
+        font-weight: 700;
+        width: 100%;
+        outline: none;
+        color: var(--ink);
+      }
+      .infv-lampchip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 12px;
+        padding: 8px 10px;
+      }
+      .infv-lampchip > i {
+        color: var(--red);
+        font-size: 1.1rem;
+      }
+      .infv-lampchip b {
+        font-size: 0.78rem;
+        font-weight: 800;
+        flex: 1;
+        min-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .infv-lampchip small {
+        font-size: 0.66rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+      .infv-lampdrop {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-family: inherit;
+        border: 2.5px dashed var(--ink);
+        border-radius: 12px;
+        background: var(--paper-2);
+        padding: 12px;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .infv-lampdrop i {
+        font-size: 1.1rem;
+        color: var(--red);
+      }
+      .infv-lampdrop b {
+        font-size: 0.8rem;
+        font-weight: 900;
+      }
+      .infv-lampdrop small {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+      @media (max-width: 600px) {
+        .infv-hero h2 {
+          font-size: 1.3rem;
+        }
+        .infv-judul {
+          font-size: 1.08rem;
+        }
+        .infv-card {
+          padding: 18px 16px;
+        }
+      }
     </style>
     <script src="js/supabase.min.js?v=10"></script>
     <script src="js/config.js?v=13"></script>
-    <script src="js/db.js?v=13" defer></script>
+    <script src="js/db.js?v=17" defer></script>
     <script src="js/app.js?v=14" defer></script>
     <script src="js/toast.js?v=10" defer></script>
     <script src="js/notice.js?v=10" defer></script>
@@ -432,9 +1011,11 @@
     <script src="js/aspirasi.js?v=10" defer></script>
     <script src="js/lagu.js?v=11" defer></script>
     <script src="js/galeri.js?v=12" defer></script>
+    <script src="js/moments.js?v=10" defer></script>
     <script src="js/arsip.js?v=12" defer></script>
-    <script src="js/osis-auth.js?v=14" defer></script>
-    <script src="js/site-edit.js?v=13" defer></script>
+    <script src="js/informasi-view.js?v=1" defer></script>
+    <script src="js/osis-auth.js?v=17" defer></script>
+    <script src="js/site-edit.js?v=14" defer></script>
     <script src="js/bottomnav.js?v=10" defer></script>
     <script src="js/nav-atur.js?v=10" defer></script>
     <script src="js/pwa.js?v=10" defer></script>
@@ -784,6 +1365,20 @@
                 </p>
               </div>
             </article>
+
+            <article class="logo-makna-card" data-area="sayap">
+              <span class="logo-makna-num">08</span>
+              <div>
+                <h4 data-edit-key="logo_8_title">Sayap</h4>
+                <p class="lm-t-full" data-edit-key="logo_8_desc">
+                  Sepasang sayap melambangkan cita-cita tinggi, kebebasan
+                  berkarya, dan gerak dinamis untuk terbang meraih masa depan.
+                </p>
+                <p class="lm-t-short" data-edit-key="logo_8_mdesc">
+                  Cita-cita tinggi dan gerak dinamis.
+                </p>
+              </div>
+            </article>
           </div>
         </div>
       </section>
@@ -999,6 +1594,72 @@
         style="display: none"
         title="Tambah galeri"
         aria-label="Tambah galeri"
+      >
+        <i class="fa-solid fa-plus"></i>
+      </button>
+    </section>
+
+    <!-- ============================================================
+         VIEW: MOMENTS (foto + video momen OSIS — Explore/Reels)
+         ============================================================ -->
+    <section class="view" data-view="moments">
+      <div class="wrap moments-wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Momen Seru</div>
+            <h2 class="sec-title">Moments <span class="red">OSIS</span></h2>
+            <p class="sec-sub">
+              Dokumentasi kegiatan, momen random, dan bloopers seru keluarga
+              besar OSIS Tarpan One.
+            </p>
+          </div>
+          <button
+            class="btn btn-red"
+            id="btnMomentsRefresh"
+            onclick="Moments.muat(true)"
+            title="Muat ulang"
+          >
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
+
+        <div class="moments-hero">
+          <span class="moments-hero-tag"
+            ><i class="fa-solid fa-clapperboard"></i> Foto & Video</span
+          >
+          <h2>Behind the scene Tarpan One</h2>
+          <p>
+            Geser ke bawah buat nikmatin keseruannya. Di HP tampil ala Reels
+            (video autoplay), di laptop tampil grid ala Explore.
+          </p>
+          <div class="moments-hero-meta">
+            <span class="moments-count"
+              ><b id="momentsHitung">0</b>&nbsp;<span id="momentsSubHitung"
+                >Memuat…</span
+              ></span
+            >
+            <span class="moments-sumber" id="momentsSumber"></span>
+          </div>
+        </div>
+
+        <div class="moments-toolbar">
+          <div class="moments-chips" id="momentsChips"></div>
+        </div>
+
+        <div class="moments-feed" id="momentsFeed">
+          <div class="moments-empty moments-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> Memuat momen...
+          </div>
+        </div>
+      </div>
+      <!-- FAB tambah momen (cuma OSIS): di dalam view biar ikut sembunyi pas pindah halaman -->
+      <button
+        class="gal-fab"
+        id="btnTambahMoments"
+        onclick="Moments.bukaForm()"
+        style="display: none"
+        title="Tambah momen"
+        aria-label="Tambah momen"
       >
         <i class="fa-solid fa-plus"></i>
       </button>
@@ -1347,6 +2008,134 @@
       </div>
     </section>
 
+    <!-- ============================================================
+         VIEW: INFORMASI (pengumuman, libur, acara — publik)
+         ============================================================ -->
+    <section class="view" data-view="informasi">
+      <div class="wrap infv-wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Info Sekolah</div>
+            <h2 class="sec-title">Papan <span class="red">Informasi</span></h2>
+            <p class="sec-sub">
+              Pengumuman resmi, jadwal libur, dan agenda acara — bisa dibaca
+              tanpa login.
+            </p>
+          </div>
+          <button
+            class="btn btn-red"
+            id="btnInfvTambah"
+            onclick="InfoView.bukaForm()"
+            style="display: none"
+          >
+            <i class="fa-solid fa-plus"></i> Tulis Info
+          </button>
+        </div>
+
+        <div class="infv-hero">
+          <span class="infv-hero-tag"
+            ><i class="fa-solid fa-bolt"></i> Info Resmi Sekolah</span
+          >
+          <h2>Apa yang lagi happening di Tarpan?</h2>
+          <p>
+            Cek jadwal libur, pengumuman penting, dan acara terkini di sini.
+            Info yang disematkan jangan sampai kelewat!
+          </p>
+          <div class="infv-hero-meta">
+            <span class="infv-count"
+              ><b id="infvHitung">0</b>&nbsp;<span id="infvSubHitung"
+                >Memuat…</span
+              ></span
+            >
+            <button class="btn btn-white btn-sm" onclick="InfoView.muat(true)">
+              <i class="fa-solid fa-rotate"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="infv-sorotan-wrap"
+          id="infvSorotanWrap"
+          style="display: none"
+        >
+          <div class="infv-sorotan-head">
+            <i class="fa-solid fa-thumbtack"></i> Disematkan — jangan kelewat
+          </div>
+          <div class="infv-sorotan" id="infvSorotan"></div>
+        </div>
+
+        <div class="infv-toolbar">
+          <div class="infv-chips" id="infvChips">
+            <button
+              type="button"
+              data-kat="semua"
+              class="on"
+              onclick="InfoView.setKategori('semua')"
+            >
+              <i class="fa-solid fa-layer-group"></i> Semua
+            </button>
+            <button
+              type="button"
+              data-kat="pengumuman"
+              onclick="InfoView.setKategori('pengumuman')"
+            >
+              <i class="fa-solid fa-bullhorn"></i> Pengumuman
+            </button>
+            <button
+              type="button"
+              data-kat="libur"
+              onclick="InfoView.setKategori('libur')"
+            >
+              <i class="fa-solid fa-umbrella-beach"></i> Libur
+            </button>
+            <button
+              type="button"
+              data-kat="acara"
+              onclick="InfoView.setKategori('acara')"
+            >
+              <i class="fa-solid fa-calendar-day"></i> Acara
+            </button>
+            <button
+              type="button"
+              data-kat="penting"
+              onclick="InfoView.setKategori('penting')"
+            >
+              <i class="fa-solid fa-triangle-exclamation"></i> Penting
+            </button>
+          </div>
+          <div class="infv-tools">
+            <label class="infv-cari">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="search"
+                id="infvCari"
+                placeholder="Cari libur, lomba, ujian…"
+                autocomplete="off"
+              />
+            </label>
+            <select
+              class="infv-urut"
+              id="infvUrut"
+              onchange="InfoView.setUrut(this.value)"
+              aria-label="Urutan tampil"
+            >
+              <option value="baru">Terbaru dulu</option>
+              <option value="lama">Terlama dulu</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="infv-list" id="infvList">
+          <div class="infv-card">
+            <div class="loading-block">
+              <div class="spinner"></div>
+              Memuat papan informasi...
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== SITE FOOTER ===== -->
     <footer class="site-footer">
       <div class="site-footer-stripes" aria-hidden="true"></div>
@@ -1427,6 +2216,12 @@
               >v6.3.0</span
             >
             <a
+              href="#/informasi"
+              style="color: inherit; font-size: 0.72rem; font-weight: 800; opacity: 0.85"
+              >Informasi</a
+            >
+            <span style="opacity: 0.5">•</span>
+            <a
               href="changelog.html"
               style="color: inherit; font-size: 0.72rem; font-weight: 800; opacity: 0.85"
               >Changelog</a
@@ -1490,6 +2285,20 @@
         </button>
       </div>
       <div class="nav-sheet-grid">
+        <a href="#/informasi" class="nav-sheet-item" data-route="informasi" data-short="Info"
+          ><span class="nsi-ico"
+            ><i class="fa-solid fa-bullhorn"></i></span
+          ><span class="nsi-text"
+            ><b>Informasi</b><small>Pengumuman & acara</small></span
+          ></a
+        >
+        <a href="#/moments" class="nav-sheet-item" data-route="moments" data-short="Moments"
+          ><span class="nsi-ico"
+            ><i class="fa-solid fa-clapperboard"></i></span
+          ><span class="nsi-text"
+            ><b>Moments</b><small>Foto & video seru</small></span
+          ></a
+        >
         <a href="#/pengurus" class="nav-sheet-item" data-route="pengurus" data-short="Pengurus"
           ><span class="nsi-ico"
             ><i class="fa-solid fa-users"></i></span

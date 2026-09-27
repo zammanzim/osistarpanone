@@ -237,7 +237,7 @@ function infoPerangkat() {
 
 // Nama buat kolom name di tabel visitor:
 // - login OSIS -> nama anggota
-// - login guest -> nickname
+// - login biasa -> nama akun
 // - anonim -> kosong (biar ga ngehapus nama lama yang udah kesimpen)
 function getVisitorName() {
   try {
@@ -247,7 +247,8 @@ function getVisitorName() {
         : null;
     if (!u) return "";
     if (u.mode === "osis") return String(u.nama || "").trim();
-    return String(u.nickname || "").trim(); // guest
+    if (u.mode === "biasa") return String(u.nama || u.username || "").trim();
+    return String(u.nickname || "").trim(); // guest LEGACY (sisa sesi lama)
   } catch {
     return "";
   }
@@ -255,9 +256,10 @@ function getVisitorName() {
 
 // Kunci identitas login buat kolom user_key di tabel visitor:
 // - login OSIS -> "osis:<id>" (stabil walau nama diganti)
-// - login guest -> "guest:<nickname-lower>" (nickname dianggap identitas)
+// - login biasa -> "biasa:<id>" (stabil walau nama diganti)
 // - anonim -> "" (tetap dihitung per device, ga digabung)
 // Dipake server buat nimpa: 1 user = 1 baris walau pindah device.
+// LEGACY "guest:<nickname>" cuma sisa baris lama (guest sudah dihapus).
 function getVisitorKey() {
   try {
     const u =
@@ -271,6 +273,12 @@ function getVisitorKey() {
         .toLowerCase();
       return id ? "osis:" + id : "";
     }
+    if (u.mode === "biasa") {
+      const id = String(u.id ?? u.username ?? "")
+        .trim()
+        .toLowerCase();
+      return id ? "biasa:" + id : "";
+    }
     const nick = String(u.nickname || "")
       .trim()
       .toLowerCase();
@@ -281,10 +289,12 @@ function getVisitorKey() {
 }
 
 // =========================================================================
-// AUTH - akun OSIS dari tabel osis_users + Supabase Auth (JWT)
-// Login: email sintetis osis-<id>@domain + password (bcrypt di Auth).
+// AUTH - akun OSIS dari tabel osis_users + akun biasa dari tabel biasa_users.
+// Keduanya login via Supabase Auth (JWT) dengan email sintetis:
+// OSIS: osis-<id>@domain (+ auth_email tersimpan); biasa: biasa-<id>@domain.
 // Kolom password plaintext SUDAH dimatikan (migrasi-auth-2-kunci.sql) —
 // JANGAN pernah select kolom password dari client lagi.
+// Tabel biasa_users bahkan tidak punya kolom password sama sekali.
 // =========================================================================
 
 // Email login: pakai auth_email tersimpan (<nama>@domain, dari migrasi bulk).
@@ -360,6 +370,59 @@ async function getOsisUserByAuthId(authId) {
     if (!String(err.message || "").match(/foto|bio|angkatan|auth_id|auth_email|column/i)) throw err;
     return null;
   }
+}
+
+// =========================================================================
+// AKUN BIASA - publik terdaftar (username + nama + password via Auth).
+// Tabel biasa_users. TIDAK punya hak OSIS apa pun (semua guard mode==="osis"
+// otomatis menolak). Dipakai buat vote polling + nama visitor.
+// Username unik global lawan osis_users (dicek server di daftar_biasa).
+// =========================================================================
+
+// Email Auth sintetis akun biasa: biasa-<id>@domain.
+function emailKlaimBiasa(id) {
+  return `biasa-${id}@${AUTH_EMAIL_DOMAIN}`;
+}
+
+// Email login: auth_email tersimpan, fallback deterministik biasa-<id>@domain.
+function emailUntukBiasa(row) {
+  const tersimpan = row && String(row.auth_email || "").trim();
+  if (tersimpan && tersimpan.includes("@")) return tersimpan;
+  return emailKlaimBiasa(row.id);
+}
+
+// Ambil akun biasa by username (TANPA password — verifikasi via Auth API).
+async function getBiasaUser(username) {
+  const { data, error } = await supa
+    .from("biasa_users")
+    .select("id, username, nama, auth_id, auth_email")
+    .eq("username", username)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+// Ambil akun biasa by id (buat refresh — TANPA password).
+async function getBiasaUserById(id) {
+  const { data, error } = await supa
+    .from("biasa_users")
+    .select("id, username, nama, auth_id, auth_email")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+// Ambil akun biasa dari session Auth (pemetaan auth.users -> biasa_users).
+async function getBiasaUserByAuthId(authId) {
+  if (!authId) return null;
+  const { data, error } = await supa
+    .from("biasa_users")
+    .select("id, username, nama, auth_id, auth_email")
+    .eq("auth_id", authId)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
 }
 
 // Update profil OSIS (nama + bio + foto PP) - validasi akun di server
@@ -719,7 +782,7 @@ async function getPollingSuaraSaya() {
   return data == null ? null : Number(data);
 }
 
-// Vote. userKey/nama diambil dari sesi login (guest / OSIS).
+// Vote. userKey/nama diambil dari sesi login (biasa / OSIS).
 // Return: "OK" (baru) / "OK_GANTI" (pindah pilihan) / "OK_SAMA".
 async function votePolling(kandidatId) {
   const u =
@@ -732,13 +795,9 @@ async function votePolling(kandidatId) {
   if (u.mode === "osis" && u.id) {
     key = "osis:" + u.id;
     nama = u.nama || u.username || "";
-  } else if (
-    typeof OsisAuth.isGuest === "function" &&
-    OsisAuth.isGuest(u) &&
-    String(u.nickname || "").trim()
-  ) {
-    key = "guest:" + String(u.nickname).trim().toLowerCase();
-    nama = String(u.nickname).trim();
+  } else if (u.mode === "biasa" && u.id) {
+    key = "biasa:" + u.id;
+    nama = u.nama || u.username || "";
   } else {
     throw new Error("ERR_NO_LOGIN");
   }
@@ -1013,6 +1072,84 @@ async function hapusInformasi(userId, id) {
   if (error) throw error;
   cekOk(data);
   Cache.del("informasi");
+}
+
+// =========================================================================
+// INFORMASI PUBLIK - pengumuman, info libur, acara untuk publik (view #/informasi di index)
+// Baca bebas tanpa login. Tulis cuma lewat RPC (cek hak "informasi" / super admin).
+// =========================================================================
+const INFO_PUBLIK_KOLOM = "id, judul, kategori, slug, ringkasan, isi, tanggal_mulai, tanggal_selesai, waktu, lokasi, sasaran, link_lampiran, label_lampiran, is_pinned, pengunggah, created_by, created_at, updated_at";
+async function getInformasiPublikList() {
+  const { data, error } = await supa
+    .from("informasi_publik")
+    .select(INFO_PUBLIK_KOLOM)
+    .order("is_pinned", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data || [];
+}
+async function getInformasiPublik(id) {
+  const { data, error } = await supa
+    .from("informasi_publik")
+    .select(INFO_PUBLIK_KOLOM)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+async function buatInformasiPublik(userId, f) {
+  const { data, error } = await supa.rpc("buat_informasi_publik", {
+    p_user_id: userId,
+    p_judul: f.judul,
+    p_kategori: f.kategori || "pengumuman",
+    p_ringkasan: f.ringkasan || "",
+    p_isi: f.isi || "",
+    p_tanggal_mulai: f.tanggal_mulai || "",
+    p_tanggal_selesai: f.tanggal_selesai || "",
+    p_waktu: f.waktu || "",
+    p_lokasi: f.lokasi || "",
+    p_sasaran: f.sasaran || "",
+    p_link_lampiran: f.link_lampiran || "",
+    p_label_lampiran: f.label_lampiran || "",
+    p_is_pinned: !!f.is_pinned,
+    p_slug: f.slug || "",
+  });
+  if (error) throw error;
+  cekId(data);
+  Cache.del("informasi_publik");
+  return data;
+}
+async function updateInformasiPublik(userId, id, f) {
+  const { data, error } = await supa.rpc("update_informasi_publik", {
+    p_user_id: userId,
+    p_id: id,
+    p_judul: f.judul,
+    p_kategori: f.kategori ?? null,
+    p_ringkasan: f.ringkasan ?? null,
+    p_isi: f.isi ?? null,
+    p_tanggal_mulai: f.tanggal_mulai ?? null,
+    p_tanggal_selesai: f.tanggal_selesai ?? null,
+    p_waktu: f.waktu ?? null,
+    p_lokasi: f.lokasi ?? null,
+    p_sasaran: f.sasaran ?? null,
+    p_link_lampiran: f.link_lampiran ?? null,
+    p_label_lampiran: f.label_lampiran ?? null,
+    p_is_pinned: f.is_pinned ?? null,
+    p_slug: f.slug ?? null,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("informasi_publik");
+}
+async function hapusInformasiPublik(userId, id) {
+  const { data, error } = await supa.rpc("hapus_informasi_publik", {
+    p_user_id: userId,
+    p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("informasi_publik");
 }
 
 // =========================================================================
@@ -2205,6 +2342,91 @@ async function hapusGallery(userId, id) {
   if (error) throw error;
   cekOk(data);
   Cache.del("gallery");
+}
+
+// =========================================================================
+// MOMENTS - 1 baris = 1 momen (1 foto ATAU 1 video + thumbnail opsional).
+// DB hanya menyimpan metadata/key R2 (lihat migrasi-moments.sql).
+// Bentuk baris: {id, caption, event_name, media_type, media_key,
+// thumb_key, category, display_order, pengunggah, created_by, created_at}.
+// Filter frontend (All/Photos/Videos/Events/Random) jalan di atas
+// bentuk ini; kalau migrasi belum di-run, js/moments.js fallback ke
+// tabel gallery (foto) jadi halaman tetap tampil tanpa data palsu.
+// =========================================================================
+const MOMENTS_KOLOM =
+  "id, caption, event_name, media_type, media_key, thumb_key, category, display_order, created_by, pengunggah, created_at";
+
+// Tandai error "tabel/RPC belum ada" biar pemanggil bisa fallback
+// (mis. ke gallery) tanpa menelan error asli lain (koneksi, auth).
+function momentsBelumMigrasi(err) {
+  const msg = String((err && (err.message || err.hint || err.details)) || "");
+  return (
+    (err && (err.code === "42P01" || err.code === "PGRST202" || err.code === "42883")) ||
+    /does not exist|not found|schema cache|could not find|moments/i.test(msg)
+  );
+}
+
+async function getMoments() {
+  const { data, error } = await supa
+    .from("moments")
+    .select(MOMENTS_KOLOM)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) {
+    if (momentsBelumMigrasi(error)) {
+      const e = new Error("MOMENTS_NO_TABLE");
+      e.cause = error;
+      throw e;
+    }
+    throw error;
+  }
+  return data || [];
+}
+
+async function buatMoment(userId, f) {
+  const { data, error } = await supa.rpc("buat_moment", {
+    p_user_id: userId,
+    p_caption: f.caption || "",
+    p_event_name: f.event_name || "",
+    p_media_type: f.media_type || "photo",
+    p_media_key: f.media_key || "",
+    p_thumb_key: f.thumb_key || "",
+    p_category: f.category || "random",
+    p_display_order: f.display_order ?? 99,
+  });
+  if (error) {
+    if (momentsBelumMigrasi(error)) {
+      throw new Error("MOMENTS_NO_TABLE");
+    }
+    throw error;
+  }
+  cekId(data);
+  Cache.del("moments");
+  return data;
+}
+
+async function updateMoment(userId, id, f) {
+  const { data, error } = await supa.rpc("update_moment", {
+    p_user_id: userId,
+    p_id: id,
+    p_caption: f.caption ?? "",
+    p_event_name: f.event_name ?? "",
+    p_category: f.category ?? "random",
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("moments");
+}
+
+async function hapusMoment(userId, id) {
+  const { data, error } = await supa.rpc("hapus_moment", {
+    p_user_id: userId,
+    p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("moments");
 }
 
 // =========================================================================

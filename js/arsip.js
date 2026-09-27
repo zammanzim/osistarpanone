@@ -95,6 +95,7 @@ const Arsip = {
       fi2.addEventListener("change", () => Arsip.tambahFotoDraft(fi2));
       document.body.appendChild(fi2);
     }
+    // Klik foto = buka popup (draft, tombol hapus & teks editable dikecualikan)
     if (grid)
       grid.addEventListener("click", (e) => {
         if (e.target.closest(".up-slot, .foto-del-btn")) return;
@@ -111,6 +112,7 @@ const Arsip = {
         const fotoIdx = Number(item.dataset.fotoIdx || 0);
         if (id) Arsip.bukaPopup(id, fotoIdx);
       });
+    // Autosave teks inline — cuma ada elemen editable-nya pas state edit nyala
     if (grid && !grid._textEditBound) {
       grid._textEditBound = true;
       grid.addEventListener("focusout", (e) => {
@@ -216,7 +218,10 @@ const Arsip = {
     const deskripsi = escapeHtml(item.deskripsi || "");
     const badge = escapeHtml(item.badge || "");
     const fotos = Array.isArray(item.fotos) ? item.fotos : [];
+    // Editable HANYA pas state edit nyala + punya hak kegiatan.
+    // Di luar itu kartu statis (tidak bisa diketik).
     const isEdit =
+      document.body.classList.contains("edit-mode") &&
       typeof OsisAuth !== "undefined" &&
       OsisAuth.bisa &&
       OsisAuth.bisa("kegiatan");

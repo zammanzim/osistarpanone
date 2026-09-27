@@ -75,7 +75,7 @@ function labelTahun(thn) {
 // =========================================================================
 
 const Router = {
-    daftarView: ["home", "pengurus", "sekbid", "galeri", "arsip", "aspirasi", "kontak", "musik"],
+    daftarView: ["home", "pengurus", "sekbid", "galeri", "moments", "arsip", "aspirasi", "kontak", "musik", "informasi"],
     initFns: {},       // init lazy per view
     selesai: {},       // flag view sudah pernah di-init
     current: "home",
@@ -95,7 +95,9 @@ const Router = {
     },
 
     parse() {
-        const h = location.hash.replace(/^#\/?/, "").toLowerCase();
+        // Potong query di hash (mis. #/informasi?id=5) biar deep-link
+        // share tetap kebaca rutenya; id dibaca view masing-masing.
+        const h = location.hash.replace(/^#\/?/, "").toLowerCase().split("?")[0];
         if (Router.daftarView.includes(h)) return h;
         // Rute dari config Bottomnav dinamis (tab/sheet bisa diubah admin).
         try {

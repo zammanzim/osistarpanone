@@ -1,0 +1,636 @@
+/* ============================================================
+   MOMENTS — feed foto + video ala Explore (desktop) / Reels (mobile)
+   Token & pola mengikuti css/style.css (ink border, hard shadow,
+   radius, Outfit). Vanilla, tanpa framework.
+   Struktur DOM (lihat js/moments.js):
+   .moments-wrap > .moments-hero + .moments-toolbar + .moments-feed
+   (.moment-card × n) + viewer .moments-viewer (fixed, di body).
+   ============================================================ */
+
+.moments-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- Hero (cerminan .infv-hero: gradien merah + hard shadow) ---- */
+.moments-hero {
+  background: linear-gradient(135deg, var(--red) 0%, #b90e22 100%);
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 5px 5px 0 var(--ink);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.moments-hero::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 3px solid rgba(255, 255, 255, 0.15);
+}
+.moments-hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 5px 12px;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+.moments-hero h2 {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  position: relative;
+  z-index: 1;
+}
+.moments-hero p {
+  font-size: 0.84rem;
+  font-weight: 500;
+  opacity: 0.9;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 55ch;
+  position: relative;
+  z-index: 1;
+}
+.moments-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  position: relative;
+  z-index: 1;
+}
+.moments-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 6px 13px;
+}
+.moments-count b {
+  font-size: 0.95rem;
+}
+.moments-sumber {
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+/* ---- Toolbar filter (cerminan .infv-toolbar/.infv-chips) ---- */
+.moments-toolbar {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 4px 4px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.moments-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.moments-chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 8px 13px;
+  border-radius: 999px;
+  border: 2.5px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s,
+    background 0.12s,
+    color 0.12s;
+}
+.moments-chips button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.moments-chips button.on {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* ---- Feed desktop: masonry ala Explore ---- */
+.moments-feed {
+  column-count: 3;
+  column-gap: 14px;
+}
+.moment-card {
+  break-inside: avoid;
+  margin-bottom: 14px;
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 4px 4px 0 var(--ink);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.moment-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.moment-media {
+  position: relative;
+  background: var(--paper-2);
+  overflow: hidden;
+}
+.moment-media img,
+.moment-media video {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+.moment-media video {
+  aspect-ratio: 4 / 5;
+  max-height: 560px;
+  background: #000;
+}
+.moment-badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 6px;
+  pointer-events: none;
+}
+.moment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  background: var(--yellow);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.moment-badge.t-video {
+  background: var(--red);
+  color: #fff;
+}
+.moment-badge.t-cat {
+  background: var(--white);
+}
+.moment-play {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.moment-play span {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  color: var(--red);
+}
+.moment-meta {
+  padding: 12px 14px 14px;
+}
+.moment-caption {
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0 0 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.moment-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+.moment-sub i {
+  font-size: 0.68rem;
+}
+.moment-oleh {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--gray);
+  margin-top: 4px;
+  display: block;
+}
+
+/* Aksi like/comment/share: rail kanan, cuma di mode reels (mobile).
+   Desktop disembunyikan biar fokus ke visual media. */
+.moment-aksi {
+  display: none;
+}
+
+.moments-empty {
+  break-inside: avoid;
+  column-span: all;
+  text-align: center;
+  background: var(--white);
+  border: 3px dashed var(--ink);
+  border-radius: 18px;
+  padding: 34px 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+.moments-empty i {
+  display: block;
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  color: var(--red);
+}
+.moments-loading {
+  column-span: all;
+}
+
+/* ---- Viewer fullscreen (foto & video) ---- */
+.moments-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  animation: momentsFade 0.22s ease;
+}
+.moments-viewer.tutup {
+  animation: momentsFadeOut 0.18s ease forwards;
+}
+@keyframes momentsFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes momentsFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+.moments-viewer-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 19, 20, 0.93);
+}
+.moments-viewer-box {
+  position: relative;
+  width: min(980px, 100%);
+  max-height: calc(100dvh - 36px);
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 6px 6px 0 var(--red);
+  overflow: hidden;
+  display: flex;
+}
+.moments-viewer-media {
+  flex: 1 1 62%;
+  min-width: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+}
+.moments-viewer-media img,
+.moments-viewer-media video {
+  width: 100%;
+  height: 100%;
+  max-height: calc(100dvh - 36px);
+  object-fit: contain;
+  display: block;
+}
+.moments-viewer-info {
+  flex: 0 0 300px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+.moments-viewer-info h4 {
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.4;
+  margin: 0;
+}
+.moments-viewer-event {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+.moments-viewer-tgl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.moments-viewer-oleh {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  border-top: 2px dashed var(--line);
+  padding-top: 10px;
+}
+.moments-viewer-aksi {
+  display: flex;
+  gap: 8px;
+  border-top: 2px dashed var(--line);
+  padding-top: 12px;
+}
+.moments-viewer-aksi button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 9px 6px;
+  border-radius: 12px;
+  border: 2.5px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.moments-viewer-aksi button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.moments-viewer-aksi button:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.moments-viewer-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2.5px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 1rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 2px 2px 0 var(--ink);
+  z-index: 2;
+}
+.moments-viewer-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2.5px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 2px 2px 0 var(--ink);
+  z-index: 2;
+}
+.moments-viewer-nav.prev {
+  left: 10px;
+}
+.moments-viewer-nav.next {
+  right: 10px;
+}
+.moments-viewer-nav:active {
+  transform: translate(1px, calc(-50% + 1px));
+  box-shadow: none;
+}
+.moments-viewer-pos {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: rgba(26, 19, 20, 0.75);
+  color: #fff;
+  border-radius: 999px;
+  padding: 4px 12px;
+  z-index: 2;
+}
+
+/* ---- Form tambah (pakai rangka .prestasi-form-* dari style.css) ---- */
+.moments-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.moments-form-grid .field {
+  margin: 0;
+}
+.moments-form-hint {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gray);
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+
+/* ============================================================
+   MOBILE (≤700px): mode Reels — snap vertikal, satu item
+   memenuhi viewport feed. Video autoplay (muted, loop,
+   playsinline) hanya yang terlihat; sisanya pause.
+   ============================================================ */
+@media (max-width: 700px) {
+  .moments-hero h2 {
+    font-size: 1.3rem;
+  }
+  .moments-hero {
+    padding: 18px;
+  }
+  .moments-feed {
+    column-count: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: calc(100dvh - 240px);
+    min-height: 320px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-snap-type: y mandatory;
+    scroll-padding: 0;
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+    background: var(--paper-2);
+    padding: 10px;
+    box-shadow: 4px 4px 0 var(--ink);
+    -webkit-overflow-scrolling: touch;
+  }
+  .moment-card {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    min-height: calc(100dvh - 268px);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .moment-card:hover {
+    transform: none;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .moment-media {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    border-radius: 12px;
+  }
+  .moment-media img,
+  .moment-media video {
+    height: 100%;
+    min-height: 260px;
+    flex: 1;
+  }
+  .moment-media video {
+    max-height: none;
+    aspect-ratio: auto;
+  }
+  /* Rail aksi ala Reels: melayang di kanan bawah media */
+  .moment-aksi {
+    position: absolute;
+    right: 10px;
+    bottom: 86px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 2;
+  }
+  .moment-aksi button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2.5px solid var(--ink);
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--ink);
+    font-size: 1rem;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .moment-aksi button:active {
+    transform: scale(0.92);
+  }
+  .moment-aksi button.aktif {
+    background: var(--red);
+    color: #fff;
+  }
+  .moments-viewer {
+    padding: 0;
+  }
+  .moments-viewer-box {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    flex-direction: column;
+  }
+  .moments-viewer-media {
+    flex: 1;
+    min-height: 0;
+  }
+  .moments-viewer-media img,
+  .moments-viewer-media video {
+    max-height: none;
+  }
+  .moments-viewer-info {
+    flex: 0 0 auto;
+    max-height: 38dvh;
+    border-top: 3px solid var(--ink);
+  }
+  .moments-viewer-nav {
+    display: none;
+  }
+}
+
+/* Tablet: 2 kolom masonry */
+@media (min-width: 701px) and (max-width: 1024px) {
+  .moments-feed {
+    column-count: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moment-card,
+  .moments-chips button,
+  .moments-viewer {
+    animation: none;
+    transition: none;
+  }
+}
