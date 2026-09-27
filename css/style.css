@@ -5569,3 +5569,291 @@ body.edit-mode .prestasi-card .foto-del-btn {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   ATUR NAVIGASI — editor tab bawah + sheet (super_admin, index)
+   ============================================================ */
+.nav-atur-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  background: var(--paper-2);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.nav-atur-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.navatur-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 10, 11, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 220;
+  padding: 18px;
+}
+.navatur-box {
+  width: min(520px, 100%);
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+  max-height: 90vh;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.navatur-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 3px solid var(--ink);
+  background: var(--yellow);
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+.navatur-head b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.navatur-hint {
+  padding: 10px 16px 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gray);
+  line-height: 1.4;
+}
+#navAturBody {
+  padding: 12px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.navatur-sec {
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 6px;
+}
+.navatur-row {
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  background: var(--white);
+  box-shadow: 2px 2px 0 var(--ink);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.navatur-row .sic {
+  width: 26px;
+  text-align: center;
+  color: var(--red);
+  flex-shrink: 0;
+}
+.navatur-row b {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.navatur-row b small {
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: var(--gray);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.navatur-tambah {
+  border: 2.5px dashed var(--ink);
+  border-radius: 12px;
+  background: transparent;
+  padding: 9px 10px;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 900;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.navatur-tambah:active {
+  transform: translate(1px, 1px);
+}
+.navatur-tambah-row {
+  display: flex;
+  gap: 8px;
+}
+.navatur-tambah-row .navatur-tambah {
+  flex: 1;
+}
+.navatur-foot {
+  padding: 12px 16px;
+  border-top: 3px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.navatur-foot-act {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+/* Kontrol editor generik (disalin dari sidebar OSIS biar konsisten) */
+.side-edit-ctrl {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.side-btn {
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--ink);
+  border-radius: 9px;
+  background: var(--white);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.side-btn:active {
+  transform: translate(1px, 1px);
+}
+.side-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.side-btn.del {
+  background: #ffe9e9;
+  color: var(--red-dark);
+}
+.side-btn.edt {
+  background: var(--yellow);
+}
+.side-form {
+  border: 2.5px dashed var(--ink);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--paper-2);
+}
+.side-form label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.side-form input[type="text"],
+.side-form select {
+  border: 2px solid var(--ink);
+  border-radius: 9px;
+  padding: 7px 9px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+}
+.side-icons {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.side-icons button {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--ink);
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  color: var(--red);
+}
+.side-icons button.on {
+  background: var(--ink);
+  color: #fff;
+}
+.side-form-act {
+  display: flex;
+  gap: 6px;
+}
+.side-add {
+  flex: 1;
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--red);
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.76rem;
+  padding: 8px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+  font-family: inherit;
+}
+.side-add:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.side-cancel {
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 900;
+  font-size: 0.76rem;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.side-reset {
+  border: none;
+  background: none;
+  color: var(--gray);
+  font-size: 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+}
+.side-hint {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--gray);
+  line-height: 1.4;
+}

@@ -2264,6 +2264,39 @@ async function simpanSidebarMenu(userId, kunci, menu) {
 }
 
 // =========================================================================
+// BOTTOM NAV + SHEET DINAMIS - config pusat milik super_admin.
+// Kunci "bottomnav_menu": { tabs: [{route,label,icon}], sheet: [...] }.
+// Baca publik, tulis hanya pengelola Site (termasuk super_admin).
+// Bentuk & validasi server: lihat migrasi-bottomnav.sql.
+// =========================================================================
+async function getBottomnav() {
+  const { data, error } = await supa
+    .from("site_content")
+    .select("nilai")
+    .eq("kunci", "bottomnav_menu")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data || !data.nilai) return null;
+  try {
+    const obj = JSON.parse(data.nilai);
+    if (obj && Array.isArray(obj.tabs) && Array.isArray(obj.sheet)) return obj;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function simpanBottomnav(userId, menu) {
+  const { data, error } = await supa.rpc("simpan_bottomnav", {
+    p_user_id: userId,
+    p_menu: menu,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("bottomnav");
+}
+
+// =========================================================================
 // ADMIN - CRUD & STORAGE
 // =========================================================================
 

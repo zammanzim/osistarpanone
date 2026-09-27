@@ -6,8 +6,8 @@
 //
 // AUTH (login app = Supabase Auth, dipetakan ke osis_users via kolom auth_id):
 // - PUT formulir/f-<id>-<ts>.<ext>: PUBLIK (responden form tanpa login).
-// - Lainnya: JWT valid + auth_id terlink ke osis_users + punya hak kelola
-//   (cek RPC akses_saya via service_role). Akun liar hasil signUp bebas = 403.
+// - Lainnya: JWT valid + auth_id terlink ke osis_users. Akun liar hasil
+//   signUp bebas = 403. Hak per modul dicek RPC masing-masing saat simpan.
 //
 // DEPLOY (sekali):
 //   1. R2: buat bucket (mis. osis-media), pasang custom domain
@@ -174,7 +174,10 @@ async function jwtValid(env, req) {
   }
 }
 
-// Cek akun OSIS terlink + punya hak kelola (pakai service_role, tetap di Worker).
+// Cek akun OSIS terlink (pakai service_role, tetap di Worker).
+// Syarat upload = linked saja (ada baris osis_users untuk auth_id ini).
+// Alasan: hak per modul (mis. agenda sekbid sendiri) dimengerti RPC
+// masing-masing, bukan Worker — file yatim tanpa baris data tidak berdampak.
 // return osis user id (>0) atau 0 = tidak berhak.
 async function cekHakOsis(env, authUserId) {
   if (!authUserId || !env.SUPABASE_SERVICE_KEY) return 0;
@@ -185,17 +188,7 @@ async function cekHakOsis(env, authUserId) {
     if (!r1.ok) return 0;
     const arr = await r1.json();
     const osisId = arr && arr[0] && arr[0].id;
-    if (!osisId) return 0; // JWT valid tapi bukan anggota OSIS (pendaftar liar)
-    const r2 = await fetch(`${base}/rest/v1/rpc/akses_saya`, {
-      method: "POST",
-      headers: { ...h, "Content-Type": "application/json" },
-      body: JSON.stringify({ p_user_id: osisId }),
-    });
-    if (!r2.ok) return 0;
-    const a = await r2.json();
-    if (a && a.super) return osisId;
-    if (a && Array.isArray(a.halaman) && a.halaman.length) return osisId;
-    return 0;
+    return osisId || 0; // JWT valid tapi bukan anggota OSIS (pendaftar liar) = 0
   } catch {
     return 0;
   }

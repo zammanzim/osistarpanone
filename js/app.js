@@ -96,7 +96,12 @@ const Router = {
 
     parse() {
         const h = location.hash.replace(/^#\/?/, "").toLowerCase();
-        return Router.daftarView.includes(h) ? h : "home";
+        if (Router.daftarView.includes(h)) return h;
+        // Rute dari config Bottomnav dinamis (tab/sheet bisa diubah admin).
+        try {
+            if (typeof Bottomnav !== "undefined" && Bottomnav.punyaRoute(h)) return h;
+        } catch (e) {}
+        return "home";
     },
 
     go() {
