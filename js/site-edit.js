@@ -809,7 +809,14 @@ const HeaderMore = {
         const isLogged = !!(u && (u.mode === "osis" || u.mode === "biasa" || u.mode === "guest" || u.mode === "tamu"));
         const narrow = window.innerWidth <= 700;
         if (wrap) {
-            const showWrap = narrow && isLogged;
+            // Tamu mobile tetap dapat titik-tiga kalau install app tersedia.
+            var pwaSiap = false;
+            try {
+              pwaSiap = !!(window.PwaInstall && window.PwaInstall.tersedia && window.PwaInstall.tersedia());
+            } catch (e) {}
+            var itemInstall = document.getElementById("headerMoreInstall");
+            if (itemInstall) itemInstall.style.display = narrow && pwaSiap ? "" : "none";
+            const showWrap = narrow && (isLogged || pwaSiap);
             wrap.classList.toggle("show", showWrap);
             wrap.style.display = showWrap ? "" : "none";
         }

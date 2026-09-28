@@ -632,7 +632,41 @@
       .infv-list {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 22px;
+      }
+      /* Pemisah hari terbit — pill tanggal + garis putus-putus biar
+         jarak antar hari keisi elemen, bukan ruang kosong */
+      .infv-daysep {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 16px 0 2px;
+      }
+      .infv-daysep:first-child {
+        margin-top: 0;
+      }
+      .infv-daysep::before,
+      .infv-daysep::after {
+        content: "";
+        flex: 1;
+        border-top: 2.5px dashed var(--line);
+      }
+      .infv-daysep > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: var(--yellow);
+        border: 2.5px solid var(--ink);
+        border-radius: 999px;
+        box-shadow: 2.5px 2.5px 0 var(--ink);
+        padding: 6px 14px;
+        font-size: 0.7rem;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+      }
+      .infv-daysep > span i {
+        color: var(--red);
       }
       .infv-card {
         background: var(--white);

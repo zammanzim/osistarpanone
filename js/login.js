@@ -136,18 +136,24 @@ const Login = {
             // 1) Coba login normal (akun sudah termigrasi ke Auth).
             const s1 = await supa.auth.signInWithPassword({ email, password: pw });
             if (!s1.error) {
-                await Login.lanjutMasukOsis(row.id);
+                await Login.lanjutSesudahSignInOsis(row, username, pw, s1);
                 return;
             }
+            if (s1.error) console.warn("signIn OSIS gagal:", (s1.error && s1.error.message) || s1.error);
             // 1b) Email tersimpan tidak cocok tapi fallback id mungkin bisa
             // (mis. auth_email belum tersinkron). Coba sekali sebelum klaim.
             if (email !== emailKlaim) {
                 const s1b = await supa.auth.signInWithPassword({ email: emailKlaim, password: pw });
                 if (!s1b.error) {
-                    await Login.lanjutMasukOsis(row.id);
+                    await Login.lanjutSesudahSignInOsis(row, username, pw, s1b);
                     return;
                 }
+                if (s1b.error) console.warn("signIn OSIS fallback gagal:", (s1b.error && s1b.error.message) || s1b.error);
             }
+            // Baris sudah tertaut ke akun Auth: berarti password salah — JANGAN
+            // lanjut ke signUp (bakal bikin akun yatim osis-<id>@ yang mengacaukan
+            // login berikutnya). Langsung tolak di sini.
+            if (row.auth_id) return Login.tampilError("Password salah, coba lagi!");
             // 2) Belum termigrasi: daftar + klaim akun via RPC (verifikasi
             //    password lama di server, lalu password plaintext dihapus).
             //    Butuh dashboard: Auth "Confirm email" = OFF.
@@ -197,6 +203,45 @@ const Login = {
         }
     },
 
+    // Setelah signIn OSIS sukses: pastikan sesi tertaut ke baris ini.
+    // Kalau belum (klaim kepotong di percobaan lama: Auth jadi, link gagal),
+    // tautkan ulang pakai password yang baru diketik. Tanpa ini user sempat
+    // ke-redirect lalu dibuang diam-diam oleh syncAuth ("pendaftar liar").
+    async lanjutSesudahSignInOsis(row, username, pw, s) {
+        const sesi = s && s.data && s.data.session;
+        const uid = (sesi && sesi.user && sesi.user.id) || "";
+        const mailSesi = String((sesi && sesi.user && sesi.user.email) || "").toLowerCase();
+        if (row.auth_id && uid && row.auth_id === uid) {
+            await Login.lanjutMasukOsis(row.id);
+            return;
+        }
+        // Heal hanya kalau sesi berasal dari email klaim pola osis-<id>@...
+        // (sesi email lain yang tidak tertaut = urusan admin, jangan diutak-atik
+        // biar tidak merusak akun yang sudah jalan).
+        if (uid && mailSesi && mailSesi === emailKlaimOsis(row.id).toLowerCase()) {
+            try {
+                const { data: hasil, error: eLink } = await supa.rpc("migrasi_link_auth", {
+                    p_username: username, p_password: pw, p_email: emailKlaimOsis(row.id),
+                });
+                if (!eLink && hasil === "OK") {
+                    await Login.lanjutMasukOsis(row.id);
+                    return;
+                }
+                console.warn("heal tautan OSIS gagal:", (eLink && eLink.message) || hasil);
+                // ERR_SUDAH = baris ini milik akun Auth lain: user masuk pakai
+                // password akun yatim/duplikat. Jangan diam — kasih tahu jelas.
+                if (hasil === "ERR_SUDAH") {
+                    try { await supa.auth.signOut(); } catch {}
+                    return Login.tampilError("Kamu masuk pakai akun duplikat. Pakai password aslimu, atau hubungi admin.");
+                }
+            } catch (err) {
+                console.warn("heal tautan OSIS gagal:", err);
+            }
+        }
+        try { await supa.auth.signOut(); } catch {}
+        return Login.tampilError("Akun login belum tertaut ke data OSIS. Hubungi admin untuk reset.");
+    },
+
     // Alur akun biasa: signIn + self-heal link (kalau daftar kepotong di tengah).
     async masukBiasaFlow(row, pw) {
         const email = emailUntukBiasa(row);
@@ -217,21 +262,29 @@ const Login = {
             }
             if (s.error) return Login.tampilError("Password salah, coba lagi!");
             // Self-heal: baris belum terlink (daftar kepotong pas link) -> link ulang.
-            const sesiUid = s.data && s.data.session && s.data.session.user
-                ? s.data.session.user.id : "";
-            if (!row.auth_id || row.auth_id !== sesiUid) {
+            // Heal hanya kalau sesi berasal dari email klaim pola biasa-<id>@...
+            const sesi = s.data && s.data.session;
+            const sesiUid = (sesi && sesi.user && sesi.user.id) || "";
+            const sesiMail = String((sesi && sesi.user && sesi.user.email) || "").toLowerCase();
+            if (row.auth_id && sesiUid && row.auth_id === sesiUid) {
+                await Login.lanjutMasukBiasa(row.id);
+                return;
+            }
+            if (sesiUid && sesiMail && sesiMail === emailKlaim.toLowerCase()) {
                 try {
-                    const { data: hasil } = await supa.rpc("link_auth_biasa", {
+                    const { data: hasil, error: eLink } = await supa.rpc("link_auth_biasa", {
                         p_user_id: row.id, p_email: emailKlaim,
                     });
+                    if (eLink) throw eLink;
                     if (hasil !== "OK") throw new Error(hasil);
+                    await Login.lanjutMasukBiasa(row.id);
+                    return;
                 } catch (err) {
                     console.error(err);
-                    try { await supa.auth.signOut(); } catch {}
-                    return Login.tampilError("Akun belum aktif. Coba daftar ulang atau hubungi admin.");
                 }
             }
-            await Login.lanjutMasukBiasa(row.id);
+            try { await supa.auth.signOut(); } catch {}
+            return Login.tampilError("Akun login belum tertaut. Coba daftar ulang atau hubungi admin.");
         } catch (err) {
             console.error(err);
             try { await supa.auth.signOut(); } catch {}

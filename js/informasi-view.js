@@ -345,7 +345,35 @@ const InfoView = (function () {
     }
     let htmlBaru = "";
     if (editingId === "baru") htmlBaru = kartuEditHtml(blankoBaru(), true);
-    box.innerHTML = htmlBaru + daftar.map(function (x) { return editingId === Number(x.id) ? kartuEditHtml(x, false) : kartuHtml(x, false); }).join("");
+    // Kelompokkan per hari terbit (created_at WIB) + sisip pemisah hari
+    // biar jarak antar hari keisi elemen.
+    const kunciHari = function (x) {
+      try {
+        const d = new Date(x.created_at);
+        if (isNaN(d)) return "lain";
+        return d.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+      } catch { return "lain"; }
+    };
+    const labelHari = function (kunci) {
+      if (kunci === "lain") return "Tanggal tidak diketahui";
+      try {
+        return new Date(kunci + "T12:00:00+07:00").toLocaleDateString("id-ID", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
+          timeZone: "Asia/Jakarta",
+        });
+      } catch { return kunci; }
+    };
+    let htmlHari = "";
+    let hariTerakhir = null;
+    daftar.forEach(function (x) {
+      const k = kunciHari(x);
+      if (k !== hariTerakhir) {
+        hariTerakhir = k;
+        htmlHari += '<div class="infv-daysep"><span><i class="fa-solid fa-calendar-day"></i> ' + esc(labelHari(k)) + "</span></div>";
+      }
+      htmlHari += editingId === Number(x.id) ? kartuEditHtml(x, false) : kartuHtml(x, false);
+    });
+    box.innerHTML = htmlBaru + htmlHari;
   }
 
   async function muat(paksa) {
