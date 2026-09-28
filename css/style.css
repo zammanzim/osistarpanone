@@ -414,6 +414,25 @@ img {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 2.5px 2.5px 0 var(--ink);
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s,
+    background 0.12s;
+}
+/* yang link (profil OSIS) = button beneran: ada feedback hover/active */
+a.user-chip {
+  cursor: pointer;
+}
+a.user-chip:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3.5px 3.5px 0 var(--ink);
+}
+a.user-chip:active {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 0 0 0 var(--ink);
 }
 .user-chip i {
   font-size: 0.9rem;
@@ -2938,6 +2957,55 @@ body.edit-mode .bento-meta .gal-del {
   font-size: 0.85rem;
   line-height: 1.55;
   word-break: break-word;
+}
+/* Balasan OSIS di aspirasi & lagu — bubble nempel di bawah pesan */
+.pesan-balas {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--white);
+  border: 2px solid var(--ink);
+  border-left: 6px solid var(--yellow);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.pesan-balas > i {
+  color: var(--red);
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.pesan-balas > div {
+  min-width: 0;
+  flex: 1;
+}
+.pesan-balas b {
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+.pesan-balas p {
+  margin: 2px 0 0;
+  word-break: break-word;
+}
+/* Isi balasan yang lagi editable — garis merah pas fokus kayak dok kegiatan */
+.pesan-balas p[contenteditable="true"] {
+  outline: none;
+  cursor: text;
+  min-height: 1.2em;
+}
+.pesan-balas p[contenteditable="true"]:focus {
+  box-shadow: 0 2px 0 var(--red);
+}
+/* Tombol aksi balasan (ceklis/batal/hapus) di bawah bubble */
+.balas-act {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 8px;
 }
 .hapus-btn {
   width: 26px;

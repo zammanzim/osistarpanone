@@ -16,6 +16,27 @@ const Lagu = {
             try { await OsisAuth.refreshAkses(); } catch {}
         }
         try { Lagu.muatDaftar(); } catch {}
+        // Autosave balasan inline (blur) + ESC buat batal
+        const listBalas = document.getElementById("daftarLagu");
+        if (listBalas && !listBalas._balasBound) {
+            listBalas._balasBound = true;
+            listBalas.addEventListener("focusout", (e) => {
+                const el = e.target.closest
+                    ? e.target.closest("[data-balas-teks][contenteditable='true']")
+                    : null;
+                if (!el) return;
+                Lagu.simpanBalasan(el);
+            });
+            listBalas.addEventListener("keydown", (e) => {
+                if (e.key !== "Escape") return;
+                const el = e.target.closest
+                    ? e.target.closest("[data-balas-teks][contenteditable='true']")
+                    : null;
+                if (!el) return;
+                el.textContent = el.dataset.orig || "";
+                el.blur();
+            });
+        }
     },
 
     // ============ PLAYLIST — SWR ============
@@ -59,6 +80,8 @@ const Lagu = {
                     const canKelola = isOsis
                         ? (editMode && OsisAuth.bisa && OsisAuth.bisa("lagu"))
                         : own;
+                    // Balas: super_admin + admin yang dikasih hak lagu (tanpa edit mode).
+                    const canBalas = isOsis && (isSuper || (OsisAuth.bisa && OsisAuth.bisa("lagu")));
                     // Super admin: bisa nandain lagu udah selesai (hijau).
                     // Tombol check selalu tampil buat super (tanpa edit mode)
                     // biar gampang nandain pas lagi muter lagu.
@@ -68,17 +91,23 @@ const Lagu = {
                             ? `<button class="hapus-btn selesai-btn on" onclick="Lagu.tandaiSelesai(${l.id}, false)" title="Batalkan tanda selesai"><i class="fa-solid fa-rotate-left"></i></button>`
                             : `<button class="hapus-btn selesai-btn" onclick="Lagu.tandaiSelesai(${l.id}, true)" title="Tandai selesai (udah diputar)"><i class="fa-solid fa-check"></i></button>`)
                         : "";
+                    const balasan = String(l.balasan || "").trim();
+                    const balasHtml = balasan
+                        ? `<div class="pesan-balas"><i class="fa-solid fa-reply"></i><div><b>${escapeHtml(l.dibalas_oleh || "OSIS")}</b><p data-balas-teks="${l.id}" contenteditable="false" data-ph="Tulis balasan...">${escapeHtml(balasan)}</p></div></div>`
+                        : "";
                     return `
-                <div class="lagu-item${selesai ? " selesai" : ""}">
+                <div class="lagu-item${selesai ? " selesai" : ""}" data-balas-id="${l.id}">
                     <div class="lagu-cover"><div class="lagu-kaset"><i class="fa-solid fa-music"></i></div></div>
                     <div class="lagu-body">
                         <div class="lagu-title">${escapeHtml(l.judul)}${selesai ? ` <span class="lagu-badge-selesai"><i class="fa-solid fa-circle-check"></i> Selesai</span>` : ""}</div>
                         <div class="lagu-artis">${escapeHtml(l.penyanyi || "-")}</div>
                         ${l.pesan ? `<div class="lagu-pesan">${escapeHtml(l.pesan)}</div>` : ""}
+                        ${balasHtml}
                         <div class="lagu-meta">
                             <span><i class="fa-solid fa-user"></i> ${escapeHtml(l.nama || "Anonim")}</span>
                             <span class="pesan-waktu">${Lagu.formatWaktu(l.created_at)}</span>
                             ${tombolSelesai}
+                            ${canBalas ? `<button class="hapus-btn" onclick="Lagu.balas(${l.id})" title="Balas request"><i class="fa-solid fa-reply"></i></button>` : ""}
                             ${canKelola ? `<button class="hapus-btn" onclick="Lagu.edit(${l.id})" title="${isOsis ? "Edit (OSIS)" : "Edit request-ku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
                             ${canKelola ? `<button class="hapus-btn" onclick="Lagu.hapus(${l.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus request-ku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
                         </div>
@@ -206,6 +235,154 @@ const Lagu = {
                 showPopup("Cuma OSIS yang bisa hapus ini.", "error");
             } else {
                 showPopup("Gagal hapus. Cek koneksi lalu coba lagi.", "error");
+            }
+        }
+    },
+
+    // ============ BALAS REQUEST (super_admin + admin hak lagu) ============
+    // Bubble balasan langsung muncul & isinya editable inline (autosave pas blur).
+    balas(id) {
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        const isSuper = !!(u && u.mode === "osis" && typeof OsisAuth.isSuper === "function" && OsisAuth.isSuper());
+        const boleh = !!(u && u.mode === "osis" && (isSuper || (OsisAuth.bisa && OsisAuth.bisa("lagu"))));
+        if (!boleh) {
+            showToast("Cuma super admin / admin lagu yang bisa bales.", "error");
+            return;
+        }
+        const item = (Lagu.cache || []).find(l => String(l.id) === String(id));
+        const wrap = document.querySelector(`.lagu-item[data-balas-id="${id}"]`);
+        if (!item || !wrap) {
+            showToast("Request tidak ketemu, muat ulang halamannya dulu.", "error");
+            return;
+        }
+        let p = wrap.querySelector(`[data-balas-teks="${id}"]`);
+        if (!p) {
+            const nama = ((typeof OsisAuth.displayName === "function" ? OsisAuth.displayName(u) : "") || (u && (u.nama || u.username)) || "OSIS").trim() || "OSIS";
+            const div = document.createElement("div");
+            div.className = "pesan-balas";
+            div.innerHTML = `<i class="fa-solid fa-reply"></i><div><b>${escapeHtml(nama)}</b><p data-balas-teks="${id}" data-ph="Tulis balasan..."></p></div>`;
+            const body = wrap.querySelector(".lagu-body");
+            const meta = body ? body.querySelector(".lagu-meta") : null;
+            if (meta) meta.before(div);
+            else if (body) body.appendChild(div);
+            else wrap.appendChild(div);
+            p = div.querySelector("p");
+        }
+        p.dataset.orig = String(item.balasan || "");
+        p.contentEditable = "true";
+        p.spellcheck = false;
+        p.focus();
+        try {
+            const r = document.createRange();
+            r.selectNodeContents(p);
+            r.collapse(false);
+            const s = getSelection();
+            s.removeAllRanges();
+            s.addRange(r);
+        } catch {}
+        // Tombol aksi di bawah bubble: ceklis simpan, batal, hapus
+        Lagu.buangAct();
+        const act = document.createElement("div");
+        act.className = "balas-act";
+        act.innerHTML =
+            `<button class="btn btn-red btn-sm" onmousedown="event.preventDefault()" onclick="Lagu.simpanBalasBtn(${item.id})" title="Simpan balasan"><i class="fa-solid fa-check"></i></button>` +
+            `<button class="btn btn-white btn-sm" onmousedown="event.preventDefault()" onclick="Lagu.batalBalasBtn(${item.id})" title="Batal"><i class="fa-solid fa-xmark"></i> Batal</button>` +
+            (String(item.balasan || "").trim()
+                ? `<button class="btn btn-white btn-sm" onmousedown="event.preventDefault()" onclick="Lagu.hapusBalasBtn(${item.id})" title="Hapus balasan"><i class="fa-solid fa-trash-can"></i> Hapus</button>`
+                : "");
+        const bubble = p.closest(".pesan-balas");
+        if (bubble) bubble.after(act);
+        else p.after(act);
+    },
+
+    balasEl(id) {
+        return document.querySelector(`[data-balas-teks="${id}"]`);
+    },
+
+    buangAct() {
+        document.querySelectorAll(".balas-act").forEach(el => el.remove());
+    },
+
+    simpanBalasBtn(id) {
+        const el = Lagu.balasEl(id);
+        if (el) Lagu.simpanBalasan(el);
+    },
+
+    batalBalasBtn(id) {
+        const el = Lagu.balasEl(id);
+        if (el) {
+            el.textContent = el.dataset.orig || "";
+            el.contentEditable = "false";
+            el.blur();
+        }
+        Lagu.buangAct();
+    },
+
+    hapusBalasBtn(id) {
+        const el = Lagu.balasEl(id);
+        if (!el) return;
+        el.textContent = "";
+        Lagu.simpanBalasan(el);
+    },
+
+    async simpanBalasan(el) {
+        if (!el) return;
+        Lagu.buangAct();
+        const id = el.dataset.balasTeks;
+        const item = (Lagu.cache || []).find(l => String(l.id) === String(id));
+        const val = String(el.textContent || "").trim().slice(0, 500);
+        const lama = String((item && item.balasan) || "").trim();
+        el.contentEditable = "false";
+        if (val === lama) {
+            el.textContent = lama;
+            return;
+        }
+        if (!val && lama) {
+            const yakin = await showPopup("Hapus balasan ini?", "confirm");
+            if (!yakin) {
+                el.textContent = lama;
+                return;
+            }
+        }
+        if (!val && !lama) {
+            el.textContent = "";
+            return;
+        }
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        const isSuper = !!(u && u.mode === "osis" && typeof OsisAuth.isSuper === "function" && OsisAuth.isSuper());
+        const boleh = !!(u && u.mode === "osis" && (isSuper || (OsisAuth.bisa && OsisAuth.bisa("lagu"))));
+        if (!boleh) {
+            el.textContent = lama;
+            showToast("Cuma super admin / admin lagu yang bisa bales.", "error");
+            return;
+        }
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            el.textContent = lama;
+            showToast("Butuh koneksi buat bales request.", "error");
+            return;
+        }
+        try {
+            if (!OsisAuth.butuh("lagu")) {
+                el.textContent = lama;
+                return;
+            }
+            await balasLaguOsis(u.id, id, val);
+            showToast(val ? "Balasan terkirim!" : "Balasan dihapus.", "success");
+            Cache.del("lagu");
+            Lagu.muatDaftar();
+        } catch (err) {
+            console.error(err);
+            el.textContent = lama;
+            if (err.message === "ERR_NO_AUTH") {
+                showPopup("Cuma super admin / admin lagu yang bisa bales.", "error");
+            } else if (err.message === "ERR_NOT_FOUND") {
+                showPopup("Request ini sudah tidak ada.", "error");
+                Cache.del("lagu");
+                Lagu.muatDaftar();
+            } else if (String(err.message || "").match(/balas_lagu_osis|schema cache|does not exist|not found/i)) {
+                showPopup("Database belum dimigrasi. Jalankan dulu migrasi-balas-pesan.sql di Supabase.", "error");
+            } else {
+                showPopup("Gagal bales. Cek koneksi lalu coba lagi.", "error");
             }
         }
     },

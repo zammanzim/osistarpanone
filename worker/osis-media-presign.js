@@ -21,14 +21,15 @@
 // =========================================================================
 
 // Folder yang boleh ditulis/dihapus — SAMA dengan folder di bucket lama
-// osis-foto, plus "moments" (halaman Moments, migrasi-moments.sql).
+// osis-foto, plus "moments" (halaman Moments, migrasi-moments.sql)
+// dan "feed" (halaman Feed, migrasi-feed.sql).
 // Key R2 dipertahankan identik (gallery/xxx.jpg) agar isi DB
 // (path relatif) tidak perlu diubah.
 const FOLDER_BOLEH = new Set([
   "gallery", "web", "angkatan", "prestasi", "kegiatan", "agenda",
   "profil", "anggota", "sekbid", "pimpinan", "notulensi", "proker",
   "program", "dokumen", "kas", "evaluasi", "formulir", "polling", "poster",
-  "moments",
+  "moments", "feed",
 ]);
 
 // Tipe konten yang boleh diupload. Tolak executable/script.

@@ -47,6 +47,9 @@ CREATE TABLE IF NOT EXISTS public.lagu_requests (
 
 ALTER TABLE public.lagu_requests ADD COLUMN IF NOT EXISTS pesan text NOT NULL DEFAULT '';
 ALTER TABLE public.lagu_requests ADD COLUMN IF NOT EXISTS selesai boolean NOT NULL DEFAULT false;
+ALTER TABLE public.lagu_requests ADD COLUMN IF NOT EXISTS balasan text NOT NULL DEFAULT '';
+ALTER TABLE public.lagu_requests ADD COLUMN IF NOT EXISTS dibalas_oleh text NOT NULL DEFAULT '';
+ALTER TABLE public.lagu_requests ADD COLUMN IF NOT EXISTS dibalas_at timestamptz NULL;
 
 CREATE INDEX IF NOT EXISTS idx_lagu_requests_created ON public.lagu_requests (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_lagu_requests_selesai ON public.lagu_requests (selesai);
@@ -76,6 +79,9 @@ CREATE INDEX IF NOT EXISTS idx_aspirasi_created ON public.aspirasi (created_at D
 
 ALTER TABLE public.aspirasi ADD COLUMN IF NOT EXISTS device_id text NOT NULL DEFAULT '';
 ALTER TABLE public.aspirasi ADD COLUMN IF NOT EXISTS is_private boolean NOT NULL DEFAULT false;
+ALTER TABLE public.aspirasi ADD COLUMN IF NOT EXISTS balasan text NOT NULL DEFAULT '';
+ALTER TABLE public.aspirasi ADD COLUMN IF NOT EXISTS dibalas_oleh text NOT NULL DEFAULT '';
+ALTER TABLE public.aspirasi ADD COLUMN IF NOT EXISTS dibalas_at timestamptz NULL;
 
 ALTER TABLE public.aspirasi ENABLE ROW LEVEL SECURITY;
 
@@ -555,6 +561,72 @@ BEGIN
     RETURN 'ERR_NOT_FOUND';
 END $$;
 
+-- Balas aspirasi oleh OSIS (super_admin / hak "aspirasi").
+-- p_balasan kosong -> hapus balasan yang ada.
+CREATE OR REPLACE FUNCTION public.balas_aspirasi_osis(
+    p_user_id bigint,
+    p_id bigint,
+    p_balasan text
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE
+    v_nama text;
+    v_balas text := left(COALESCE(btrim(p_balasan), ''), 500);
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'aspirasi') THEN
+        RETURN 'ERR_NO_AUTH';
+    END IF;
+    IF v_balas = '' THEN
+        UPDATE public.aspirasi
+        SET balasan = '', dibalas_oleh = '', dibalas_at = NULL
+        WHERE id = p_id;
+    ELSE
+        SELECT COALESCE(NULLIF(btrim(nama), ''), username, '') INTO v_nama
+        FROM public.osis_users WHERE id = p_user_id;
+        IF NOT FOUND THEN RETURN 'ERR_NO_AUTH'; END IF;
+        UPDATE public.aspirasi
+        SET balasan = v_balas, dibalas_oleh = v_nama, dibalas_at = now()
+        WHERE id = p_id;
+    END IF;
+    IF FOUND THEN RETURN 'OK'; END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
+-- Balas request lagu oleh OSIS (super_admin / hak "lagu").
+-- p_balasan kosong -> hapus balasan yang ada.
+CREATE OR REPLACE FUNCTION public.balas_lagu_osis(
+    p_user_id bigint,
+    p_id bigint,
+    p_balasan text
+)
+RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE
+    v_nama text;
+    v_balas text := left(COALESCE(btrim(p_balasan), ''), 500);
+BEGIN
+    IF NOT public.osis_bisa(p_user_id, 'lagu') THEN
+        RETURN 'ERR_NO_AUTH';
+    END IF;
+    IF v_balas = '' THEN
+        UPDATE public.lagu_requests
+        SET balasan = '', dibalas_oleh = '', dibalas_at = NULL
+        WHERE id = p_id;
+    ELSE
+        SELECT COALESCE(NULLIF(btrim(nama), ''), username, '') INTO v_nama
+        FROM public.osis_users WHERE id = p_user_id;
+        IF NOT FOUND THEN RETURN 'ERR_NO_AUTH'; END IF;
+        UPDATE public.lagu_requests
+        SET balasan = v_balas, dibalas_oleh = v_nama, dibalas_at = now()
+        WHERE id = p_id;
+    END IF;
+    IF FOUND THEN RETURN 'OK'; END IF;
+    RETURN 'ERR_NOT_FOUND';
+END $$;
+
 -- Tandai selesai / batalkan request lagu (KHUSUS super_admin).
 -- p_selesai=true -> tandai selesai (hijau di playlist), false -> batalkan.
 CREATE OR REPLACE FUNCTION public.tandai_lagu_selesai(
@@ -593,6 +665,8 @@ REVOKE EXECUTE ON FUNCTION public.edit_lagu_own(text, bigint, text, text, text, 
 REVOKE EXECUTE ON FUNCTION public.edit_aspirasi_osis(bigint, bigint, text, text, text) FROM public;
 REVOKE EXECUTE ON FUNCTION public.edit_lagu_osis(bigint, bigint, text, text, text, text) FROM public;
 REVOKE EXECUTE ON FUNCTION public.tandai_lagu_selesai(bigint, bigint, boolean) FROM public;
+REVOKE EXECUTE ON FUNCTION public.balas_aspirasi_osis(bigint, bigint, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.balas_lagu_osis(bigint, bigint, text) FROM public;
 GRANT EXECUTE ON FUNCTION public.kirim_aspirasi_terbatas(text, text, text, text, boolean, integer) TO anon;
 GRANT EXECUTE ON FUNCTION public.kirim_lagu_terbatas(text, text, text, text, text, integer) TO anon;
 GRANT EXECUTE ON FUNCTION public.tambah_visitor_unik(text, text, text, text, text, text, text) TO anon;
@@ -605,6 +679,8 @@ GRANT EXECUTE ON FUNCTION public.edit_lagu_own(text, bigint, text, text, text, t
 GRANT EXECUTE ON FUNCTION public.edit_aspirasi_osis(bigint, bigint, text, text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.edit_lagu_osis(bigint, bigint, text, text, text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.tandai_lagu_selesai(bigint, bigint, boolean) TO anon;
+GRANT EXECUTE ON FUNCTION public.balas_aspirasi_osis(bigint, bigint, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.balas_lagu_osis(bigint, bigint, text) TO anon;
 
 -- ============ 6. TABEL GALLERY (dokumentasi kegiatan) ============
 -- Satu baris = satu kegiatan. `fotos` = jsonb array path foto di bucket.

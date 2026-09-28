@@ -230,7 +230,7 @@ const OsisAuth = {
             const diSub = /(^|\/)osis\//.test(String(location.pathname || "").replace(/\\/g, "/"));
             const hrefChip = ((diSub ? "" : "osis/") + "profil");
             area.innerHTML = `
-                <a href="${hrefChip}" class="user-chip" title="${escapeHtml(judul)} — klik untuk buka profil" style="text-decoration:none;color:inherit;cursor:pointer">
+                <a href="${hrefChip}" class="user-chip" title="${escapeHtml(judul)} — klik untuk buka profil">
                     ${ikon}
                     ${namaChip}
                 </a>

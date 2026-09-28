@@ -290,7 +290,11 @@ const InfoView = (function () {
     const ss = document.getElementById("infvSorotan");
 
     const fokusKunci = kunciDariHash();
+    const toolbar = document.getElementById("infvToolbar");
     if (fokusKunci) {
+        // Mode fokus 1 info (?id=): filter + pencarian disembunyikan.
+        if (toolbar) toolbar.style.display = "none";
+        const satu = cariByKunci(fokusKunci);
       const satu = cariByKunci(fokusKunci);
       if (satu) {
         box.innerHTML =
@@ -365,7 +369,11 @@ const InfoView = (function () {
     try {
       if (typeof getInformasiPublikList === "function") {
         const fresh = await getInformasiPublikList();
-        if (Array.isArray(fresh) && fresh.length) {
+        // Array kosong = data valid (mis. semua info dihapus), JANGAN ditolak
+        // cuma karena length-nya 0 — kalau tidak, `semua` basi tetap dipakai
+        // dan card yang udah dihapus server bakal gentayangan (hapus ulang
+        // malah ERR_NOT_FOUND).
+        if (Array.isArray(fresh)) {
           semua = fresh;
           try {
             if (typeof Cache !== "undefined" && Cache.set) Cache.set(CACHE_KUNCI, fresh);
@@ -707,6 +715,10 @@ const InfoView = (function () {
     try {
       const u = OsisAuth.getUser();
       await hapusInformasiPublik(u.id, id);
+      // Optimistis: buang dari memori + render langsung biar card
+      // detik itu juga hilang, baru sinkron ke server di bawah.
+      semua = (semua || []).filter(function (x) { return String(x.id) !== String(id); });
+      render();
       info("Info berhasil dihapus");
       try {
         if (typeof Cache !== "undefined" && Cache.del) Cache.del(CACHE_KUNCI);

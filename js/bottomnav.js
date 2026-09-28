@@ -19,6 +19,7 @@ const Bottomnav = {
       { route: "kontak", label: "Kontak", icon: "fa-solid fa-phone" },
     ],
     sheet: [
+      { route: "feed", label: "Feed", sub: "Scrolling foto & video", icon: "fa-solid fa-fire", short: "Feed" },
       { route: "informasi", label: "Informasi", sub: "Pengumuman & acara", icon: "fa-solid fa-bullhorn", short: "Info" },
       { route: "moments", label: "Moments", sub: "Foto & video seru", icon: "fa-solid fa-clapperboard", short: "Moments" },
       { route: "pengurus", label: "Pengurus", sub: "Struktur OSIS", icon: "fa-solid fa-users", short: "Pengurus" },

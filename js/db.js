@@ -520,11 +520,21 @@ async function kirimAspirasi(nama, kelas, isi, isPrivate = false) {
 
 // Ambil aspirasi terbaru buat ditampilkan (terbaru di atas, maks 50)
 async function getAspirasi() {
-  const { data, error } = await supa
+  let { data, error } = await supa
     .from("aspirasi")
-    .select("id, device_id, nama, kelas, isi, is_private, created_at")
+    .select("id, device_id, nama, kelas, isi, is_private, balasan, dibalas_oleh, dibalas_at, created_at")
     .order("created_at", { ascending: false })
     .limit(50);
+  // Fallback: DB belum dimigrasi (kolom balasan belum ada) -> select lama.
+  if (error && String(error.message || "").match(/balasan|dibalas|schema cache|column/i)) {
+    const fb = await supa
+      .from("aspirasi")
+      .select("id, device_id, nama, kelas, isi, is_private, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (fb.error) throw fb.error;
+    return (fb.data || []).map(r => ({ ...r, balasan: "", dibalas_oleh: "", dibalas_at: null }));
+  }
   if (error) throw error;
   return data || [];
 }
@@ -606,12 +616,22 @@ async function catatVisitor() {
 
 // Ambil request lagu terbaru (terbaru di atas, maks 30)
 async function getRequestLagu() {
-  const kolom = "id, device_id, judul, penyanyi, pesan, nama, selesai, created_at";
+  const kolom = "id, device_id, judul, penyanyi, pesan, nama, selesai, balasan, dibalas_oleh, dibalas_at, created_at";
   let { data, error } = await supa
     .from("lagu_requests")
     .select(kolom)
     .order("created_at", { ascending: false })
     .limit(30);
+  // Fallback: DB belum dimigrasi (kolom balasan belum ada) -> tanpa kolom balasan.
+  if (error && String(error.message || "").match(/balasan|dibalas/i)) {
+    const fb = await supa
+      .from("lagu_requests")
+      .select("id, device_id, judul, penyanyi, pesan, nama, selesai, created_at")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (fb.error) throw fb.error;
+    return (fb.data || []).map(r => ({ ...r, balasan: "", dibalas_oleh: "", dibalas_at: null }));
+  }
   // Fallback: DB belum dimigrasi (kolom selesai belum ada) -> select lama.
   if (error && String(error.message || "").match(/selesai|schema cache|column/i)) {
     const fb = await supa
@@ -701,6 +721,27 @@ async function editLaguOsis(userId, id, judul, penyanyi, pesan, nama) {
     p_penyanyi: penyanyi,
     p_pesan: pesan,
     p_nama: nama,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+
+// Balas aspirasi / request lagu oleh OSIS (super_admin / hak halaman).
+// p_balasan kosong = hapus balasan yang ada.
+async function balasAspirasiOsis(userId, id, balasan) {
+  const { data, error } = await supa.rpc("balas_aspirasi_osis", {
+    p_user_id: userId,
+    p_id: id,
+    p_balasan: balasan,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+async function balasLaguOsis(userId, id, balasan) {
+  const { data, error } = await supa.rpc("balas_lagu_osis", {
+    p_user_id: userId,
+    p_id: id,
+    p_balasan: balasan,
   });
   if (error) throw error;
   cekOk(data);
@@ -2427,6 +2468,137 @@ async function hapusMoment(userId, id) {
   if (error) throw error;
   cekOk(data);
   Cache.del("moments");
+}
+
+// =========================================================================
+// FEED - scrolling foto + video ala IG (like, komen, share).
+// Upload bebas semua akun OSIS; hapus = pemilik / super_admin.
+// Komen wajib login; like/share bebas (user_key per perangkat).
+// Bentuk post: {id, media_type, media_key, caption, pengunggah,
+// share_count, created_at, like_count, comment_count, liked}.
+// Lihat migrasi-feed.sql.
+// =========================================================================
+function feedBelumMigrasi(err) {
+  const msg = String((err && (err.message || err.hint || err.details)) || "");
+  return (
+    (err && (err.code === "42P01" || err.code === "PGRST202" || err.code === "42883")) ||
+    /does not exist|not found|schema cache|could not find|feed_posts|feed_likes|feed_comments|feed_/i.test(msg)
+  );
+}
+
+function feedErrMigrasi() {
+  const e = new Error("FEED_NO_TABLE");
+  return e;
+}
+
+async function feedPostsList(limit, offset, userKey) {
+  const { data, error } = await supa.rpc("feed_posts_list", {
+    p_limit: limit || 8,
+    p_offset: offset || 0,
+    p_user_key: userKey || "",
+  });
+  if (error) {
+    if (feedBelumMigrasi(error)) throw feedErrMigrasi();
+    throw error;
+  }
+  return Array.isArray(data) ? data : [];
+}
+
+// 1 postingan buat deep-link (#/feed?id=...). Balikin objek / null.
+async function feedPostSatu(id, userKey) {
+  const { data, error } = await supa.rpc("feed_post_satu", {
+    p_id: id,
+    p_user_key: userKey || "",
+  });
+  if (error) {
+    if (feedBelumMigrasi(error)) throw feedErrMigrasi();
+    throw error;
+  }
+  return data || null;
+}
+
+async function feedPostBuat(userId, f) {
+  const { data, error } = await supa.rpc("feed_post_buat", {
+    p_user_id: userId,
+    p_media_type: f.media_type || "photo",
+    p_media_key: f.media_key || "",
+    p_thumb_key: f.thumb_key || "",
+    p_caption: f.caption || "",
+  });
+  if (error) {
+    if (feedBelumMigrasi(error)) throw feedErrMigrasi();
+    throw error;
+  }
+  cekId(data);
+  return data;
+}
+
+async function feedPostHapus(userId, id) {
+  const { data, error } = await supa.rpc("feed_post_hapus", {
+    p_user_id: userId,
+    p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+
+async function feedLikeToggle(postId, userKey) {
+  const { data, error } = await supa.rpc("feed_like_toggle", {
+    p_post_id: postId,
+    p_user_key: userKey || "",
+  });
+  if (error) {
+    if (feedBelumMigrasi(error)) throw feedErrMigrasi();
+    throw error;
+  }
+  if (typeof data === "string" && /^ERR/i.test(data)) throw new Error(data);
+  const n = parseInt(data, 10);
+  if (!Number.isFinite(n) || n < 0) throw new Error("LIKE_GAGAL");
+  return n;
+}
+
+async function feedKomenList(postId, limit, offset) {
+  const { data, error } = await supa.rpc("feed_komen_list", {
+    p_post_id: postId,
+    p_limit: limit || 20,
+    p_offset: offset || 0,
+  });
+  if (error) {
+    if (feedBelumMigrasi(error)) throw feedErrMigrasi();
+    throw error;
+  }
+  return Array.isArray(data) ? data : [];
+}
+
+async function feedKomenTambah(postId, userKey, nama, teks) {
+  const { data, error } = await supa.rpc("feed_komen_tambah", {
+    p_post_id: postId,
+    p_user_key: userKey || "",
+    p_nama: nama || "Anonim",
+    p_teks: teks || "",
+  });
+  if (error) {
+    if (feedBelumMigrasi(error)) throw feedErrMigrasi();
+    throw error;
+  }
+  cekId(data);
+  return data;
+}
+
+async function feedKomenHapus(userId, userKey, id) {
+  const { data, error } = await supa.rpc("feed_komen_hapus", {
+    p_user_id: userId || 0,
+    p_user_key: userKey || "",
+    p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+
+async function feedShareCat(postId) {
+  try {
+    await supa.rpc("feed_share_cat", { p_post_id: postId });
+  } catch {}
 }
 
 // =========================================================================

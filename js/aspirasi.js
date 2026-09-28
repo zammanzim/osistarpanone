@@ -21,6 +21,27 @@ const Aspirasi = {
         } catch { Aspirasi.status = "BUKA"; }
         if (Aspirasi.status === "TUTUP") Aspirasi.kunciFormulir();
         try { Aspirasi.muatPesan(); } catch {}
+        // Autosave balasan inline (blur) + ESC buat batal
+        const listBalas = document.getElementById("daftarPesan");
+        if (listBalas && !listBalas._balasBound) {
+            listBalas._balasBound = true;
+            listBalas.addEventListener("focusout", (e) => {
+                const el = e.target.closest
+                    ? e.target.closest("[data-balas-teks][contenteditable='true']")
+                    : null;
+                if (!el) return;
+                Aspirasi.simpanBalasan(el);
+            });
+            listBalas.addEventListener("keydown", (e) => {
+                if (e.key !== "Escape") return;
+                const el = e.target.closest
+                    ? e.target.closest("[data-balas-teks][contenteditable='true']")
+                    : null;
+                if (!el) return;
+                el.textContent = el.dataset.orig || "";
+                el.blur();
+            });
+        }
     },
 
     // ============ DAFTAR PESAN — SWR ============
@@ -66,18 +87,28 @@ const Aspirasi = {
                     const canKelola = isOsis
                         ? (editMode && OsisAuth.bisa && OsisAuth.bisa("aspirasi"))
                         : own;
+                    // Balas: super_admin + admin yang dikasih hak aspirasi.
+                    // Tanpa edit mode (kayak tombol selesai di lagu) biar
+                    // gampang bales kapan aja.
+                    const canBalas = isOsis && (OsisAuth.isSuper() || (OsisAuth.bisa && OsisAuth.bisa("aspirasi")));
                     const lock = p.is_private ? `<span title="Private — hanya OSIS" style="color:var(--red);font-size:0.7rem"><i class="fa-solid fa-lock"></i> Private</span>` : "";
+                    const balasan = String(p.balasan || "").trim();
+                    const balasHtml = balasan
+                        ? `<div class="pesan-balas"><i class="fa-solid fa-reply"></i><div><b>${escapeHtml(p.dibalas_oleh || "OSIS")}</b><p data-balas-teks="${p.id}" contenteditable="false" data-ph="Tulis balasan...">${escapeHtml(balasan)}</p></div></div>`
+                        : "";
                     return `
-                <div class="pesan-item" style="${p.is_private ? "border-style:dashed" : ""}">
+                <div class="pesan-item" data-balas-id="${p.id}" style="${p.is_private ? "border-style:dashed" : ""}">
                     <div class="pesan-meta">
                         <span class="pesan-nama"><i class="fa-solid fa-user"></i> ${escapeHtml(p.nama || "Anonim")}</span>
                         <span class="pesan-kelas">${escapeHtml(p.kelas || "-")}</span>
                         ${lock}
                         <span class="pesan-waktu">${Aspirasi.formatWaktu(p.created_at)}</span>
+                        ${canBalas ? `<button class="hapus-btn" onclick="Aspirasi.balas(${p.id})" title="Balas pesan"><i class="fa-solid fa-reply"></i></button>` : ""}
                         ${canKelola ? `<button class="hapus-btn" onclick="Aspirasi.edit(${p.id})" title="${isOsis ? "Edit (OSIS)" : "Edit pesanku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
                         ${canKelola ? `<button class="hapus-btn" onclick="Aspirasi.hapus(${p.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus pesanku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
                     </div>
                     <p class="pesan-isi">${escapeHtml(p.isi)}</p>
+                    ${balasHtml}
                 </div>`;
                 }).join("");
                 return sep + items;
@@ -222,6 +253,150 @@ const Aspirasi = {
                 showPopup("Cuma OSIS yang bisa hapus pesan ini.", "error");
             } else {
                 showPopup("Gagal hapus. Cek koneksi lalu coba lagi.", "error");
+            }
+        }
+    },
+
+    // ============ BALAS PESAN (super_admin + admin hak aspirasi) ============
+    // Bubble balasan langsung muncul & isinya editable inline (autosave pas blur).
+    balas(id) {
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        const boleh = !!(u && u.mode === "osis" && (OsisAuth.isSuper() || (OsisAuth.bisa && OsisAuth.bisa("aspirasi"))));
+        if (!boleh) {
+            showToast("Cuma super admin / admin aspirasi yang bisa bales.", "error");
+            return;
+        }
+        const item = (Aspirasi.cache || []).find(p => String(p.id) === String(id));
+        const wrap = document.querySelector(`.pesan-item[data-balas-id="${id}"]`);
+        if (!item || !wrap) {
+            showToast("Pesan tidak ketemu, muat ulang halamannya dulu.", "error");
+            return;
+        }
+        let p = wrap.querySelector(`[data-balas-teks="${id}"]`);
+        if (!p) {
+            const nama = ((typeof OsisAuth.displayName === "function" ? OsisAuth.displayName(u) : "") || (u && (u.nama || u.username)) || "OSIS").trim() || "OSIS";
+            const div = document.createElement("div");
+            div.className = "pesan-balas";
+            div.innerHTML = `<i class="fa-solid fa-reply"></i><div><b>${escapeHtml(nama)}</b><p data-balas-teks="${id}" data-ph="Tulis balasan..."></p></div>`;
+            const isi = wrap.querySelector(".pesan-isi");
+            if (isi) isi.after(div);
+            else wrap.appendChild(div);
+            p = div.querySelector("p");
+        }
+        p.dataset.orig = String(item.balasan || "");
+        p.contentEditable = "true";
+        p.spellcheck = false;
+        p.focus();
+        try {
+            const r = document.createRange();
+            r.selectNodeContents(p);
+            r.collapse(false);
+            const s = getSelection();
+            s.removeAllRanges();
+            s.addRange(r);
+        } catch {}
+        // Tombol aksi di bawah bubble: ceklis simpan, batal, hapus
+        Aspirasi.buangAct();
+        const act = document.createElement("div");
+        act.className = "balas-act";
+        act.innerHTML =
+            `<button class="btn btn-red btn-sm" onmousedown="event.preventDefault()" onclick="Aspirasi.simpanBalasBtn(${item.id})" title="Simpan balasan"><i class="fa-solid fa-check"></i></button>` +
+            `<button class="btn btn-white btn-sm" onmousedown="event.preventDefault()" onclick="Aspirasi.batalBalasBtn(${item.id})" title="Batal"><i class="fa-solid fa-xmark"></i> Batal</button>` +
+            (String(item.balasan || "").trim()
+                ? `<button class="btn btn-white btn-sm" onmousedown="event.preventDefault()" onclick="Aspirasi.hapusBalasBtn(${item.id})" title="Hapus balasan"><i class="fa-solid fa-trash-can"></i> Hapus</button>`
+                : "");
+        const bubble = p.closest(".pesan-balas");
+        if (bubble) bubble.after(act);
+        else p.after(act);
+    },
+
+    balasEl(id) {
+        return document.querySelector(`[data-balas-teks="${id}"]`);
+    },
+
+    buangAct() {
+        document.querySelectorAll(".balas-act").forEach(el => el.remove());
+    },
+
+    simpanBalasBtn(id) {
+        const el = Aspirasi.balasEl(id);
+        if (el) Aspirasi.simpanBalasan(el);
+    },
+
+    batalBalasBtn(id) {
+        const el = Aspirasi.balasEl(id);
+        if (el) {
+            el.textContent = el.dataset.orig || "";
+            el.contentEditable = "false";
+            el.blur();
+        }
+        Aspirasi.buangAct();
+    },
+
+    hapusBalasBtn(id) {
+        const el = Aspirasi.balasEl(id);
+        if (!el) return;
+        el.textContent = "";
+        Aspirasi.simpanBalasan(el);
+    },
+
+    async simpanBalasan(el) {
+        if (!el) return;
+        Aspirasi.buangAct();
+        const id = el.dataset.balasTeks;
+        const item = (Aspirasi.cache || []).find(p => String(p.id) === String(id));
+        const val = String(el.textContent || "").trim().slice(0, 500);
+        const lama = String((item && item.balasan) || "").trim();
+        el.contentEditable = "false";
+        if (val === lama) {
+            el.textContent = lama;
+            return;
+        }
+        if (!val && lama) {
+            const yakin = await showPopup("Hapus balasan ini?", "confirm");
+            if (!yakin) {
+                el.textContent = lama;
+                return;
+            }
+        }
+        if (!val && !lama) {
+            el.textContent = "";
+            return;
+        }
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        const boleh = !!(u && u.mode === "osis" && (OsisAuth.isSuper() || (OsisAuth.bisa && OsisAuth.bisa("aspirasi"))));
+        if (!boleh) {
+            el.textContent = lama;
+            showToast("Cuma super admin / admin aspirasi yang bisa bales.", "error");
+            return;
+        }
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            el.textContent = lama;
+            showToast("Butuh koneksi buat bales pesan.", "error");
+            return;
+        }
+        try {
+            if (!OsisAuth.butuh("aspirasi")) {
+                el.textContent = lama;
+                return;
+            }
+            await balasAspirasiOsis(u.id, id, val);
+            showToast(val ? "Balasan terkirim!" : "Balasan dihapus.", "success");
+            Cache.del("aspirasi");
+            Aspirasi.muatPesan();
+        } catch (err) {
+            console.error(err);
+            el.textContent = lama;
+            if (err.message === "ERR_NO_AUTH") {
+                showPopup("Cuma super admin / admin aspirasi yang bisa bales.", "error");
+            } else if (err.message === "ERR_NOT_FOUND") {
+                showPopup("Pesan ini sudah tidak ada.", "error");
+                Cache.del("aspirasi");
+                Aspirasi.muatPesan();
+            } else if (String(err.message || "").match(/balas_aspirasi_osis|schema cache|does not exist|not found/i)) {
+                showPopup("Database belum dimigrasi. Jalankan dulu migrasi-balas-pesan.sql di Supabase.", "error");
+            } else {
+                showPopup("Gagal bales. Cek koneksi lalu coba lagi.", "error");
             }
         }
     },

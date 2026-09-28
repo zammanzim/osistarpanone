@@ -137,6 +137,7 @@
     </script>
     <link rel="stylesheet" href="css/style.css?v=18" />
     <link rel="stylesheet" href="css/moments.css?v=10" />
+    <link rel="stylesheet" href="css/feed.css?v=1" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -1012,6 +1013,7 @@
     <script src="js/lagu.js?v=11" defer></script>
     <script src="js/galeri.js?v=12" defer></script>
     <script src="js/moments.js?v=10" defer></script>
+    <script src="js/feed.js?v=1" defer></script>
     <script src="js/arsip.js?v=12" defer></script>
     <script src="js/informasi-view.js?v=1" defer></script>
     <script src="js/osis-auth.js?v=17" defer></script>
@@ -1666,6 +1668,50 @@
     </section>
 
     <!-- ============================================================
+         VIEW: FEED (scrolling foto + video ala IG — like/komen/share)
+         ============================================================ -->
+    <section class="view" data-view="feed">
+      <div class="wrap feed-wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Scrolling Seru</div>
+            <h2 class="sec-title">Feed <span class="red">OSIS</span></h2>
+            <p class="sec-sub">
+              Scroll santai foto & video Tarpan One. Urutan diacak tiap
+              dibuka, postingan baru selalu di atas!
+            </p>
+          </div>
+          <button
+            class="btn btn-red"
+            id="btnFeedRefresh"
+            onclick="Feed.muat(true)"
+            title="Muat ulang"
+          >
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
+
+        <div class="feed-list" id="feedList">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat feed...
+          </div>
+        </div>
+      </div>
+      <!-- FAB posting (cuma OSIS): di dalam view biar ikut sembunyi pas pindah halaman -->
+      <button
+        class="gal-fab"
+        id="btnTambahFeed"
+        onclick="Feed.bukaForm()"
+        style="display: none"
+        title="Buat postingan"
+        aria-label="Buat postingan"
+      >
+        <i class="fa-solid fa-plus"></i>
+      </button>
+    </section>
+
+    <!-- ============================================================
          VIEW: ARSIP GALERI (paginasi, read-only)
          ============================================================ -->
     <section class="view" data-view="arsip">
@@ -2034,9 +2080,9 @@
 
         <div class="infv-hero">
           <span class="infv-hero-tag"
-            ><i class="fa-solid fa-bolt"></i> Info Resmi Sekolah</span
+            ><i class="fa-solid fa-bolt"></i> Info Resmi Sekolah/Tentang Osis</span
           >
-          <h2>Apa yang lagi happening di Tarpan?</h2>
+          <h2>Apa yang lagi terjadi di Tarpan?</h2>
           <p>
             Cek jadwal libur, pengumuman penting, dan acara terkini di sini.
             Info yang disematkan jangan sampai kelewat!
@@ -2064,7 +2110,7 @@
           <div class="infv-sorotan" id="infvSorotan"></div>
         </div>
 
-        <div class="infv-toolbar">
+        <div class="infv-toolbar" id="infvToolbar">
           <div class="infv-chips" id="infvChips">
             <button
               type="button"
