@@ -295,17 +295,18 @@ const InfoView = (function () {
         // Mode fokus 1 info (?id=): filter + pencarian disembunyikan.
         if (toolbar) toolbar.style.display = "none";
         const satu = cariByKunci(fokusKunci);
-      const satu = cariByKunci(fokusKunci);
       if (satu) {
         box.innerHTML =
           '<div class="infv-fokusbar"><a class="btn btn-white btn-sm" href="#/informasi"><i class="fa-solid fa-arrow-left"></i> Semua info</a><span><i class="fa-solid fa-eye"></i> Fokus 1 info</span></div>' +
           (editingId === Number(satu.id) ? kartuEditHtml(satu, false) : kartuHtml(satu, true));
         if (hitung) hitung.textContent = "1";
         if (sub) sub.textContent = "info terpilih";
-        if (sw) sw.style.display = "none";
-        return;
-      }
+            if (sw) sw.style.display = "none";
+            return;
+        }
     }
+    // Mode daftar biasa: pastikan toolbar filter + pencarian tampil lagi.
+    if (toolbar) toolbar.style.display = "";
 
     const daftar = urutkan(semua.filter(cocok));
     if (hitung) hitung.textContent = String(daftar.length);
