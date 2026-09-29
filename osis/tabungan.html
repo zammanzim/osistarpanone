@@ -75,7 +75,7 @@
         gap: 8px;
       }
       .stat-group-total {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
         text-align: left;
       }
       .stat-group-count {
@@ -158,6 +158,87 @@
         gap: 8px;
       }
       .rekap-card h3 i { color: var(--red); }
+      .tb-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .tb-head h3 {
+        flex: 1;
+        min-width: 0;
+        margin-bottom: 0;
+        flex-wrap: nowrap;
+        overflow: hidden;
+      }
+      .tb-head h3 > i { flex-shrink: 0; }
+      .tb-head h3 .tb-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .tb-head h3 .jenis.total {
+        flex-shrink: 0;
+        margin-left: 0;
+      }
+      .tb-menu-wrap {
+        position: relative;
+        flex-shrink: 0;
+      }
+      .tb-more-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        border: 2px solid var(--ink);
+        background: var(--white);
+        color: var(--ink);
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .tb-more-btn:hover { background: var(--paper); }
+      .tb-menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+        min-width: 180px;
+        z-index: 30;
+        overflow: hidden;
+      }
+      .tb-menu[hidden] { display: none; }
+      .tb-menu button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 10px 12px;
+        background: none;
+        border: 0;
+        font-family: inherit;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--ink);
+        cursor: pointer;
+        text-align: left;
+      }
+      .tb-menu button:hover { background: var(--paper); }
+      .tb-menu button i { color: var(--red); }
+      .tb-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .tb-foot .jenis.milik { margin-left: auto; }
       .filter-card {
         background: var(--white);
         border: 3px solid var(--ink);
@@ -434,7 +515,7 @@
     <script src="../js/osis-sidebar.js?v=13" defer></script>
     <script src="../js/osis-header.js?v=10" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/tabungan.js?v=13" defer></script>
+    <script src="../js/tabungan.js?v=15" defer></script>
   <script src="../js/pwa.js?v=10" defer></script>
   </head>
   <body>
@@ -465,9 +546,9 @@
       <div class="stat-grid">
         <div class="stat-group stat-group-total">
           <div class="stat-card"><span class="lbl"><i class="fa-solid fa-wallet"></i> Total Tabungan</span><b id="statTotal">-</b></div>
-          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-day"></i> Total Harian</span><b id="statHarian">-</b></div>
-          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-week"></i> Total Mingguan</span><b id="statMinggu">-</b></div>
           <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-days"></i> Total Bulanan</span><b id="statBulan">-</b></div>
+          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-week"></i> Total Mingguan</span><b id="statMinggu">-</b></div>
+          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-day"></i> Total Harian</span><b id="statHarian">-</b></div>
         </div>
         <div class="stat-group stat-group-count">
           <div class="stat-card"><span class="lbl"><i class="fa-solid fa-users"></i> Penabung</span><b id="statOrang">-</b></div>

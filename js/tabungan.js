@@ -62,12 +62,20 @@ const Tabungan = {
             if (ed) { Tabungan.editRow(ed.dataset.tabEdit); return; }
             const hb = e.target.closest("[data-tab-del]");
             if (hb) { Tabungan.hapusRow(hb.dataset.tabDel); return; }
+            const mr = e.target.closest("[data-tab-more]");
+            if (mr) { e.stopPropagation(); Tabungan.toggleMenu(mr); return; }
             const tb = e.target.closest("[data-tab-tambah]");
             if (tb) { Tabungan.bukaForm(decodeURIComponent(tb.dataset.tabTambah || "")); return; }
             const pf = e.target.closest("[data-tab-pdf]");
-            if (pf) { e.stopPropagation(); Tabungan.exportSatu(decodeURIComponent(pf.dataset.tabPdf || "")); return; }
+            if (pf) { e.stopPropagation(); Tabungan.tutupSemuaMenu(); Tabungan.exportSatu(decodeURIComponent(pf.dataset.tabPdf || "")); return; }
+            // Klik di dalam menu tapi bukan tombol: jangan tembus ke detail baris
+            if (e.target.closest(".tb-menu")) { e.stopPropagation(); return; }
             const row = e.target.closest("[data-tab-row]");
             if (row) { Tabungan.detail(row.dataset.tabRow); return; }
+        });
+        // Klik di luar menu: tutup semua menu titik-tiga yang terbuka
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".tb-menu-wrap")) Tabungan.tutupSemuaMenu();
         });
         ["tabForm", "tabDetail"].forEach(id => {
             document.getElementById(id)?.addEventListener("click", (e) => {
@@ -79,6 +87,7 @@ const Tabungan = {
         });
         document.addEventListener("keydown", (e) => {
             if (e.key !== "Escape") return;
+            Tabungan.tutupSemuaMenu();
             if (document.getElementById("tabForm")?.classList.contains("open")) Tabungan.tutupForm();
             if (document.getElementById("tabDetail")?.classList.contains("open")) Tabungan.tutupDetail();
         });
@@ -307,36 +316,60 @@ const Tabungan = {
         }
         wrap.innerHTML = grups.map(g => {
             const sudahSemua = g.rows.length > 0 && g.rows.every(r => !!r.cek);
-            // Label hijau di kanan atas kalau ini tabungan milik sendiri
+            // Label hijau "Milik sendiri" tampil di kanan bawah (footer card)
             const milik = Tabungan.milikSaya({ nama: g.nama });
+            const namaEnc = encodeURIComponent(g.nama);
             return `<div class="rekap-card" style="margin-bottom:12px">
-                <h3><i class="fa-solid fa-piggy-bank"></i> Tabungan — ${escapeHtml(g.nama)} <span class="jenis total" style="margin-left:auto">${Tabungan.rp(g.total)}${sudahSemua ? " ✓" : ""}</span>${milik ? ` <span class="jenis milik"><i class="fa-solid fa-user-check"></i> Milik sendiri</span>` : ""}</h3>
-                <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Tanggal</th><th>Nominal</th><th>Total Semua</th><th>Ceklis</th>${boleh ? `<th style="text-align:right">Aksi</th>` : ""}</tr></thead><tbody>
+                <div class="tb-head">
+                    <h3><i class="fa-solid fa-piggy-bank"></i> <span class="tb-title">Tabungan — ${escapeHtml(g.nama)}</span> <span class="jenis total">${Tabungan.rp(g.total)}${sudahSemua ? " ✓" : ""}</span></h3>
+                    <div class="tb-menu-wrap">
+                        <button type="button" class="tb-more-btn" data-tab-more="${namaEnc}" title="Menu lainnya"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                        <div class="tb-menu" hidden>
+                            <button type="button" data-tab-pdf="${namaEnc}"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Ceklis</th><th>Tanggal</th><th>Nominal</th><th>Total Semua</th>${boleh ? `<th style="text-align:right">Aksi</th>` : ""}</tr></thead><tbody>
                 ${g.rows.map((r, i) => {
                     // Kelola (akses tabungan) boleh ceklis siapa saja; lainnya cuma milik sendiri
                     const bisaCek = boleh || Tabungan.milikSaya(r);
                     return `<tr data-tab-row="${r.id}">
                     <td>${i + 1}</td>
-                    <td>${escapeHtml(Tabungan.fmtTanggalPendek(r.tanggal))}${olehLabel(r) ? `<br>${olehLabel(r)}` : ""}</td>
-                    <td><span class="jenis ${Tabungan.isKeluar(r) ? "keluar" : "masuk"}">${Tabungan.isKeluar(r) ? "−" : "+"} ${Tabungan.rp(r.nominal)}</span></td>
-                    <td class="num">${Tabungan.rp(r._total)}</td>
                     <td>${bisaCek
                         ? `<button type="button" class="cek-btn ${r.cek ? "on" : ""}" data-tab-toggle="${r.id}" title="${r.cek ? "Sudah diceklis — klik untuk batalkan" : "Belum diceklis — klik untuk tandai"}"><i class="fa-solid ${r.cek ? "fa-check" : "fa-minus"}"></i></button>`
                         : `<span class="cek-btn ${r.cek ? "on" : ""}" style="cursor:default"><i class="fa-solid ${r.cek ? "fa-check" : "fa-minus"}"></i></span>`}</td>
+                    <td>${escapeHtml(Tabungan.fmtTanggalPendek(r.tanggal))}${olehLabel(r) ? `<br>${olehLabel(r)}` : ""}</td>
+                    <td><span class="jenis ${Tabungan.isKeluar(r) ? "keluar" : "masuk"}">${Tabungan.isKeluar(r) ? "−" : "+"} ${Tabungan.rp(r.nominal)}</span></td>
+                    <td class="num">${Tabungan.rp(r._total)}</td>
                     ${boleh ? `<td><div class="row-act">
                         <button type="button" class="icon-btn" data-tab-edit="${r.id}" title="Edit" style="width:30px; height:30px; font-size:0.75rem; border-width:2px"><i class="fa-solid fa-pen"></i></button>
                         <button type="button" class="icon-btn" data-tab-del="${r.id}" title="Hapus" style="width:30px; height:30px; font-size:0.75rem; background:var(--red); color:#fff; border-width:2px"><i class="fa-solid fa-trash-can"></i></button>
                     </div></td>` : ""}
                 </tr>`;}).join("")}
                 </tbody></table></div>
-                ${boleh ? `<div style="display:flex; justify-content:space-between; gap:8px; margin-top:10px">
-                    <button class="btn btn-white btn-sm" data-tab-pdf="${encodeURIComponent(g.nama)}"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
-                    <button class="btn btn-white btn-sm" data-tab-tambah="${encodeURIComponent(g.nama)}"><i class="fa-solid fa-plus"></i> Tambah Setoran</button>
-                </div>` : `<div style="display:flex; justify-content:flex-start; gap:8px; margin-top:10px">
-                    <button class="btn btn-white btn-sm" data-tab-pdf="${encodeURIComponent(g.nama)}"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
-                </div>`}
+                ${(boleh || milik) ? `<div class="tb-foot">
+                    ${boleh ? `<button class="btn btn-white btn-sm" data-tab-tambah="${namaEnc}"><i class="fa-solid fa-plus"></i> Tambah Setoran</button>` : `<span></span>`}
+                    ${milik ? `<span class="jenis milik"><i class="fa-solid fa-user-check"></i> Milik sendiri</span>` : ""}
+                </div>` : ""}
             </div>`;
         }).join("");
+    },
+
+    toggleMenu(btn) {
+        try {
+            const wrap = btn.closest(".tb-menu-wrap");
+            const menu = wrap?.querySelector(".tb-menu");
+            if (!menu) return;
+            const sedangBuka = !menu.hidden;
+            Tabungan.tutupSemuaMenu();
+            if (!sedangBuka) menu.hidden = false;
+        } catch {}
+    },
+
+    tutupSemuaMenu() {
+        try {
+            document.querySelectorAll("#tabunganWrap .tb-menu").forEach(m => { m.hidden = true; });
+        } catch {}
     },
 
     bacaFilter() {
@@ -634,22 +667,42 @@ const Tabungan = {
     async toggleCek(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
-        const item = (Tabungan.cache || []).find(r => String(r.id) === String(id));
+        const key = String(id);
+        const item = (Tabungan.cache || []).find(r => String(r.id) === key);
         if (!item) return;
         // Kelola (akses tabungan) boleh ceklis siapa saja; lainnya cuma milik sendiri
         if (!(OsisAuth.bisa("tabungan") || Tabungan.milikSaya(item))) {
             showToast("Kamu cuma bisa ceklis tabungan sendiri.", "error");
             return;
         }
+        // Cegah double-tap saat request sebelumnya belum selesai
+        if (!Tabungan._pendingCek) Tabungan._pendingCek = new Set();
+        if (Tabungan._pendingCek.has(key)) return;
+        const nilaiAwal = !!item.cek;
+        const nilaiBaru = !nilaiAwal;
+        // 1) Optimis: ubah UI seketika, urusan kirim belakangan
+        item.cek = nilaiBaru;
+        try { if (typeof Cache !== "undefined") Cache.set("tabungan", Tabungan.cache); } catch {}
+        try { Tabungan.render(); } catch {}
+        Tabungan._pendingCek.add(key);
         try {
-            await toggleTabunganCek(u.id, id, !item.cek);
-            showToast(!item.cek ? "Ditandai sudah diceklis." : "Ceklis dibatalkan.", "success");
+            await toggleTabunganCek(u.id, id, nilaiBaru);
+            showToast(nilaiBaru ? "Ditandai sudah diceklis." : "Ceklis dibatalkan.", "success");
             Tabungan.segarkan();
         } catch (err) {
             console.error(err);
+            // 2) Gagal: kembalikan UI ke nilai awal
+            try {
+                const cur = (Tabungan.cache || []).find(r => String(r.id) === key);
+                if (cur) cur.cek = nilaiAwal;
+                if (typeof Cache !== "undefined") Cache.set("tabungan", Tabungan.cache);
+                Tabungan.render();
+            } catch {}
             const msg = String((err && err.message) || err || "");
             showToast("Gagal update ceklis: " + (/ERR_NO_AUTH/i.test(msg) ? "kamu cuma bisa ceklis tabungan sendiri" : msg), "error");
             Tabungan.segarkan();
+        } finally {
+            Tabungan._pendingCek.delete(key);
         }
     },
 
@@ -729,8 +782,8 @@ const Tabungan = {
                     <tr><td>Ceklis</td><td style="text-align:right">${sudah}/${g.rows.length} sudah diceklis</td></tr>
                 </table>
                 <table border="1" cellspacing="0" cellpadding="6" style="width:100%; font-size:12px; border-collapse:collapse">
-                    <thead><tr><th>No</th><th>Tanggal</th><th>Setoran</th><th>Penarikan</th><th>Saldo Jalan</th><th>Status</th></tr></thead>
-                    <tbody>${g.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(Tabungan.fmtTanggalPendek(r.tanggal))}</td><td style="text-align:right">${Tabungan.isKeluar(r) ? "-" : Tabungan.rp(r.nominal)}</td><td style="text-align:right">${Tabungan.isKeluar(r) ? Tabungan.rp(r.nominal) : "-"}</td><td style="text-align:right">${Tabungan.rp(r._total)}</td><td>${r.cek ? "Sudah" : "Belum"}</td></tr>`).join("") || `<tr><td colspan="6">Tidak ada data.</td></tr>`}</tbody>
+                    <thead><tr><th>No</th><th>Ceklis</th><th>Tanggal</th><th>Setoran</th><th>Penarikan</th><th>Saldo Jalan</th></tr></thead>
+                    <tbody>${g.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.cek ? "Sudah" : "Belum"}</td><td>${esc(Tabungan.fmtTanggalPendek(r.tanggal))}</td><td style="text-align:right">${Tabungan.isKeluar(r) ? "-" : Tabungan.rp(r.nominal)}</td><td style="text-align:right">${Tabungan.isKeluar(r) ? Tabungan.rp(r.nominal) : "-"}</td><td style="text-align:right">${Tabungan.rp(r._total)}</td></tr>`).join("") || `<tr><td colspan="6">Tidak ada data.</td></tr>`}</tbody>
                 </table>
                 <p style="font-size:11px; color:#666; margin-top:12px">Dicetak ${new Date().toLocaleString("id-ID")} dari website OSIS Tarpan One.</p>
             </div>`;
