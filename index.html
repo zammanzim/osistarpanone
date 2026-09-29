@@ -1725,6 +1725,13 @@
           </button>
         </div>
 
+        <div class="feed-filter" id="feedFilter">
+          <button type="button" class="feed-chip on" data-feed-kat="semua" onclick="Feed.setFilter('semua')"><i class="fa-solid fa-layer-group"></i> Semua</button>
+          <button type="button" class="feed-chip" data-feed-kat="aib" onclick="Feed.setFilter('aib')"><i class="fa-solid fa-eye-slash"></i> Aib</button>
+          <button type="button" class="feed-chip" data-feed-kat="serius" onclick="Feed.setFilter('serius')"><i class="fa-solid fa-star"></i> Serius</button>
+          <button type="button" class="feed-chip" data-feed-kat="kocak" onclick="Feed.setFilter('kocak')"><i class="fa-solid fa-face-laugh-squint"></i> Kocak</button>
+        </div>
+
         <div class="feed-list" id="feedList">
           <div class="loading-block">
             <div class="spinner"></div>

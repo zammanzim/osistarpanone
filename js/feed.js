@@ -18,7 +18,42 @@ const Feed = {
     playing: null,
     pendingFile: null,
     pendingKind: "photo",
+    pendingKategori: "aib",
+    // Filter tampilan (client-side, semua/kategori)
+    filterKat: "semua",
+    KATEGORI: [
+        { id: "aib", label: "Aib", icon: "fa-solid fa-eye-slash", desc: "Momen aib" },
+        { id: "serius", label: "Serius", icon: "fa-solid fa-star", desc: "Beneran" },
+        { id: "kocak", label: "Kocak", icon: "fa-solid fa-face-laugh-squint", desc: "Kekocakan" },
+    ],
     terinisialisasi: false,
+
+    // ---- kategori ----
+    katOf(it) {
+        const k = String((it && it.kategori) || "aib").toLowerCase();
+        return ["aib", "serius", "kocak"].includes(k) ? k : "aib";
+    },
+
+    katLabel(id) {
+        const k = (Feed.KATEGORI || []).find(x => x.id === id);
+        return k ? k.label : "Aib";
+    },
+
+    katBadge(id) {
+        const k = (Feed.KATEGORI || []).find(x => x.id === id) || Feed.KATEGORI[0];
+        const esc = (typeof escapeHtml === "function" ? escapeHtml : String);
+        return `<span class="feed-kat feed-kat-${esc(k.id)}"><i class="${esc(k.icon)}"></i> ${esc(k.label)}</span>`;
+    },
+
+    setFilter(kat) {
+        Feed.filterKat = kat || "semua";
+        try {
+            document.querySelectorAll("[data-feed-kat]").forEach(b => {
+                b.classList.toggle("on", b.dataset.feedKat === Feed.filterKat);
+            });
+        } catch {}
+        Feed.render();
+    },
 
     // ---- identitas ----
     user() {
@@ -174,6 +209,13 @@ const Feed = {
         }
     },
 
+    // Item tampil: saring kategori dulu (client-side).
+    itemsTampil() {
+        const f = Feed.filterKat || "semua";
+        if (f === "semua") return (Feed.items || []);
+        return (Feed.items || []).filter(it => Feed.katOf(it) === f);
+    },
+
     // Urutan tampil: pin deep-link > baru (<24 jam, terbaru dulu) > acak.
     urutTampil() {
         const BARU = 24 * 3600 * 1000;
@@ -182,7 +224,7 @@ const Feed = {
             const t = new Date(it.created_at).getTime();
             return t && (skrg - t) < BARU;
         };
-        return [...(Feed.items || [])].sort((a, b) => {
+        return [...Feed.itemsTampil()].sort((a, b) => {
             if (a._pin && b._pin) return 0;
             if (a._pin) return -1;
             if (b._pin) return 1;
@@ -201,15 +243,19 @@ const Feed = {
         Feed.jedaSemua();
         const items = Feed.urutTampil();
         if (!items.length) {
-            list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-images"></i> Belum ada postingan. Jadilah yang pertama!</div>`;
+            const f = Feed.filterKat || "semua";
+            list.innerHTML = (f !== "semua" && (Feed.items || []).length)
+                ? `<div class="pesan-empty"><i class="fa-solid fa-filter"></i> Belum ada postingan ${Feed.katLabel(f).toLowerCase()}.<br><br><button class="btn btn-white btn-sm" onclick="Feed.setFilter('semua')">Tampilkan semua</button></div>`
+                : `<div class="pesan-empty"><i class="fa-solid fa-images"></i> Belum ada postingan. Jadilah yang pertama!</div>`;
             return;
         }
         list.innerHTML = items.map(it => Feed.kartu(it)).join("") +
             (Feed.habis
-                ? `<div class="feed-end">— Udah paling bawah, mantap! —</div>`
+                ? `<div class="feed-end">— Udah paling bawah nih! —</div>`
                 : `<div class="feed-loading" id="feedSentinel"><div class="spinner"></div> Memuat...</div>`);
         Feed.amatiVideo();
         Feed.amatiSentinel();
+        Feed.jadwalPilihVideo();
     },
 
     kartu(it) {
@@ -230,6 +276,7 @@ const Feed = {
             `<div class="feed-head">` +
             `<span class="feed-avatar">${esc(Feed.inisial(it.pengunggah))}</span>` +
             `<div class="feed-who"><b>${esc(it.pengunggah || "OSIS")}</b><small>${Feed.fmtWaktu(it.created_at)}</small></div>` +
+            Feed.katBadge(Feed.katOf(it)) +
             (canDel ? `<button type="button" class="feed-del" onclick="Feed.hapus(${id})" title="Hapus postingan"><i class="fa-solid fa-trash-can"></i></button>` : "") +
             `</div>` +
             media +
@@ -296,28 +343,66 @@ const Feed = {
         });
     },
 
-    // ============ VIDEO (autoplay pas terlihat, 1 bunyi) ============
+    // ============ VIDEO (autoplay TEPAT 1: yang paling tengah layar) ============
+    // Observer cuma jadi pemicu — keputusan play/jeda selalu lewat
+    // pilihVideoAktif() biar tidak ada 2 video play bareng.
     pasangObserver() {
         if (Feed.observer) return;
         if (!("IntersectionObserver" in window)) return;
         Feed.observer = new IntersectionObserver((entries) => {
+            let perluPilih = false;
             entries.forEach(en => {
                 const card = en.target;
                 if (card.id === "feedSentinel") {
                     if (en.isIntersecting) Feed.muat(false);
                     return;
                 }
-                const video = card.querySelector ? card.querySelector("video") : null;
-                if (!video) return;
-                const ratio = en.intersectionRatio || 0;
-                if (en.isIntersecting && ratio >= 0.6) {
-                    Feed.pastikanSrc(video);
-                    Feed.putar(card, video);
-                } else {
-                    Feed.jeda(card, video);
-                }
+                if (card.querySelector && card.querySelector("video")) perluPilih = true;
             });
-        }, { root: null, rootMargin: "200px 0px 200px 0px", threshold: [0, 0.6, 1] });
+            if (perluPilih) Feed.jadwalPilihVideo();
+        }, { root: null, rootMargin: "100px 0px 100px 0px", threshold: [0, 0.25, 0.5, 0.75, 1] });
+    },
+
+    // Tunda sedikit biar scroll cepat tidak bikin play-jeda-play beruntun.
+    jadwalPilihVideo() {
+        if (Feed._pilihT) return;
+        Feed._pilihT = setTimeout(() => {
+            Feed._pilihT = null;
+            try { Feed.pilihVideoAktif(); } catch {}
+        }, 80);
+    },
+
+    // Satu-satunya yang boleh play: kartu yang cukup terlihat (>=40%)
+    // dan paling dekat ke tengah layar. Sisanya dipaksa jeda.
+    pilihVideoAktif() {
+        if (document.hidden) return;
+        try {
+            const r = (typeof Router !== "undefined" && Router.current) || "";
+            if (r && r !== "feed") return;
+        } catch {}
+        const tengah = window.innerHeight / 2;
+        let terbaik = null;
+        let skorTerbaik = Infinity;
+        document.querySelectorAll("#feedList .feed-card").forEach(card => {
+            const video = card.querySelector ? card.querySelector("video") : null;
+            if (!video) return;
+            const box = card.getBoundingClientRect();
+            if (!box.height || box.bottom <= 0 || box.top >= window.innerHeight) return;
+            const tampak = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0);
+            if (tampak < box.height * 0.4) return;
+            const skor = Math.abs((box.top + box.bottom) / 2 - tengah);
+            if (skor < skorTerbaik) { skorTerbaik = skor; terbaik = { card, video }; }
+        });
+        document.querySelectorAll("#feedList .feed-card").forEach(card => {
+            const video = card.querySelector ? card.querySelector("video") : null;
+            if (!video) return;
+            if (terbaik && video === terbaik.video) {
+                Feed.pastikanSrc(video);
+                Feed.putar(terbaik.card, video);
+            } else {
+                Feed.jeda(card, video);
+            }
+        });
     },
 
     amatiVideo() {
@@ -360,11 +445,20 @@ const Feed = {
         Feed.sinkronIkonMute(card, video);
         try {
             const p = video.play();
-            if (p && p.catch) p.catch(() => {
+            if (p && p.then) p.then(() => {
+                // Balapan antar-callback: kalau video ini sudah bukan
+                // pilihan aktif saat promise selesai, ikut jeda.
+                if (Feed.playing !== video) { try { video.pause(); } catch {} }
+            }).catch(() => {
                 if (!video.muted) {
                     video.muted = true;
                     Feed.sinkronIkonMute(card, video);
-                    try { video.play().catch(() => {}); } catch {}
+                    try {
+                        const p2 = video.play();
+                        if (p2 && p2.then) p2.then(() => {
+                            if (Feed.playing !== video) { try { video.pause(); } catch {} }
+                        }).catch(() => {});
+                    } catch {}
                 }
             });
         } catch {}
@@ -651,6 +745,7 @@ const Feed = {
         }
         Feed.pendingFile = null;
         Feed.pendingKind = "photo";
+        Feed.pendingKategori = "aib";
         const lama = document.getElementById("feedFormOverlay");
         if (lama) lama.remove();
         const overlay = document.createElement("div");
@@ -673,6 +768,15 @@ const Feed = {
             `</div>` +
             `<div class="feed-filemeta" id="feedFileMeta" style="display:none"></div>` +
             `<input type="file" id="feedFormFile" accept="image/*,video/mp4,video/webm" style="display:none">` +
+            `<div class="field" style="margin-top:12px">` +
+            `<label>Kategori</label>` +
+            `<div class="feed-kat-pick" id="feedKatPick">` +
+            Feed.KATEGORI.map((k, i) =>
+                `<button type="button" class="feed-kat-pick-btn${i === 0 ? " on" : ""}" data-kat="${k.id}" onclick="Feed.pilihKategori('${k.id}', this)" title="${k.desc}"><i class="${k.icon}"></i> ${k.label}</button>`
+            ).join("") +
+            `</div>` +
+            `<input type="hidden" id="feedKategori" value="aib">` +
+            `</div>` +
             `<div class="field" style="margin-top:12px">` +
             `<label>Caption</label>` +
             `<textarea id="feedCaption" class="admin-input admin-textarea" placeholder="Tulis caption..." maxlength="500" rows="3"></textarea>` +
@@ -713,6 +817,23 @@ const Feed = {
         }
         document.body.style.overflow = "";
         Feed.pendingFile = null;
+        Feed.pendingKategori = "aib";
+    },
+
+    pilihKategori(kat, btn) {
+        Feed.pendingKategori = ["aib", "serius", "kocak"].includes(kat) ? kat : "aib";
+        const hid = document.getElementById("feedKategori");
+        if (hid) hid.value = Feed.pendingKategori;
+        try {
+            const box = document.getElementById("feedKatPick");
+            if (box) box.querySelectorAll(".feed-kat-pick-btn").forEach(b => {
+                b.classList.toggle("on", b.dataset.kat === Feed.pendingKategori);
+            });
+            else if (btn) {
+                (btn.parentNode.querySelectorAll(".feed-kat-pick-btn") || []).forEach(b => b.classList.remove("on"));
+                btn.classList.add("on");
+            }
+        } catch {}
     },
 
     fmtSize(byte) {
@@ -766,6 +887,8 @@ const Feed = {
         const u = Feed.user();
         if (!u || u.mode !== "osis") return;
         const caption = ((document.getElementById("feedCaption") || {}).value || "").trim();
+        const katRaw = String(((document.getElementById("feedKategori") || {}).value || Feed.pendingKategori || "aib")).toLowerCase();
+        const kategori = ["aib", "serius", "kocak"].includes(katRaw) ? katRaw : "aib";
         const file = Feed.pendingFile;
         if (!file) {
             if (typeof showToast === "function") showToast("Pilih foto/video dulu", "error");
@@ -786,6 +909,7 @@ const Feed = {
                 media_key: path,
                 thumb_key: "",
                 caption,
+                kategori,
             });
             if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
             if (typeof showToast === "function") showToast("Postingan tayang!", "success");

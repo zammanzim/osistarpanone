@@ -25,8 +25,19 @@ CREATE TABLE IF NOT EXISTS public.feed_posts (
     thumb_key text NOT NULL DEFAULT '',
     caption text NOT NULL DEFAULT '',
     share_count integer NOT NULL DEFAULT 0,
+    kategori text NOT NULL DEFAULT 'aib' CHECK (kategori IN ('aib', 'serius', 'kocak')),
     created_at timestamptz NOT NULL DEFAULT now()
 );
+-- Kolom kategori buat DB lama (migrasi idempotent)
+ALTER TABLE public.feed_posts ADD COLUMN IF NOT EXISTS kategori text NOT NULL DEFAULT 'aib';
+UPDATE public.feed_posts SET kategori = 'aib' WHERE kategori IS NULL OR btrim(kategori) = '' OR kategori = 'random' OR kategori NOT IN ('aib', 'serius', 'kocak');
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'feed_posts_kategori_check') THEN
+    ALTER TABLE public.feed_posts DROP CONSTRAINT feed_posts_kategori_check;
+  END IF;
+END $$;
+ALTER TABLE public.feed_posts ADD CONSTRAINT feed_posts_kategori_check CHECK (kategori IN ('aib', 'serius', 'kocak'));
+CREATE INDEX IF NOT EXISTS idx_feed_posts_kategori ON public.feed_posts (kategori);
 
 CREATE TABLE IF NOT EXISTS public.feed_likes (
     post_id bigint NOT NULL REFERENCES public.feed_posts(id) ON DELETE CASCADE,
@@ -82,13 +93,15 @@ CREATE OR REPLACE FUNCTION public.feed_post_buat(
     p_media_type text,
     p_media_key text,
     p_thumb_key text,
-    p_caption text
+    p_caption text,
+    p_kategori text DEFAULT 'aib'
 )
 RETURNS bigint
 LANGUAGE plpgsql SECURITY DEFINER
 AS $$
 DECLARE
     new_id bigint;
+    v_kat text := lower(COALESCE(NULLIF(btrim(p_kategori), ''), 'aib'));
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM public.osis_users WHERE id = p_user_id) THEN
         RETURN -1;
@@ -101,14 +114,18 @@ BEGIN
     IF p_media_type NOT IN ('photo', 'video') THEN
         RETURN -3;
     END IF;
+    IF v_kat NOT IN ('aib', 'serius', 'kocak') THEN
+        v_kat := 'aib';
+    END IF;
     INSERT INTO public.feed_posts
-        (created_by, media_type, media_key, thumb_key, caption)
+        (created_by, media_type, media_key, thumb_key, caption, kategori)
     VALUES
         (p_user_id,
          p_media_type,
          left(p_media_key, 512),
          left(COALESCE(p_thumb_key, ''), 512),
-         left(COALESCE(p_caption, ''), 500))
+         left(COALESCE(p_caption, ''), 500),
+         v_kat)
     RETURNING id INTO new_id;
     RETURN new_id;
 END $$;
@@ -169,6 +186,7 @@ BEGIN
             p.pengunggah,
             p.share_count,
             p.created_at,
+            COALESCE(NULLIF(p.kategori, 'random'), 'aib') AS kategori,
             (SELECT count(*) FROM public.feed_likes l WHERE l.post_id = p.id) AS like_count,
             (SELECT count(*) FROM public.feed_comments c WHERE c.post_id = p.id) AS comment_count,
             CASE
@@ -332,6 +350,7 @@ BEGIN
             p.pengunggah,
             p.share_count,
             p.created_at,
+            COALESCE(NULLIF(p.kategori, 'random'), 'aib') AS kategori,
             (SELECT count(*) FROM public.feed_likes l WHERE l.post_id = p.id) AS like_count,
             (SELECT count(*) FROM public.feed_comments c WHERE c.post_id = p.id) AS comment_count,
             CASE
@@ -347,7 +366,7 @@ BEGIN
     RETURN hasil;
 END $$;
 
-REVOKE EXECUTE ON FUNCTION public.feed_post_buat(bigint, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION public.feed_post_buat(bigint, text, text, text, text, text) FROM public;
 REVOKE EXECUTE ON FUNCTION public.feed_post_hapus(bigint, bigint) FROM public;
 REVOKE EXECUTE ON FUNCTION public.feed_posts_list(integer, integer, text) FROM public;
 REVOKE EXECUTE ON FUNCTION public.feed_like_toggle(bigint, text) FROM public;
@@ -356,7 +375,7 @@ REVOKE EXECUTE ON FUNCTION public.feed_komen_list(bigint, integer, integer) FROM
 REVOKE EXECUTE ON FUNCTION public.feed_komen_hapus(bigint, text, bigint) FROM public;
 REVOKE EXECUTE ON FUNCTION public.feed_share_cat(bigint) FROM public;
 REVOKE EXECUTE ON FUNCTION public.feed_post_satu(bigint, text) FROM public;
-GRANT EXECUTE ON FUNCTION public.feed_post_buat(bigint, text, text, text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.feed_post_buat(bigint, text, text, text, text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.feed_post_hapus(bigint, bigint) TO anon;
 GRANT EXECUTE ON FUNCTION public.feed_posts_list(integer, integer, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.feed_like_toggle(bigint, text) TO anon;

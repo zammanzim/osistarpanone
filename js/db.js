@@ -2542,12 +2542,14 @@ async function feedPostSatu(id, userKey) {
 }
 
 async function feedPostBuat(userId, f) {
+  const kat = String(f.kategori || "aib").toLowerCase();
   const { data, error } = await supa.rpc("feed_post_buat", {
     p_user_id: userId,
     p_media_type: f.media_type || "photo",
     p_media_key: f.media_key || "",
     p_thumb_key: f.thumb_key || "",
     p_caption: f.caption || "",
+    p_kategori: ["aib", "serius", "kocak"].includes(kat) ? kat : "aib",
   });
   if (error) {
     if (feedBelumMigrasi(error)) throw feedErrMigrasi();
