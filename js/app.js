@@ -70,6 +70,44 @@ function labelTahun(thn) {
 }
 
 // =========================================================================
+// RUPIAH — input teks + format titik ribuan otomatis, simpan angka murni.
+// Pakai: ikatRupiah("kasNominal") sekali di init() halaman.
+// Ketik "10000" -> tampil "10.000", parseRupiah("10.000") -> 10000.
+// =========================================================================
+
+// Ambil angka murni dari tampilan berformat ("10.000" / "Rp 10.000" -> 10000).
+function parseRupiah(v) {
+    return parseInt(String(v ?? "").replace(/\D/g, ""), 10) || 0;
+}
+
+// Format ulang isi input jadi titik ribuan, posisi kursor dipertahankan.
+// Dipanggil tiap event "input" (ketik, tempel, hapus semua ke-cover).
+function formatRupiah(el) {
+    if (!el) return;
+    const pos = (typeof el.selectionStart === "number") ? el.selectionStart : String(el.value || "").length;
+    const digitSebelum = String(el.value || "").slice(0, pos).replace(/\D/g, "").length;
+    // Maks 15 digit (aman presisi JS, cukup sampai 999 triliun)
+    const angka = String(el.value || "").replace(/\D/g, "").slice(0, 15).replace(/^0+(?=\d)/, "");
+    el.value = angka ? Number(angka).toLocaleString("id-ID") : "";
+    // Kembalikan caret ke belakang digit yang sama seperti sebelum format
+    let hit = 0, i = 0;
+    const s = el.value;
+    while (i < s.length && hit < digitSebelum) {
+        if (/\d/.test(s[i])) hit++;
+        i++;
+    }
+    try { el.setSelectionRange(i, i); } catch {}
+}
+
+// Pasang format otomatis ke input nominal (sekali per halaman).
+function ikatRupiah(id) {
+    const el = document.getElementById(id);
+    if (!el || el.dataset.rupiahTerikat) return;
+    el.dataset.rupiahTerikat = "1";
+    el.addEventListener("input", () => formatRupiah(el));
+}
+
+// =========================================================================
 // ROUTER — SPA hash routing (index)
 // Rute: #/ #/sekbid #/aspirasi #/kontak #/musik
 // =========================================================================

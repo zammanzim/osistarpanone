@@ -148,7 +148,7 @@ const Home = {
                 </div>
                 <div class="foto-pop">
                     ${hintHtml}
-                    <img src="${src}" alt="${escapeHtml(finalJudul)}" draggable="false">
+                    <span class="media-muat media-muat-tinggi" style="width:100%"><img src="${src}" alt="${escapeHtml(finalJudul)}" draggable="false" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span>
                     ${olehAwal ? `<div class="foto-oleh" id="fotoOleh">Diupload oleh ${escapeHtml(olehAwal)}</div>` : `<div class="foto-oleh" id="fotoOleh" style="display:none"></div>`}
                     ${captionHtml}
                 </div>
@@ -250,9 +250,10 @@ const Home = {
                 const p = Home.cachePimpinan[String(thn)];
                 const foto = (p && p.foto_angkatan) ? p.foto_angkatan : `angkatan/foto-${thn}.jpg`;
                 html += `
-                    <div class="year-card" onclick="Home.toggleStruktur(${thn})" role="button">
+                    <div class="year-card media-muat" onclick="Home.toggleStruktur(${thn})" role="button">
                         <img src="${getFoto(foto)}" alt="Angkatan ${thn}" loading="lazy"
-                             onerror="this.remove();">
+                             onload="this.closest('.media-muat').classList.add('sudah-muat')"
+                             onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove();"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>
                         <div class="year-overlay">
                             <span class="year-num">${thn}</span>
                             <span class="year-label">${labelTahun(thn)}</span>
@@ -266,13 +267,13 @@ const Home = {
         };
 
         const cachedP = Cache.get("pimpinan");
-        const cachedA = Cache.get("anggota");
+        const cachedA = Cache.get("pengurus");
         if (cachedP && cachedA) {
             render(cachedP, cachedA);
-            Promise.all([getPimpinan(), getAnggota()]).then(([freshP, freshA]) => {
+            Promise.all([getPimpinan(), getPengurus()]).then(([freshP, freshA]) => {
                 if (JSON.stringify(freshP) !== JSON.stringify(cachedP) || JSON.stringify(freshA) !== JSON.stringify(cachedA)) {
                     Cache.set("pimpinan", freshP);
-                    Cache.set("anggota", freshA);
+                    Cache.set("pengurus", freshA);
                     render(freshP, freshA);
                 }
             }).catch(() => {});
@@ -284,9 +285,9 @@ const Home = {
         </div>`;
 
         try {
-            const [freshP, freshA] = await Promise.all([getPimpinan(), getAnggota()]);
+            const [freshP, freshA] = await Promise.all([getPimpinan(), getPengurus()]);
             Cache.set("pimpinan", freshP);
-            Cache.set("anggota", freshA);
+            Cache.set("pengurus", freshA);
             render(freshP, freshA);
         } catch (err) {
             console.error("Gagal muat arsip:", err);
@@ -404,18 +405,20 @@ const Home = {
                     </div>
                 </div>
                 <div class="struktur-modal-body">
-                    <div class="struktur-foto">
+                    <div class="struktur-foto media-muat media-muat-tinggi">
                         <img src="${getFoto(foto)}" alt="Angkatan ${tahun}" loading="lazy"
                              onclick="Home.bukaFotoAngkatan(${tahun}, 'angkatan')"
-                             onerror="this.remove();">
+                             onload="this.closest('.media-muat').classList.add('sudah-muat')"
+                             onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove();"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>
                     </div>
 
                     <div class="struktur-pimpinan">
                         <div class="pimp-card">
-                            <div class="pimp-photo">
+                            <div class="pimp-photo media-muat mini">
                                 <img src="${getFoto(pimpinan ? pimpinan.ketua_foto : "")}" alt="Ketua OSIS"
                                      onclick="Home.bukaFotoAngkatan(${tahun}, 'ketua')"
-                                     onerror="this.remove();">
+                                     onload="this.closest('.media-muat').classList.add('sudah-muat')"
+                                     onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove();"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>
                             </div>
                             <div class="pimp-info">
                                 ${isEdit ? `<b contenteditable="true" spellcheck="false" data-pimp-field="ketua_nama" data-tahun="${tahun}">${pimpinan && pimpinan.ketua_nama ? escapeHtml(pimpinan.ketua_nama) : ""}</b>` : `<b>${pimpinan && pimpinan.ketua_nama ? escapeHtml(pimpinan.ketua_nama) : "Belum Ada"}</b>`}
@@ -423,10 +426,11 @@ const Home = {
                             </div>
                         </div>
                         <div class="pimp-card">
-                            <div class="pimp-photo">
+                            <div class="pimp-photo media-muat mini">
                                 <img src="${getFoto(pimpinan ? pimpinan.wakil_foto : "")}" alt="Wakil Ketua"
                                      onclick="Home.bukaFotoAngkatan(${tahun}, 'wakil')"
-                                     onerror="this.remove();">
+                                     onload="this.closest('.media-muat').classList.add('sudah-muat')"
+                                     onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove();"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>
                             </div>
                             <div class="pimp-info">
                                 ${isEdit ? `<b contenteditable="true" spellcheck="false" data-pimp-field="wakil_nama" data-tahun="${tahun}">${pimpinan && pimpinan.wakil_nama ? escapeHtml(pimpinan.wakil_nama) : ""}</b>` : `<b>${pimpinan && pimpinan.wakil_nama ? escapeHtml(pimpinan.wakil_nama) : "Belum Ada"}</b>`}

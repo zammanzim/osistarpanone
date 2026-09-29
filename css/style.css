@@ -695,6 +695,11 @@ a.user-chip:active {
   transform: translate(3px, 3px);
   box-shadow: none !important;
 }
+/* Tombol lagi sibuk (login/daftar, dsb.): redup + tidak bisa diklik dua kali. */
+.btn:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
 .btn-red {
   background: var(--red);
   color: #fff;
@@ -1294,6 +1299,9 @@ a.user-chip:active {
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s;
+}
+.prestasi-card > .media-muat {
+  height: 100%;
 }
 .prestasi-card:hover img {
   transform: scale(1.05);
@@ -5609,6 +5617,82 @@ body.edit-mode .prestasi-card .foto-del-btn {
   border-top: 3px solid var(--ink);
   border-bottom: 3px solid var(--ink);
   cursor: zoom-in;
+}
+/* Thumbnail loading generik SEMUA gambar: bungkus <img> dengan .media-muat
+   + <span class="media-muat-loading"><span class="spinner"></span></span>,
+   img dikasih onload="this.closest('.media-muat').classList.add('sudah-muat')".
+   .tinggi = cangkok ruang (feed/kartu besar), .mini = spinner kecil (thumb). */
+.media-muat {
+  position: relative;
+  display: block;
+}
+.media-muat-tinggi {
+  min-height: 180px;
+}
+.media-muat-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(26, 19, 20, 0.05) 0 14px,
+      transparent 14px 28px
+    ),
+    var(--paper-2);
+  z-index: 2;
+}
+.media-muat-loading .spinner {
+  margin: 0;
+}
+.media-muat.mini .media-muat-loading .spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2.5px;
+}
+.sudah-muat > .media-muat-loading {
+  display: none;
+}
+.sudah-muat.media-muat-tinggi {
+  min-height: 0;
+}
+/* Box pengurus yang jadi wrapper tetap flex (inisial tetap tengah) */
+.pg-foto.media-muat,
+.pg-pop-foto.media-muat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Thumbnail loading: kotak bergaris + spinner sampai gambar siap */
+.poster-media {
+  position: relative;
+  min-height: 200px;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(26, 19, 20, 0.05) 0 14px,
+      transparent 14px 28px
+    ),
+    var(--paper-2);
+}
+.poster-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.poster-loading .spinner {
+  margin: 0;
+}
+.poster-media.sudah-muat {
+  min-height: 0;
+}
+.poster-media.sudah-muat .poster-loading {
+  display: none;
 }
 .poster-body {
   padding: 10px 12px 12px;

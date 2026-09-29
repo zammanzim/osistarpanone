@@ -324,6 +324,7 @@ const OsisSidebar = {
                 .osis-sidebar-head h2 { font-size: 1rem; font-weight: 900; line-height: 1.1; }
                 .osis-sidebar-head p { font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--red-dark); }
                 .osis-sidebar nav { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 7px; }
+                .osis-side-sec { font-size: .64rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--gray); padding: 8px 4px 0; display: flex; align-items: center; gap: 6px; }
                 .osis-sidebar-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 2.5px solid var(--ink); border-radius: 12px; background: var(--white); font-size: .82rem; font-weight: 800; text-decoration: none; color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
                 .osis-sidebar-link:active { transform: translate(1px,1px); box-shadow: none; }
                 .osis-sidebar-link.active { background: var(--red); color: #fff; }
@@ -562,23 +563,33 @@ const OsisSidebar = {
       nav.innerHTML = "<div class=\"side-hint\">Menu kosong.</div>";
       return;
     }
-    nav.innerHTML = items
-      .map((m) => {
-        const slug = OsisSidebar.slugHref(m.href);
-        const aktif = slug && slug === cur ? " active" : "";
-        return (
-          "<a href=\"" +
-          OsisSidebar.esc(m.href) +
-          "\" class=\"osis-sidebar-link" +
-          aktif +
-          "\"><span class=\"sic\"><i class=\"" +
-          OsisSidebar.esc(m.icon) +
-          "\"></i></span>" +
-          OsisSidebar.esc(m.label) +
-          "</a>"
-        );
-      })
-      .join("");
+    const linkHtml = (m) => {
+      const slug = OsisSidebar.slugHref(m.href);
+      const aktif = slug && slug === cur ? " active" : "";
+      return (
+        "<a href=\"" +
+        OsisSidebar.esc(m.href) +
+        "\" class=\"osis-sidebar-link" +
+        aktif +
+        "\"><span class=\"sic\"><i class=\"" +
+        OsisSidebar.esc(m.icon) +
+        "\"></i></span>" +
+        OsisSidebar.esc(m.label) +
+        "</a>"
+      );
+    };
+    // Pisah: menu khusus super admin di atas, sisanya di bawah.
+    const superItems = items.filter((m) => m.super);
+    const biasaItems = items.filter((m) => !m.super);
+    if (!superItems.length) {
+      nav.innerHTML = biasaItems.map(linkHtml).join("");
+      return;
+    }
+    nav.innerHTML =
+      "<div class=\"osis-side-sec\"><i class=\"fa-solid fa-crown\"></i> Super Admin</div>" +
+      superItems.map(linkHtml).join("") +
+      "<div class=\"osis-side-sec\"><i class=\"fa-solid fa-grip\"></i> Menu</div>" +
+      (biasaItems.map(linkHtml).join("") || "<div class=\"side-hint\">Kosong.</div>");
   },
 
   renderEditor(nav) {

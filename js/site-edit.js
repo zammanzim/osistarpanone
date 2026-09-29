@@ -146,6 +146,7 @@ const SiteEdit = {
             try { if (window.Notice && Notice.hide) Notice.hide("editmode"); } catch {}
         }
         HeaderMore.refresh();
+        if (typeof NavAtur !== "undefined" && NavAtur.refresh) NavAtur.refresh();
         if (typeof Prestasi !== "undefined" && Prestasi.render) Prestasi.render();
         if (typeof Kegiatan !== "undefined" && Kegiatan.render) Kegiatan.render();
         if (typeof Galeri !== "undefined" && Galeri.render) Galeri.render();
@@ -376,7 +377,7 @@ const SiteEdit = {
             const nama = namaEl ? namaEl.textContent.trim() : orig.nama;
             const jabatan = jabEl ? jabEl.textContent.trim() : orig.jabatan;
             if (nama !== orig.nama || jabatan !== orig.jabatan) {
-                saves.push(updateAnggota(parseInt(id, 10), { nama, jabatan, urutan: orig.urutan }));
+                saves.push(updatePengurus(parseInt(id, 10), { nama, jabatan, urutan: orig.urutan }));
             }
         });
 
@@ -386,12 +387,12 @@ const SiteEdit = {
             const nama = chip.querySelector('[data-field="nama"]')?.textContent.trim() || "";
             const jabatan = chip.querySelector('[data-field="jabatan"]')?.textContent.trim() || "";
             if (!nama || !jabatan) return;
-            saves.push(tambahAnggota({ tahun: parseInt(tahun, 10), nama, jabatan, urutan: 99 }));
+            saves.push(tambahPengurus({ tahun: parseInt(tahun, 10), nama, jabatan, urutan: 99 }));
         });
 
         // anggota yang di-X — dieksekusi bareng autosave pas popup ditutup
         const hapusIds = [...(SiteEdit.pendingHapusAnggota[key] || [])];
-        const hapusPromises = hapusIds.map(id => hapusAnggota(parseInt(id, 10)));
+        const hapusPromises = hapusIds.map(id => hapusPengurus(parseInt(id, 10)));
 
         const promises = [];
         if (pimpChanged) {
@@ -426,7 +427,7 @@ const SiteEdit = {
             // refresh anggota cache from DB biar urutan konsisten
             if ((saves.length > 0 || hapusPromises.length > 0) && typeof supa !== "undefined") {
                 try {
-                    const { data } = await supa.from("anggota").select("*").eq("tahun", parseInt(tahun, 10)).order("urutan");
+                    const { data } = await supa.from("pengurus").select("*").eq("tahun", parseInt(tahun, 10)).order("urutan");
                     if (typeof Home !== "undefined") Home.cacheAnggota[key] = data || [];
                 } catch (e) {}
             } else if (hapusPromises.length > 0 && typeof Home !== "undefined" && Home.cacheAnggota[key]) {
@@ -524,16 +525,16 @@ const SiteEdit = {
         if (!nama || !jabatan) { showToast("Nama & jabatan wajib diisi", "error"); return; }
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
             try {
-                await Outbox.enqueue({ modul: "anggota", op: "update",
-                    label: "Ubah anggota: " + String(nama).slice(0, 42),
+                await Outbox.enqueue({ modul: "pengurus", op: "update",
+                    label: "Ubah pengurus: " + String(nama).slice(0, 42),
                     payload: { id, tahun: parseInt(tahun, 10), nama, jabatan, urutan },
-                    files: [], cacheKeys: ["anggota"] });
+                    files: [], cacheKeys: ["pengurus"] });
             } catch (e) { showToast(e.message, "error"); return; }
             Outbox.toastAntre();
             return;
         }
         try {
-            await updateAnggota(id, { nama, jabatan, urutan });
+            await updatePengurus(id, { nama, jabatan, urutan });
             // update cache
             if (typeof Home !== "undefined" && Home.cacheAnggota[String(tahun)]) {
                 const list = Home.cacheAnggota[String(tahun)];
@@ -555,7 +556,7 @@ const SiteEdit = {
         const yakin = await showPopup("Hapus anggota ini?", "confirm");
         if (!yakin) return;
         try {
-            await hapusAnggota(id);
+            await hapusPengurus(id);
             if (typeof Home !== "undefined" && Home.cacheAnggota[String(tahun)]) {
                 Home.cacheAnggota[String(tahun)] = Home.cacheAnggota[String(tahun)].filter(a => String(a.id) !== String(id));
             }
@@ -575,12 +576,12 @@ const SiteEdit = {
         const urutan = parseInt(document.getElementById(`newAnggotaUrutan-${tahun}`)?.value, 10) || 99;
         if (!nama || !jabatan) { showToast("Nama & jabatan wajib diisi", "error"); return; }
         try {
-            await tambahAnggota({ tahun: parseInt(tahun,10), nama, jabatan, urutan });
+            await tambahPengurus({ tahun: parseInt(tahun,10), nama, jabatan, urutan });
             // update cache: fetch ulang atau push
             if (typeof Home !== "undefined") {
                 if (!Home.cacheAnggota[String(tahun)]) Home.cacheAnggota[String(tahun)] = [];
                 // id belum tau, reload dari DB biar akurat
-                const { data } = await supa.from("anggota").select("*").eq("tahun", parseInt(tahun,10)).order("urutan");
+                const { data } = await supa.from("pengurus").select("*").eq("tahun", parseInt(tahun,10)).order("urutan");
                 Home.cacheAnggota[String(tahun)] = data || [];
             }
             showToast("Anggota ditambah!", "success");

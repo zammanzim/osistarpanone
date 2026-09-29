@@ -100,7 +100,7 @@ const Prestasi = {
         const isEdit = (typeof OsisAuth !== "undefined" && OsisAuth.bisa && OsisAuth.bisa("prestasi"));
         return `
             <div class="prestasi-card" data-prestasi-id="${item.id}" style="position:relative">
-                <img src="${getFoto(cover)}" alt="${tag || "Prestasi"}" loading="lazy" onerror="this.style.display='none'" onclick="Prestasi.bukaPopup(${item.id})">
+                <div class="media-muat media-muat-tinggi"><img src="${getFoto(cover)}" alt="${tag || "Prestasi"}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'" onclick="Prestasi.bukaPopup(${item.id})"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></div>
                 ${tag || isEdit ? `<span class="prestasi-tag" data-prestasi-tag="${item.id}" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false">${tag || (isEdit ? "Tag" : "")}</span>` : ""}
                 <button class="foto-del-btn" onclick="event.stopPropagation(); Prestasi.hapus(${item.id})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button>
             </div>`;

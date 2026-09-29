@@ -338,8 +338,8 @@ const Galeri = {
         let fotoHtml = "";
         fotos.forEach((path, idx) => {
             fotoHtml += `
-                <div class="item" data-foto-idx="${idx}" onclick="Galeri.bukaPopup(${item.id}, ${idx})">
-                    <img src="${getFoto(path)}" alt="${judul}" loading="lazy">
+                <div class="item media-muat" data-foto-idx="${idx}" onclick="Galeri.bukaPopup(${item.id}, ${idx})">
+                    <img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>
                     <button class="foto-del-btn" onclick="event.stopPropagation(); Galeri.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button>
                 </div>`;
         });

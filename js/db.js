@@ -474,13 +474,37 @@ async function getPimpinan() {
   return data;
 }
 
-// Anggota semua tahun, urut jabatan
+// Anggota simple semua tahun (nama, kelas, tahun, jabatan, username) — urut nama A-Z.
+// Dipakai absen & admin anggota. Biodata lengkap ada di tabel pengurus.
 async function getAnggota() {
   const { data, error } = await supa
     .from("anggota")
+    .select("id, tahun, nama, jabatan, kelas, username, created_at")
+    .order("tahun", { ascending: true })
+    .order("nama", { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+// Pengurus semua tahun (biodata lengkap) — urut jabatan/urutan.
+// Dipakai halaman pengurus, homepage struktur & dashboard.
+async function getPengurus() {
+  const { data, error } = await supa
+    .from("pengurus")
     .select("*")
     .order("tahun", { ascending: true })
     .order("urutan", { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+// Periode + status aktif (tabel periode) — nentuin tahun mana yang dipakai
+// roster absen. Cuma tahun aktif yang muncul (cth: 2026 & 2027 aktif).
+async function getPeriode() {
+  const { data, error } = await supa
+    .from("periode")
+    .select("tahun, aktif")
+    .order("tahun", { ascending: true });
   if (error) throw error;
   return data;
 }
@@ -2742,22 +2766,13 @@ async function hapusPimpinan(tahun) {
   Cache.del("pimpinan");
 }
 
+// Anggota SIMPLE: cuma nama, jabatan, kelas, username (+ tahun).
+// Dipakai absen & admin anggota. Tanpa urutan/foto/biodata (sort nama A-Z).
 async function tambahAnggota(row) {
-  const args = {
+  const { data, error } = await supa.rpc("tambah_anggota", {
     p_user_id: _uid(), p_tahun: row.tahun, p_nama: row.nama || "",
-    p_jabatan: row.jabatan || "", p_urutan: row.urutan ?? 99, p_foto: row.foto || "",
-    p_panggilan: row.panggilan || "", p_ttl: row.ttl || "",
-    p_visi: row.visi || "", p_misi: row.misi || "",
-    p_ig: row.ig || "", p_wa: row.wa || "", p_tiktok: row.tiktok || "",
-    p_motto: row.motto || "", p_kelas: row.kelas || "", p_username: row.username || ""
-  };
-  let data, error;
-  ({ data, error } = await supa.rpc("tambah_anggota", args));
-  if (error && /p_(panggilan|ttl|visi|misi|ig|wa|tiktok|motto|kelas|username)/i.test(error.message || "")) {
-    // Migrasi biodata belum di-run — simpan field lama saja
-    ["p_panggilan", "p_ttl", "p_visi", "p_misi", "p_ig", "p_wa", "p_tiktok", "p_motto", "p_kelas", "p_username"].forEach(k => delete args[k]);
-    ({ data, error } = await supa.rpc("tambah_anggota", args));
-  }
+    p_jabatan: row.jabatan || "", p_kelas: row.kelas || "", p_username: row.username || ""
+  });
   if (error) throw error;
   cekId(data);
   Cache.del("anggota");
@@ -2765,25 +2780,13 @@ async function tambahAnggota(row) {
 }
 
 async function updateAnggota(id, row) {
-  // Field biodata yang TIDAK disertakan dikirim null = jangan ubah.
-  // (Lindungi pemanggil parsial cth. site-edit dari menghapus data.)
-  const bio = (k) => (k in row ? row[k] || "" : null);
   const args = {
     p_user_id: _uid(), p_id: id, p_nama: row.nama || "",
-    p_jabatan: row.jabatan || "", p_urutan: row.urutan ?? 99,
-    p_foto: ("foto" in row) ? (row.foto || "") : null,
-    p_panggilan: bio("panggilan"), p_ttl: bio("ttl"),
-    p_visi: bio("visi"), p_misi: bio("misi"),
-    p_ig: bio("ig"), p_wa: bio("wa"), p_tiktok: bio("tiktok"),
-    p_motto: bio("motto"), p_kelas: bio("kelas"), p_username: bio("username")
+    p_jabatan: row.jabatan || "",
+    p_kelas: ("kelas" in row) ? (row.kelas || "") : null,
+    p_username: ("username" in row) ? (row.username || "") : null
   };
-  let data, error;
-  ({ data, error } = await supa.rpc("update_anggota", args));
-  if (error && /p_(panggilan|ttl|visi|misi|ig|wa|tiktok|motto|kelas|username)/i.test(error.message || "")) {
-    // Migrasi biodata belum di-run — simpan field lama saja
-    ["p_panggilan", "p_ttl", "p_visi", "p_misi", "p_ig", "p_wa", "p_tiktok", "p_motto", "p_kelas", "p_username"].forEach(k => delete args[k]);
-    ({ data, error } = await supa.rpc("update_anggota", args));
-  }
+  const { data, error } = await supa.rpc("update_anggota", args);
   if (error) throw error;
   cekOk(data);
   Cache.del("anggota");
@@ -2807,9 +2810,65 @@ async function getAnggotaSaya() {
   return data || null;
 }
 
+// =========================================================================
+// PENGURUS — biodata lengkap (tabel pengurus, hasil rename dari anggota lama)
+// Dipakai halaman pengurus, homepage struktur & dashboard.
+// =========================================================================
+async function tambahPengurus(row) {
+  const args = {
+    p_user_id: _uid(), p_tahun: row.tahun, p_nama: row.nama || "",
+    p_jabatan: row.jabatan || "", p_urutan: row.urutan ?? 99, p_foto: row.foto || "",
+    p_panggilan: row.panggilan || "", p_ttl: row.ttl || "",
+    p_visi: row.visi || "", p_misi: row.misi || "",
+    p_ig: row.ig || "", p_wa: row.wa || "", p_tiktok: row.tiktok || "",
+    p_motto: row.motto || "", p_kelas: row.kelas || "", p_username: row.username || ""
+  };
+  const { data, error } = await supa.rpc("tambah_pengurus", args);
+  if (error) throw error;
+  cekId(data);
+  Cache.del("pengurus");
+  return data;
+}
+
+async function updatePengurus(id, row) {
+  // Field biodata yang TIDAK disertakan dikirim null = jangan ubah.
+  const bio = (k) => (k in row ? row[k] || "" : null);
+  const args = {
+    p_user_id: _uid(), p_id: id, p_nama: row.nama || "",
+    p_jabatan: row.jabatan || "", p_urutan: row.urutan ?? 99,
+    p_foto: ("foto" in row) ? (row.foto || "") : null,
+    p_panggilan: bio("panggilan"), p_ttl: bio("ttl"),
+    p_visi: bio("visi"), p_misi: bio("misi"),
+    p_ig: bio("ig"), p_wa: bio("wa"), p_tiktok: bio("tiktok"),
+    p_motto: bio("motto"), p_kelas: bio("kelas"), p_username: bio("username")
+  };
+  const { data, error } = await supa.rpc("update_pengurus", args);
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("pengurus");
+}
+
+async function hapusPengurus(id) {
+  const { data, error } = await supa.rpc("hapus_pengurus", {
+    p_user_id: _uid(), p_id: id
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("pengurus");
+}
+
+// Baris pengurus milik user yang login (cocok username). null kalau tidak ada.
+async function getPengurusSaya() {
+  const uid = _uid();
+  if (!uid) return null;
+  const { data, error } = await supa.rpc("pengurus_saya", { p_user_id: uid });
+  if (error) throw error;
+  return data || null;
+}
+
 // Update biodata MILIK SENDIRI (nama & jabatan dikunci di server).
-async function updateAnggotaSendiri(id, row) {
-  const { data, error } = await supa.rpc("update_anggota_sendiri", {
+async function updatePengurusSendiri(id, row) {
+  const { data, error } = await supa.rpc("update_pengurus_sendiri", {
     p_user_id: _uid(), p_id: id,
     p_panggilan: row.panggilan || "", p_ttl: row.ttl || "", p_kelas: row.kelas || "",
     p_visi: row.visi || "", p_misi: row.misi || "",
@@ -2818,7 +2877,7 @@ async function updateAnggotaSendiri(id, row) {
   });
   if (error) throw error;
   cekOk(data);
-  Cache.del("anggota");
+  Cache.del("pengurus");
 }
 
 async function tambahSekbid(row) {

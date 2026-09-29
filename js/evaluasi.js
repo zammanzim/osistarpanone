@@ -657,7 +657,7 @@ const Evaluasi = {
         const dok = Array.isArray(e.dokumentasi) ? e.dokumentasi : [];
         const dokHtml = dok.length ? `<div class="evaluasi-fotos">${dok.map(d => {
             const p = typeof d === "string" ? d : d.path;
-            return `<img src="${getFoto(p)}" alt="" loading="lazy" style="width:110px; height:110px; object-fit:cover; border:2px solid var(--ink); border-radius:10px" onclick="Home && Home.bukaFotoPopup && Home.bukaFotoPopup(this, '${escapeHtml(e.nama_kegiatan).replace(/'/g, "\\'")}', '')">`;
+            return `<span class="media-muat mini" style="width:110px;height:110px;flex-shrink:0"><img src="${getFoto(p)}" alt="" loading="lazy" style="width:110px; height:110px; object-fit:cover; border:2px solid var(--ink); border-radius:10px" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" onclick="Home && Home.bukaFotoPopup && Home.bukaFotoPopup(this, '${escapeHtml(e.nama_kegiatan).replace(/'/g, "\\'")}', '')"><span class="media-muat-loading" aria-hidden="true" style="border-radius:10px"><span class="spinner"></span></span></span>`;
         }).join("")}</div>` : `<div class="detail-text" style="opacity:.6">Tidak ada dokumentasi.</div>`;
 
         // ringkasan keuangan dari modul kas (read-only, kalau proker dikaitkan)

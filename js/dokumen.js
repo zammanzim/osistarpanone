@@ -567,7 +567,7 @@ const Dokumen = {
         } else {
             const pv = Dokumen.bisaPreview(d);
             const url = Dokumen.fileUrl(d);
-            if (pv === "img") preview = `<div class="dok-preview-box"><img src="${url}" alt=""></div>`;
+            if (pv === "img") preview = `<div class="dok-preview-box media-muat media-muat-tinggi"><img src="${url}" alt="" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></div>`;
             else if (pv === "pdf") preview = `<div class="dok-preview-box"><iframe src="${url}" title="Preview PDF"></iframe></div>`;
             else preview = `<div class="detail-text" style="opacity:.7">Preview tidak tersedia untuk tipe .${escapeHtml(ext || "?")} — klik Download buat buka file.</div>`;
         }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Absensi Pengurus — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=18" />
+    <link rel="stylesheet" href="../css/style.css?v=19" />
 <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
 <link rel="manifest" href="../manifest.webmanifest" />
@@ -230,6 +230,29 @@
       }
       .tipe-tabs button.on-tidak { background: #ffe9e9; color: var(--red-dark); box-shadow: 3px 3px 0 var(--ink); }
       .tipe-tabs button.on-hadir { background: #d6f5d6; color: #146314; box-shadow: 3px 3px 0 var(--ink); }
+      /* Fokus tahun roster (2026 / 2027) di bawah absensi-head */
+      .tahun-tabs {
+        display: flex;
+        gap: 8px;
+      }
+      .tahun-tabs button {
+        flex: 1;
+        padding: 10px;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        background: var(--white);
+        font-family: inherit;
+        font-size: 0.84rem;
+        font-weight: 900;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .tahun-tabs button.on {
+        background: var(--ink);
+        color: #fff;
+        box-shadow: 3px 3px 0 var(--red);
+      }
+      .tahun-tabs button.on i { color: var(--yellow); }
       .kas-scroll { overflow-x: auto; }
       table.kas-tabel {
         width: 100%;
@@ -346,6 +369,32 @@
         align-items: center;
         gap: 6px;
       }
+      /* Pemisah tahun (periode aktif) di daftar Absen Langsung & form Tambah */
+      .absen-tahun {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--ink);
+        color: #fff;
+        border-radius: 10px;
+        padding: 6px 12px;
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        margin: 8px 0 6px;
+      }
+      .absen-tahun:first-child { margin-top: 0; }
+      .absen-tahun i { color: var(--yellow); }
+      .absen-tahun .cnt {
+        margin-left: auto;
+        font-size: 0.62rem;
+        font-weight: 900;
+        background: var(--yellow);
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 1px 9px;
+        white-space: nowrap;
+      }
       .absen-list {
         display: flex;
         flex-direction: column;
@@ -434,8 +483,9 @@
     <script src="../js/show-popup.js?v=10" defer></script>
     <script src="../js/osis-auth.js?v=17" defer></script>
     <script src="../js/osis-sidebar.js?v=13" defer></script>
+    <script src="../js/osis-header.js?v=10" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/absensi.js?v=15" defer></script>
+    <script src="../js/absensi.js?v=16" defer></script>
   <script src="../js/pwa.js?v=10" defer></script>
   </head>
   <body>
@@ -465,6 +515,9 @@
           <button class="btn btn-white" id="btnAbsenLangsung" style="display: none"><i class="fa-solid fa-bolt"></i> Absen Langsung</button>
         </div>
       </div>
+
+      <!-- Fokus tahun roster absen (periode aktif). Selalu 1 kepilih, default kiri. -->
+      <div class="tahun-tabs" id="tahunTabs" style="display: none"></div>
 
       <div class="stat-grid">
         <div class="stat-card izin"><span class="lbl"><i class="fa-solid fa-envelope-open-text"></i> Izin</span><b id="statIzin">-</b></div>
@@ -497,8 +550,11 @@
         </div>
         <div class="field"><label>Tanggal</label><input type="date" id="absTanggal" class="admin-input" /></div>
         <div class="field"><label>Nama kegiatan</label><input type="text" id="absKegiatan" class="admin-input" placeholder="cth: Kumpulan rutin" maxlength="120" /></div>
-        <div id="absensiRows" style="margin-top:10px"></div>
-        <button class="btn btn-white btn-sm" id="btnTambahBaris"><i class="fa-solid fa-plus"></i> Tambah pengurus</button>
+        <div class="field" style="margin-top:10px"><label>Cari pengurus</label><input type="text" id="tambahSearch" class="admin-input" placeholder="Ketik nama... (ketuk buat pilih)" autocomplete="off" /></div>
+        <div class="absen-sec"><i class="fa-regular fa-circle"></i> Ketuk buat pilih (<span id="tambahBelumCount">0</span>)</div>
+        <div class="absen-list" id="tambahBelum"></div>
+        <div class="absen-sec"><i class="fa-solid fa-user-xmark"></i> Tidak hadir (<span id="tambahPilihCount">0</span>) — isi status + alasan</div>
+        <div id="absensiRows" style="margin-top:6px"></div>
         <div class="form-actions-row" style="margin-top: 12px">
           <button class="btn btn-white" id="btnBatalAbsensi">Batal</button>
           <button class="btn btn-red" id="btnSimpanAbsensi"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>

@@ -27,7 +27,7 @@
 // (path relatif) tidak perlu diubah.
 const FOLDER_BOLEH = new Set([
   "gallery", "web", "angkatan", "prestasi", "kegiatan", "agenda",
-  "profil", "anggota", "sekbid", "pimpinan", "notulensi", "proker",
+  "profil", "anggota", "pengurus", "sekbid", "pimpinan", "notulensi", "proker",
   "program", "dokumen", "kas", "evaluasi", "formulir", "polling", "poster",
   "moments", "feed",
 ]);

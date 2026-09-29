@@ -233,7 +233,7 @@ const Kegiatan = {
           idx === 0 && (badge || isEdit)
             ? `<span class="bento-badge" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="BADGE">${badge}</span>`
             : "";
-        return `<div class="item" data-foto-idx="${idx}"><img src="${getFoto(path)}" alt="${judul}" loading="lazy" onerror="this.style.display='none'">${badgeHtml}<button class="foto-del-btn" onclick="event.stopPropagation(); Kegiatan.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button></div>`;
+        return `<div class="item media-muat" data-foto-idx="${idx}"><img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>${badgeHtml}<button class="foto-del-btn" onclick="event.stopPropagation(); Kegiatan.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button></div>`;
       })
       .join("");
     return `

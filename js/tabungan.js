@@ -13,6 +13,12 @@ const Tabungan = {
     editingId: null,
     detailId: null,
     jenisForm: "masuk",
+    // Roster nama dari data anggota (periode aktif), buat pilih penabung.
+    anggota: [],
+    periodeTahun: [],
+    namaQ: "",
+    // Nama-nama milik user login (akun + anggota + pengurus) — boleh ceklis sendiri.
+    namaSaya: [],
 
     async init() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
@@ -29,6 +35,17 @@ const Tabungan = {
         document.getElementById("filterQ")?.addEventListener("input", () => Tabungan.bacaFilter());
         document.getElementById("btnBatalTabungan")?.addEventListener("click", () => Tabungan.tutupForm());
         document.getElementById("btnSimpanTabungan")?.addEventListener("click", () => Tabungan.simpan());
+        // Pilih nama dari data anggota (ketuk, bukan ketik bebas)
+        document.getElementById("tabNamaSearch")?.addEventListener("input", () => {
+            Tabungan.namaQ = document.getElementById("tabNamaSearch").value || "";
+            Tabungan.renderNamaList();
+        });
+        document.getElementById("tabNamaListBox")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-pilih-nama]");
+            if (b) Tabungan.pilihNama(decodeURIComponent(b.dataset.pilihNama || ""));
+        });
+        // Nominal: ketik angka -> tampil titik ribuan otomatis
+        if (typeof ikatRupiah === "function") ikatRupiah("tabNominal");
         document.getElementById("btnEditDariDetail")?.addEventListener("click", () => {
             const id = Tabungan.detailId;
             Tabungan.tutupDetail();
@@ -73,7 +90,37 @@ const Tabungan = {
                 collect: () => ({ jenis: Tabungan.jenisForm })
             });
         }
+        // Nama milik sendiri (buat ceklis tanpa akses kelola) — fail silent
+        Tabungan.muatNamaSaya();
         Tabungan.muat();
+    },
+
+    // Nama-nama milik user login: nama akun + nama anggota/pengurus yang
+    // tertaut username-nya. Cocok salah satu = baris milik sendiri.
+    async muatNamaSaya() {
+        const set = new Set();
+        const tambah = (n) => { n = String(n || "").trim().toLowerCase(); if (n) set.add(n); };
+        try {
+            const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+            if (u) tambah(u.nama);
+        } catch {}
+        try {
+            const [a, p] = await Promise.all([
+                (typeof getAnggotaSaya === "function" ? getAnggotaSaya() : Promise.resolve(null)).catch(() => null),
+                (typeof getPengurusSaya === "function" ? getPengurusSaya() : Promise.resolve(null)).catch(() => null)
+            ]);
+            if (a) tambah(a.nama);
+            if (p) tambah(p.nama);
+        } catch {}
+        Tabungan.namaSaya = [...set];
+        try { Tabungan.render(); } catch {}
+    },
+
+    // Baris ini milik user login?
+    milikSaya(r) {
+        if (!r) return false;
+        const k = String(r.nama || "").trim().toLowerCase();
+        return !!k && (Tabungan.namaSaya || []).includes(k);
     },
 
     setJenis(j) {
@@ -221,6 +268,10 @@ const Tabungan = {
         const strMinggu = keStr(minggu);
         const blnIni = keStr(now).slice(0, 7);
         const rows = Tabungan.cache || [];
+        const strHariIni = keStr(now);
+        const totalHarian = rows.reduce((a, r) => {
+            return a + (String(r.tanggal || "") === strHariIni ? Tabungan.nilai(r) : 0);
+        }, 0);
         const totalMinggu = rows.reduce((a, r) => {
             const t = String(r.tanggal || "");
             return a + ((t >= strSenin && t <= strMinggu) ? Tabungan.nilai(r) : 0);
@@ -231,6 +282,8 @@ const Tabungan = {
         setStat("statOrang", orang, "orang");
         const elTotal = document.getElementById("statTotal");
         if (elTotal) elTotal.textContent = Tabungan.rp(totalSemua);
+        const elHarian = document.getElementById("statHarian");
+        if (elHarian) elHarian.textContent = Tabungan.rp(totalHarian);
         const elMinggu = document.getElementById("statMinggu");
         if (elMinggu) elMinggu.textContent = Tabungan.rp(totalMinggu);
         const elBulan = document.getElementById("statBulan");
@@ -246,28 +299,35 @@ const Tabungan = {
             return;
         }
         const grups = Tabungan.grupPerOrang(data);
+        // Milik sendiri selalu paling atas, sisanya tetap A-Z
+        grups.sort((a, b) => (Tabungan.milikSaya({ nama: b.nama }) ? 1 : 0) - (Tabungan.milikSaya({ nama: a.nama }) ? 1 : 0));
         if (!grups.length) {
             wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Tabungan.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
             return;
         }
         wrap.innerHTML = grups.map(g => {
             const sudahSemua = g.rows.length > 0 && g.rows.every(r => !!r.cek);
+            // Label hijau di kanan atas kalau ini tabungan milik sendiri
+            const milik = Tabungan.milikSaya({ nama: g.nama });
             return `<div class="rekap-card" style="margin-bottom:12px">
-                <h3><i class="fa-solid fa-piggy-bank"></i> Tabungan — ${escapeHtml(g.nama)} <span class="jenis total" style="margin-left:auto">${Tabungan.rp(g.total)}${sudahSemua ? " ✓" : ""}</span></h3>
+                <h3><i class="fa-solid fa-piggy-bank"></i> Tabungan — ${escapeHtml(g.nama)} <span class="jenis total" style="margin-left:auto">${Tabungan.rp(g.total)}${sudahSemua ? " ✓" : ""}</span>${milik ? ` <span class="jenis milik"><i class="fa-solid fa-user-check"></i> Milik sendiri</span>` : ""}</h3>
                 <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Tanggal</th><th>Nominal</th><th>Total Semua</th><th>Ceklis</th>${boleh ? `<th style="text-align:right">Aksi</th>` : ""}</tr></thead><tbody>
-                ${g.rows.map((r, i) => `<tr data-tab-row="${r.id}">
+                ${g.rows.map((r, i) => {
+                    // Kelola (akses tabungan) boleh ceklis siapa saja; lainnya cuma milik sendiri
+                    const bisaCek = boleh || Tabungan.milikSaya(r);
+                    return `<tr data-tab-row="${r.id}">
                     <td>${i + 1}</td>
                     <td>${escapeHtml(Tabungan.fmtTanggalPendek(r.tanggal))}${olehLabel(r) ? `<br>${olehLabel(r)}` : ""}</td>
                     <td><span class="jenis ${Tabungan.isKeluar(r) ? "keluar" : "masuk"}">${Tabungan.isKeluar(r) ? "−" : "+"} ${Tabungan.rp(r.nominal)}</span></td>
                     <td class="num">${Tabungan.rp(r._total)}</td>
-                    <td>${boleh
+                    <td>${bisaCek
                         ? `<button type="button" class="cek-btn ${r.cek ? "on" : ""}" data-tab-toggle="${r.id}" title="${r.cek ? "Sudah diceklis — klik untuk batalkan" : "Belum diceklis — klik untuk tandai"}"><i class="fa-solid ${r.cek ? "fa-check" : "fa-minus"}"></i></button>`
                         : `<span class="cek-btn ${r.cek ? "on" : ""}" style="cursor:default"><i class="fa-solid ${r.cek ? "fa-check" : "fa-minus"}"></i></span>`}</td>
                     ${boleh ? `<td><div class="row-act">
                         <button type="button" class="icon-btn" data-tab-edit="${r.id}" title="Edit" style="width:30px; height:30px; font-size:0.75rem; border-width:2px"><i class="fa-solid fa-pen"></i></button>
                         <button type="button" class="icon-btn" data-tab-del="${r.id}" title="Hapus" style="width:30px; height:30px; font-size:0.75rem; background:var(--red); color:#fff; border-width:2px"><i class="fa-solid fa-trash-can"></i></button>
                     </div></td>` : ""}
-                </tr>`).join("")}
+                </tr>`;}).join("")}
                 </tbody></table></div>
                 ${boleh ? `<div style="display:flex; justify-content:space-between; gap:8px; margin-top:10px">
                     <button class="btn btn-white btn-sm" data-tab-pdf="${encodeURIComponent(g.nama)}"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
@@ -290,11 +350,145 @@ const Tabungan = {
         Tabungan.bacaFilter();
     },
 
-    isiDatalist() {
-        const dl = document.getElementById("tabNamaList");
-        if (!dl) return;
-        const namaSet = [...new Set((Tabungan.cache || []).map(r => String(r.nama || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-        dl.innerHTML = namaSet.map(n => `<option value="${escapeHtml(n)}">`).join("");
+    // ============ NAMA DARI DATA ANGGOTA (ketuk, bukan ketik bebas) ============
+    // Roster = anggota periode AKTIF (tabel periode), fallback periode terbaru.
+    norm(s) {
+        return String(s || "").trim().toLowerCase();
+    },
+
+    // Cari per token: tiap kata kunci harus terkandung di nama.
+    cocokQuery(nama, q) {
+        const toks = Tabungan.norm(q).split(/\s+/).filter(Boolean);
+        if (!toks.length) return true;
+        const t = Tabungan.norm(nama);
+        return toks.every(k => t.includes(k));
+    },
+
+    async muatPeriode() {
+        try {
+            if (typeof getPeriode !== "function") return;
+            const cached = (typeof Cache !== "undefined") ? Cache.get("periode") : null;
+            if (cached && cached.length) {
+                Tabungan.pakaiPeriode(cached);
+                getPeriode().then(fresh => {
+                    if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
+                        Cache.set("periode", fresh);
+                        Tabungan.pakaiPeriode(fresh);
+                        if (Tabungan.anggota._cacheList) Tabungan.pakaiAnggota(Tabungan.anggota._cacheList);
+                        Tabungan.renderNamaList();
+                    }
+                }).catch(() => {});
+                return;
+            }
+            const fresh = await getPeriode();
+            if (typeof Cache !== "undefined") Cache.set("periode", fresh);
+            Tabungan.pakaiPeriode(fresh);
+        } catch (err) { console.error(err); }
+    },
+
+    pakaiPeriode(list) {
+        Tabungan.periodeTahun = (list || [])
+            .filter(p => p && p.aktif)
+            .map(p => parseInt(p.tahun, 10))
+            .filter(Number.isFinite)
+            .sort((a, b) => a - b);
+    },
+
+    async muatAnggota() {
+        try {
+            await Tabungan.muatPeriode();
+            const cached = (typeof Cache !== "undefined") ? Cache.get("anggota") : null;
+            if (cached && cached.length) {
+                Tabungan.pakaiAnggota(cached);
+                getAnggota().then(fresh => {
+                    if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
+                        Cache.set("anggota", fresh);
+                        Tabungan.pakaiAnggota(fresh);
+                        Tabungan.renderNamaList();
+                    }
+                }).catch(() => {});
+                return;
+            }
+            const fresh = await getAnggota();
+            if (typeof Cache !== "undefined") Cache.set("anggota", fresh);
+            Tabungan.pakaiAnggota(fresh);
+        } catch (err) {
+            console.error(err);
+            showToast("Gagal memuat anggota: " + err.message, "error");
+        }
+    },
+
+    // Nama unik per tahun, urut tahun lalu A-Z
+    pakaiAnggota(list) {
+        const bersih = (list || []).filter(a => a && String(a.nama || "").trim());
+        const aktif = (Tabungan.periodeTahun || []).filter(Number.isFinite);
+        let pakai;
+        if (aktif.length) {
+            pakai = bersih.filter(a => aktif.includes(parseInt(a.tahun, 10)));
+        } else {
+            const thns = [...new Set(bersih.map(a => parseInt(a.tahun, 10)).filter(Number.isFinite))].sort((a, b) => b - a);
+            const th = thns.length ? thns[0] : null;
+            pakai = th !== null ? bersih.filter(a => parseInt(a.tahun, 10) === th) : bersih;
+        }
+        const temu = new Set();
+        const jadi = [];
+        pakai.forEach(a => {
+            const nama = String(a.nama).trim();
+            const t = parseInt(a.tahun, 10);
+            const kunci = (Number.isFinite(t) ? t : "?") + "|" + nama.toLowerCase();
+            if (!nama || temu.has(kunci)) return;
+            temu.add(kunci);
+            jadi.push({ nama, tahun: Number.isFinite(t) ? t : null });
+        });
+        jadi.sort((x, y) => (x.tahun ?? 9999) - (y.tahun ?? 9999) || x.nama.localeCompare(y.nama));
+        Tabungan.anggota = jadi;
+        Tabungan.anggota._cacheList = list;
+    },
+
+    pilihNama(nama) {
+        nama = String(nama || "").trim();
+        if (!nama) return;
+        document.getElementById("tabNama").value = nama;
+        Tabungan.renderNamaList();
+        if (typeof FormPersist !== "undefined") FormPersist.touch("tabForm");
+    },
+
+    renderNamaList() {
+        const box = document.getElementById("tabNamaListBox");
+        if (!box) return;
+        if (!document.getElementById("tabForm")?.classList.contains("open")) return;
+        const dipilih = (document.getElementById("tabNama")?.value || "").trim();
+        const q = Tabungan.namaQ || "";
+        const saring = Tabungan.anggota.filter(o => Tabungan.cocokQuery(o.nama, q));
+        // Banner pilihan
+        const dp = document.getElementById("tabNamaDipilih");
+        if (dp) {
+            if (dipilih) {
+                const ketemu = Tabungan.anggota.find(o => Tabungan.norm(o.nama) === Tabungan.norm(dipilih));
+                dp.className = "tb-dipilih";
+                dp.innerHTML = `<span class="dot"><i class="fa-solid fa-check"></i></span> ${escapeHtml(dipilih)}<small>${ketemu && ketemu.tahun != null ? ketemu.tahun : "riwayat"}</small>`;
+            } else {
+                dp.className = "tb-dipilih kosong";
+                dp.innerHTML = `<span class="dot">○</span> Belum dipilih — ketuk nama di bawah`;
+            }
+        }
+        if (!saring.length) {
+            box.innerHTML = `<div class="pesan-empty">${Tabungan.anggota.length ? "Tidak ada nama yang cocok." : "Memuat anggota..."}</div>`;
+            return;
+        }
+        // Kelompok per tahun
+        const m = new Map();
+        saring.forEach(o => {
+            const t = o.tahun != null ? o.tahun : "?";
+            if (!m.has(t)) m.set(t, []);
+            m.get(t).push(o.nama);
+        });
+        box.innerHTML = [...m.entries()]
+            .sort((a, b) => (a[0] === "?" ? 9999 : a[0]) - (b[0] === "?" ? 9999 : b[0]))
+            .map(([t, names]) =>
+                `<div class="tb-tahun"><i class="fa-solid fa-calendar"></i> ${t === "?" ? "Tanpa tahun" : t}<span class="cnt">${names.length}</span></div>` +
+                names.map(n => `<button type="button" class="tb-item${Tabungan.norm(n) === Tabungan.norm(dipilih) ? " pilih" : ""}" data-pilih-nama="${encodeURIComponent(n)}"><span class="dot">${Tabungan.norm(n) === Tabungan.norm(dipilih) ? '<i class="fa-solid fa-check"></i>' : "○"}</span> ${escapeHtml(n)}</button>`).join("")
+            ).join("");
     },
 
     // Sembunyikan tombol aksi kalau tidak punya kendali atas halaman ini
@@ -316,9 +510,16 @@ const Tabungan = {
         document.getElementById("tabFormTitle").textContent = "Tambah Setoran";
         Tabungan.setJenis("masuk");
         document.getElementById("tabNama").value = prefillNama || "";
+        // Via "Tambah Setoran" per orang: nama sudah pasti — kunci, langsung
+        // tampil tanpa picker. Dibuka manual: picker seperti biasa.
+        const terkunci = !!prefillNama;
+        document.getElementById("tabNamaSearchWrap").style.display = terkunci ? "none" : "";
+        document.getElementById("tabNamaListBox").style.display = terkunci ? "none" : "";
+        Tabungan.namaQ = "";
+        document.getElementById("tabNamaSearch").value = "";
         document.getElementById("tabTanggal").value = Tabungan.hariIni();
         document.getElementById("tabNominal").value = "";
-        Tabungan.isiDatalist();
+        Tabungan.renderNamaList();
         // Pulihkan draft kalau ada (tutup form / refresh tidak sengaja).
         // Di-skip kalau dibuka via "Tambah Setoran" per orang (nama eksplisit).
         if (!prefillNama) {
@@ -329,14 +530,20 @@ const Tabungan = {
                     if (d.jenis) Tabungan.setJenis(d.jenis);
                     if (typeof d.tabNama === "string") document.getElementById("tabNama").value = d.tabNama;
                     if (typeof d.tabTanggal === "string" && d.tabTanggal) document.getElementById("tabTanggal").value = d.tabTanggal;
-                    if (d.tabNominal !== undefined && d.tabNominal !== null) document.getElementById("tabNominal").value = d.tabNominal;
+                    if (d.tabNominal !== undefined && d.tabNominal !== null) {
+                        document.getElementById("tabNominal").value = d.tabNominal;
+                        if (typeof formatRupiah === "function") formatRupiah(document.getElementById("tabNominal"));
+                    }
                     showToast("Draft dipulihkan.", "info");
                 }
             } catch {}
         }
         document.getElementById("tabForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById(prefillNama ? "tabNominal" : "tabNama")?.focus(), 80);
+        Tabungan.renderNamaList();
+        // Roster anggota buat daftar ketuk (cache dulu, segarkan background)
+        Tabungan.muatAnggota().then(() => Tabungan.renderNamaList()).catch(() => {});
+        setTimeout(() => document.getElementById(prefillNama ? "tabNominal" : "tabNamaSearch")?.focus(), 80);
     },
 
     editRow(id) {
@@ -350,11 +557,18 @@ const Tabungan = {
         document.getElementById("tabFormTitle").textContent = "Edit Setoran";
         Tabungan.setJenis(item.jenis);
         document.getElementById("tabNama").value = item.nama || "";
+        // Mode edit: picker tetap tampil (boleh ganti nama)
+        document.getElementById("tabNamaSearchWrap").style.display = "";
+        document.getElementById("tabNamaListBox").style.display = "";
+        Tabungan.namaQ = "";
+        document.getElementById("tabNamaSearch").value = "";
         document.getElementById("tabTanggal").value = item.tanggal || "";
         document.getElementById("tabNominal").value = item.nominal ?? "";
-        Tabungan.isiDatalist();
+        if (typeof formatRupiah === "function") formatRupiah(document.getElementById("tabNominal"));
         document.getElementById("tabForm").classList.add("open");
         document.body.style.overflow = "hidden";
+        Tabungan.renderNamaList();
+        Tabungan.muatAnggota().then(() => Tabungan.renderNamaList()).catch(() => {});
     },
 
     tutupForm() {
@@ -369,9 +583,12 @@ const Tabungan = {
         if (!OsisAuth.butuh("tabungan")) return;
         const nama = (document.getElementById("tabNama").value || "").trim();
         const tanggal = document.getElementById("tabTanggal").value || "";
-        const nominal = parseInt(document.getElementById("tabNominal").value, 10);
+        // Angka murni tanpa titik (tampilan "10.000" -> 10000 ke DB)
+        const nominal = (typeof parseRupiah === "function")
+            ? parseRupiah(document.getElementById("tabNominal").value)
+            : (parseInt(document.getElementById("tabNominal").value, 10) || 0);
         const jenis = Tabungan.jenisForm;
-        if (!nama) { showToast("Nama wajib diisi.", "error"); return; }
+        if (!nama) { showToast("Pilih nama penabung dari daftar.", "error"); return; }
         if (!tanggal) { showToast("Tanggal wajib diisi.", "error"); return; }
         if (!nominal || nominal <= 0) { showToast("Nominal harus lebih dari 0.", "error"); return; }
         const id = Tabungan.editingId || (document.getElementById("tabId").value ? parseInt(document.getElementById("tabId").value, 10) : null);
@@ -417,16 +634,21 @@ const Tabungan = {
     async toggleCek(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") return;
-        if (!OsisAuth.butuh("tabungan")) return;
         const item = (Tabungan.cache || []).find(r => String(r.id) === String(id));
         if (!item) return;
+        // Kelola (akses tabungan) boleh ceklis siapa saja; lainnya cuma milik sendiri
+        if (!(OsisAuth.bisa("tabungan") || Tabungan.milikSaya(item))) {
+            showToast("Kamu cuma bisa ceklis tabungan sendiri.", "error");
+            return;
+        }
         try {
             await toggleTabunganCek(u.id, id, !item.cek);
             showToast(!item.cek ? "Ditandai sudah diceklis." : "Ceklis dibatalkan.", "success");
             Tabungan.segarkan();
         } catch (err) {
             console.error(err);
-            showToast("Gagal update ceklis: " + err.message, "error");
+            const msg = String((err && err.message) || err || "");
+            showToast("Gagal update ceklis: " + (/ERR_NO_AUTH/i.test(msg) ? "kamu cuma bisa ceklis tabungan sendiri" : msg), "error");
             Tabungan.segarkan();
         }
     },

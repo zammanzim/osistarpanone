@@ -510,7 +510,7 @@ const Notulensi = {
         const lamp = Array.isArray(a.lampiran) ? a.lampiran : [];
         const lampHtml = lamp.length ? `<div class="notulensi-fotos">${lamp.map(l => {
             const p = typeof l === "string" ? l : l.path;
-            return `<img src="${getFoto(p)}" alt="" loading="lazy" style="width:110px; height:110px; object-fit:cover; border:2px solid var(--ink); border-radius:10px" onclick="Home && Home.bukaFotoPopup && Home.bukaFotoPopup(this, '${escapeHtml(a.judul).replace(/'/g, "\\'")}', '')">`;
+            return `<span class="media-muat mini" style="width:110px;height:110px;flex-shrink:0"><img src="${getFoto(p)}" alt="" loading="lazy" style="width:110px; height:110px; object-fit:cover; border:2px solid var(--ink); border-radius:10px" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" onclick="Home && Home.bukaFotoPopup && Home.bukaFotoPopup(this, '${escapeHtml(a.judul).replace(/'/g, "\\'")}', '')"><span class="media-muat-loading" aria-hidden="true" style="border-radius:10px"><span class="spinner"></span></span></span>`;
         }).join("")}</div>` : `<div class="detail-text">Tidak ada lampiran.</div>`;
         const lbl = Notulensi.STATUS_LABEL[a.status] || a.status || "-";
         const info = (k, v) => `<div><div class="k">${k}</div><div class="v">${v || "-"}</div></div>`;

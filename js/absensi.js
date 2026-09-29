@@ -10,8 +10,14 @@ const Absensi = {
     cache: [],
     filter: { q: "", status: "", tanggal: "", tab: "tidak" },
     editTanggal: null,
-    // State modal Absen Langsung (tandai hadir cepat dari tabel anggota)
-    langsung: { anggota: [], tahun: null, q: "", activeIdx: 0, saving: false },
+    // Tambah yang dibuka untuk tanggal berisi: baris tercatat dimuat otomatis
+    // jadi baris terpilih (tambah bersifat aditif). Basis hapus/update pas simpan.
+    tanggalDimuat: null,
+    // State modal Absen Langsung (tandai hadir cepat dari tabel anggota simple)
+    // Roster = anggota periode AKTIF (tabel periode), dipisah per tahun.
+    // tahunFokus = SELALU 1 tahun (tombol 2026/2027, default paling kiri,
+    // pilihan terakhir disimpan di localStorage). Tidak bisa kosong.
+    langsung: { anggota: [], periodeTahun: [], tahunFokus: null, tahun: null, q: "", activeIdx: 0, saving: false },
 
     STATUS: ["izin", "sakit", "alpha"],
 
@@ -29,12 +35,27 @@ const Absensi = {
         document.getElementById("btnTabTidak")?.addEventListener("click", () => Absensi.setTab("tidak"));
         document.getElementById("btnTabHadir")?.addEventListener("click", () => Absensi.setTab("hadir"));
         document.getElementById("btnResetFilter")?.addEventListener("click", () => Absensi.resetFilter());
+        // Tombol fokus tahun (2026 / 2027) di bawah absensi-head
+        document.getElementById("tahunTabs")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-tahun-fokus]");
+            if (b) Absensi.setTahunFokus(parseInt(b.dataset.tahunFokus, 10));
+        });
         ["filterQ", "filterStatus", "filterTanggal"].forEach(id => {
             document.getElementById(id)?.addEventListener("input", () => Absensi.bacaFilter());
         });
         document.getElementById("btnBatalAbsensi")?.addEventListener("click", () => Absensi.tutupForm());
         document.getElementById("btnSimpanAbsensi")?.addEventListener("click", () => Absensi.simpan());
-        document.getElementById("btnTambahBaris")?.addEventListener("click", () => Absensi.tambahBaris());
+        document.getElementById("tambahSearch")?.addEventListener("input", () => Absensi.renderTambahList());
+        document.getElementById("absTanggal")?.addEventListener("input", () => {
+            // Tanggal diganti saat form masih kosong: muat baris tercatat tanggal itu.
+            // Kalau user sudah memilih, jangan utak-atik pilihannya.
+            if (!Absensi.editTanggal && !document.querySelectorAll("#absensiRows .abs-row").length) Absensi.preloadTanggal();
+            else Absensi.renderTambahList();
+        });
+        document.getElementById("tambahBelum")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-pilih]");
+            if (b) Absensi.togglePilih(decodeURIComponent(b.dataset.pilih || ""));
+        });
         document.getElementById("absensiWrap")?.addEventListener("click", (e) => {
             const eb = e.target.closest("[data-abs-edithari]");
             if (eb) { Absensi.editHari(eb.dataset.absEdithari); return; }
@@ -44,9 +65,9 @@ const Absensi = {
         document.getElementById("absensiRows")?.addEventListener("click", (e) => {
             const rb = e.target.closest("[data-abs-rmrow]");
             if (!rb) return;
-            const rows = document.querySelectorAll("#absensiRows .abs-row");
-            if (rows.length <= 1) { showToast("Minimal 1 baris pengurus.", "error"); return; }
             rb.closest(".abs-row")?.remove();
+            Absensi.hitungPilih();
+            Absensi.renderTambahList();
             FormPersist.touch("absensiForm");
         });
         document.getElementById("btnAbsenLangsung")?.addEventListener("click", () => Absensi.bukaLangsung());
@@ -92,6 +113,10 @@ const Absensi = {
             });
         }
         Absensi.muat();
+        // Muat periode aktif biar tombol tahun (2026/2027) langsung tampil,
+        // + roster biar riwayat bisa dipisah per tahun fokus (fail-silent)
+        Absensi.muatPeriode().then(() => Absensi.renderTahunTabs()).catch(() => {});
+        Absensi.muatRosterHadir();
     },
 
 
@@ -175,6 +200,8 @@ const Absensi = {
                 if (r.status === "hadir") return false;
                 if (f.status && r.status !== f.status) return false;
             }
+            // Fokus tahun (tombol 2026/2027): cuma nama roster tahun itu
+            if (!Absensi.cocokFokus(r.nama)) return false;
             if (f.tanggal && String(r.tanggal) !== String(f.tanggal)) return false;
             if (q && !(String(r.nama || "").toLowerCase().includes(q) || String(r.kegiatan || "").toLowerCase().includes(q))) return false;
             return true;
@@ -202,6 +229,88 @@ const Absensi = {
         if (isHadir) Absensi.muatRosterHadir();
     },
 
+    // ============ FOKUS TAHUN (tombol 2026/2027 di bawah absensi-head) ============
+    // Klik = roster absen (Langsung + form Tambah) cuma tahun itu.
+    // Klik lagi = balik ke semua periode aktif.
+    tahunAktifList() {
+        let thns = (Absensi.langsung.periodeTahun || []).filter(Number.isFinite);
+        if (!thns.length) {
+            thns = [...new Set((Absensi.langsung.anggota || [])
+                .map(o => (o && typeof o === "object" ? o.tahun : null))
+                .filter(Number.isFinite))].sort((a, b) => a - b);
+        }
+        return thns;
+    },
+
+    renderTahunTabs() {
+        const box = document.getElementById("tahunTabs");
+        if (!box) return;
+        const thns = Absensi.tahunAktifList();
+        if (!thns.length) { box.style.display = "none"; box.innerHTML = ""; return; }
+        // Selalu ada 1 kepilih: pulihkan pilihan terakhir, fallback ke kiri (pertama)
+        let f = Absensi.langsung.tahunFokus;
+        if (!thns.includes(f)) {
+            try { f = parseInt(localStorage.getItem("absensi_tahun_fokus"), 10); } catch { f = NaN; }
+            if (!thns.includes(f)) f = thns[0];
+        }
+        const berubah = Absensi.langsung.tahunFokus !== f;
+        Absensi.langsung.tahunFokus = f;
+        box.style.display = "";
+        box.innerHTML = thns.map(t =>
+            `<button type="button" class="${f === t ? "on" : ""}" data-tahun-fokus="${t}"><i class="fa-solid fa-calendar"></i> ${t}</button>`
+        ).join("");
+        if (berubah) {
+            Absensi.renderLangsung();
+            Absensi.renderTambahList();
+            try { Absensi.render(); } catch {}
+        }
+    },
+
+    setTahunFokus(t) {
+        if (!Number.isFinite(t)) return;
+        // Klik tab yang sedang aktif = tetap (tidak bisa kosong)
+        Absensi.langsung.tahunFokus = t;
+        try { localStorage.setItem("absensi_tahun_fokus", String(t)); } catch {}
+        Absensi.langsung.activeIdx = 0;
+        Absensi.renderTahunTabs();
+        Absensi.renderLangsung();
+        Absensi.renderTambahList();
+        Absensi.render();
+        // Pastikan roster terbaru buat pemetaan nama riwayat (fail-silent)
+        Absensi.muatRosterHadir();
+    },
+
+    // Roster sudah dibatasi fokus? (dipakai daftar Langsung + form Tambah)
+    rosterFokus() {
+        const roster = Absensi.langsung.anggota || [];
+        const f = Absensi.langsung.tahunFokus;
+        if (f == null) return roster;
+        return roster.filter(o => ((o && typeof o === "object" ? o.tahun : null) ?? null) === f);
+    },
+
+    // Peta nama -> tahun-tahun roster (buat misahin riwayat per tahun fokus).
+    // Riwayat osis_absensi cuma simpan nama, jadi tahunnya dicocokkan ke roster.
+    petaTahun() {
+        const m = new Map();
+        (Absensi.langsung.anggota || []).forEach(o => {
+            const nama = (o && typeof o === "object") ? o.nama : o;
+            const t = (o && typeof o === "object" ? o.tahun : null);
+            const k = Absensi.norm(nama);
+            if (!k) return;
+            if (!m.has(k)) m.set(k, new Set());
+            if (t != null) m.get(k).add(t);
+        });
+        return m;
+    },
+
+    // Baris riwayat ini masuk tahun fokus? (null = semua lolos)
+    cocokFokus(nama) {
+        const f = Absensi.langsung.tahunFokus;
+        if (f == null) return true;
+        const s = Absensi.petaTahun().get(Absensi.norm(nama));
+        return !!(s && s.has(f));
+    },
+
     // ============ RENDER ============
     render() {
         if (Absensi.filter.tab === "hadir") { Absensi.renderHadir(); return; }
@@ -220,8 +329,9 @@ const Absensi = {
         };
         // Stat paling atas = tanggal terakhir (atau tanggal filter), bukan keseluruhan.
         // Baris 'hadir' tidak ikut hitungan statistik ketidakhadiran.
+        // Fokus tahun aktif: cuma nama roster tahun itu yang dihitung.
         const all = Absensi.cache || [];
-        const allTK = all.filter(r => r.status !== "hadir");
+        const allTK = all.filter(r => r.status !== "hadir" && Absensi.cocokFokus(r.nama));
         let tTarget = Absensi.filter.tanggal || "";
         if (!tTarget && allTK.length) {
             tTarget = allTK.map(r => String(r.tanggal || "")).filter(Boolean).sort().reverse()[0] || "";
@@ -293,25 +403,29 @@ const Absensi = {
             .map(r => String(r.nama || "").trim()).filter(Boolean)
             .sort((a, b) => a.localeCompare(b));
         if (tersimpan.length) return { daftar: tersimpan, otomatis: false };
-        const roster = Absensi.langsung.anggota || [];
+        const roster = (Absensi.langsung.anggota || []).map(r => r.nama ?? r);
         const catat = new Set(hari.map(r => Absensi.norm(r.nama)));
         return { daftar: roster.filter(n => !catat.has(Absensi.norm(n))), otomatis: true };
     },
 
-    // Roster anggota (periode terbaru) buat hitung hadir otomatis.
-    // Cache-first; render ulang tab Hadir tiap ada data baru.
+    // Roster anggota (periode AKTIF via tabel periode) buat hitung hadir otomatis
+    // + misahin riwayat per tahun fokus. Cache-first, fail-silent (tanpa toast).
+    // Render ulang kalau tab Hadir aktif ATAU tahun fokus sedang dipakai.
     async muatRosterHadir() {
+        // Render ulang kalau hasilnya kepakai di layar sekarang
+        const perluRender = () => Absensi.filter.tab === "hadir" || Absensi.langsung.tahunFokus != null;
         try {
+            await Absensi.muatPeriode();
             const cached = (typeof Cache !== "undefined") ? Cache.get("anggota") : null;
             if (cached && cached.length) {
                 const sebelum = JSON.stringify(Absensi.langsung.anggota || []);
                 Absensi.pakaiAnggota(cached);
-                if (JSON.stringify(Absensi.langsung.anggota || []) !== sebelum && Absensi.filter.tab === "hadir") Absensi.render();
+                if (JSON.stringify(Absensi.langsung.anggota || []) !== sebelum && perluRender()) Absensi.render();
                 getAnggota().then(fresh => {
                     if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
                         Cache.set("anggota", fresh);
                         Absensi.pakaiAnggota(fresh);
-                        if (Absensi.filter.tab === "hadir") Absensi.render();
+                        if (perluRender()) Absensi.render();
                     }
                 }).catch(() => {});
                 return;
@@ -319,7 +433,7 @@ const Absensi = {
             const fresh = await getAnggota();
             if (typeof Cache !== "undefined") Cache.set("anggota", fresh);
             Absensi.pakaiAnggota(fresh);
-            if (Absensi.filter.tab === "hadir") Absensi.render();
+            if (perluRender()) Absensi.render();
         } catch (err) { console.error(err); }
     },
 
@@ -341,6 +455,7 @@ const Absensi = {
         const tglSet = {};
         all.forEach(r => {
             if (!r.tanggal) return;
+            if (!Absensi.cocokFokus(r.nama)) return;
             if (Absensi.filter.tanggal && String(r.tanggal) !== String(Absensi.filter.tanggal)) return;
             tglSet[String(r.tanggal)] = true;
         });
@@ -349,8 +464,9 @@ const Absensi = {
             const h = Absensi.hadirTanggal(t);
             const hariRows = all.filter(r => String(r.tanggal) === String(t));
             const keg = (hariRows.map(r => String(r.kegiatan || "").trim()).find(Boolean) || "");
-            if (q && !(h.daftar.some(n => n.toLowerCase().includes(q)) || keg.toLowerCase().includes(q))) return;
-            grupHadir[t] = { daftar: h.daftar, otomatis: h.otomatis, keg };
+            const daftar = h.daftar.filter(n => Absensi.cocokFokus(n));
+            if (q && !(daftar.some(n => n.toLowerCase().includes(q)) || keg.toLowerCase().includes(q))) return;
+            grupHadir[t] = { daftar, otomatis: h.otomatis, keg };
         });
         const tgls = Object.keys(grupHadir).sort().reverse();
 
@@ -406,15 +522,20 @@ const Absensi = {
             const el = document.getElementById(id);
             if (el) el.value = "";
         });
+        // Fokus tahun tidak ikut di-reset (tab harus selalu ada yang kepilih)
         Absensi.bacaFilter();
     },
 
-    // ============ FORM ============
+    // ============ FORM (ketuk nama dari anggota + status + alasan) ============
+    // Nama TIDAK diketik manual — dipilih dengan mengetuk daftar anggota
+    // (kayak Absen Langsung). Tiap yang dipilih wajib isi status
+    // (izin/sakit/alpha) + alasan kenapa tidak hadir.
     barisHtml(prefill) {
         const pr = prefill || {};
         return `<div class="abs-row" ${pr.id ? `data-row-id="${pr.id}"` : ""} style="position:relative; border:2px dashed var(--line); border-radius:12px; padding:10px; margin-bottom:8px">
             <button type="button" class="icon-btn" data-abs-rmrow title="Hapus baris" style="position:absolute; top:8px; right:8px; width:28px; height:28px; font-size:0.75rem; background:var(--red); color:#fff; border-width:2px"><i class="fa-solid fa-trash-can"></i></button>
-            <div class="field" style="padding-right:36px"><label>Nama pengurus</label><input type="text" class="admin-input abs-nama" placeholder="cth: Nizam" maxlength="80" value="${escapeHtml(pr.nama || "")}" /></div>
+            <input type="hidden" class="abs-nama" value="${escapeHtml(pr.nama || "")}" />
+            <div class="field" style="padding-right:36px"><label>Nama pengurus</label><b style="font-size:0.9rem">${escapeHtml(pr.nama || "-")}</b></div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px">
                 <div class="field"><label>Status</label><select class="admin-input abs-status">
                     <option value="izin" ${pr.status === "izin" ? "selected" : ""}>Izin</option>
@@ -427,8 +548,93 @@ const Absensi = {
     },
 
     tambahBaris(prefill) {
+        const nama = String((prefill && prefill.nama) || "").trim();
+        if (!nama) return;
+        const dobel = [...document.querySelectorAll("#absensiRows .abs-nama")]
+            .some(el => Absensi.norm(el.value) === Absensi.norm(nama));
+        if (dobel) { showToast(nama + " sudah dipilih.", "info"); return; }
         document.getElementById("absensiRows")?.insertAdjacentHTML("beforeend", Absensi.barisHtml(prefill));
+        Absensi.hitungPilih();
+        Absensi.renderTambahList();
         if (typeof FormPersist !== "undefined") FormPersist.touch("absensiForm");
+    },
+
+    // Ketuk nama di daftar -> pilih (tambah baris) / ketuk lagi -> batal pilih.
+    togglePilih(nama) {
+        nama = String(nama || "").trim();
+        if (!nama) return;
+        const rows = [...document.querySelectorAll("#absensiRows .abs-row")];
+        const target = rows.find(el => Absensi.norm(el.querySelector(".abs-nama")?.value || "") === Absensi.norm(nama));
+        if (target) {
+            target.remove();
+            Absensi.hitungPilih();
+            Absensi.renderTambahList();
+            if (typeof FormPersist !== "undefined") FormPersist.touch("absensiForm");
+            return;
+        }
+        Absensi.tambahBaris({ nama, status: "izin", alasan: "" });
+    },
+
+    hitungPilih() {
+        const el = document.getElementById("tambahPilihCount");
+        if (el) el.textContent = document.querySelectorAll("#absensiRows .abs-row").length;
+    },
+
+    // Daftar ketuk: roster anggota dikurangi yang sudah dipilih & yang sudah
+    // tercatat pada tanggal form (diblokir biar tidak dobel / bentrok).
+    renderTambahList() {
+        const box = document.getElementById("tambahBelum");
+        if (!box) return;
+        if (!document.getElementById("absensiForm")?.classList.contains("open")) return;
+        const tanggal = document.getElementById("absTanggal")?.value || "";
+        const q = document.getElementById("tambahSearch")?.value || "";
+        const roster = Absensi.rosterFokus();
+        const dipilih = new Set([...document.querySelectorAll("#absensiRows .abs-nama")].map(el => Absensi.norm(el.value)));
+        // Baris yang lagi diedit (tanggal yang sama) boleh dipilih ulang.
+        const milikEdit = Absensi.editTanggal && String(tanggal) === String(Absensi.editTanggal)
+            ? new Set((Absensi.cache || []).filter(r => String(r.tanggal) === String(Absensi.editTanggal)).map(r => String(r.id)))
+            : null;
+        const blokir = {};
+        (Absensi.cache || []).filter(r => String(r.tanggal) === String(tanggal)).forEach(r => {
+            if (milikEdit && milikEdit.has(String(r.id))) return;
+            blokir[Absensi.norm(r.nama)] = r.status;
+        });
+        const tersedia = [], diblokir = [];
+        roster.forEach(o => {
+            const nama = o.nama ?? o;
+            const tahun = (o && typeof o === "object" && o.tahun != null) ? o.tahun : null;
+            const k = Absensi.norm(nama);
+            if (dipilih.has(k)) return;
+            if (!Absensi.cocokQuery(nama, q)) return;
+            if (blokir[k]) diblokir.push({ nama, tahun, status: blokir[k] });
+            else tersedia.push({ nama, tahun });
+        });
+        const cnt = document.getElementById("tambahBelumCount");
+        if (cnt) cnt.textContent = tersedia.length;
+        const labelBlokir = (s) => s === "hadir" ? "Hadir" : Absensi.labelStatus(s);
+        // Dipisah per tahun (periode aktif): header tahun di atas tiap kelompok.
+        const grupBtn = (list) => Absensi.grupTahun(list).map(([t, names]) =>
+            `<div class="absen-tahun"><i class="fa-solid fa-calendar"></i> ${escapeHtml(Absensi.labelTahun(t))}<span class="cnt">${names.length}</span></div>` +
+            names.map(n => `<button type="button" class="absen-item" data-pilih="${encodeURIComponent(n)}"><span class="dot">○</span> ${escapeHtml(n)}</button>`).join("")
+        ).join("");
+        const grupBlokir = (list) => {
+            const m = new Map();
+            list.forEach(o => {
+                const t = o.tahun != null ? o.tahun : "?";
+                if (!m.has(t)) m.set(t, []);
+                m.get(t).push(o);
+            });
+            return [...m.entries()]
+                .sort((a, b) => (a[0] === "?" ? 9999 : a[0]) - (b[0] === "?" ? 9999 : b[0]))
+                .map(([t, items]) =>
+                    `<div class="absen-tahun"><i class="fa-solid fa-calendar"></i> ${escapeHtml(Absensi.labelTahun(t))}<span class="cnt">${items.length}</span></div>` +
+                    items.map(o => `<div class="absen-item blocked"><span class="dot">−</span> ${escapeHtml(o.nama)}<small>${labelBlokir(o.status)}</small></div>`).join("")
+                ).join("");
+        };
+        box.innerHTML = (tersedia.length
+            ? grupBtn(tersedia)
+            : `<div class="pesan-empty">${roster.length ? "Semua anggota tersaring / sudah dipilih." : "Memuat anggota..."}</div>`)
+            + grupBlokir(diblokir);
     },
 
     // Kumpulin isi form mentah buat draft (tanpa validasi).
@@ -455,11 +661,12 @@ const Absensi = {
         if (!u || u.mode !== "osis") return;
         if (!OsisAuth.butuh("absensi")) return;
         Absensi.editTanggal = null;
+        Absensi.tanggalDimuat = null;
         document.getElementById("absensiFormTitle").textContent = "Tambah Ketidakhadiran";
         document.getElementById("absTanggal").value = Absensi.filter.tanggal || new Date().toISOString().slice(0, 10);
         document.getElementById("absKegiatan").value = "";
         document.getElementById("absensiRows").innerHTML = "";
-        Absensi.tambahBaris();
+        document.getElementById("tambahSearch").value = "";
         // Pulihkan draft kalau ada (tutup form / refresh tidak sengaja)
         try {
             const d = (typeof FormPersist !== "undefined") ? FormPersist.load("absensiForm") : null;
@@ -475,6 +682,36 @@ const Absensi = {
         } catch {}
         document.getElementById("absensiForm").classList.add("open");
         document.body.style.overflow = "hidden";
+        // Muat baris tercatat tanggal ini (kalau ada) + daftar ketuk
+        Absensi.preloadTanggal();
+        // Roster anggota buat daftar ketuk (cache dulu, segarkan background)
+        Absensi.muatAnggotaLangsung().then(() => Absensi.renderTambahList()).catch(() => {});
+    },
+
+    // Tambah untuk tanggal yang sudah ada isinya: muat baris tercatat
+    // (izin/sakit/alpha) jadi baris terpilih — bisa edit + tambah orang.
+    // Baris 'hadir' tidak ikut (form ini tidak mengelola kehadiran).
+    // Cuma jalan saat form masih kosong (jangan timpa pilihan/draft user).
+    preloadTanggal() {
+        if (Absensi.editTanggal) { Absensi.hitungPilih(); Absensi.renderTambahList(); return; }
+        const tanggal = document.getElementById("absTanggal")?.value || "";
+        Absensi.tanggalDimuat = null;
+        if (tanggal && !document.querySelectorAll("#absensiRows .abs-row").length) {
+            const ada = new Set([...document.querySelectorAll("#absensiRows .abs-nama")].map(el => Absensi.norm(el.value)));
+            const rows = (Absensi.cache || [])
+                .filter(r => String(r.tanggal) === String(tanggal) && r.status !== "hadir")
+                .slice().sort((a, b) => String(a.nama || "").localeCompare(String(b.nama || "")));
+            if (rows.length) {
+                Absensi.tanggalDimuat = tanggal;
+                rows.forEach(r => {
+                    if (ada.has(Absensi.norm(r.nama))) return;
+                    ada.add(Absensi.norm(r.nama));
+                    Absensi.tambahBaris({ id: r.id, nama: r.nama, status: r.status, alasan: r.alasan });
+                });
+            }
+        }
+        Absensi.hitungPilih();
+        Absensi.renderTambahList();
     },
 
     editHari(tanggal) {
@@ -485,6 +722,7 @@ const Absensi = {
         const rows = (Absensi.cache || []).filter(r => String(r.tanggal) === String(tanggal) && r.status !== "hadir");
         if (!rows.length) return;
         Absensi.editTanggal = tanggal;
+        Absensi.tanggalDimuat = null;
         document.getElementById("absensiFormTitle").textContent = "Edit — " + Absensi.fmtTanggalPanjang(tanggal);
         document.getElementById("absTanggal").value = tanggal;
         document.getElementById("absKegiatan").value = (rows.map(r => String(r.kegiatan || "").trim()).find(Boolean) || "");
@@ -493,12 +731,17 @@ const Absensi = {
             .forEach(r => Absensi.tambahBaris({ id: r.id, nama: r.nama, status: r.status, alasan: r.alasan }));
         document.getElementById("absensiForm").classList.add("open");
         document.body.style.overflow = "hidden";
+        document.getElementById("tambahSearch").value = "";
+        Absensi.hitungPilih();
+        Absensi.renderTambahList();
+        Absensi.muatAnggotaLangsung().then(() => Absensi.renderTambahList()).catch(() => {});
     },
 
     tutupForm() {
         document.getElementById("absensiForm")?.classList.remove("open");
         document.body.style.overflow = "";
         Absensi.editTanggal = null;
+        Absensi.tanggalDimuat = null;
     },
 
     async simpan() {
@@ -509,9 +752,20 @@ const Absensi = {
         if (!tanggal) { showToast("Tanggal wajib diisi.", "error"); return; }
         const kegiatan = (document.getElementById("absKegiatan")?.value || "").trim().slice(0, 120);
         const els = [...document.querySelectorAll("#absensiRows .abs-row")];
-        if (!els.length) { showToast("Tambah minimal 1 pengurus.", "error"); return; }
-        const originalIds = Absensi.editTanggal
-            ? (Absensi.cache || []).filter(r => String(r.tanggal) === String(Absensi.editTanggal)).map(r => String(r.id))
+        // Dikosongin sampai nol = hapus baris tidak hadir hari itu
+        // (mode edit / tambah yang memuat baris tercatat).
+        // Mode tambah kosong + tanggal kosong = tidak ada yang bisa disimpan.
+        // Basis = tanggal edit ATAU tanggal dimuat (tambah aditif).
+        const basisTanggal = Absensi.editTanggal || Absensi.tanggalDimuat;
+        if (!els.length && !basisTanggal) { showToast("Pilih minimal 1 pengurus.", "error"); return; }
+        if (!els.length && basisTanggal) {
+            const yakinKosong = await showPopup(`Kosongkan data ketidakhadiran ${escapeHtml(Absensi.fmtTanggalPanjang(basisTanggal))}? Baris izin/sakit/alpha hari itu akan dihapus (data hadir tidak ikut).`, "confirm");
+            if (!yakinKosong) return;
+        }
+        // Basis hapus/update = baris TIDAK HADIR tanggal basis saja.
+        // Baris 'hadir' tidak dikelola form ini — jangan ikut terhapus.
+        const originalIds = basisTanggal
+            ? (Absensi.cache || []).filter(r => String(r.tanggal) === String(basisTanggal) && r.status !== "hadir").map(r => String(r.id))
             : [];
         const lainnya = (Absensi.cache || []).filter(r => !originalIds.includes(String(r.id)));
         const rows = [];
@@ -532,7 +786,7 @@ const Absensi = {
             rows.push({ id: rid, nama, status, alasan });
         }
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
-            if (Absensi.editTanggal || rows.some(r => r.id)) {
+            if (basisTanggal || rows.some(r => r.id)) {
                 showToast("Ubah absensi butuh koneksi — data pembanding ada di server.", "error");
                 return;
             }
@@ -589,7 +843,7 @@ const Absensi = {
     },
 
     // ============ ABSEN LANGSUNG (tandai hadir cepat) ============
-    // Sumber nama WAJIB dari tabel anggota (periode terbaru). Simpan hadir
+    // Sumber nama WAJIB dari tabel anggota simple (periode terbaru). Simpan hadir
     // ke tabel osis_absensi yang sama (status 'hadir'), jadi UNIQUE
     // tanggal+lower(nama) mencegah dobel & bentrok izin/sakit/alpha.
     norm(s) {
@@ -648,6 +902,7 @@ const Absensi = {
 
     async muatAnggotaLangsung() {
         try {
+            await Absensi.muatPeriode();
             const cached = (typeof Cache !== "undefined") ? Cache.get("anggota") : null;
             if (cached && cached.length) {
                 Absensi.pakaiAnggota(cached);
@@ -670,15 +925,89 @@ const Absensi = {
         }
     },
 
-    // Ambil periode terbaru, nama unik urut A-Z
+    // Tahun aktif dari tabel periode (cache-first + revalidasi background).
+    // Fallback: [] = pakaiAnggota pakai periode terbaru (mode lama, offline).
+    async muatPeriode() {
+        try {
+            const cached = (typeof Cache !== "undefined") ? Cache.get("periode") : null;
+            if (cached && cached.length) {
+                Absensi.pakaiPeriode(cached);
+                getPeriode().then(fresh => {
+                    if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
+                        Cache.set("periode", fresh);
+                        Absensi.pakaiPeriode(fresh);
+                        Absensi.terapkanPeriodeBaru();
+                    }
+                }).catch(() => {});
+                return;
+            }
+            const fresh = await getPeriode();
+            if (typeof Cache !== "undefined") Cache.set("periode", fresh);
+            Absensi.pakaiPeriode(fresh);
+        } catch (err) { console.error(err); }
+    },
+
+    pakaiPeriode(list) {
+        Absensi.langsung.periodeTahun = (list || [])
+            .filter(p => p && p.aktif)
+            .map(p => parseInt(p.tahun, 10))
+            .filter(Number.isFinite)
+            .sort((a, b) => a - b);
+    },
+
+    // Periode berubah di background -> saring ulang roster terakhir & render.
+    terapkanPeriodeBaru() {
+        if (Absensi.langsung._cacheList) Absensi.pakaiAnggota(Absensi.langsung._cacheList);
+        Absensi.renderTahunTabs();
+        if (document.getElementById("absenLangsung")?.classList.contains("open")) Absensi.renderLangsung();
+        if (document.getElementById("absensiForm")?.classList.contains("open")) Absensi.renderTambahList();
+        if (Absensi.filter.tab === "hadir") { try { Absensi.render(); } catch {} }
+    },
+
+    // Kelompokkan list {nama, tahun} per tahun (urut tahun lalu nama).
+    // Kembali [[tahun, [nama...]], ...].
+    grupTahun(list) {
+        const m = new Map();
+        (list || []).forEach(o => {
+            const nama = (o && typeof o === "object") ? o.nama : o;
+            const t = (o && typeof o === "object" && o.tahun != null) ? o.tahun : "?";
+            if (!m.has(t)) m.set(t, []);
+            m.get(t).push(nama);
+        });
+        return [...m.entries()].sort((a, b) => (a[0] === "?" ? 9999 : a[0]) - (b[0] === "?" ? 9999 : b[0]));
+    },
+
+    labelTahun(t) {
+        return t === "?" ? "Tanpa tahun" : String(t);
+    },
+
+    // Roster = anggota periode AKTIF saja, nama unik per tahun urut tahun lalu A-Z.
+    // Fallback (periode kosong/offline): periode terbaru saja (mode lama).
     pakaiAnggota(list) {
+        Absensi.langsung._cacheList = list;
         const bersih = (list || []).filter(a => a && String(a.nama || "").trim());
-        const thns = [...new Set(bersih.map(a => parseInt(a.tahun, 10)).filter(Number.isFinite))].sort((a, b) => b - a);
-        const th = thns.length ? thns[0] : null;
-        const pakai = th !== null ? bersih.filter(a => parseInt(a.tahun, 10) === th) : bersih;
+        const aktif = (Absensi.langsung.periodeTahun || []).filter(Number.isFinite);
+        let pakai, th = null;
+        if (aktif.length) {
+            pakai = bersih.filter(a => aktif.includes(parseInt(a.tahun, 10)));
+        } else {
+            const thns = [...new Set(bersih.map(a => parseInt(a.tahun, 10)).filter(Number.isFinite))].sort((a, b) => b - a);
+            th = thns.length ? thns[0] : null;
+            pakai = th !== null ? bersih.filter(a => parseInt(a.tahun, 10) === th) : bersih;
+        }
         Absensi.langsung.tahun = th;
-        Absensi.langsung.anggota = [...new Set(pakai.map(a => String(a.nama).trim()))]
-            .filter(Boolean).sort((a, b) => a.localeCompare(b));
+        const temu = new Set();
+        Absensi.langsung.anggota = [];
+        pakai.forEach(a => {
+            const nama = String(a.nama).trim();
+            const t = parseInt(a.tahun, 10);
+            const kunci = (Number.isFinite(t) ? t : "?") + "|" + nama.toLowerCase();
+            if (!nama || temu.has(kunci)) return;
+            temu.add(kunci);
+            Absensi.langsung.anggota.push({ nama, tahun: Number.isFinite(t) ? t : null });
+        });
+        Absensi.langsung.anggota.sort((x, y) => (x.tahun ?? 9999) - (y.tahun ?? 9999) || x.nama.localeCompare(y.nama));
+        Absensi.renderTahunTabs();
     },
 
     // Kelompokkan anggota -> belum / sudah / izin-sakit-alpha utk sesi ini.
@@ -696,19 +1025,21 @@ const Absensi = {
         const q = L.q || "";
         const saring = q.trim() !== "";
         const belum = [], sudah = [], blokir = [];
-        L.anggota.forEach(nama => {
+        Absensi.rosterFokus().forEach(o => {
+            const nama = o.nama ?? o;
+            const tahun = (o && typeof o === "object" && o.tahun != null) ? o.tahun : null;
             const k = Absensi.norm(nama);
             if (hadirSet.has(k)) {
-                if (!saring || Absensi.cocokQuery(nama, q)) sudah.push(nama);
+                if (!saring || Absensi.cocokQuery(nama, q)) sudah.push({ nama, tahun });
                 return;
             }
             if (blokirMap[k]) {
-                if (!saring || Absensi.cocokQuery(nama, q)) blokir.push({ nama, status: blokirMap[k] });
+                if (!saring || Absensi.cocokQuery(nama, q)) blokir.push({ nama, tahun, status: blokirMap[k] });
                 return;
             }
-            if (Absensi.cocokQuery(nama, q)) belum.push(nama);
+            if (Absensi.cocokQuery(nama, q)) belum.push({ nama, tahun });
         });
-        return { belum, sudah, blokir, total: L.anggota.length, hadirCount: sudah.length };
+        return { belum, sudah, blokir, total: Absensi.rosterFokus().length, hadirCount: sudah.length };
     },
 
     renderLangsung() {
@@ -729,10 +1060,38 @@ const Absensi = {
         setCount("langsungBelumCount", d.belum.length);
         setCount("langsungSudahCount", d.sudah.length);
         setCount("langsungIzinCount", d.blokir.length);
+        // Daftar dipisah per tahun (periode aktif): header tahun di tiap kelompok.
+        // d.belum sudah urut tahun lalu nama, jadi index flat 'i' jalan terus.
+        let idxBelum = 0;
+        const grupBelum = (list) => Absensi.grupTahun(list).map(([t, names]) =>
+            `<div class="absen-tahun"><i class="fa-solid fa-calendar"></i> ${escapeHtml(Absensi.labelTahun(t))}<span class="cnt">${names.length}</span></div>` +
+            names.map(n => {
+                const i = idxBelum++;
+                return `<button type="button" class="absen-item${i === L.activeIdx ? " active" : ""}" data-hadir="${encodeURIComponent(n)}"><span class="dot">○</span> ${escapeHtml(n)}</button>`;
+            }).join("")
+        ).join("");
+        const grupSudah = (list) => Absensi.grupTahun(list).map(([t, names]) =>
+            `<div class="absen-tahun"><i class="fa-solid fa-calendar"></i> ${escapeHtml(Absensi.labelTahun(t))}<span class="cnt">${names.length}</span></div>` +
+            names.map(n => `<div class="absen-item done"><span class="dot"><i class="fa-solid fa-check"></i></span> ${escapeHtml(n)}<small>hadir</small><button type="button" class="batal" data-batal-hadir="${encodeURIComponent(n)}" title="Batalkan (salah pencet)"><i class="fa-solid fa-xmark"></i></button></div>`).join("")
+        ).join("");
+        const grupBlokir = (list) => {
+            const m = new Map();
+            list.forEach(o => {
+                const t = o.tahun != null ? o.tahun : "?";
+                if (!m.has(t)) m.set(t, []);
+                m.get(t).push(o);
+            });
+            return [...m.entries()]
+                .sort((a, b) => (a[0] === "?" ? 9999 : a[0]) - (b[0] === "?" ? 9999 : b[0]))
+                .map(([t, items]) =>
+                    `<div class="absen-tahun"><i class="fa-solid fa-calendar"></i> ${escapeHtml(Absensi.labelTahun(t))}<span class="cnt">${items.length}</span></div>` +
+                    items.map(o => `<div class="absen-item blocked"><span class="dot">−</span> ${escapeHtml(o.nama)}<small>${Absensi.labelStatus(o.status)}</small></div>`).join("")
+                ).join("");
+        };
         const bEl = document.getElementById("langsungBelum");
         if (bEl) {
             bEl.innerHTML = d.belum.length
-                ? d.belum.map((n, i) => `<button type="button" class="absen-item${i === L.activeIdx ? " active" : ""}" data-hadir="${encodeURIComponent(n)}"><span class="dot">○</span> ${escapeHtml(n)}</button>`).join("")
+                ? grupBelum(d.belum)
                 : `<div class="pesan-empty">${L.anggota.length ? "Semua anggota tersaring / sudah tercatat." : "Memuat anggota..."}</div>`;
             const akt = bEl.querySelector(".absen-item.active");
             if (akt) akt.scrollIntoView({ block: "nearest" });
@@ -740,13 +1099,13 @@ const Absensi = {
         const sEl = document.getElementById("langsungSudah");
         if (sEl) {
             sEl.innerHTML = d.sudah.length
-                ? d.sudah.map(n => `<div class="absen-item done"><span class="dot"><i class="fa-solid fa-check"></i></span> ${escapeHtml(n)}<small>hadir</small><button type="button" class="batal" data-batal-hadir="${encodeURIComponent(n)}" title="Batalkan (salah pencet)"><i class="fa-solid fa-xmark"></i></button></div>`).join("")
+                ? grupSudah(d.sudah)
                 : `<div class="pesan-empty">Belum ada yang hadir.</div>`;
         }
         const iEl = document.getElementById("langsungIzin");
         if (iEl) {
             iEl.innerHTML = d.blokir.length
-                ? d.blokir.map(o => `<div class="absen-item blocked"><span class="dot">−</span> ${escapeHtml(o.nama)}<small>${Absensi.labelStatus(o.status)}</small></div>`).join("")
+                ? grupBlokir(d.blokir)
                 : `<div class="pesan-empty">Tidak ada.</div>`;
         }
     },
@@ -766,8 +1125,8 @@ const Absensi = {
             const d = Absensi.daftarLangsung();
             if (!d.belum.length) return;
             // Enter = hasil pertama kalau cuma satu, kalau tidak yang sedang disorot
-            const pick = d.belum.length === 1 ? d.belum[0] : (d.belum[L.activeIdx] ?? d.belum[0]);
-            Absensi.tandaiHadir(pick);
+            const pick0 = d.belum.length === 1 ? d.belum[0] : (d.belum[L.activeIdx] ?? d.belum[0]);
+            Absensi.tandaiHadir(pick0 && typeof pick0 === "object" ? pick0.nama : pick0);
         }
     },
 

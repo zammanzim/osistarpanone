@@ -90,7 +90,7 @@ const Poster = {
                     </div>
                     ${isEdit ? `<button class="poster-del" onclick="event.stopPropagation(); Poster.hapus(${item.id})" title="Hapus poster"><i class="fa-solid fa-trash-can"></i></button>` : ""}
                 </div>
-                <img src="${getFoto(foto)}" alt="${judul || "Poster"}" loading="lazy" onerror="this.style.display='none'" onclick="Poster.bukaPopup(${item.id})">
+                <div class="poster-media"><img src="${getFoto(foto)}" alt="${judul || "Poster"}" loading="lazy" onload="this.closest('.poster-media').classList.add('sudah-muat')" onerror="this.closest('.poster-media').style.display='none'" onclick="Poster.bukaPopup(${item.id})"><span class="poster-loading" aria-hidden="true"><span class="spinner"></span></span></div>
                 <div class="poster-body">
                     <p>${judul ? `<b>${judul}</b> ` : ""}${caption} ${olehLabel(item)}</p>
                 </div>

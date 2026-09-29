@@ -119,6 +119,9 @@ const Keuangan = {
         ?.addEventListener("input", () => Keuangan.bacaFilter());
     });
 
+    // Nominal: ketik angka -> tampil titik ribuan otomatis
+    if (typeof ikatRupiah === "function") ikatRupiah("kasNominal");
+
     // bukti drag & drop (gambar)
     const drop = document.getElementById("kasDrop");
     const fileInput = document.getElementById("kasBukti");
@@ -629,6 +632,7 @@ const Keuangan = {
       if (adaIsi) {
         if (d.jenis) Keuangan.setJenis(d.jenis);
         FormPersist.fillFields(d);
+        if (typeof formatRupiah === "function") formatRupiah(document.getElementById("kasNominal"));
       }
     } catch {}
     document.getElementById("kasForm").classList.add("open");
@@ -659,6 +663,7 @@ const Keuangan = {
     }
     document.getElementById("kasTanggal").value = item.tanggal || "";
     document.getElementById("kasNominal").value = item.nominal ?? "";
+    if (typeof formatRupiah === "function") formatRupiah(document.getElementById("kasNominal"));
     document.getElementById("kasKeterangan").value = item.keterangan || "";
     if (ks) ks.value = item.kategori || "Lainnya";
     const dv = document.getElementById("kasDivisi");
@@ -755,7 +760,9 @@ const Keuangan = {
       tanggal: document.getElementById("kasTanggal").value || null,
       keterangan: v("kasKeterangan"),
       kategori: v("kasKategori") || "Lainnya",
-      nominal: parseInt(document.getElementById("kasNominal").value, 10) || 0,
+      nominal: (typeof parseRupiah === "function"
+        ? parseRupiah(document.getElementById("kasNominal").value)
+        : parseInt(document.getElementById("kasNominal").value, 10) || 0),
       divisi: v("kasDivisi"),
       pic: v("kasPic"),
       proker_id: num("kasProker"),
@@ -903,7 +910,7 @@ const Keuangan = {
                 ${info("Diubah", Keuangan.fmtTanggalWaktu(t.updated_at))}
             </div>
             ${t.catatan ? `<div class="detail-text">${escapeHtml(t.catatan)}</div>` : ""}
-            ${t.bukti_path ? `<div class="detail-sec" style="margin-top:10px"><h5 style="font-size:.72rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; color:var(--red)">Bukti Transaksi</h5><div class="bukti-box"><img src="${getFoto(t.bukti_path)}" alt="Bukti" onclick="Home && Home.bukaFotoPopup && Home.bukaFotoPopup(this, 'Bukti transaksi', '')"></div></div>` : ""}`;
+            ${t.bukti_path ? `<div class="detail-sec" style="margin-top:10px"><h5 style="font-size:.72rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; color:var(--red)">Bukti Transaksi</h5><div class="bukti-box media-muat media-muat-tinggi"><img src="${getFoto(t.bukti_path)}" alt="Bukti" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" onclick="Home && Home.bukaFotoPopup && Home.bukaFotoPopup(this, 'Bukti transaksi', '')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></div></div>` : ""}`;
     document.getElementById("kasDetail").classList.add("open");
     document.body.style.overflow = "hidden";
   },

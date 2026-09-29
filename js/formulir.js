@@ -819,7 +819,7 @@ const Formulir = {
         const url = getFoto(v.path);
         const label = escapeHtml(v.nama || "file");
         if (Formulir.isGambar(v.nama || v.path)) {
-            return `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="" loading="lazy" style="max-width:100%; max-height:240px; width:auto; height:auto; display:block; border:2px solid var(--ink); border-radius:10px"></a><a href="${url}" target="_blank" rel="noopener" style="color:var(--red); font-size:.74rem; font-weight:700">${label}</a>`;
+            return `<a href="${url}" target="_blank" rel="noopener"><span class="media-muat mini" style="display:inline-block;max-width:100%;vertical-align:top"><img src="${url}" alt="" loading="lazy" style="max-width:100%; max-height:240px; width:auto; height:auto; display:block; border:2px solid var(--ink); border-radius:10px" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true" style="border-radius:10px"><span class="spinner"></span></span></span></a><a href="${url}" target="_blank" rel="noopener" style="color:var(--red); font-size:.74rem; font-weight:700">${label}</a>`;
         }
         return `<a href="${url}" target="_blank" rel="noopener" style="color:var(--red)">${label}</a>`;
     },

@@ -222,7 +222,7 @@ const Feed = {
               `<span class="feed-play"><i class="fa-solid fa-play"></i></span>` +
               `<button type="button" class="feed-mute" onclick="event.stopPropagation(); Feed.toggleMute(${id}, this)" title="Suara"><i class="fa-solid fa-volume-xmark"></i></button>` +
               `</div>`
-            : `<div class="feed-media"><img src="${(typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key)}" alt="${esc(it.caption || "Postingan feed")}" loading="lazy" decoding="async"></div>`;
+            : `<div class="feed-media"><span class="media-muat media-muat-tinggi" style="width:100%"><img src="${(typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key)}" alt="${esc(it.caption || "Postingan feed")}" loading="lazy" decoding="async" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span></div>`;
         const u = Feed.user();
         const canDel = Feed.isSuper() || (Feed.isOsis() && u && String(it.created_by) === String(u.id));
         const komenBuka = !!Feed.komenBuka[id];

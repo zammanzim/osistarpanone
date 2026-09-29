@@ -1,6 +1,6 @@
 // =========================================================================
 // DASHBOARD OSIS — command center (folder /osis)
-// Dipakai di osis/index.html — ringkasan halaman yang ADA: agenda, anggota,
+// Dipakai di osis/index.html — ringkasan halaman yang ADA: agenda, pengurus,
 // keuangan, tabungan, absensi, dokumen. Semua fetch fail-silent + empty
 // state per section. Sidebar tidak disentuh.
 // =========================================================================
@@ -45,7 +45,7 @@ const Dashboard = {
 
         const [agenda, anggota, kas, tabungan, absensi, dokumen, sekbid] = await Promise.all([
             (typeof getAllAgenda === "function" ? getAllAgenda() : Promise.resolve([])).catch(() => []),
-            (typeof getAnggota === "function" ? getAnggota() : Promise.resolve([])).catch(() => []),
+            (typeof getPengurus === "function" ? getPengurus() : Promise.resolve([])).catch(() => []),
             (typeof getKas === "function" ? getKas() : Promise.resolve([])).catch(() => []),
             (typeof getTabungan === "function" ? getTabungan() : Promise.resolve([])).catch(() => []),
             (typeof getAbsensi === "function" ? getAbsensi() : Promise.resolve([])).catch(() => []),
@@ -99,7 +99,8 @@ const Dashboard = {
         if (!box) return;
         const inisial = Dashboard.inisial(u && (u.nama || u.username));
         if (u && u.foto) {
-            box.innerHTML = `<img src="${getFoto(u.foto)}" alt="" onerror="this.remove()">`;
+            box.classList.add("media-muat", "mini");
+            box.innerHTML = `<img src="${getFoto(u.foto)}" alt="" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove()"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
             if (!box.querySelector("img")) box.textContent = inisial;
         } else {
             box.textContent = inisial;

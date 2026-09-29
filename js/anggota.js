@@ -1,8 +1,10 @@
 // =========================================================================
-// ANGGOTA & SEKBID — halaman khusus OSIS (folder /osis)
-// Dipakai di osis/anggota.html — 2 tab:
-// - Anggota: grid kartu per tahun + popup tambah/edit (foto drag&drop + biodata)
-//   (ketua & wakil cukup jadi anggota dengan jabatan Ketua / Wakil Ketua OSIS)
+// ANGGOTA (simple) & PENGURUS (biodata) & SEKBID — halaman khusus OSIS
+// Dipakai di osis/anggota.html — 3 tab:
+// - Anggota: simple (nama, jabatan, kelas, username) per tahun, sort nama A-Z.
+//   Dipakai absen.
+// - Pengurus: biodata lengkap (foto + panggilan/TTL/visi/misi/medsos/motto)
+//   per tahun, sort urutan. Tampil di halaman Pengurus & struktur homepage.
 // - Sekbid: grid kartu BPH + seksi bidang + popup tambah/edit
 // =========================================================================
 
@@ -10,13 +12,15 @@ const Anggota = {
     tahun: null,
     tahunList: [],
     anggotaCache: [],
+    pengurusCache: [],
     pimpinanCache: [],
     sekbidCache: [],
     tab: "anggota",
     fotoTarget: null, // { kind: "pengurus", field } — buat 1 file input bersama
     pfFiles: {},      // staged pengurus: { ketua_foto: File, wakil_foto: File, foto_angkatan: File }
     pfPreview: {},    // preview URL per field (dibuat sekali pas pilih file)
-    aggForm: { id: null, fotoPath: "", pendingFile: null, pendingUrl: null },
+    aggForm: { id: null },
+    pengForm: { id: null, fotoPath: "", pendingFile: null, pendingUrl: null },
     sekForm: { id: null, fotoPath: "", pendingFile: null, pendingUrl: null },
 
     async init() {
@@ -36,6 +40,7 @@ const Anggota = {
             Anggota.tahun = parseInt(e.target.value, 10);
             Anggota.renderAnggota();
             Anggota.renderPengurus();
+            Anggota.renderSekbid();
         });
         document.getElementById("btnTambahTahun")?.addEventListener("click", () => Anggota.tambahPeriode());
 
@@ -70,7 +75,7 @@ const Anggota = {
             if (f && target && target.kind === "pengurus") Anggota.handlePengurusFile(f, target.field);
         });
 
-        // grid anggota: tambah / edit / hapus (delegasi)
+        // grid anggota (simple): tambah / edit / hapus (delegasi)
         document.getElementById("anggotaTable")?.addEventListener("click", (e) => {
             const add = e.target.closest("[data-agg-add]");
             if (add) { Anggota.bukaPopupAnggota(); return; }
@@ -78,6 +83,16 @@ const Anggota = {
             if (edit) { Anggota.editAnggota(edit.dataset.aggEdit); return; }
             const del = e.target.closest("[data-agg-del]");
             if (del) { Anggota.hapusAnggota(del.dataset.aggDel); return; }
+        });
+
+        // grid pengurus (biodata): tambah / edit / hapus (delegasi)
+        document.getElementById("pengurusTable")?.addEventListener("click", (e) => {
+            const add = e.target.closest("[data-peng-add]");
+            if (add) { Anggota.bukaPopupPengurus(); return; }
+            const edit = e.target.closest("[data-peng-edit]");
+            if (edit) { Anggota.editPengurus(edit.dataset.pengEdit); return; }
+            const del = e.target.closest("[data-peng-del]");
+            if (del) { Anggota.hapusPengurus(del.dataset.pengDel); return; }
         });
 
         // grid sekbid: tambah / edit / hapus (delegasi)
@@ -90,9 +105,15 @@ const Anggota = {
             if (del) { Anggota.hapusSekbid(del.dataset.sekDel); return; }
         });
 
-        // popup anggota: drop + input + simpan + backdrop/ESC
-        Anggota.bindPopupDrop("anggotaDrop", "anggotaPopupFile", (f) => Anggota.handlePopupFile("agg", f));
-        document.getElementById("btnSimpanAnggotaPopup")?.addEventListener("click", () => Anggota.simpanPopupAnggota());
+        // popup anggota/pengurus: drop foto (dipakai mode pengurus) + simpan + backdrop/ESC.
+        // Satu popup dipakai dua mode: simple (anggota) sembunyikan foto/bio/urutan,
+        // full (pengurus) tampilkan semua.
+        Anggota.bindPopupDrop("anggotaDrop", "anggotaPopupFile", (f) => Anggota.handlePopupFile("peng", f));
+        document.getElementById("btnSimpanAnggotaPopup")?.addEventListener("click", () => {
+            const t = document.getElementById("anggotaPopupTitle")?.textContent || "";
+            if (/pengurus/i.test(t)) Anggota.simpanPopupPengurus();
+            else Anggota.simpanPopupAnggota();
+        });
         document.getElementById("anggotaPopup")?.addEventListener("click", (e) => {
             if (e.target.id === "anggotaPopup") Anggota.tutupPopupAnggota();
         });
@@ -135,14 +156,16 @@ const Anggota = {
     },
 
     // ============ MUAT ============
-    terapkanSemua(pimp, agg, sek) {
+    terapkanSemua(pimp, agg, peng, sek) {
         Anggota.pimpinanCache = pimp || [];
         Anggota.anggotaCache = agg || [];
+        Anggota.pengurusCache = peng || [];
         Anggota.sekbidCache = sek || [];
-        // daftar tahun = gabungan pimpinan + anggota, terbaru dulu
+        // daftar tahun = gabungan pengurus + anggota (+ pimpinan legacy), terbaru dulu
         const setTahun = new Set();
         Anggota.pimpinanCache.forEach(p => { if (p.tahun) setTahun.add(parseInt(p.tahun, 10)); });
         Anggota.anggotaCache.forEach(a => { if (a.tahun) setTahun.add(parseInt(a.tahun, 10)); });
+        Anggota.pengurusCache.forEach(a => { if (a.tahun) setTahun.add(parseInt(a.tahun, 10)); });
         Anggota.tahunList = [...setTahun].filter(Number.isFinite).sort((a, b) => b - a);
         if (!Anggota.tahunList.length) {
             Anggota.tahunList = [new Date().getFullYear()];
@@ -160,19 +183,20 @@ const Anggota = {
 
     async muatSemua() {
         // Render cache DULU biar offline langsung tampil.
-        const cp = Cache.get("pimpinan"), ca = Cache.get("anggota"), cs = Cache.get("sekbid");
-        if (cp || ca || cs) {
-            try { Anggota.terapkanSemua(cp || [], ca || [], cs || []); } catch {}
+        const cp = Cache.get("pimpinan"), ca = Cache.get("anggota"), cg = Cache.get("pengurus"), cs = Cache.get("sekbid");
+        if (cp || ca || cg || cs) {
+            try { Anggota.terapkanSemua(cp || [], ca || [], cg || [], cs || []); } catch {}
         }
         try {
-            const [pimp, agg, sek] = await Promise.all([getPimpinan(), getAnggota(), getSekbid()]);
+            const [pimp, agg, peng, sek] = await Promise.all([getPimpinan(), getAnggota(), getPengurus(), getSekbid()]);
             Cache.set("pimpinan", pimp || []);
             Cache.set("anggota", agg || []);
+            Cache.set("pengurus", peng || []);
             Cache.set("sekbid", sek || []);
-            Anggota.terapkanSemua(pimp, agg, sek);
+            Anggota.terapkanSemua(pimp, agg, peng, sek);
         } catch (err) {
             console.error(err);
-            if (!(cp || ca || cs)) {
+            if (!(cp || ca || cg || cs)) {
                 document.getElementById("anggotaTable").innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Offline dan belum ada data tersimpan. Buka halaman ini sekali saat online.</div>`;
                 showToast("Gagal memuat: " + err.message, "error");
             }
@@ -225,9 +249,15 @@ const Anggota = {
         showToast(`Periode ${thn} siap — isi pengurus lalu Simpan`, "info");
     },
 
-    // ============ ANGGOTA (kartu + popup) ============
+    // ============ ANGGOTA SIMPLE (kartu + popup) ============
     rowsTahun() {
         return (Anggota.anggotaCache || [])
+            .filter(a => parseInt(a.tahun, 10) === Anggota.tahun)
+            .sort((a, b) => String(a.nama || "").localeCompare(String(b.nama || "")));
+    },
+
+    rowsPengurusTahun() {
+        return (Anggota.pengurusCache || [])
             .filter(a => parseInt(a.tahun, 10) === Anggota.tahun)
             .sort((a, b) => (a.urutan || 99) - (b.urutan || 99));
     },
@@ -244,14 +274,13 @@ const Anggota = {
         const cnt = document.getElementById("anggotaCount");
         if (cnt) cnt.textContent = rows.length ? `(${rows.length})` : "";
         const cards = rows.map(a => {
-            const foto = a.foto
-                ? `<img src="${getFoto(a.foto)}" alt="" loading="lazy" onerror="this.remove()">`
-                : Anggota.initial(a.nama);
+            const sub = [a.jabatan, a.kelas].filter(s => String(s || "").trim()).map(s => escapeHtml(s)).join(" · ") || "-";
             return `
                 <div class="angg-card">
-                    <div class="angg-foto">${foto}</div>
+                    <div class="angg-foto">${Anggota.initial(a.nama)}</div>
                     <h4>${escapeHtml(a.nama || "-")}</h4>
-                    <span class="jabatan">${escapeHtml(a.jabatan || "-")}</span>
+                    <span class="jabatan">${sub}</span>
+                    ${a.username ? `<small style="font-size:0.68rem;color:var(--gray);font-weight:700">@${escapeHtml(a.username)}</small>` : ""}
                     <div class="angg-actions">
                         <button class="btn btn-white btn-sm" data-agg-edit="${a.id}"><i class="fa-solid fa-pen"></i></button>
                         <button class="btn btn-red btn-sm" data-agg-del="${a.id}"><i class="fa-solid fa-trash-can"></i></button>
@@ -266,19 +295,34 @@ const Anggota = {
             ${rows.length ? "" : `<div class="pesan-empty" style="margin-top:10px">Belum ada anggota periode ${Anggota.tahun}.</div>`}`;
     },
 
+    // Field popup yang cuma milik pengurus (disembunyikan di mode anggota simple)
+    _pengOnlyIds() {
+        return ["anggotaPanggilan", "anggotaTtl", "anggotaVisi", "anggotaMisi",
+            "anggotaIg", "anggotaWa", "anggotaTiktok", "anggotaMotto", "anggotaUrutan"];
+    },
+
+    _popupMode(mode) {
+        const simple = mode === "anggota";
+        Anggota._pengOnlyIds().forEach(id => {
+            const el = document.getElementById(id);
+            const f = el ? el.closest(".field") : null;
+            if (f) f.style.display = simple ? "none" : "";
+        });
+        const drop = document.getElementById("anggotaDrop");
+        const dropField = drop ? drop.closest(".field") : null;
+        if (dropField) dropField.style.display = simple ? "none" : "";
+    },
+
     bukaPopupAnggota() {
-        Anggota._revokePopupUrl("agg");
-        Anggota.aggForm = { id: null, fotoPath: "", pendingFile: null, pendingUrl: null };
+        Anggota._revokePopupUrl("peng");
+        Anggota.aggForm = { id: null };
         document.getElementById("anggotaPopupId").value = "";
         document.getElementById("anggotaNama").value = "";
         document.getElementById("anggotaJabatan").value = "";
-        Anggota.isiBio(null);
-        // urutan otomatis: max + 1 biar di paling bawah
-        const rows = Anggota.rowsTahun();
-        const nextNo = rows.length ? Math.max(...rows.map(a => parseInt(a.urutan, 10) || 0)) + 1 : 1;
-        document.getElementById("anggotaUrutan").value = String(Math.min(nextNo, 999));
+        document.getElementById("anggotaKelas").value = "";
+        document.getElementById("anggotaUsername").value = "";
         document.getElementById("anggotaPopupTitle").textContent = "Tambah Anggota";
-        Anggota.renderPopupFoto("agg");
+        Anggota._popupMode("anggota");
         document.getElementById("anggotaPopup").classList.add("open");
         document.body.style.overflow = "hidden";
         setTimeout(() => document.getElementById("anggotaNama")?.focus(), 80);
@@ -287,15 +331,15 @@ const Anggota = {
     editAnggota(id) {
         const item = Anggota.anggotaCache.find(a => String(a.id) === String(id));
         if (!item) return;
-        Anggota._revokePopupUrl("agg");
-        Anggota.aggForm = { id, fotoPath: item.foto || "", pendingFile: null, pendingUrl: null };
+        Anggota._revokePopupUrl("peng");
+        Anggota.aggForm = { id };
         document.getElementById("anggotaPopupId").value = id;
         document.getElementById("anggotaNama").value = item.nama || "";
         document.getElementById("anggotaJabatan").value = item.jabatan || "";
-        document.getElementById("anggotaUrutan").value = item.urutan ?? 99;
-        Anggota.isiBio(item);
+        document.getElementById("anggotaKelas").value = item.kelas || "";
+        document.getElementById("anggotaUsername").value = item.username || "";
         document.getElementById("anggotaPopupTitle").textContent = "Edit Anggota";
-        Anggota.renderPopupFoto("agg");
+        Anggota._popupMode("anggota");
         document.getElementById("anggotaPopup").classList.add("open");
         document.body.style.overflow = "hidden";
         setTimeout(() => document.getElementById("anggotaNama")?.focus(), 80);
@@ -304,8 +348,9 @@ const Anggota = {
     tutupPopupAnggota() {
         document.getElementById("anggotaPopup")?.classList.remove("open");
         document.body.style.overflow = "";
-        Anggota._revokePopupUrl("agg");
-        Anggota.aggForm = { id: null, fotoPath: "", pendingFile: null, pendingUrl: null };
+        Anggota._revokePopupUrl("peng");
+        Anggota.aggForm = { id: null };
+        Anggota.pengForm = { id: null, fotoPath: "", pendingFile: null, pendingUrl: null };
     },
 
     handlePopupFile(which, file) {
@@ -314,23 +359,23 @@ const Anggota = {
             return;
         }
         Anggota._revokePopupUrl(which);
-        const form = which === "agg" ? Anggota.aggForm : Anggota.sekForm;
+        const form = which === "peng" ? Anggota.pengForm : Anggota.sekForm;
         form.pendingFile = file;
         form.pendingUrl = URL.createObjectURL(file);
         Anggota.renderPopupFoto(which);
     },
 
     _revokePopupUrl(which) {
-        const form = which === "agg" ? Anggota.aggForm : Anggota.sekForm;
+        const form = which === "peng" ? Anggota.pengForm : Anggota.sekForm;
         if (form && form.pendingUrl) { try { URL.revokeObjectURL(form.pendingUrl); } catch {} }
         if (form) { form.pendingFile = null; form.pendingUrl = null; }
     },
 
     renderPopupFoto(which) {
-        const isAgg = which === "agg";
-        const drop = document.getElementById(isAgg ? "anggotaDrop" : "sekbidDrop");
-        const inner = document.getElementById(isAgg ? "anggotaDropInner" : "sekbidDropInner");
-        const form = isAgg ? Anggota.aggForm : Anggota.sekForm;
+        const isPeng = which === "peng";
+        const drop = document.getElementById(isPeng ? "anggotaDrop" : "sekbidDrop");
+        const inner = document.getElementById(isPeng ? "anggotaDropInner" : "sekbidDropInner");
+        const form = isPeng ? Anggota.pengForm : Anggota.sekForm;
         if (!drop) return;
         drop.querySelectorAll("img").forEach(i => i.remove());
         let src = "";
@@ -374,20 +419,14 @@ const Anggota = {
         if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
         const nama = document.getElementById("anggotaNama").value.trim();
         const jabatan = document.getElementById("anggotaJabatan").value.trim();
-        const bio = Anggota.bacaBio();
-        let urutan = parseInt(document.getElementById("anggotaUrutan").value, 10);
-        if (!Number.isFinite(urutan) || urutan < 1) urutan = 99;
+        const kelas = document.getElementById("anggotaKelas").value.trim();
+        const username = document.getElementById("anggotaUsername").value.trim();
         const id = document.getElementById("anggotaPopupId").value || null;
         if (!nama) { showToast("Nama wajib diisi", "error"); return; }
-        const __specAgg = () => {
-            const pf = Anggota.aggForm.pendingFile;
-            return { modul: "anggota", op: id ? "update" : "create",
-                label: "Anggota: " + String(nama).slice(0, 42),
-                payload: Object.assign({ id: id || null, tahun: Anggota.tahun, nama, jabatan, urutan,
-                    fotoExist: Anggota.aggForm.fotoPath || "" }, bio),
-                files: pf ? [{ slot: "foto", file: pf, name: pf.name, type: pf.type }] : [],
-                cacheKeys: ["anggota"] };
-        };
+        const __specAgg = () => ({ modul: "anggota", op: id ? "update" : "create",
+            label: "Anggota: " + String(nama).slice(0, 42),
+            payload: { id: id || null, tahun: Anggota.tahun, nama, jabatan, kelas, username },
+            files: [], cacheKeys: ["anggota"] });
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
             try { await Outbox.enqueue(__specAgg()); } catch (e) { showToast(e.message, "error"); return; }
             Outbox.sesudahAntre(() => Anggota.tutupPopupAnggota());
@@ -397,33 +436,11 @@ const Anggota = {
         const btn = document.getElementById("btnSimpanAnggotaPopup");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         try {
-            let foto = Anggota.aggForm.fotoPath || "";
-            if (Anggota.aggForm.pendingFile) {
-                const f = Anggota.aggForm.pendingFile;
-                const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-                const path = `anggota/anggota-${Anggota.tahun}-${Date.now()}.${ext}`;
-                await uploadFotoStorage(f, path);
-                if (foto && foto !== path) { try { await hapusFotoStorage(foto); } catch {} }
-                foto = path;
-            }
-            const colFotoMissing = (e) => String((e && e.message) || e || "").match(/foto/i);
             if (id) {
-                try {
-                    await updateAnggota(id, Object.assign({ nama, jabatan, urutan, foto }, bio));
-                } catch (e) {
-                    // kolom foto belum ada (migrasi belum di-run) — simpan tanpa foto
-                    if (!foto || !colFotoMissing(e)) throw e;
-                    await updateAnggota(id, Object.assign({ nama, jabatan, urutan }, bio));
-                    showToast("Tersimpan tanpa foto (run migrasi blok 13 dulu)", "info");
-                    Anggota.tutupPopupAnggota();
-                    const fresh0 = await getAnggota();
-                    Anggota.anggotaCache = fresh0 || [];
-                    Anggota.renderAnggota();
-                    return;
-                }
+                await updateAnggota(id, { nama, jabatan, kelas, username });
                 showToast("Anggota diperbarui!", "success");
             } else {
-                await tambahAnggota(Object.assign({ tahun: Anggota.tahun, nama, jabatan, urutan, foto }, bio));
+                await tambahAnggota({ tahun: Anggota.tahun, nama, jabatan, kelas, username });
                 showToast("Anggota ditambah!", "success");
             }
             Anggota.tutupPopupAnggota();
@@ -448,7 +465,6 @@ const Anggota = {
         if (!yakin) return;
         try {
             await hapusAnggota(id);
-            if (item && item.foto) { try { await hapusFotoStorage(item.foto); } catch {} }
             Anggota.anggotaCache = Anggota.anggotaCache.filter(a => String(a.id) !== String(id));
             showToast("Anggota dihapus", "success");
             Anggota.renderAnggota();
@@ -458,22 +474,152 @@ const Anggota = {
         }
     },
 
-    // ============ PENGURUS ============
+    // ============ PENGURUS (biodata lengkap, kartu + popup full) ============
     pimpTahun() {
         return (Anggota.pimpinanCache || []).find(p => parseInt(p.tahun, 10) === Anggota.tahun) || null;
     },
 
     renderPengurus() {
-        // Panel pengurus sudah digabung ke daftar anggota — keluar kalau panel tidak ada
-        if (!document.getElementById("panelPengurus")) return;
-        const p = Anggota.pimpTahun() || {};
-        document.getElementById("pimpKetuaNama").value = p.ketua_nama || "";
-        document.getElementById("pimpWakilNama").value = p.wakil_nama || "";
-        const pt = document.getElementById("pengurusTahun");
-        if (pt) pt.textContent = Anggota.tahun;
-        Anggota.renderPfBox("pfKetua", "ketua_foto", p.ketua_foto);
-        Anggota.renderPfBox("pfWakil", "wakil_foto", p.wakil_foto);
-        Anggota.renderPfBox("pfAngkatan", "foto_angkatan", p.foto_angkatan);
+        const wrap = document.getElementById("pengurusTable");
+        if (!wrap) return;
+        const rows = Anggota.rowsPengurusTahun();
+        const cnt = document.getElementById("pengurusCount");
+        if (cnt) cnt.textContent = rows.length ? `(${rows.length})` : "";
+        const cards = rows.map(a => {
+            const foto = a.foto
+                ? `<img src="${getFoto(a.foto)}" alt="" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove()"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`
+                : Anggota.initial(a.nama);
+            return `
+                <div class="angg-card">
+                    <div class="angg-foto media-muat mini">${foto}</div>
+                    <h4>${escapeHtml(a.nama || "-")}</h4>
+                    <span class="jabatan">${escapeHtml(a.jabatan || "-")}</span>
+                    <div class="angg-actions">
+                        <button class="btn btn-white btn-sm" data-peng-edit="${a.id}"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-red btn-sm" data-peng-del="${a.id}"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>`;
+        }).join("");
+        wrap.innerHTML = `
+            <div class="angg-grid">
+                <div class="angg-card angg-add" data-peng-add><i class="fa-solid fa-plus"></i><span>Tambah Pengurus</span></div>
+                ${cards || ""}
+            </div>
+            ${rows.length ? "" : `<div class="pesan-empty" style="margin-top:10px">Belum ada pengurus periode ${Anggota.tahun}.</div>`}`;
+    },
+
+    bukaPopupPengurus() {
+        Anggota._revokePopupUrl("peng");
+        Anggota.pengForm = { id: null, fotoPath: "", pendingFile: null, pendingUrl: null };
+        document.getElementById("anggotaPopupId").value = "";
+        document.getElementById("anggotaNama").value = "";
+        document.getElementById("anggotaJabatan").value = "";
+        Anggota.isiBio(null);
+        const rows = Anggota.rowsPengurusTahun();
+        const nextNo = rows.length ? Math.max(...rows.map(a => parseInt(a.urutan, 10) || 0)) + 1 : 1;
+        document.getElementById("anggotaUrutan").value = String(Math.min(nextNo, 999));
+        document.getElementById("anggotaPopupTitle").textContent = "Tambah Pengurus";
+        Anggota._popupMode("pengurus");
+        Anggota.renderPopupFoto("peng");
+        document.getElementById("anggotaPopup").classList.add("open");
+        document.body.style.overflow = "hidden";
+        setTimeout(() => document.getElementById("anggotaNama")?.focus(), 80);
+    },
+
+    editPengurus(id) {
+        const item = Anggota.pengurusCache.find(a => String(a.id) === String(id));
+        if (!item) return;
+        Anggota._revokePopupUrl("peng");
+        Anggota.pengForm = { id, fotoPath: item.foto || "", pendingFile: null, pendingUrl: null };
+        document.getElementById("anggotaPopupId").value = id;
+        document.getElementById("anggotaNama").value = item.nama || "";
+        document.getElementById("anggotaJabatan").value = item.jabatan || "";
+        document.getElementById("anggotaUrutan").value = item.urutan ?? 99;
+        Anggota.isiBio(item);
+        document.getElementById("anggotaPopupTitle").textContent = "Edit Pengurus";
+        Anggota._popupMode("pengurus");
+        Anggota.renderPopupFoto("peng");
+        document.getElementById("anggotaPopup").classList.add("open");
+        document.body.style.overflow = "hidden";
+        setTimeout(() => document.getElementById("anggotaNama")?.focus(), 80);
+    },
+
+    async simpanPopupPengurus() {
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
+        const nama = document.getElementById("anggotaNama").value.trim();
+        const jabatan = document.getElementById("anggotaJabatan").value.trim();
+        const bio = Anggota.bacaBio();
+        let urutan = parseInt(document.getElementById("anggotaUrutan").value, 10);
+        if (!Number.isFinite(urutan) || urutan < 1) urutan = 99;
+        const id = document.getElementById("anggotaPopupId").value || null;
+        if (!nama) { showToast("Nama wajib diisi", "error"); return; }
+        const __specPeng = () => {
+            const pf = Anggota.pengForm.pendingFile;
+            return { modul: "pengurus", op: id ? "update" : "create",
+                label: "Pengurus: " + String(nama).slice(0, 42),
+                payload: Object.assign({ id: id || null, tahun: Anggota.tahun, nama, jabatan, urutan,
+                    fotoExist: Anggota.pengForm.fotoPath || "" }, bio),
+                files: pf ? [{ slot: "foto", file: pf, name: pf.name, type: pf.type }] : [],
+                cacheKeys: ["pengurus"] };
+        };
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            try { await Outbox.enqueue(__specPeng()); } catch (e) { showToast(e.message, "error"); return; }
+            Outbox.sesudahAntre(() => Anggota.tutupPopupAnggota());
+            return;
+        }
+
+        const btn = document.getElementById("btnSimpanAnggotaPopup");
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
+        try {
+            let foto = Anggota.pengForm.fotoPath || "";
+            if (Anggota.pengForm.pendingFile) {
+                const f = Anggota.pengForm.pendingFile;
+                const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
+                const path = `pengurus/pengurus-${Anggota.tahun}-${Date.now()}.${ext}`;
+                await uploadFotoStorage(f, path);
+                if (foto && foto !== path) { try { await hapusFotoStorage(foto); } catch {} }
+                foto = path;
+            }
+            if (id) {
+                await updatePengurus(id, Object.assign({ nama, jabatan, urutan, foto }, bio));
+                showToast("Pengurus diperbarui!", "success");
+            } else {
+                await tambahPengurus(Object.assign({ tahun: Anggota.tahun, nama, jabatan, urutan, foto }, bio));
+                showToast("Pengurus ditambah!", "success");
+            }
+            Anggota.tutupPopupAnggota();
+            const fresh = await getPengurus();
+            Anggota.pengurusCache = fresh || [];
+            try { Cache.set("pengurus", fresh || []); } catch {}
+            Anggota.renderPengurus();
+        } catch (err) {
+            console.error(err);
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specPeng())) {
+                Outbox.sesudahAntre(() => Anggota.tutupPopupAnggota());
+                return;
+            }
+            showToast("Gagal simpan: " + err.message, "error");
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }
+        }
+    },
+
+    async hapusPengurus(id) {
+        const item = Anggota.pengurusCache.find(a => String(a.id) === String(id));
+        const yakin = await showPopup(`Hapus ${item ? item.nama : "pengurus ini"} dari periode ${Anggota.tahun}?`, "confirm");
+        if (!yakin) return;
+        try {
+            await hapusPengurus(id);
+            if (item && item.foto) { try { await hapusFotoStorage(item.foto); } catch {} }
+            Anggota.pengurusCache = Anggota.pengurusCache.filter(a => String(a.id) !== String(id));
+            try { Cache.set("pengurus", Anggota.pengurusCache); } catch {}
+            showToast("Pengurus dihapus", "success");
+            Anggota.renderPengurus();
+        } catch (err) {
+            console.error(err);
+            showPopup("Gagal hapus: " + err.message, "error");
+        }
     },
 
     renderPfBox(boxId, field, savedPath) {
@@ -608,7 +754,7 @@ const Anggota = {
                 html += `</div><div class="angg-grup">${escapeHtml(s.kategori === "BPH" ? "Badan Pengurus Harian" : "Seksi Bidang")}</div><div class="angg-grid">`;
             }
             const foto = s.foto
-                ? `<img src="${getFoto(s.foto)}" alt="" loading="lazy" onerror="this.remove()">`
+                ? `<span class="media-muat mini" style="width:72px;height:72px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="${getFoto(s.foto)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove()"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span>`
                 : `<i class="fa-solid fa-layer-group"></i>`;
             html += `
                 <div class="angg-card">

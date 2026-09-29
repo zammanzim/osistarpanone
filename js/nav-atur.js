@@ -3,7 +3,8 @@
 // Atur tab bawah (maks 4) + Menu Lainnya: tambah, hapus, geser urutan,
 // pindah tab↔sheet, ikon, label. Tersimpan ke server (site_content.
 // bottomnav_menu) dan berlaku untuk SEMUA user. Ikut pola OsisSidebar.
-// Tombol muncul di dalam sheet "Menu Lainnya" (index saja).
+// Tombol muncul di dalam sheet "Menu Lainnya" (index saja),
+// hanya pas state edit (body.edit-mode) + punya hak "Site".
 // =========================================================================
 
 const NavAtur = {
@@ -63,13 +64,27 @@ const NavAtur = {
 
   refresh() {
     const btn = document.getElementById("navAturBtn");
-    if (btn) btn.style.display = NavAtur.bisa() ? "" : "none";
+    if (!btn) return;
+    // Tombol cuma tampil pas state edit (body.edit-mode) + punya hak.
+    let edit = false;
+    try {
+      edit = document.body.classList.contains("edit-mode");
+    } catch (e) {}
+    btn.style.display = edit && NavAtur.bisa() ? "" : "none";
   },
 
   // ---- buka / tutup editor ----
   buka() {
     if (!NavAtur.bisa()) {
       if (typeof showToast === "function") showToast("Hanya super_admin yang bisa mengatur navigasi.", "error");
+      return;
+    }
+    let edit = false;
+    try {
+      edit = document.body.classList.contains("edit-mode");
+    } catch (e) {}
+    if (!edit) {
+      if (typeof showToast === "function") showToast("Aktifkan mode edit dulu.", "error");
       return;
     }
     if (typeof NavMore !== "undefined") NavMore.tutup();

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Anggota & Pengurus - OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=18" />
+    <link rel="stylesheet" href="../css/style.css?v=19" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -178,6 +178,10 @@
         object-fit: cover;
         display: block;
       }
+      .angg-card .angg-foto.media-muat {
+        display: grid;
+        place-items: center;
+      }
       .angg-card h4 {
         font-size: 0.88rem;
         font-weight: 900;
@@ -331,7 +335,8 @@
     <script src="../js/show-popup.js?v=10" defer></script>
     <script src="../js/osis-auth.js?v=17" defer></script>
     <script src="../js/osis-sidebar.js?v=13" defer></script>
-    <script src="../js/anggota.js?v=10" defer></script>
+    <script src="../js/osis-header.js?v=10" defer></script>
+    <script src="../js/anggota.js?v=11" defer></script>
     <script src="../js/pwa.js?v=10" defer></script>
   </head>
   <body>
@@ -376,22 +381,40 @@
         <button class="angg-tab active" data-tab="anggota">
           <i class="fa-solid fa-users"></i> Anggota
         </button>
+        <button class="angg-tab" data-tab="pengurus">
+          <i class="fa-solid fa-id-card"></i> Pengurus
+        </button>
         <button class="angg-tab" data-tab="sekbid">
           <i class="fa-solid fa-layer-group"></i> Sekbid
         </button>
       </div>
 
-      <!-- ANGGOTA -->
+      <!-- ANGGOTA (simple: nama, jabatan, kelas, username) -->
       <div class="anggota-card" id="panelAnggota">
         <h3>
           <i class="fa-solid fa-users"></i> Anggota
           <span id="anggotaCount"></span>
         </h3>
-        <p class="sub">Klik kartu + buat tambah, ikon pen buat edit. Ketua &amp; wakil cukup diisi sebagai anggota dengan jabatan Ketua / Wakil Ketua OSIS.</p>
+        <p class="sub">Data anggota simple (nama, jabatan, kelas, username) — dipakai absen. Klik kartu + buat tambah, ikon pen buat edit.</p>
         <div id="anggotaTable">
           <div class="loading-block">
             <div class="spinner"></div>
             Memuat anggota...
+          </div>
+        </div>
+      </div>
+
+      <!-- PENGURUS (biodata lengkap) -->
+      <div class="anggota-card" id="panelPengurus" style="display: none">
+        <h3>
+          <i class="fa-solid fa-id-card"></i> Pengurus
+          <span id="pengurusCount"></span>
+        </h3>
+        <p class="sub">Biodata pengurus lengkap (foto, panggilan, TTL, visi, misi, medsos). Tampil di halaman Pengurus &amp; struktur homepage.</p>
+        <div id="pengurusTable">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat pengurus...
           </div>
         </div>
       </div>

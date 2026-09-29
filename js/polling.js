@@ -223,7 +223,7 @@ const Polling = {
             const pct = total > 0 ? Math.round((jml / total) * 100) : 0;
             const mine = Polling.saya != null && String(Polling.saya) === String(k.id);
             const foto = k.foto
-                ? "<img class=\"pol-foto\" src=\"" + escapeHtml(getFoto(k.foto)) + "\" alt=\"Foto " + escapeHtml(k.nama || "") + "\" loading=\"lazy\">"
+                ? "<span class=\"media-muat\" style=\"display:block\"><img class=\"pol-foto\" src=\"" + escapeHtml(getFoto(k.foto)) + "\" alt=\"Foto " + escapeHtml(k.nama || "") + "\" loading=\"lazy\" onload=\"this.closest('.media-muat').classList.add('sudah-muat')\" onerror=\"this.closest('.media-muat').classList.add('sudah-muat')\"><span class=\"media-muat-loading\" aria-hidden=\"true\"><span class=\"spinner\"></span></span></span>"
                 : "<div class=\"pol-foto-ph\">" + escapeHtml(String(k.nomor || "?")) + "</div>";
             const visi = (k.visi || k.misi)
                 ? "<details class=\"pol-visi\"><summary><i class=\"fa-solid fa-bullseye\"></i> Visi & Misi</summary><div style=\"margin-top:6px\"><b>Visi:</b><br>" + escapeHtml(k.visi || "-") + "<br><br><b>Misi:</b><br>" + escapeHtml(k.misi || "-") + "</div></details>"
@@ -282,7 +282,7 @@ const Polling = {
         const list = Polling.kandidat || [];
         if (kelola) {
             kelola.innerHTML = list.length ? list.map((k) => {
-                const img = k.foto ? "<img src=\"" + escapeHtml(getFoto(k.foto)) + "\" alt=\"\">" : "";
+                const img = k.foto ? "<span class=\"media-muat mini\" style=\"width:44px;height:44px;flex-shrink:0\"><img src=\"" + escapeHtml(getFoto(k.foto)) + "\" alt=\"\" style=\"width:44px;height:44px;object-fit:cover;border-radius:10px;border:2px solid var(--ink)\" onload=\"this.closest('.media-muat').classList.add('sudah-muat')\" onerror=\"this.closest('.media-muat').classList.add('sudah-muat')\"><span class=\"media-muat-loading\" aria-hidden=\"true\" style=\"border-radius:10px\"><span class=\"spinner\"></span></span></span>" : "";
                 return "<div class=\"pol-kelola-item\">" + img +
                     "<span class=\"nm\">" + escapeHtml(String(k.nomor || "?")) + ". " + escapeHtml(k.nama || "-") + " &middot; " + Polling.suaraKandidat(k.id) + " suara" + (String(k.pengunggah || "").trim() ? " &middot; oleh " + escapeHtml(String(k.pengunggah).trim()) : "") + "</span>" +
                     "<button onclick=\"Polling.editKandidat(" + k.id + ")\"><i class=\"fa-solid fa-pen\"></i></button>" +

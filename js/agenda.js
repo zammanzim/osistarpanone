@@ -261,7 +261,7 @@ const AgendaAdmin = {
         const fotos = Array.isArray(a.fotos) ? a.fotos : [];
         const fotosHtml = fotos.length ? `<div class="agenda-fotos">${fotos.map((f, fi) => {
             const p = typeof f === "string" ? f : f.path;
-            return `<img src="${getFoto(p)}" alt="" loading="lazy" class="bisa-klik" title="Klik untuk lihat detail" onclick="event.stopPropagation(); AgendaAdmin.detail(${a.id}, ${fi})">`;
+            return `<span class="media-muat mini" style="width:90px;height:90px;flex-shrink:0"><img src="${getFoto(p)}" alt="" loading="lazy" class="bisa-klik" style="width:90px;height:90px" title="Klik untuk lihat detail" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" onclick="event.stopPropagation(); AgendaAdmin.detail(${a.id}, ${fi})"><span class="media-muat-loading" aria-hidden="true" style="border-radius:10px"><span class="spinner"></span></span></span>`;
         }).join("")}</div>` : "";
         const tgl = a.tanggal ? new Date(a.tanggal).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-";
         const pel = String(a.pelaksana || "").trim();
@@ -396,15 +396,15 @@ const AgendaAdmin = {
                 ${olehLabel(a)}
             </div>
             ${a.deskripsi ? `<p style="font-size:0.88rem; line-height:1.6; margin:6px 0 2px; overflow-wrap:anywhere">${escapeHtml(a.deskripsi)}</p>` : ""}
-            <div class="agenda-detail-stage">
-                <img id="agendaDetailFoto" src="" alt="${escapeHtml(a.judul || "Foto agenda")}">
-                ${fotos.length > 1 ? `<button type="button" class="agenda-detail-nav prev" onclick="AgendaAdmin.fotoGeser(-1)" title="Sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="agenda-detail-stage media-muat media-muat-tinggi">
+                <img id="agendaDetailFoto" src="" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" alt="${escapeHtml(a.judul || "Foto agenda")}">
+                <span class="media-muat-loading" aria-hidden="true" style="z-index:auto"><span class="spinner"></span></span>${fotos.length > 1 ? `<button type="button" class="agenda-detail-nav prev" onclick="AgendaAdmin.fotoGeser(-1)" title="Sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
                 <button type="button" class="agenda-detail-nav next" onclick="AgendaAdmin.fotoGeser(1)" title="Berikutnya"><i class="fa-solid fa-chevron-right"></i></button>` : ""}
                 ${fotos.length > 1 ? `<span class="agenda-detail-count" id="agendaDetailCount"></span>` : ""}
             </div>
             ${fotos.length > 1 ? `<div class="agenda-detail-thumbs" id="agendaDetailThumbs">${fotos.map((f, fi) => {
                 const p = typeof f === "string" ? f : f.path;
-                return `<img src="${getFoto(p)}" alt="" loading="lazy" data-thumb="${fi}" onclick="AgendaAdmin.fotoPilih(${fi})">`;
+                return `<span class="media-muat mini" style="width:64px;height:64px;flex-shrink:0"><img src="${getFoto(p)}" alt="" loading="lazy" data-thumb="${fi}" style="width:64px;height:64px" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" onclick="AgendaAdmin.fotoPilih(${fi})"><span class="media-muat-loading" aria-hidden="true" style="border-radius:10px"><span class="spinner"></span></span></span>`;
             }).join("")}</div>` : ""}`;
         AgendaAdmin.renderDetailFoto();
         document.getElementById("agendaDetail").classList.add("open");
@@ -419,7 +419,10 @@ const AgendaAdmin = {
         AgendaAdmin.detailIdx = (AgendaAdmin.detailIdx + fotos.length) % fotos.length;
         const f = fotos[AgendaAdmin.detailIdx];
         const img = document.getElementById("agendaDetailFoto");
-        if (img) img.src = getFoto(typeof f === "string" ? f : f.path);
+        if (img) {
+            img.closest(".media-muat")?.classList.remove("sudah-muat");
+            img.src = getFoto(typeof f === "string" ? f : f.path);
+        }
         const count = document.getElementById("agendaDetailCount");
         if (count) count.textContent = (AgendaAdmin.detailIdx + 1) + " / " + fotos.length;
         document.querySelectorAll("#agendaDetailThumbs img").forEach(el => {

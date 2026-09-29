@@ -289,7 +289,7 @@ const Moments = {
                 ` disablepictureinpicture></video>` +
                 `<div class="moment-play"><span><i class="fa-solid fa-play"></i></span></div>`;
         } else {
-            media = `<img src="${it.src}" alt="${cap}" loading="lazy" decoding="async">`;
+            media = `<span class="media-muat media-muat-tinggi"><img src="${it.src}" alt="${cap}" loading="lazy" decoding="async" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span>`;
         }
 
         return `<article class="moment-card" data-uid="${it.uid}" data-idx="${idx}" onclick="Moments.bukaViewer(${idx})">` +
@@ -458,7 +458,7 @@ const Moments = {
 
         const media = it.kind === "video"
             ? `<video src="${it.src}" controls loop playsinline preload="metadata"${it.poster ? ` poster="${it.poster}"` : ""}></video>`
-            : `<img src="${it.src}" alt="${cap}" draggable="false">`;
+            : `<span class="media-muat media-muat-tinggi" style="width:100%"><img src="${it.src}" alt="${cap}" draggable="false" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span>`;
 
         const ov = document.createElement("div");
         ov.className = "moments-viewer";

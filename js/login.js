@@ -77,10 +77,23 @@ const Login = {
 
     setSibuk(sibuk) {
         Login.sibuk = sibuk;
+        // Simpan tampilan asli sekali saja biar bisa dibalikin.
         const b1 = document.getElementById("btnMasuk");
+        if (b1 && !b1.dataset.htmlAsli) b1.dataset.htmlAsli = b1.innerHTML;
         const b2 = document.getElementById("btnDaftar");
-        if (b1) b1.disabled = sibuk;
-        if (b2) b2.disabled = sibuk;
+        if (b2 && !b2.dataset.htmlAsli) b2.dataset.htmlAsli = b2.innerHTML;
+        if (b1) {
+            b1.disabled = sibuk;
+            b1.innerHTML = sibuk
+                ? '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...'
+                : b1.dataset.htmlAsli;
+        }
+        if (b2) {
+            b2.disabled = sibuk;
+            b2.innerHTML = sibuk
+                ? '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...'
+                : b2.dataset.htmlAsli;
+        }
     },
 
     // ============ MASUK (OSIS dulu, lalu akun biasa) ============

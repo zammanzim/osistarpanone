@@ -51,7 +51,8 @@
     proker: "Proker",
     evaluasi: "Evaluasi",
     anggota: "Anggota",
-    pimpinan: "Pengurus",
+    pengurus: "Pengurus",
+    pimpinan: "Pimpinan",
     sekbid: "Sekbid",
     webfoto: "Foto Web",
     siteteks: "Teks Web",
@@ -798,14 +799,23 @@
   Outbox.handlers.proker = handlerMulti("proker");
   Outbox.handlers.evaluasi = handlerMulti("evaluasi");
 
-  // ---- Anggota / Pengurus / Sekbid
+  // ---- Anggota (simple: nama, jabatan, kelas, username) & Pengurus (biodata) / Sekbid
   Outbox.handlers.anggota = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    if (op.op === "update" && p.id) {
+      await updateAnggota(p.id, { nama: p.nama, jabatan: p.jabatan, kelas: p.kelas || "", username: p.username || "" });
+    } else {
+      await tambahAnggota({ tahun: p.tahun, nama: p.nama, jabatan: p.jabatan, kelas: p.kelas || "", username: p.username || "" });
+    }
+  };
+  Outbox.handlers.pengurus = async function (op) {
     var uid = Outbox.butuhLogin(op);
     var p = op.payload || {};
     var foto = p.fotoExist || "";
     if (op.files && op.files.length) {
       foto = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
-        return "anggota/anggota-" + (p.tahun || "x") + "-" + Date.now() + "." + extOf(m.name, "jpg");
+        return "pengurus/pengurus-" + (p.tahun || "x") + "-" + Date.now() + "." + extOf(m.name, "jpg");
       }, uid);
       if (p.fotoExist && p.fotoExist !== foto) {
         try {
@@ -822,15 +832,15 @@
       // foto hanya dikirim kalau ada (baru/existing) — jangan hapus foto server.
       if (foto || (op.files && op.files.length)) rowU.foto = foto;
       try {
-        await updateAnggota(p.id, rowU);
+        await updatePengurus(p.id, rowU);
       } catch (e) {
         if (rowU.foto && String((e && e.message) || e || "").match(/foto/i)) {
           delete rowU.foto;
-          await updateAnggota(p.id, rowU);
+          await updatePengurus(p.id, rowU);
         } else throw e;
       }
     } else {
-      await tambahAnggota({ tahun: p.tahun, nama: p.nama, jabatan: p.jabatan, urutan: p.urutan, foto: foto,
+      await tambahPengurus({ tahun: p.tahun, nama: p.nama, jabatan: p.jabatan, urutan: p.urutan, foto: foto,
         panggilan: p.panggilan || "", ttl: p.ttl || "", visi: p.visi || "", misi: p.misi || "",
         ig: p.ig || "", wa: p.wa || "", tiktok: p.tiktok || "", motto: p.motto || "", kelas: p.kelas || "", username: p.username || "" });
     }

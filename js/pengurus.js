@@ -1,6 +1,6 @@
 // =========================================================================
 // PENGURUS — daftar biodata pengurus, satu list card full-width
-// Sumber data: tabel pimpinan (ketua/wakil) + anggota
+// Sumber data: tabel pimpinan (ketua/wakil) + pengurus
 // =========================================================================
 
 const Pengurus = {
@@ -38,13 +38,13 @@ const Pengurus = {
 
   async muat() {
     const cp = Cache.get("pimpinan");
-    const ca = Cache.get("anggota");
+    const ca = Cache.get("pengurus");
     if (cp && ca) Pengurus.pakai(cp, ca);
 
     try {
-      const [pimp, agg] = await Promise.all([getPimpinan(), getAnggota()]);
+      const [pimp, agg] = await Promise.all([getPimpinan(), getPengurus()]);
       Cache.set("pimpinan", pimp || []);
-      Cache.set("anggota", agg || []);
+      Cache.set("pengurus", agg || []);
       Pengurus.pakai(pimp || [], agg || []);
     } catch (err) {
       console.error("Gagal muat pengurus:", err);
@@ -58,7 +58,7 @@ const Pengurus = {
     Pengurus.muatMilik();
   },
 
-  // Cari baris anggota milik user yang login (buat tombol edit di card sendiri)
+  // Cari baris pengurus milik user yang login (buat tombol edit di card sendiri)
   async muatMilik() {
     let uid = null;
     try {
@@ -84,7 +84,7 @@ const Pengurus = {
       const kuasa =
         typeof OsisAuth !== "undefined" &&
         (OsisAuth.isSuper() || OsisAuth.bisa("anggota"));
-      const saya = await getAnggotaSaya();
+      const saya = await getPengurusSaya();
       const idBaru = (saya && saya.id) || null;
       if (idBaru !== Pengurus.milikId || kuasa !== Pengurus.superKuasa) {
         Pengurus.milikId = idBaru;
@@ -166,7 +166,7 @@ const Pengurus = {
     if (!list) return;
     const thn = Pengurus.tahunAktif;
 
-    // Ketua & wakil = anggota dengan jabatan Ketua / Wakil Ketua OSIS.
+    // Ketua & wakil = pengurus dengan jabatan Ketua / Wakil Ketua OSIS.
     // Kalau belum ada, fallback ke tabel pimpinan lama (abaikan placeholder).
     const rows = Pengurus.anggota
       .filter(
@@ -254,7 +254,7 @@ const Pengurus = {
         const foto = k.foto
           ? `<img src="${getFoto(k.foto)}" alt="${escapeHtml(
               k.nama
-            )}" loading="lazy">`
+            )}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove()"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`
           : `<span class="pg-initial">${inisial}</span>`;
         const d = k.data || {};
         const bioVal = (v) => String(v ?? "").trim();
@@ -281,7 +281,7 @@ const Pengurus = {
           <span class="pg-periode"><i class="fa-solid fa-star"></i> PENGURUS ${thn}/${
             thn + 1
           }</span>
-          <div class="pg-foto">${foto}</div>
+          <div class="pg-foto media-muat mini">${foto}</div>
           <div class="pg-info">
             <h3>${escapeHtml(k.nama)}</h3>
             <p>${escapeHtml(k.jabatan)}</p>
@@ -455,7 +455,7 @@ const Pengurus = {
       String(k.nama || "?").trim().charAt(0).toUpperCase() || "?"
     );
     const foto = k.foto
-      ? `<img src="${getFoto(k.foto)}" alt="${escapeHtml(k.nama)}">`
+      ? `<img src="${getFoto(k.foto)}" alt="${escapeHtml(k.nama)}" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove()"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`
       : `<span class="pg-initial">${inisial}</span>`;
     const no = String(i + 1).padStart(2, "0");
 
@@ -463,7 +463,7 @@ const Pengurus = {
           <div class="pg-pop-top">
             <div class="pg-pop-foto-wrap">
               <span class="pg-pop-no">${no}</span>
-              <div class="pg-pop-foto">${foto}</div>
+              <div class="pg-pop-foto media-muat mini">${foto}</div>
             </div>
             <div class="pg-pop-main">
               <p class="pg-pop-jab">${escapeHtml(k.jabatan)}</p>
@@ -711,7 +711,7 @@ const Pengurus = {
       if (Pengurus.editFile) {
         const f = Pengurus.editFile;
         const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-        const path = `anggota/anggota-${k.data.tahun || Pengurus.tahunAktif}-${Date.now()}.${ext}`;
+        const path = `pengurus/pengurus-${k.data.tahun || Pengurus.tahunAktif}-${Date.now()}.${ext}`;
         await uploadFotoStorage(f, path);
         if (foto && foto !== path) {
           try {
@@ -722,10 +722,10 @@ const Pengurus = {
       }
       const milikSendiri = k.data.id === Pengurus.milikId;
       if (milikSendiri) {
-        await updateAnggotaSendiri(k.data.id, Object.assign({}, bio, { foto }));
+        await updatePengurusSendiri(k.data.id, Object.assign({}, bio, { foto }));
       } else {
         // Super/admin: pakai jalur admin biasa (nama & jabatan ikut terkunci via "")
-        await updateAnggota(
+        await updatePengurus(
           k.data.id,
           Object.assign(
             { nama: "", jabatan: "", urutan: k.data.urutan ?? 99, foto },
@@ -739,7 +739,7 @@ const Pengurus = {
       Object.assign(k.data, bio, { foto });
       k.foto = foto;
       try {
-        Cache.set("anggota", Pengurus.anggota);
+        Cache.set("pengurus", Pengurus.anggota);
       } catch {}
       Pengurus.isiBodyView();
       Pengurus.render();
@@ -747,7 +747,7 @@ const Pengurus = {
       console.error(err);
       const msg = String((err && err.message) || err || "");
       if (typeof showToast === "function") {
-        if (/anggota_sendiri|function/i.test(msg))
+        if (/pengurus_sendiri|anggota_sendiri|function/i.test(msg))
           showToast("Migrasi edit-sendiri belum dijalankan admin.", "error");
         else if (/BUKAN_MILIK|NO_AUTH/i.test(msg))
           showToast("Kamu tidak boleh mengedit ini.", "error");
