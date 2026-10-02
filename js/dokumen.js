@@ -492,10 +492,12 @@ const Dokumen = {
                 if (cur && cur.pengunggah && !f.pengunggah) f.pengunggah = cur.pengunggah;
                 await updateDokumen(u.id, id, f);
                 showToast("Dokumen diperbarui!", "success");
+                catatAksi("simpan_dokumen", "edit " + String(nama || "").slice(0, 60));
             } else {
                 const newId = await buatDokumen(u.id, f);
                 if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
                 showToast("Dokumen tersimpan!", "success");
+                catatAksi("simpan_dokumen", String(nama || "").slice(0, 60));
             }
             Dokumen.tutupForm();
             await Dokumen.muat();

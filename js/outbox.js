@@ -74,7 +74,7 @@
       }
     } catch {}
     try {
-      if (tipe === "error") alert(msg);
+      if (tipe === "error" && typeof window.showPopup === "function") window.showPopup(msg, "error");
       else console.log("[outbox]", msg);
     } catch {}
   }

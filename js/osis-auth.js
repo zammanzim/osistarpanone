@@ -161,6 +161,8 @@ const OsisAuth = {
     },
 
     async logout() {
+        // Catat dulu selagi identitas masih ada (fire-and-forget), baru buang cache.
+        try { catatAksi("logout", ""); } catch {}
         // Cache dibuang DULU secara sinkron (pemanggil sync langsung lihat logout),
         // session Auth dicabut setelahnya.
         OsisAuth.buangCacheOsis();
@@ -181,9 +183,6 @@ const OsisAuth = {
     async tanya(pesan) {
         try {
             if (typeof showPopup === "function") return !!(await showPopup(pesan, "confirm"));
-        } catch {}
-        try {
-            if (typeof confirm === "function") return confirm(pesan);
         } catch {}
         return true;
     },

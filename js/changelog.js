@@ -227,7 +227,7 @@
 
   async function hapus(id) {
     if (!butuhKelola()) return;
-    var yakin = (typeof showPopup === "function") ? await showPopup("Hapus entri ini dari changelog?", "confirm") : confirm("Hapus entri ini?");
+    var yakin = (typeof showPopup === "function") ? await showPopup("Hapus entri ini dari changelog?", "confirm") : true;
     if (!yakin) return;
     try {
       var u = OsisAuth.getUser();

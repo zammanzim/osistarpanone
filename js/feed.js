@@ -546,6 +546,7 @@ const Feed = {
                 const s = btn.querySelector("span");
                 if (s) s.textContent = String(n);
             }
+            if (!dulu) catatAksi("like_feed", "postingan #" + id);
         } catch (err) {
             console.error(err);
             if (item) {
@@ -648,6 +649,7 @@ const Feed = {
             const box = document.getElementById("feedKbox-" + id);
             if (box) box.innerHTML = Feed.komenHtml(id);
             Feed.refreshCount(id);
+            catatAksi("komen_feed", teks.slice(0, 80));
         } catch (err) {
             console.error(err);
             if (typeof showToast === "function") showToast("Gagal kirim komentar.", "error");
@@ -657,7 +659,7 @@ const Feed = {
     async hapusKomen(postId, komenId) {
         const yakin = (typeof showPopup === "function")
             ? await showPopup("Hapus komentar ini?", "confirm")
-            : confirm("Hapus komentar ini?");
+            : true;
         if (!yakin) return;
         try {
             const u = Feed.user();
@@ -709,6 +711,7 @@ const Feed = {
                 item.share_count = (parseInt(item.share_count, 10) || 0) + 1;
                 Feed.refreshCount(id);
             }
+            catatAksi("share_feed", "postingan #" + id);
         } catch {}
     },
 
@@ -720,7 +723,7 @@ const Feed = {
         if (!item) return;
         const yakin = (typeof showPopup === "function")
             ? await showPopup("Hapus postingan ini? Medianya ikut terhapus.", "confirm")
-            : confirm("Hapus postingan ini?");
+            : true;
         if (!yakin) return;
         try {
             await feedPostHapus(u.id, id);
@@ -730,6 +733,7 @@ const Feed = {
             delete Feed.komenBuka[id];
             Feed.render();
             if (typeof showToast === "function") showToast("Postingan dihapus.", "success");
+            catatAksi("hapus_feed", "postingan #" + id);
         } catch (err) {
             console.error(err);
             if (typeof showPopup === "function") showPopup("Gagal hapus: " + (err && err.message), "error");
@@ -913,6 +917,7 @@ const Feed = {
             });
             if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
             if (typeof showToast === "function") showToast("Postingan tayang!", "success");
+            catatAksi("upload_feed", (Feed.pendingKind === "video" ? "video " : "foto ") + kategori);
             Feed.tutupForm();
             await Feed.muat(true);
             window.scrollTo(0, 0);

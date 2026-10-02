@@ -834,11 +834,13 @@ const Keuangan = {
       if (id) {
         await updateKas(u.id, id, f);
         showToast("Transaksi diperbarui! Saldo otomatis update.", "success");
+        catatAksi("simpan_keuangan", "edit " + String(f.keterangan || "").slice(0, 60));
       } else {
         const newId = await buatKas(u.id, f);
         if (!newId || newId <= 0)
           throw new Error("Gagal simpan (" + newId + ")");
         showToast("Transaksi tersimpan! Saldo otomatis update.", "success");
+        catatAksi("simpan_keuangan", String(f.keterangan || "").slice(0, 60) + " " + Keuangan.rp(f.nominal));
       }
       if (typeof FormPersist !== "undefined") FormPersist.clear("kasForm");
       Keuangan.tutupForm();
@@ -877,6 +879,7 @@ const Keuangan = {
       }
       if (dariDetail) Keuangan.tutupDetail();
       showToast("Transaksi dihapus, saldo diperbarui", "success");
+      catatAksi("hapus_keuangan", String((item && item.keterangan) || "").slice(0, 60));
       await Keuangan.muat();
     } catch (err) {
       console.error(err);

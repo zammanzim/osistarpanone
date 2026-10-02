@@ -26,6 +26,7 @@ const OsisSidebar = {
     { href: "program-bulanan", label: "Program Bulanan", icon: "fa-solid fa-calendar-days" },
     { href: "profil", label: "Profil Saya", icon: "fa-solid fa-circle-user" },
     { href: "akses", label: "Akses", icon: "fa-solid fa-key", super: true },
+    { href: "logs", label: "Logs", icon: "fa-solid fa-clock-rotate-left", super: true },
   ],
 
   // Kompatibel ke belakang: kode lama baca OsisSidebar.MENU (array).
@@ -43,6 +44,7 @@ const OsisSidebar = {
     ["program-bulanan", "Program Bulanan", "fa-solid fa-calendar-days"],
     ["profil", "Profil Saya", "fa-solid fa-circle-user"],
     ["akses", "Akses", "fa-solid fa-key", "super"],
+    ["logs", "Logs", "fa-solid fa-clock-rotate-left", "super"],
   ],
 
   // Pilihan ikon siap pakai di form tambah/edit.
@@ -221,13 +223,18 @@ const OsisSidebar = {
     } catch (err) {
       if (typeof showToast === "function")
         showToast("Gagal simpan: " + (err && err.message ? err.message : err), "error");
-      else alert("Gagal simpan: " + (err && err.message ? err.message : err));
       return false;
     }
   },
 
   async resetMenu() {
-    if (!confirm("Kembalikan sidebar ke bawaan untuk SEMUA user?")) return;
+    let yakin = true;
+    try {
+      yakin = (typeof showPopup === "function")
+        ? !!(await showPopup("Kembalikan sidebar ke bawaan untuk SEMUA user?", "confirm"))
+        : true;
+    } catch (e) { yakin = true; }
+    if (!yakin) return;
     OsisSidebar.editIndex = -1;
     await OsisSidebar.simpanKeServer(
       OsisSidebar.DEFAULT_MENU.map((x) => ({ ...x })),
@@ -465,7 +472,13 @@ const OsisSidebar = {
         showToast("Menu tidak boleh kosong semua.", "error");
       return;
     }
-    if (!confirm("Hapus menu \"" + target.label + "\" untuk SEMUA user?")) return;
+    let yakin = true;
+    try {
+      yakin = (typeof showPopup === "function")
+        ? !!(await showPopup("Hapus menu \"" + target.label + "\" untuk SEMUA user?", "confirm"))
+        : true;
+    } catch (e) { yakin = true; }
+    if (!yakin) return;
     penuh.splice(i, 1);
     if (await OsisSidebar.simpanKeServer(penuh, "Menu dihapus.")) {
       OsisSidebar.editIndex = -1;
@@ -505,12 +518,10 @@ const OsisSidebar = {
     const superOnly = document.getElementById("sideSuper")?.checked || false;
     if (!judul) {
       if (typeof showToast === "function") showToast("Isi nama menu dulu.", "error");
-      else alert("Isi nama menu dulu.");
       return;
     }
     if (!href) {
       if (typeof showToast === "function") showToast("Isi tujuan/link menu.", "error");
-      else alert("Isi tujuan/link menu.");
       return;
     }
     href = href.replace(/\.html?$/i, "").replace(/^\.\//, "");
@@ -528,7 +539,6 @@ const OsisSidebar = {
       if (duplikat) {
         if (typeof showToast === "function")
           showToast("Link itu sudah ada di sidebar.", "error");
-        else alert("Link itu sudah ada di sidebar.");
         return;
       }
       penuh.push({ href, label: judul, icon: ikon, super: superOnly });

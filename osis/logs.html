@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Log Aktivitas — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css?v=22" />
+<meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+<link rel="manifest" href="../manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      .logs-wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .logs-head {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .logs-head .ico {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: var(--ink);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .logs-head h1 {
+        font-size: 1.25rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+      .logs-head p {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .logs-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      @media (min-width: 720px) {
+        .logs-stats {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+      .logs-stat {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 10px 8px;
+        box-shadow: 3px 3px 0 var(--ink);
+        text-align: center;
+        min-width: 0;
+      }
+      .logs-stat .lbl {
+        font-size: 0.6rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--gray);
+      }
+      .logs-stat b {
+        display: block;
+        font-size: 1.3rem;
+        font-weight: 900;
+        margin-top: 4px;
+      }
+      .logs-stat.online b { color: #146314; }
+      .logs-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px 16px;
+        box-shadow: 4px 4px 0 var(--ink);
+      }
+      .logs-card h3 {
+        font-size: 0.82rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .logs-card h3 i { color: var(--red); }
+      .logs-card h3 .cnt {
+        margin-left: auto;
+        background: #d6f5d6;
+        color: #146314;
+        border: 1.5px solid var(--ink);
+        border-radius: 999px;
+        padding: 1px 10px;
+        font-size: 0.68rem;
+      }
+      #onlineStrip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .logs-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        background: var(--paper-2);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        padding: 4px 12px 4px 8px;
+      }
+      .logs-chip b { font-weight: 900; }
+      .logs-online-empty {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--gray);
+      }
+      .filter-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 10px;
+        align-items: end;
+      }
+      @media (max-width: 560px) {
+        .filter-card {
+          grid-template-columns: 1fr auto;
+        }
+        .filter-card .field:first-child {
+          grid-column: 1 / -1;
+        }
+      }
+      .filter-card .field { margin-bottom: 0; }
+      .logs-item {
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        padding: 10px 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+        margin-bottom: 8px;
+      }
+      .logs-item-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .logs-nama {
+        font-size: 0.84rem;
+        font-weight: 900;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .logs-nama i {
+        font-size: 0.7rem;
+        color: var(--red);
+        margin-right: 6px;
+      }
+      .logs-waktu {
+        font-size: 0.66rem;
+        font-weight: 700;
+        color: var(--gray);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .logs-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+      }
+      .logs-badge {
+        font-size: 0.62rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: var(--ink);
+        color: #fff;
+        border-radius: 999px;
+        padding: 3px 10px;
+        white-space: nowrap;
+      }
+      .logs-hal {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--gray);
+      }
+      .logs-hal b { color: var(--ink); font-weight: 900; }
+      .logs-rel {
+        margin-left: auto;
+        font-size: 0.66rem;
+        font-weight: 700;
+        color: var(--gray);
+        white-space: nowrap;
+      }
+      .logs-det {
+        margin-top: 6px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+      .logs-key {
+        margin-top: 4px;
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+    </style>
+    <script src="../js/supabase.min.js?v=10"></script>
+    <script src="../js/config.js?v=13"></script>
+    <script src="../js/db.js?v=20" defer></script>
+    <script src="../js/aktivitas.js?v=10" defer></script>
+    <script src="../js/app.js?v=10" defer></script>
+    <script src="../js/toast.js?v=10" defer></script>
+    <script src="../js/notice.js?v=10" defer></script>
+    <script src="../js/show-popup.js?v=13" defer></script>
+    <script src="../js/osis-auth.js?v=19" defer></script>
+    <script src="../js/osis-sidebar.js?v=15" defer></script>
+    <script src="../js/osis-header.js?v=10" defer></script>
+    <script src="../js/logs.js?v=10" defer></script>
+  <script src="../js/pwa.js?v=10" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>LOGS</h2>
+          <p>Aktivitas User</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="logs-wrap">
+      <div class="logs-head">
+        <div class="ico"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>LOG AKTIVITAS</h1>
+          <p>Pantau siapa online, buka apa, dan ngapain aja. Khusus super admin.</p>
+        </div>
+        <button class="btn btn-red" id="btnRefreshLogs"><i class="fa-solid fa-rotate"></i> Refresh</button>
+      </div>
+
+      <div class="logs-stats">
+        <div class="logs-stat online"><span class="lbl"><i class="fa-solid fa-circle-dot"></i> Online</span><b id="statOnline">-</b></div>
+        <div class="logs-stat"><span class="lbl"><i class="fa-solid fa-bolt"></i> Aksi Hari Ini</span><b id="statAksiHari">-</b></div>
+        <div class="logs-stat"><span class="lbl"><i class="fa-solid fa-users"></i> User Aktif Hari Ini</span><b id="statUserHari">-</b></div>
+        <div class="logs-stat"><span class="lbl"><i class="fa-solid fa-database"></i> Dimuat</span><b id="statTotal">-</b></div>
+      </div>
+
+      <div class="logs-card">
+        <h3><i class="fa-solid fa-circle-dot"></i> Sedang Online <span class="cnt" id="onlineCount">0</span></h3>
+        <div id="onlineStrip"><span class="logs-online-empty">Memuat...</span></div>
+      </div>
+
+      <div class="filter-card">
+        <div class="field"><label>Cari (nama/aksi/halaman/detail)</label><input type="text" id="filterQ" class="admin-input" placeholder="Ketik..." /></div>
+        <div class="field"><label>Aksi</label><select id="filterAksi" class="admin-input"><option value="">Semua aksi</option></select></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
+      </div>
+
+      <div id="logsWrap"><div class="logs-card"><div class="loading-block"><div class="spinner"></div>Memuat logs...</div></div></div>
+      <div id="btnLagiWrap" style="display:none; text-align:center">
+        <button class="btn btn-white" id="btnLagi"><i class="fa-solid fa-angles-down"></i> Muat 100 Lagi</button>
+      </div>
+    </div>
+  </body>
+</html>

@@ -235,6 +235,23 @@ function infoPerangkat() {
   };
 }
 
+// Mode akses: "app" = dibuka dari PWA ter-install (standalone),
+// "browser" = dibuka dari tab browser biasa.
+// User-Agent app & browser SAMA, jadi wajib deteksi client-side.
+function modeAkses() {
+  try {
+    if (
+      window.matchMedia &&
+      window.matchMedia("(display-mode: standalone)").matches
+    )
+      return "app";
+    if (window.navigator && window.navigator.standalone === true) return "app"; // iOS
+    if (document.referrer && document.referrer.indexOf("android-app://") === 0)
+      return "app"; // TWA / Play wrapper
+  } catch {}
+  return "browser";
+}
+
 // Nama buat kolom name di tabel visitor:
 // - login OSIS -> nama anggota
 // - login biasa -> nama akun
@@ -615,6 +632,7 @@ async function catatVisitor() {
     p_resolusi: info.resolusi,
     p_name: getVisitorName(),
     p_user_key: getVisitorKey(),
+    p_mode: modeAkses(),
   };
   let { data, error } = await supa.rpc("tambah_visitor_unik", payload);
   // Fallback: kalo function baru (7 param) belum di-run di Supabase,
@@ -636,6 +654,65 @@ async function catatVisitor() {
   }
   if (error) throw error;
   return data || 0;
+}
+
+// =========================================================================
+// AKTIVITAS + PRESENCE — heartbeat tiap 60 detik (last_seen + halaman aktif)
+// + log segala aksi user (upload, like, simpan, dsb.). Semua fire-and-forget:
+// TIDAK PERNAH melempar error ke pemanggil biar tracking ga ganggu UX.
+// =========================================================================
+
+// Sentuh presence: lagi online di halaman apa (tanpa ubah jumlah kunjungan)
+async function aktivitasHeartbeat(halaman) {
+  try {
+    await supa.rpc("aktivitas_heartbeat", {
+      p_device_id: getDeviceId(),
+      p_user_key: getVisitorKey(),
+      p_nama: getVisitorName(),
+      p_halaman: halaman || "",
+      p_mode: modeAkses(),
+    });
+  } catch {}
+}
+
+// Catat 1 aksi user. Balikin id baris (0 = didedupe/gagal, aman diabaikan).
+async function aktivitasCatat(aksi, halaman, detail) {
+  try {
+    const { data } = await supa.rpc("aktivitas_catat", {
+      p_device_id: getDeviceId(),
+      p_user_key: getVisitorKey(),
+      p_nama: getVisitorName(),
+      p_aksi: aksi || "",
+      p_halaman: halaman || "",
+      p_detail: detail || "",
+      p_mode: modeAkses(),
+    });
+    return data || 0;
+  } catch {
+    return 0;
+  }
+}
+
+// List aktivitas terbaru (popup visitor + halaman Logs; dukung offset buat muat lagi)
+async function aktivitasList(limit, offset) {
+  const { data, error } = await supa.rpc("aktivitas_list", {
+    p_limit: limit || 30,
+    p_offset: offset || 0,
+  });
+  if (error) throw error;
+  return Array.isArray(data) ? data : [];
+}
+
+// Helper global: catat aksi dari modul mana pun. Aman dipanggil walau
+// aktivitas.js belum dimuat / RPC belum dimigrasi (no-op diam-diam).
+function catatAksi(aksi, detail) {
+  try {
+    if (typeof Aktivitas !== "undefined" && Aktivitas.aksi) {
+      Aktivitas.aksi(aksi, detail);
+    } else {
+      aktivitasCatat(aksi, "", detail || "");
+    }
+  } catch {}
 }
 
 // Ambil request lagu terbaru (terbaru di atas, maks 30)

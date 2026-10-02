@@ -810,6 +810,7 @@ const Absensi = {
                 else await buatAbsensi(u.id, { tanggal, nama: r.nama, status: r.status, alasan: r.alasan, kegiatan });
             }
             showToast("Absensi tersimpan!", "success");
+            catatAksi("simpan_absensi", String(tanggal || "") + " (" + rows.length + " orang)");
             if (typeof FormPersist !== "undefined") FormPersist.clear("absensiForm");
             Absensi.tutupForm();
             Absensi.segarkan();

@@ -90,7 +90,7 @@ const InfoView = (function () {
   function info(msg, tipe) {
     if (typeof window.showToast === "function") window.showToast(msg, tipe || "success");
     else if (typeof window.showPopup === "function") window.showPopup(msg, tipe === "error" ? "error" : "success");
-    else alert(msg);
+    else console.log("[info]", msg);
   }
 
   function fmtTgl(iso) {
@@ -736,9 +736,9 @@ const InfoView = (function () {
     try {
       yakin = typeof window.showPopup === "function"
         ? await window.showPopup("Hapus info ini?", "confirm")
-        : confirm("Hapus info ini?");
+        : true;
     } catch {
-      yakin = confirm("Hapus info ini?");
+      yakin = false;
     }
     if (!yakin) return;
     try {

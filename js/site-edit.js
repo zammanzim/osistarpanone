@@ -8,6 +8,7 @@ const SiteEdit = {
     active: false,
     fileTarget: null, // { type: 'web_foto', key } | { type: 'pimpinan', tahun } | { type: 'pimpinan_modal', tahun, field }
     pendingModalFotos: {}, // tahun -> { ketua_foto, wakil_foto, foto_angkatan }
+    pendingAnggotaFotos: {}, // "id:123" | "temp:t..." -> path foto, dieksekusi pas popup ditutup
     pendingHapusAnggota: {}, // tahun -> Set(id) yang di-X, dieksekusi pas popup ditutup
 
     init() {
@@ -376,8 +377,10 @@ const SiteEdit = {
             const jabEl = chip.querySelector('[data-field="jabatan"]');
             const nama = namaEl ? namaEl.textContent.trim() : orig.nama;
             const jabatan = jabEl ? jabEl.textContent.trim() : orig.jabatan;
-            if (nama !== orig.nama || jabatan !== orig.jabatan) {
-                saves.push(updatePengurus(parseInt(id, 10), { nama, jabatan, urutan: orig.urutan }));
+            const fotoPending = SiteEdit.pendingAnggotaFotos["id:" + id];
+            const fotoBaru = fotoPending || orig.foto || "";
+            if (nama !== orig.nama || jabatan !== orig.jabatan || (fotoPending && fotoPending !== (orig.foto || ""))) {
+                saves.push(updatePengurus(parseInt(id, 10), { nama, jabatan, urutan: orig.urutan, foto: fotoBaru }));
             }
         });
 
@@ -387,7 +390,8 @@ const SiteEdit = {
             const nama = chip.querySelector('[data-field="nama"]')?.textContent.trim() || "";
             const jabatan = chip.querySelector('[data-field="jabatan"]')?.textContent.trim() || "";
             if (!nama || !jabatan) return;
-            saves.push(tambahPengurus({ tahun: parseInt(tahun, 10), nama, jabatan, urutan: 99 }));
+            const fotoTemp = SiteEdit.pendingAnggotaFotos["temp:" + (chip.dataset.tempKey || "")] || "";
+            saves.push(tambahPengurus({ tahun: parseInt(tahun, 10), nama, jabatan, urutan: 99, foto: fotoTemp }));
         });
 
         // anggota yang di-X — dieksekusi bareng autosave pas popup ditutup
@@ -420,6 +424,7 @@ const SiteEdit = {
         if (promises.length === 0) {
             delete SiteEdit.pendingModalFotos[key];
             delete SiteEdit.pendingHapusAnggota[key];
+            SiteEdit.pendingAnggotaFotos = {};
             return;
         }
         try {
@@ -436,6 +441,7 @@ const SiteEdit = {
             }
             delete SiteEdit.pendingModalFotos[key];
             delete SiteEdit.pendingHapusAnggota[key];
+            SiteEdit.pendingAnggotaFotos = {};
             showToast("Perubahan tersimpan", "success");
         } catch (err) {
             console.error(err);
@@ -606,6 +612,8 @@ const SiteEdit = {
         const key = String(tahun);
         if (!SiteEdit.pendingHapusAnggota[key]) SiteEdit.pendingHapusAnggota[key] = new Set();
         SiteEdit.pendingHapusAnggota[key].add(String(id));
+        // foto pending anggota ini ikut dibuang (tidak jadi disimpan)
+        delete SiteEdit.pendingAnggotaFotos["id:" + id];
         chip.remove();
         if (typeof showToast === "function") showToast("Dihapus (tersimpan pas popup ditutup)", "info");
     },
@@ -614,22 +622,40 @@ const SiteEdit = {
         const modal = document.querySelector(`.struktur-modal[data-tahun="${tahun}"]`);
         const grid = modal ? modal.querySelector(".anggota-grid") : document.querySelector(".anggota-grid");
         if (!grid) return;
+        const tempKey = `t${Date.now()}`;
         const chip = document.createElement("div");
         chip.className = "anggota-chip";
         chip.dataset.temp = "true";
+        chip.dataset.tempKey = tempKey;
         chip.innerHTML = `
             <button type="button" class="chip-x" title="Batal" aria-label="Batal">×</button>
-            <b contenteditable="true" spellcheck="false" data-field="nama" data-ph="Nama"></b>
-            <span contenteditable="true" spellcheck="false" data-field="jabatan" data-ph="Jabatan"></span>
+            <div class="anggota-photo kosong"><span class="anggota-inisial">?</span><button type="button" class="anggota-cam" onclick="event.stopPropagation();SiteEdit.pilihFotoAnggota(event,${tahun},'temp:${tempKey}')" title="Tambah foto" aria-label="Tambah foto"><i class="fa-solid fa-camera"></i></button></div>
+            <div class="anggota-info"><b contenteditable="true" spellcheck="false" data-field="nama" data-ph="Nama"></b><span contenteditable="true" spellcheck="false" data-field="jabatan" data-ph="Jabatan"></span></div>
         `;
         chip.querySelector(".chip-x").addEventListener("click", (ev) => {
             ev.stopPropagation(); ev.preventDefault(); chip.remove();
+            const path = SiteEdit.pendingAnggotaFotos["temp:" + tempKey];
+            delete SiteEdit.pendingAnggotaFotos["temp:" + tempKey];
+            if (path && typeof hapusFotoStorage === "function") hapusFotoStorage(path).catch(() => {});
         });
         const tambahBtn = grid.querySelector(".anggota-chip.tambah");
         if (tambahBtn) grid.insertBefore(chip, tambahBtn);
         else grid.appendChild(chip);
         const first = chip.querySelector('[data-field="nama"]');
         if (first) first.focus();
+    },
+
+    // Pilih foto anggota di popup angkatan (edit mode). Disimpan pending,
+    // dieksekusi bareng autosave pas popup ditutup (lihat savePopup).
+    pilihFotoAnggota(e, tahun, kunci) {
+        if (e) { e.stopPropagation(); e.preventDefault(); }
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!u || u.mode !== "osis") {
+            showToast("Cuma OSIS yang bisa ganti foto", "error");
+            return;
+        }
+        SiteEdit.fileTarget = { type: "anggota_modal", tahun: String(tahun), kunci: String(kunci) };
+        document.getElementById("siteEditFileInput").click();
     },
 
     async onFilePicked(input) {
@@ -746,6 +772,36 @@ const SiteEdit = {
                 if (field === "foto_angkatan") {
                     const card = document.querySelector(`.year-card[onclick*="${tahun}"] img`);
                     if (card) card.src = getFoto(path);
+                }
+                showToast("Foto diganti (tersimpan pas tutup popup)", "success");
+            } else if (target.type === "anggota_modal") {
+                if (typeof Outbox !== "undefined" && Outbox.offline()) {
+                    showToast("Ganti foto ini butuh koneksi.", "error");
+                    return;
+                }
+                const tahun = String(target.tahun);
+                const path = `pengurus/anggota-${tahun}-${Date.now()}.${ext}`;
+                await uploadFotoStorage(file, path);
+                SiteEdit.pendingAnggotaFotos[target.kunci] = path;
+                // preview langsung di chip
+                const modal = document.querySelector(".struktur-modal");
+                if (modal) {
+                    let chip = null;
+                    if (target.kunci.startsWith("id:")) {
+                        chip = modal.querySelector(`.anggota-chip[data-anggota-id="${target.kunci.slice(3)}"]`);
+                    } else if (target.kunci.startsWith("temp:")) {
+                        chip = modal.querySelector(`.anggota-chip[data-temp-key="${target.kunci.slice(5)}"]`);
+                    }
+                    const av = chip && chip.querySelector(".anggota-photo");
+                    if (av) {
+                        av.classList.remove("kosong");
+                        const lama = av.querySelector("img, .anggota-inisial");
+                        if (lama) lama.remove();
+                        const img = document.createElement("img");
+                        img.src = getFoto(path);
+                        img.alt = "Foto anggota";
+                        av.prepend(img);
+                    }
                 }
                 showToast("Foto diganti (tersimpan pas tutup popup)", "success");
             }

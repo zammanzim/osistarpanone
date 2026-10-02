@@ -239,8 +239,11 @@ img {
 }
 .visitor-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.vstat-card.online b {
+  color: #146314;
 }
 .vstat-card {
   background: var(--paper-2);
@@ -298,11 +301,12 @@ img {
   overflow-y: auto;
   padding-right: 3px;
 }
+/* Isi vitem dibikin padat — info tetap lengkap, makan tempat dikit */
 .vitem {
   background: var(--paper-2);
   border: 2px solid var(--ink);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 7px 10px;
 }
 .vitem:first-child {
   background: var(--white);
@@ -315,26 +319,44 @@ img {
   gap: 8px;
 }
 .vitem-name {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 900;
 }
 .vitem-name i {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--red);
-  margin-right: 6px;
-}
-.vitem-durasi {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--red-dark);
-  white-space: nowrap;
-}
-.vitem-durasi i {
   margin-right: 4px;
 }
+/* Tab Hari Ini: kiri info, kanan badge + status online */
+.vitem-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.vitem-main {
+  flex: 1;
+  min-width: 0;
+}
+.vitem-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  max-width: 46%;
+  text-align: right;
+}
+.vitem-side .vhalaman {
+  margin-top: 0;
+  justify-content: flex-end;
+  text-align: right;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
 .vitem-masuk {
-  margin-top: 4px;
-  font-size: 0.68rem;
+  margin-top: 2px;
+  font-size: 0.63rem;
   font-weight: 700;
   color: var(--gray);
 }
@@ -344,8 +366,8 @@ img {
   margin-right: 5px;
 }
 .vitem-info {
-  margin-top: 4px;
-  font-size: 0.68rem;
+  margin-top: 2px;
+  font-size: 0.63rem;
   font-weight: 700;
   color: var(--gray);
   overflow: hidden;
@@ -395,6 +417,174 @@ img {
   background: var(--red);
   color: var(--white);
   box-shadow: 2px 2px 0 var(--ink);
+}
+/* Stat App vs Browser + filter + badge mode akses */
+/* Popup cuma selebar 430px, jadi 3 kolom x 2 baris (6 kartu) — 1 baris
+   bikin meluber keluar popup di layar desktop. */
+/* Stat dibikin ringkas — yang utama itu list perangkat, bukan angkanya. */
+.visitor-stats {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.vstat-card {
+  padding: 7px 4px;
+  border-radius: 12px;
+}
+.vstat-card b {
+  font-size: 1.02rem;
+}
+.vstat-card span {
+  font-size: 0.55rem;
+}
+.vstat-card.app b {
+  color: #1a5bb8;
+}
+.vstat-card.browser b {
+  color: #b25a09;
+}
+.vmode-filter-wrap {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.vmode-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--white);
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: var(--gray);
+  cursor: pointer;
+}
+.vmode-filter i {
+  color: var(--red);
+  font-size: 0.7rem;
+}
+.vmode-filter.active {
+  background: var(--ink);
+  color: #fff;
+}
+.vmode-filter.active i {
+  color: var(--yellow);
+}
+.vitem-mode {
+  margin-top: 3px;
+}
+.vmode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+}
+.vmode i {
+  font-size: 0.62rem;
+}
+.vmode.app {
+  background: #eaf2ff;
+  color: #1a5bb8;
+}
+.vmode.browser {
+  background: #fdf0e6;
+  color: #b25a09;
+}
+/* Presence online + halaman aktif */
+.vhalaman {
+  margin-top: 2px;
+  font-size: 0.63rem;
+  font-weight: 700;
+  color: var(--gray);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vhalaman.on {
+  color: #146314;
+}
+.vhalaman b {
+  font-weight: 900;
+}
+.vdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c9c2bd;
+  flex-shrink: 0;
+}
+.vdot.on {
+  background: #22a722;
+  box-shadow: 0 0 0 3px rgba(34, 167, 34, 0.22);
+  animation: vdotPulse 1.6s ease-in-out infinite;
+}
+@keyframes vdotPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(34, 167, 34, 0.22); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 167, 34, 0.1); }
+}
+
+/* Feed aktivitas di popup visitor */
+.aitem {
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 9px 12px;
+}
+.aitem:first-child {
+  background: var(--white);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.aitem-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.aitem-nama {
+  font-size: 0.78rem;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aitem-nama i {
+  font-size: 0.66rem;
+  color: var(--red);
+  margin-right: 5px;
+}
+.aitem-waktu {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: var(--gray);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.aitem-aksi {
+  margin-top: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.aitem-aksi b {
+  font-weight: 900;
+}
+.aitem-det {
+  margin-top: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gray);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .vtab:not(.active):hover {
   background: var(--paper-2);
@@ -903,9 +1093,23 @@ a.user-chip:active {
    JEJAK ORGANISASI (GRID TAHUN)
    ============================================================ */
 .year-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 6px 2px 6px 34px;
+}
+/* Garis perjalanan waktu (mobile saja, disembunyikan di desktop) */
+.year-grid::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 16px;
+  bottom: 16px;
+  width: 3px;
+  border-radius: 99px;
+  background: var(--ink);
+  opacity: 0.9;
 }
 
 .year-card {
@@ -913,11 +1117,30 @@ a.user-chip:active {
   border: 3px solid var(--ink);
   border-radius: 18px;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   cursor: pointer;
   background: var(--paper-2);
+  box-shadow: 5px 5px 0 var(--ink);
   transition: transform 0.15s;
   -webkit-tap-highlight-color: transparent;
+  animation: yearRise 0.45s both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+/* Selang-seling miring biar ritmis, tidak monoton */
+.year-grid .year-item {
+  position: relative;
+}
+.year-grid .year-item:nth-child(odd) .year-card {
+  transform: rotate(-0.6deg);
+}
+.year-grid .year-item:nth-child(even) .year-card {
+  transform: rotate(0.6deg);
+}
+@keyframes yearRise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
 }
 .year-card:active {
   transform: scale(0.96);
@@ -946,17 +1169,43 @@ a.user-chip:active {
   padding: 10px 12px;
 }
 .year-card .year-num {
-  font-size: 1.15rem;
+  font-size: 1.35rem;
   font-weight: 900;
   color: #fff;
   line-height: 1;
+  letter-spacing: -0.01em;
 }
 .year-card .year-label {
+  align-self: flex-start;
   font-size: 0.6rem;
   font-weight: 800;
-  color: var(--yellow);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  background: var(--ink);
+  color: var(--yellow);
+  border-radius: 99px;
+  padding: 3px 10px;
+  margin-top: 5px;
+}
+/* Era ADIABI (2023+) dibedakan warnanya */
+.year-item.era-adiabi .year-label {
+  background: var(--red);
+  color: #fff;
+}
+/* Titik penanda di garis timeline */
+.year-item .year-dot {
+  position: absolute;
+  left: -31px;
+  top: 30px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  z-index: 2;
+}
+.year-item.era-adiabi .year-dot {
+  background: var(--yellow);
 }
 .year-card .year-loading {
   position: absolute;
@@ -967,6 +1216,38 @@ a.user-chip:active {
   font-size: 0.7rem;
   font-weight: 800;
   color: var(--gray);
+}
+/* Tombol tambah angkatan: cuma muncul pas edit mode */
+body.edit-mode #btnTambahAngkatan {
+  display: inline-flex !important;
+}
+/* Tombol hapus angkatan di card: cuma muncul pas edit mode */
+.year-del-btn {
+  display: none;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+  z-index: 3;
+}
+body.edit-mode .year-del-btn {
+  display: inline-flex;
+}
+.year-del-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
 }
 
 /* Popup struktur */
@@ -1216,23 +1497,81 @@ a.user-chip:active {
 .anggota-chip {
   border: 2px solid var(--ink);
   border-radius: 10px;
-  padding: 7px 9px;
+  overflow: hidden;
   background: var(--paper);
   display: flex;
   flex-direction: column;
   position: relative;
+  text-align: center;
 }
-.anggota-chip b {
+.anggota-chip .anggota-photo {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--paper-2);
+  border-bottom: 2px solid var(--ink);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.anggota-chip .anggota-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.anggota-chip .anggota-photo.kosong {
+  background: var(--yellow);
+}
+.anggota-chip .anggota-inisial {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--ink);
+}
+.anggota-chip .anggota-info {
+  padding: 7px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.anggota-chip .anggota-info b {
   font-size: 0.7rem;
   font-weight: 800;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
-.anggota-chip span {
+.anggota-chip .anggota-info span {
   font-size: 0.58rem;
   font-weight: 700;
   color: var(--gray);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+/* Tombol kamera di foto anggota — cuma pas edit mode */
+.anggota-chip .anggota-cam {
+  display: none;
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid var(--ink);
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 0.75rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 1.5px 1.5px 0 var(--ink);
+}
+body.edit-mode .anggota-chip .anggota-cam {
+  display: inline-flex;
+}
+/* Slot tambah anggota: samakan tinggi kartu */
+.anggota-chip.tambah {
+  min-height: 150px;
 }
 /* tombol X hapus chip — cuma dirender pas edit mode */
 .anggota-chip .chip-x {
@@ -1256,6 +1595,11 @@ a.user-chip:active {
 }
 .anggota-chip .chip-x:hover {
   filter: brightness(1.1);
+}
+/* Card foto overflow hidden — X masuk ke dalam card */
+.anggota-chip .chip-x {
+  top: 6px;
+  right: 6px;
 }
 
 /* ============================================================
@@ -2105,6 +2449,9 @@ body.edit-mode .bento-meta .gal-del {
     transition: none;
     transform: none;
   }
+  .year-card {
+    animation: none;
+  }
 }
 
 /* ============================================================
@@ -2762,11 +3109,29 @@ body.edit-mode .bento-meta .gal-del {
   }
 
   .year-grid {
-    grid-template-columns: repeat(4, 1fr);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
+    padding: 0;
+  }
+  .year-grid::before {
+    display: none;
   }
   .year-card {
     aspect-ratio: 4 / 2.8;
+    transform: none;
+    animation: none;
+  }
+  .year-card:nth-child(odd),
+  .year-card:nth-child(even) {
+    transform: none;
+  }
+  .year-grid .year-item:nth-child(odd) .year-card,
+  .year-grid .year-item:nth-child(even) .year-card {
+    transform: none;
+  }
+  .year-item .year-dot {
+    display: none;
   }
 
   .anggota-grid {
@@ -3806,6 +4171,51 @@ body.edit-mode {
 @media (min-width: 1024px) {
   .struktur-modal-body {
     position: relative;
+  }
+  /* Popup angkatan desktop: lebar, 2 kolom.
+     Kiri = foto angkatan + ketua/wakil, kanan = daftar anggota.
+     Tiap kolom scroll mandiri. Mobile tidak berubah. */
+  .struktur-modal-box {
+    width: min(980px, calc(100vw - 48px));
+  }
+  .struktur-modal-body {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: 18px;
+    padding: 18px;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .struktur-modal-body .struktur-side {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 2px;
+  }
+  .struktur-modal-body .struktur-foto {
+    margin: 0;
+    flex-shrink: 0;
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .struktur-modal-body .struktur-foto img {
+    border-bottom: none;
+    max-height: 40vh;
+  }
+  .struktur-modal-body .struktur-pimpinan {
+    padding: 0;
+  }
+  .struktur-modal-body .struktur-anggota {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 2px 2px 0;
+  }
+  .struktur-modal-body .anggota-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
   }
 }
 /* Hint swipe ganti angkatan: melayang kanan bawah modal (tidak ikut scroll) */
@@ -5768,25 +6178,23 @@ body.edit-mode .prestasi-card .foto-del-btn {
 /* ============================================================
    ATUR NAVIGASI — editor tab bawah + sheet (super_admin, index)
    ============================================================ */
-.nav-atur-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  margin-top: 10px;
-  padding: 10px 12px;
+/* Tombol gear di header sheet, kiri tombol X */
+.nav-sheet-gear {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   border: 2.5px solid var(--ink);
-  border-radius: 12px;
-  background: var(--paper-2);
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 900;
+  background: var(--yellow);
   color: var(--ink);
+  display: grid;
+  place-items: center;
   cursor: pointer;
   box-shadow: 2px 2px 0 var(--ink);
+  margin-left: auto;
+  margin-right: 8px;
+  font-size: 0.85rem;
 }
-.nav-atur-btn:active {
+.nav-sheet-gear:active {
   transform: translate(1px, 1px);
   box-shadow: none;
 }
@@ -5799,6 +6207,17 @@ body.edit-mode .prestasi-card .foto-del-btn {
   justify-content: center;
   z-index: 220;
   padding: 18px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.22s ease,
+    visibility 0.22s ease;
+}
+.navatur-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 .navatur-box {
   width: min(520px, 100%);
@@ -5811,6 +6230,11 @@ body.edit-mode .prestasi-card .foto-del-btn {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transform: scale(0.96) translateY(10px);
+  transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+.navatur-overlay.open .navatur-box {
+  transform: scale(1) translateY(0);
 }
 .navatur-head {
   display: flex;

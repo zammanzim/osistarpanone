@@ -306,6 +306,7 @@ window.closePopup = function () {
 window.ModalNav = (function () {
     const IDS = [
         "visitorOverlay", "prestasiFormOverlay", "posterFormOverlay",
+        "navAturOverlay",
         "agendaForm", "agendaDetail", "absensiForm", "absenLangsung",
         "kasForm", "kasDetail", "tabForm", "tabDetail", "aksDetail",
         "dokumenForm", "dokumenDetail", "evaluasiForm", "evaluasiDetail",
@@ -357,6 +358,11 @@ window.ModalNav = (function () {
                     if (el && el.parentNode) el.parentNode.removeChild(el);
                     pulihkanScroll();
                     return;
+                }
+                case "navAturOverlay": {
+                    const N = ambil("NavAtur");
+                    if (N && N.tutup) { N.tutup(); return; }
+                    break;
                 }
                 case "agendaForm": {
                     const A = ambil("AgendaAdmin");

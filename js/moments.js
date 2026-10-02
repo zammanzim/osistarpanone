@@ -774,6 +774,7 @@ const Moments = {
             });
             if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
             if (typeof showToast === "function") showToast("Momen ditambah!", "success");
+            catatAksi("upload_moments", ((Moments.pendingKind === "video" ? "video " : "foto ") + String(eventName || caption || "").trim()).slice(0, 80));
             Moments.tutupForm();
             await Moments.muat(true);
         } catch (err) {
@@ -801,7 +802,7 @@ const Moments = {
         if (!it) return;
         const yakin = (typeof showPopup === "function")
             ? await showPopup("Hapus momen ini? Medianya ikut terhapus.", "confirm")
-            : confirm("Hapus momen ini?");
+            : true;
         if (!yakin) return;
         try {
             await hapusMoment(u.id, it.srcId);

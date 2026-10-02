@@ -6,6 +6,7 @@ const Home = {
     cachePimpinan: {},
     cacheAnggota: {},
     tahunAktif: null,
+    tahunList: [],
     fotoPopup: null,
     terinisialisasi: false,
 
@@ -233,48 +234,15 @@ const Home = {
         const grid = document.getElementById("yearGrid");
         if (!grid) return;
 
-        const render = (listPimpinan, listAnggota) => {
-            Home.cachePimpinan = {};
-            Home.cacheAnggota = {};
-            listPimpinan.forEach(p => { Home.cachePimpinan[String(p.tahun)] = p; });
-            listAnggota.forEach(a => {
-                const k = String(a.tahun);
-                if (!Home.cacheAnggota[k]) Home.cacheAnggota[k] = [];
-                Home.cacheAnggota[k].push(a);
-            });
-            const totalTahun = Object.keys(Home.cachePimpinan).length;
-            const chipTahun = document.getElementById("chipTahun");
-            if (chipTahun && totalTahun) chipTahun.textContent = `${Math.min(...Object.keys(Home.cachePimpinan))}–${Math.max(...Object.keys(Home.cachePimpinan))}`;
-            let html = "";
-            for (let thn = 2010; thn <= 2027; thn++) {
-                const p = Home.cachePimpinan[String(thn)];
-                const foto = (p && p.foto_angkatan) ? p.foto_angkatan : `angkatan/foto-${thn}.jpg`;
-                html += `
-                    <div class="year-card media-muat" onclick="Home.toggleStruktur(${thn})" role="button">
-                        <img src="${getFoto(foto)}" alt="Angkatan ${thn}" loading="lazy"
-                             onload="this.closest('.media-muat').classList.add('sudah-muat')"
-                             onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove();"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>
-                        <div class="year-overlay">
-                            <span class="year-num">${thn}</span>
-                            <span class="year-label">${labelTahun(thn)}</span>
-                        </div>
-                    </div>`;
-            }
-            grid.innerHTML = html;
-            if (document.body.classList.contains("edit-mode") && typeof SiteEdit !== "undefined" && SiteEdit.injectPhotoButtons) {
-                SiteEdit.injectPhotoButtons();
-            }
-        };
-
         const cachedP = Cache.get("pimpinan");
         const cachedA = Cache.get("pengurus");
         if (cachedP && cachedA) {
-            render(cachedP, cachedA);
+            Home.renderArsip(cachedP, cachedA);
             Promise.all([getPimpinan(), getPengurus()]).then(([freshP, freshA]) => {
                 if (JSON.stringify(freshP) !== JSON.stringify(cachedP) || JSON.stringify(freshA) !== JSON.stringify(cachedA)) {
                     Cache.set("pimpinan", freshP);
                     Cache.set("pengurus", freshA);
-                    render(freshP, freshA);
+                    Home.renderArsip(freshP, freshA);
                 }
             }).catch(() => {});
             return;
@@ -288,12 +256,155 @@ const Home = {
             const [freshP, freshA] = await Promise.all([getPimpinan(), getPengurus()]);
             Cache.set("pimpinan", freshP);
             Cache.set("pengurus", freshA);
-            render(freshP, freshA);
+            Home.renderArsip(freshP, freshA);
         } catch (err) {
             console.error("Gagal muat arsip:", err);
             grid.innerHTML = `<div class="year-card" style="grid-column: 1 / -1; aspect-ratio: auto; cursor: default;">
                 <div class="year-loading">Gagal memuat data. Cek koneksi & konfigurasi.</div>
             </div>`;
+        }
+    },
+
+    // Render daftar tahun DINAMIS dari data DB (bukan loop fix).
+    // Tahun = gabungan unik tahun di tabel pimpinan + pengurus, terbaru dulu.
+    // Tahun tanpa data tidak tampil — tambah via tombol Tambah (edit mode).
+    renderArsip(listPimpinan, listAnggota) {
+        const grid = document.getElementById("yearGrid");
+        if (!grid) return;
+        Home.cachePimpinan = {};
+        Home.cacheAnggota = {};
+        (listPimpinan || []).forEach(p => { Home.cachePimpinan[String(p.tahun)] = p; });
+        (listAnggota || []).forEach(a => {
+            const k = String(a.tahun);
+            if (!Home.cacheAnggota[k]) Home.cacheAnggota[k] = [];
+            Home.cacheAnggota[k].push(a);
+        });
+        const setTahun = new Set();
+        Object.keys(Home.cachePimpinan).forEach(k => {
+            const t = parseInt(k, 10);
+            if (!isNaN(t)) setTahun.add(t);
+        });
+        Object.keys(Home.cacheAnggota).forEach(k => {
+            const t = parseInt(k, 10);
+            if (!isNaN(t)) setTahun.add(t);
+        });
+        // Terbaru paling atas
+        Home.tahunList = [...setTahun].sort((a, b) => b - a);
+        const min = Home.tahunList.length ? Home.tahunList[Home.tahunList.length - 1] : null;
+        const maks = Home.tahunList.length ? Home.tahunList[0] : null;
+        const labelRentang = Home.tahunList.length > 1 ? `${min}–${maks}` : (maks ?? "—");
+        const chipTahun = document.getElementById("chipTahun");
+        if (chipTahun) chipTahun.textContent = labelRentang;
+        const chipJejak = document.getElementById("chipJejak");
+        if (chipJejak) chipJejak.textContent = labelRentang;
+        if (Home.tahunList.length === 0) {
+            grid.innerHTML = `<div class="pesan-empty" style="grid-column:1/-1">Belum ada data angkatan.</div>`;
+            return;
+        }
+        let html = "";
+        Home.tahunList.forEach((thn, idx) => {
+            const p = Home.cachePimpinan[String(thn)];
+            const foto = (p && p.foto_angkatan) ? p.foto_angkatan : `angkatan/foto-${thn}.jpg`;
+            const era = thn >= 2023 ? "era-adiabi" : "era-angkatan";
+            html += `
+                <div class="year-item ${era}" style="--i:${idx}">
+                    <span class="year-dot" aria-hidden="true"></span>
+                    <div class="year-card media-muat" onclick="Home.toggleStruktur(${thn})" role="button" tabindex="0" aria-label="Lihat angkatan ${thn}">
+                        <button type="button" class="year-del-btn" onclick="event.stopPropagation();Home.hapusAngkatan(event,${thn})" title="Hapus angkatan ${thn}" aria-label="Hapus angkatan ${thn}">&times;</button>
+                        <img src="${getFoto(foto)}" alt="Angkatan ${thn}" loading="lazy"
+                             onload="this.closest('.media-muat').classList.add('sudah-muat')"
+                             onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove();"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>
+                            <div class="year-overlay">
+                            <span class="year-num">${thn}</span>
+                            <span class="year-label">${labelTahun(thn)}</span>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        grid.innerHTML = html;
+        if (document.body.classList.contains("edit-mode") && typeof SiteEdit !== "undefined" && SiteEdit.injectPhotoButtons) {
+            SiteEdit.injectPhotoButtons();
+        }
+    },
+
+    // Tambah angkatan baru (edit mode): bikin baris pimpinan kosong untuk
+    // tahun pilihan, lalu render ulang. Isi detail via popup angkatan.
+    async tambahAngkatan() {
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        if (!u || u.mode !== "osis") {
+            if (typeof showToast === "function") showToast("Login OSIS dulu buat nambah angkatan.", "error");
+            return;
+        }
+        const list = (Home.tahunList && Home.tahunList.length) ? Home.tahunList : [new Date().getFullYear() - 1];
+        const usulan = Math.max(...list) + 1;
+        const input = await showPopup("Tahun angkatan baru", "form", {
+            title: "Tambah Angkatan",
+            fields: [{ name: "tahun", label: "Tahun", type: "number", value: String(usulan) }]
+        });
+        if (input === null || input === false) return;
+        const tahun = parseInt(input, 10);
+        if (isNaN(tahun) || tahun < 2000 || tahun > 2100) {
+            if (typeof showToast === "function") showToast("Tahun tidak valid (2000–2100).", "error");
+            return;
+        }
+        if (Home.cachePimpinan[String(tahun)]) {
+            if (typeof showToast === "function") showToast(`Angkatan ${tahun} sudah ada.`, "error");
+            return;
+        }
+        try {
+            await simpanPimpinan({ tahun, ketua_nama: "", wakil_nama: "", ketua_foto: "", wakil_foto: "", foto_angkatan: "" });
+            const key = String(tahun);
+            Home.cachePimpinan[key] = { tahun, ketua_nama: "", wakil_nama: "", ketua_foto: "", wakil_foto: "", foto_angkatan: "" };
+            Cache.set("pimpinan", Object.values(Home.cachePimpinan));
+            Home.renderArsip(Object.values(Home.cachePimpinan), Object.values(Home.cacheAnggota).flat());
+            if (typeof showToast === "function") showToast(`Angkatan ${tahun} ditambahkan — klik card buat isi detail.`, "success");
+        } catch (err) {
+            console.error(err);
+            if (typeof showToast === "function") showToast("Gagal nambah angkatan: " + (err.message || err), "error");
+        }
+    },
+
+    // Hapus angkatan (edit mode): hapus baris pimpinan + semua pengurus
+    // tahun itu (biar card tidak muncul lagi dari data pengurus) + foto storage.
+    async hapusAngkatan(ev, tahun) {
+        if (ev) ev.stopPropagation();
+        const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+        if (!u || u.mode !== "osis") {
+            if (typeof showToast === "function") showToast("Login OSIS dulu buat hapus angkatan.", "error");
+            return;
+        }
+        tahun = parseInt(tahun, 10);
+        if (!tahun || isNaN(tahun)) return;
+        const key = String(tahun);
+        const anggota = (Home.cacheAnggota && Home.cacheAnggota[key]) || [];
+        const ok = await showPopup(
+            `Hapus angkatan ${tahun}${anggota.length ? ` beserta ${anggota.length} anggota` : ""}? Data tidak bisa dikembalikan.`,
+            "confirm"
+        );
+        if (!ok) return;
+        const pimp = (Home.cachePimpinan && Home.cachePimpinan[key]) || {};
+        try {
+            await hapusPimpinan(tahun);
+            const hasil = await Promise.allSettled(
+                anggota.filter(a => a && a.id != null).map(a => hapusPengurus(parseInt(a.id, 10)))
+            );
+            const gagal = hasil.filter(h => h.status === "rejected").length;
+            // Bersihkan foto storage yang yatim (fire-and-forget)
+            [pimp.foto_angkatan, pimp.ketua_foto, pimp.wakil_foto,
+                ...anggota.map(a => a && a.foto).filter(Boolean)].forEach(path => {
+                if (path && typeof hapusFotoStorage === "function") hapusFotoStorage(path).catch(() => {});
+            });
+            delete Home.cachePimpinan[key];
+            delete Home.cacheAnggota[key];
+            Cache.set("pimpinan", Object.values(Home.cachePimpinan));
+            Cache.set("pengurus", Object.values(Home.cacheAnggota).flat());
+            Home.renderArsip(Object.values(Home.cachePimpinan), Object.values(Home.cacheAnggota).flat());
+            if (typeof showToast === "function") {
+                showToast(gagal ? `Angkatan ${tahun} dihapus, tapi ${gagal} anggota gagal dihapus.` : `Angkatan ${tahun} dihapus.`, gagal ? "error" : "success");
+            }
+        } catch (err) {
+            console.error(err);
+            if (typeof showToast === "function") showToast("Gagal hapus angkatan: " + (err.message || err), "error");
         }
     },
 
@@ -349,17 +460,31 @@ const Home = {
             } catch (e) {}
         }
         const pimpinan = Home.cachePimpinan[String(tahun)] || null;
-        const anggota = Home.cacheAnggota[String(tahun)] || [];
+        // Ketua/wakil sudah tampil di kartu pimpinan atas — kecualikan dari
+        // list anggota (cocok nama, atau jabatan persis Ketua/Wakil Ketua).
+        const norm = s => String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+        const namaPimp = [pimpinan && pimpinan.ketua_nama, pimpinan && pimpinan.wakil_nama].map(norm).filter(Boolean);
+        const jabPimp = ["ketua osis", "wakil ketua", "ketua", "wakil"];
+        const anggota = (Home.cacheAnggota[String(tahun)] || []).filter(a => !namaPimp.includes(norm(a.nama)) && !jabPimp.includes(norm(a.jabatan)));
         const foto = (pimpinan && pimpinan.foto_angkatan) ? pimpinan.foto_angkatan : `angkatan/foto-${tahun}.jpg`;
         const isEdit = document.body.classList.contains("edit-mode") && (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
 
         let chips = "";
+        const fotoHtml = (a, tempKey) => {
+            const kunci = (tempKey != null) ? `temp:${tempKey}` : `id:${a.id}`;
+            const cam = isEdit ? `<button type="button" class="anggota-cam" onclick="event.stopPropagation();SiteEdit.pilihFotoAnggota(event,${tahun},'${kunci}')" title="Ganti foto" aria-label="Ganti foto"><i class="fa-solid fa-camera"></i></button>` : "";
+            const klik = (a.foto && !tempKey) ? ` onclick="event.stopPropagation();Home.bukaFotoAnggota(${tahun},${a.id})" style="cursor:pointer"` : "";
+            const isi = a.foto
+                ? `<img src="${getFoto(a.foto)}" alt="${escapeHtml(a.nama || "Anggota")}" loading="lazy" onerror="this.remove()">`
+                : `<span class="anggota-inisial">${escapeHtml(Home.inisial(a.nama))}</span>`;
+            return `<div class="anggota-photo${a.foto ? "" : " kosong"}"${klik}>${isi}${cam}</div>`;
+        };
         if (!isEdit) {
             if (anggota.length > 0) {
                 chips = anggota.map(a => `
                     <div class="anggota-chip">
-                        <b>${escapeHtml(a.nama)}</b>
-                        <span>${escapeHtml(a.jabatan)}</span>
+                        ${fotoHtml(a)}
+                        <div class="anggota-info"><b>${escapeHtml(a.nama)}</b><span>${escapeHtml(a.jabatan)}</span></div>
                     </div>`).join("");
             } else {
                 chips = `<div style="grid-column: 1 / -1; font-size: 0.75rem; color: var(--gray); font-weight: 700;">Belum ada data anggota tahun ini.</div>`;
@@ -369,8 +494,8 @@ const Home = {
                 chips = anggota.map(a => `
                     <div class="anggota-chip" data-anggota-id="${a.id}">
                         <button type="button" class="chip-x" onclick="SiteEdit.hapusChipInline(event, ${a.id}, ${tahun})" title="Hapus anggota" aria-label="Hapus anggota">&times;</button>
-                        <b contenteditable="true" spellcheck="false" data-field="nama" data-anggota-id="${a.id}">${escapeHtml(a.nama)}</b>
-                        <span contenteditable="true" spellcheck="false" data-field="jabatan" data-anggota-id="${a.id}">${escapeHtml(a.jabatan)}</span>
+                        ${fotoHtml(a)}
+                        <div class="anggota-info"><b contenteditable="true" spellcheck="false" data-field="nama" data-anggota-id="${a.id}">${escapeHtml(a.nama)}</b><span contenteditable="true" spellcheck="false" data-field="jabatan" data-anggota-id="${a.id}">${escapeHtml(a.jabatan)}</span></div>
                     </div>`).join("");
             } else {
                 chips = "";
@@ -405,6 +530,7 @@ const Home = {
                     </div>
                 </div>
                 <div class="struktur-modal-body">
+                    <div class="struktur-side">
                     <div class="struktur-foto media-muat media-muat-tinggi">
                         <img src="${getFoto(foto)}" alt="Angkatan ${tahun}" loading="lazy"
                              onclick="Home.bukaFotoAngkatan(${tahun}, 'angkatan')"
@@ -437,6 +563,7 @@ const Home = {
                                 <span>Wakil Ketua</span>
                             </div>
                         </div>
+                    </div>
                     </div>
 
                     <div class="struktur-anggota">
@@ -481,11 +608,29 @@ const Home = {
     getGaleriAngkatan(tahun) {
         const pimpinan = Home.cachePimpinan[String(tahun)] || null;
         const fotoAngkatan = (pimpinan && pimpinan.foto_angkatan) ? pimpinan.foto_angkatan : `angkatan/foto-${tahun}.jpg`;
-        return [
+        const dasar = [
             { key: "angkatan", src: getFoto(fotoAngkatan), judul: `Angkatan ${tahun}`, caption: labelTahun(tahun) },
             { key: "ketua", src: getFoto(pimpinan ? pimpinan.ketua_foto : ""), judul: "Ketua OSIS", caption: pimpinan && pimpinan.ketua_nama ? pimpinan.ketua_nama : "" },
             { key: "wakil", src: getFoto(pimpinan ? pimpinan.wakil_foto : ""), judul: "Wakil Ketua", caption: pimpinan && pimpinan.wakil_nama ? pimpinan.wakil_nama : "" }
-        ].filter(item => item.src);
+        ];
+        const angg = ((Home.cacheAnggota && Home.cacheAnggota[String(tahun)]) || [])
+            .filter(a => a && a.foto)
+            .map(a => ({ key: `anggota-${a.id}`, src: getFoto(a.foto), judul: a.nama || "Anggota", caption: a.jabatan || "" }));
+        return [...dasar, ...angg].filter(item => item.src);
+    },
+
+    // Inisial nama buat avatar kosong ("Siti Aminah" -> "SA")
+    inisial(nama) {
+        const kata = String(nama || "").trim().split(/\s+/).filter(Boolean);
+        if (!kata.length) return "?";
+        return (kata[0][0] + (kata.length > 1 ? kata[kata.length - 1][0] : "")).toUpperCase();
+    },
+
+    bukaFotoAnggota(tahun, id) {
+        const gallery = Home.getGaleriAngkatan(tahun);
+        if (gallery.length === 0) return;
+        const index = Math.max(0, gallery.findIndex(item => item.key === `anggota-${id}`));
+        Home.bukaFotoPopup(null, gallery[index].judul, gallery[index].caption, { gallery, index });
     },
 
     bukaFotoAngkatan(tahun, key) {
@@ -510,8 +655,7 @@ const Home = {
         if (!modal) return;
         const tahun = parseInt(modal.dataset.tahun, 10);
         if (!tahun || isNaN(tahun)) return;
-        const tahunList = [];
-        for (let thn = 2010; thn <= 2027; thn++) tahunList.push(thn);
+        const tahunList = (Home.tahunList && Home.tahunList.length ? [...Home.tahunList] : [tahun]).sort((a, b) => a - b);
         const idx = tahunList.indexOf(tahun);
         if (idx < 0) return;
         const next = tahunList[(idx + arah + tahunList.length) % tahunList.length];

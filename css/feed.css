@@ -511,10 +511,17 @@
   color: var(--gray);
 }
 
-/* ---- desktop: kartu sedikit lega ---- */
+/* ---- desktop: tetap 1 kolom, lebih lebar & lega ---- */
 @media (min-width: 1024px) {
+  .feed-wrap {
+    max-width: 720px;
+  }
   .feed-list {
-    gap: 22px;
+    gap: 26px;
+    margin-top: 20px;
+  }
+  .feed-card {
+    border-radius: 24px;
   }
   .feed-head {
     padding: 14px 18px;

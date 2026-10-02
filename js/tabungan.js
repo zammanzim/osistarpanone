@@ -644,9 +644,11 @@ const Tabungan = {
             if (id) {
                 await updateTabungan(u.id, id, { nama, tanggal, nominal, jenis });
                 showToast("Setoran diperbarui!", "success");
+                catatAksi("simpan_tabungan", "edit " + nama + " " + Tabungan.rp(nominal));
             } else {
                 await buatTabungan(u.id, { nama, tanggal, nominal, jenis });
                 showToast(jenis === "keluar" ? "Penarikan tersimpan!" : "Setoran tersimpan!", "success");
+                catatAksi("simpan_tabungan", nama + " " + Tabungan.rp(nominal));
             }
             if (typeof FormPersist !== "undefined") FormPersist.clear("tabForm");
             Tabungan.tutupForm();
@@ -688,6 +690,7 @@ const Tabungan = {
         try {
             await toggleTabunganCek(u.id, id, nilaiBaru);
             showToast(nilaiBaru ? "Ditandai sudah diceklis." : "Ceklis dibatalkan.", "success");
+            catatAksi("cek_tabungan", (nilaiBaru ? "✓ " : "batal ") + (item.nama || ""));
             Tabungan.segarkan();
         } catch (err) {
             console.error(err);
@@ -718,6 +721,7 @@ const Tabungan = {
             await hapusTabungan(u.id, id);
             if (dariDetail) Tabungan.tutupDetail();
             showToast("Setoran dihapus.", "success");
+            catatAksi("hapus_tabungan", (item.nama || "") + " " + Tabungan.rp(item.nominal));
             Tabungan.segarkan();
         } catch (err) {
             console.error(err);

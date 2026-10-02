@@ -345,6 +345,7 @@ const Polling = {
             const r = await votePolling(id);
             Polling.saya = id;
             showToast(r === "OK_GANTI" ? "Pilihanmu dipindah. Makasih!" : "Suaramu tercatat. Makasih!", "success");
+            catatAksi("vote_polling", nama.slice(0, 60));
             Polling.muatHasil().catch(() => {});
         } catch (err) {
             Polling.petaError(err);

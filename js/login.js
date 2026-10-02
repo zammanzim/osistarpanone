@@ -408,6 +408,9 @@ const Login = {
         OsisAuth.loginOsis(fresh);
         // Muat hak kendali sebelum masuk (biar tombol aksi langsung benar)
         try { await OsisAuth.refreshAkses(); } catch {}
+        // Catat login (best-effort, dibatasi 1.5 detik biar redirect tetap cepat)
+        try { await Promise.race([aktivitasCatat("login", "Login", ""), new Promise(r => setTimeout(r, 1500))]); } catch {}
+        try { catatVisitor().catch(() => {}); } catch {}
         location.replace(Login.back);
     },
 
@@ -426,6 +429,9 @@ const Login = {
             return Login.tampilError("Akun tidak ditemukan.");
         }
         OsisAuth.loginBiasa(fresh);
+        // Catat login (best-effort, dibatasi 1.5 detik biar redirect tetap cepat)
+        try { await Promise.race([aktivitasCatat("login", "Login", ""), new Promise(r => setTimeout(r, 1500))]); } catch {}
+        try { catatVisitor().catch(() => {}); } catch {}
         location.replace(Login.back);
     },
 

@@ -204,6 +204,7 @@ const Aspirasi = {
         try {
             await kirimAspirasi(nama || "Anonim", kelas || "-", isi, isPrivate);
             showToast(isPrivate ? "Terkirim sebagai private (hanya OSIS bisa lihat)." : "Terima kasih! Aspirasimu sudah terkirim.", "success");
+            catatAksi("kirim_aspirasi", isi.slice(0, 80));
             document.getElementById("namaSiswa").value = "";
             document.getElementById("kelasSiswa").value = "";
             document.getElementById("isiAspirasi").value = "";

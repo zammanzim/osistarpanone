@@ -186,6 +186,7 @@ const Lagu = {
         try {
             await kirimRequestLagu(judul, penyanyi, kata, nama || "Anonim");
             showToast("Mantap! Lagu kamu masuk playlist.", "success");
+            catatAksi("kirim_lagu", (judul + " - " + penyanyi).slice(0, 80));
             document.getElementById("judulLagu").value = "";
             document.getElementById("penyanyiLagu").value = "";
             document.getElementById("kataLagu").value = "";

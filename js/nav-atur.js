@@ -3,8 +3,8 @@
 // Atur tab bawah (maks 4) + Menu Lainnya: tambah, hapus, geser urutan,
 // pindah tab↔sheet, ikon, label. Tersimpan ke server (site_content.
 // bottomnav_menu) dan berlaku untuk SEMUA user. Ikut pola OsisSidebar.
-// Tombol muncul di dalam sheet "Menu Lainnya" (index saja),
-// hanya pas state edit (body.edit-mode) + punya hak "Site".
+// Tombol gear muncul di header sheet "Menu Lainnya" (index saja),
+// di kiri tombol X — tampil selama punya hak "Site".
 // =========================================================================
 
 const NavAtur = {
@@ -48,43 +48,35 @@ const NavAtur = {
     return JSON.parse(JSON.stringify(o || { tabs: [], sheet: [] }));
   },
 
-  // ---- tombol di sheet ----
+  // ---- tombol gear di kiri tombol X (header sheet) ----
   pasangTombol() {
-    const sheet = document.getElementById("navSheet");
-    if (!sheet || document.getElementById("navAturBtn")) return;
+    const head = document.querySelector("#navSheet .nav-sheet-head");
+    if (!head || document.getElementById("navAturBtn")) return;
     const btn = document.createElement("button");
     btn.type = "button";
     btn.id = "navAturBtn";
-    btn.className = "nav-atur-btn";
-    btn.innerHTML = '<i class="fa-solid fa-gear"></i><span>Atur Navigasi</span>';
+    btn.className = "nav-sheet-gear";
+    btn.title = "Atur Navigasi";
+    btn.setAttribute("aria-label", "Atur Navigasi");
+    btn.innerHTML = '<i class="fa-solid fa-gear"></i>';
     btn.addEventListener("click", () => NavAtur.buka());
-    sheet.appendChild(btn);
+    const x = head.querySelector(".nav-sheet-close");
+    if (x) head.insertBefore(btn, x);
+    else head.appendChild(btn);
     NavAtur.refresh();
   },
 
   refresh() {
     const btn = document.getElementById("navAturBtn");
     if (!btn) return;
-    // Tombol cuma tampil pas state edit (body.edit-mode) + punya hak.
-    let edit = false;
-    try {
-      edit = document.body.classList.contains("edit-mode");
-    } catch (e) {}
-    btn.style.display = edit && NavAtur.bisa() ? "" : "none";
+    // Tampil selama punya hak — tanpa syarat state edit.
+    btn.style.display = NavAtur.bisa() ? "" : "none";
   },
 
   // ---- buka / tutup editor ----
   buka() {
     if (!NavAtur.bisa()) {
       if (typeof showToast === "function") showToast("Hanya super_admin yang bisa mengatur navigasi.", "error");
-      return;
-    }
-    let edit = false;
-    try {
-      edit = document.body.classList.contains("edit-mode");
-    } catch (e) {}
-    if (!edit) {
-      if (typeof showToast === "function") showToast("Aktifkan mode edit dulu.", "error");
       return;
     }
     if (typeof NavMore !== "undefined") NavMore.tutup();
@@ -110,6 +102,7 @@ const NavAtur = {
       "</div></div></div>";
     document.body.appendChild(ov);
     document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add("open")));
     ov.addEventListener("click", (e) => {
       if (e.target === ov) NavAtur.tutup();
     });
@@ -122,9 +115,15 @@ const NavAtur = {
 
   tutup() {
     const ov = document.getElementById("navAturOverlay");
-    if (ov) ov.remove();
     NavAtur.draft = null;
     NavAtur.editKey = null;
+    if (!ov) return;
+    // Fade out dulu (seperti popup lain), baru lepas dari DOM
+    ov.classList.remove("open");
+    setTimeout(() => {
+      const el = document.getElementById("navAturOverlay");
+      if (el && !el.classList.contains("open") && el.parentNode) el.remove();
+    }, 220);
     if (!document.querySelector(".struktur-modal") && !document.getElementById("uniOverlay")) {
       document.body.style.overflow = "";
     }
@@ -234,14 +233,20 @@ const NavAtur = {
     NavAtur.render();
   },
 
-  hapus(sek, i) {
+  async hapus(sek, i) {
     const list = sek === "tabs" ? NavAtur.draft.tabs : NavAtur.draft.sheet;
     if (!list[i]) return;
     if (sek === "tabs" && list.length <= 1) {
       if (typeof showToast === "function") showToast("Tab bawah minimal 1.", "error");
       return;
     }
-    if (!confirm('Hapus "' + (list[i].label || list[i].route || "?") + '" dari navigasi?')) return;
+    let yakin = true;
+    try {
+      yakin = (typeof showPopup === "function")
+        ? !!(await showPopup('Hapus "' + (list[i].label || list[i].route || "?") + '" dari navigasi?', "confirm"))
+        : true;
+    } catch (e) { yakin = true; }
+    if (!yakin) return;
     list.splice(i, 1);
     NavAtur.editKey = null;
     NavAtur.render();
@@ -417,7 +422,6 @@ const NavAtur = {
       (typeof Bottomnav !== "undefined" && Bottomnav.validasi && Bottomnav.validasi(NavAtur.draft)) || null;
     if (err) {
       if (typeof showToast === "function") showToast(err, "error");
-      else alert(err);
       return;
     }
     try {
@@ -439,14 +443,18 @@ const NavAtur = {
         if (typeof showToast === "function") showToast("Kamu tidak punya kendali atas halaman ini.", "error");
       } else if (typeof showToast === "function") {
         showToast("Gagal simpan: " + msg, "error");
-      } else {
-        alert("Gagal simpan: " + msg);
       }
     }
   },
 
   async reset() {
-    if (!confirm("Kembalikan navigasi ke bawaan untuk SEMUA user?")) return;
+    let yakin = true;
+    try {
+      yakin = (typeof showPopup === "function")
+        ? !!(await showPopup("Kembalikan navigasi ke bawaan untuk SEMUA user?", "confirm"))
+        : true;
+    } catch (e) { yakin = true; }
+    if (!yakin) return;
     const uid = NavAtur.uid();
     if (!uid) {
       if (typeof showToast === "function") showToast("Login dulu sebagai OSIS.", "error");
@@ -469,7 +477,6 @@ const NavAtur = {
       NavAtur.tutup();
     } catch (e) {
       if (typeof showToast === "function") showToast("Gagal reset: " + ((e && e.message) || e), "error");
-      else alert("Gagal reset: " + ((e && e.message) || e));
     }
   },
 
