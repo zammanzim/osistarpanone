@@ -315,8 +315,13 @@ const Home = {
                              onload="this.closest('.media-muat').classList.add('sudah-muat')"
                              onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove();"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>
                             <div class="year-overlay">
-                            <span class="year-num">${thn}</span>
-                            <span class="year-label">${labelTahun(thn)}</span>
+                            <div class="year-bottom">
+                                <div class="year-text">
+                                    <span class="year-num">${thn}</span>
+                                    <span class="year-label">${labelTahun(thn)}</span>
+                                </div>
+                                <span class="year-more">Lihat selengkapnya <i class="fa-solid fa-chevron-right" aria-hidden="true"></i></span>
+                            </div>
                         </div>
                     </div>
                 </div>`;

@@ -1168,6 +1168,41 @@ a.user-chip:active {
   justify-content: flex-end;
   padding: 10px 12px;
 }
+.year-card .year-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+.year-card .year-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.year-card .year-more {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  white-space: nowrap;
+  background: var(--yellow);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 99px;
+  padding: 4px 10px;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
+  margin-bottom: 2px;
+}
+.year-card .year-more i {
+  font-size: 0.55rem;
+}
+.year-card:hover .year-more {
+  background: #fff;
+}
 .year-card .year-num {
   font-size: 1.35rem;
   font-weight: 900;
@@ -2726,22 +2761,24 @@ body.edit-mode .bento-meta .gal-del {
   flex: 0 0 auto;
   position: relative;
   z-index: 1;
-  width: 56px;
-  height: 56px;
-  margin: -28px 2px 0;
+  width: 60px;
+  height: 60px;
+  margin: -32px 4px 0;
   align-self: flex-start;
   border-radius: 50%;
   border: 3px solid var(--ink);
-  background: var(--red);
-  color: #fff;
+  background: var(--yellow);
+  color: var(--ink);
   font-size: 1.35rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 2px;
   cursor: pointer;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow:
+    3px 3px 0 var(--ink),
+    0 6px 18px rgba(255, 180, 0, 0.45);
   transition:
     transform 0.18s,
     box-shadow 0.18s,
@@ -2750,7 +2787,9 @@ body.edit-mode .bento-meta .gal-del {
 }
 .nav-more-btn:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow:
+    4px 4px 0 var(--ink),
+    0 8px 22px rgba(255, 180, 0, 0.55);
 }
 .nav-more-btn:active {
   transform: translate(1px, 1px);
@@ -2758,35 +2797,130 @@ body.edit-mode .bento-meta .gal-del {
 }
 .nav-more-btn i {
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   line-height: 1;
 }
-/* Label nama menu — cuma muncul pas lagi di halaman sheet */
+/* Label "Menu Lainnya" — pill hitam nempel di luar bawah lingkaran */
 #navMoreLabel {
-  display: none;
-  max-width: 50px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.52rem;
+  position: absolute;
+  bottom: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: block;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-size: 0.58rem;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.2;
   letter-spacing: 0.01em;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
+  pointer-events: none;
 }
 .nav-more-btn.is-in-sheet i {
-  font-size: 1.05rem;
-}
-.nav-more-btn.is-in-sheet #navMoreLabel {
-  display: block;
+  font-size: 1.2rem;
 }
 .nav-more-btn.active,
 .nav-more-btn[aria-expanded="true"] {
   background: var(--ink);
+  color: var(--yellow);
 }
 .nav-more-btn.is-in-sheet {
-  /* Lagi di halaman sheet (pengurus/aspirasi/arsip/musik): hitam = aktif,
-     beda dari default merah. Ikon ikut ganti jadi ikon halaman (diatur JS). */
+  /* Lagi di halaman sheet (pengurus/aspirasi/arsip/musik): merah = aktif,
+     beda dari default kuning. Ikon ikut ganti jadi ikon halaman (diatur JS). */
   background: var(--red);
+  color: #fff;
+}
+/* Badge "baru" — titik merah di pojok tombol, hilang setelah dibuka sekali */
+.nav-more-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2.5px solid #fff;
+  box-shadow: 0 0 0 2px var(--ink);
+  z-index: 2;
+  pointer-events: none;
+}
+/* Tooltip pemandu — muncul di atas tombol selama mode attn */
+.nav-more-tip {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1.3;
+  padding: 6px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.nav-more-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--ink);
+}
+/* Mode perhatian: goyang + ring pulse + tooltip bobbing + dot kedip */
+.nav-more-btn.attn {
+  animation: navMoreNudge 1.6s ease-in-out infinite;
+}
+.nav-more-btn.attn::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 3px solid var(--yellow);
+  animation: navMorePing 1.6s ease-out infinite;
+  pointer-events: none;
+}
+.nav-more-btn.attn .nav-more-tip {
+  opacity: 1;
+  animation: navMoreTipBob 1.6s ease-in-out infinite;
+}
+.nav-more-btn.attn .nav-more-dot {
+  animation: navMoreDotPing 1.2s ease-in-out infinite;
+}
+@keyframes navMoreNudge {
+  0%, 100% { transform: rotate(0) scale(1); }
+  10% { transform: rotate(-8deg) scale(1.06); }
+  20% { transform: rotate(8deg) scale(1.06); }
+  30% { transform: rotate(0) scale(1); }
+}
+@keyframes navMorePing {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@keyframes navMoreTipBob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-4px); }
+}
+@keyframes navMoreDotPing {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-more-btn.attn,
+  .nav-more-btn.attn::before,
+  .nav-more-btn.attn .nav-more-tip,
+  .nav-more-btn.attn .nav-more-dot {
+    animation: none;
+  }
 }
 
 /* backdrop + sheet */
@@ -6043,8 +6177,12 @@ body.edit-mode .prestasi-card .foto-del-btn {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  text-align: center;
   pointer-events: none;
   background:
     repeating-linear-gradient(
@@ -6054,6 +6192,27 @@ body.edit-mode .prestasi-card .foto-del-btn {
     ),
     var(--paper-2);
   z-index: 2;
+}
+/* Hint internet lemot: muncul 5 detik setelah spinner tampil.
+   Kalau gambar keburu ke-load, parent kena .sudah-muat (display:none)
+   jadi hint otomatis ikut hilang — tanpa JS tambahan. */
+.media-muat-loading::after {
+  content: "Internet kamu mungkin nge-lag, tunggu bentar atau coba lagi nanti pas internetnya lancar.";
+  display: block;
+  max-width: 230px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--gray);
+  opacity: 0;
+  animation: mediaMuatHintIn 0.35s ease 5s both;
+}
+.media-muat.mini .media-muat-loading::after {
+  display: none;
+}
+@keyframes mediaMuatHintIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
 }
 .media-muat-loading .spinner {
   margin: 0;
@@ -6160,9 +6319,9 @@ body.edit-mode .prestasi-card .foto-del-btn {
     font-size: 1.05rem;
   }
   .nav-more-btn {
-    width: 52px;
-    height: 52px;
-    margin-top: -26px;
+    width: 66px;
+    height: 66px;
+    margin-top: -30px;
     font-size: 1.25rem;
   }
   .nav-sheet-grid {

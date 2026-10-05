@@ -14,6 +14,9 @@ const Arsip = {
   total: 0,
   terinisialisasi: false,
   token: 0,
+  memuat: false, // lagi fetch — render jangan vonis "belum ada"
+  gagalMuat: false, // fetch terakhir error (offline) — render jangan vonis kosong
+  pernahMuat: false, // minimal 1x sukses — sebelum itu kosong = "belum tahu", bukan "belum ada"
 
   // 0 itu order valid, jangan || 99
   ord(k) {
@@ -165,6 +168,8 @@ const Arsip = {
     if (!grid) return;
     Arsip.page = Math.max(1, parseInt(page, 10) || 1);
     const token = ++Arsip.token;
+    Arsip.memuat = true;
+    Arsip.gagalMuat = false;
     grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat arsip...</div>`;
     Arsip.renderBar();
     try {
@@ -180,10 +185,14 @@ const Arsip = {
       }
       Arsip.total = total || 0;
       Arsip.rows = rows || [];
+      Arsip.memuat = false;
+      Arsip.pernahMuat = true;
       Arsip.render();
     } catch (err) {
       console.error(err);
       if (token !== Arsip.token) return;
+      Arsip.memuat = false;
+      Arsip.gagalMuat = true;
       grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat arsip. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Arsip.muat(Arsip.page)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
     }
     Arsip.renderBar();
@@ -205,7 +214,17 @@ const Arsip = {
     if (Arsip.draft) html += Arsip.kartuDraft();
     const rows = Arsip.rows || [];
     if (rows.length === 0 && !Arsip.draft) {
-      html += `<div class="pesan-empty"><i class="fa-solid fa-images"></i> Belum ada arsip.</div>`;
+      // Jangan vonis "belum ada" pas internet mati/lemot:
+      // - lagi loading / belum pernah sukses = tampil loading
+      // - fetch terakhir gagal = tampil error + tombol coba lagi
+      // "Belum ada arsip" cuma kalau sudah pernah sukses dan hasilnya kosong.
+      if (Arsip.memuat || !Arsip.pernahMuat) {
+        html += `<div class="loading-block"><div class="spinner"></div>Memuat arsip...</div>`;
+      } else if (Arsip.gagalMuat) {
+        html += `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat arsip. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Arsip.muat(Arsip.page)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+      } else {
+        html += `<div class="pesan-empty"><i class="fa-solid fa-images"></i> Belum ada arsip.</div>`;
+      }
     } else {
       html += rows.map((item) => Arsip.kartu(item)).join("");
     }

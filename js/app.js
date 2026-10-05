@@ -245,7 +245,8 @@ const NavMore = {
         NavMore.setLabel();
     },
     // Label nama menu di tombol tengah — dari data-short item sheet
-    // (fallback ke teks <b>), dikosongkan kalau bukan halaman sheet.
+    // (fallback ke teks <b>), default "Menu Lainnya" biar user tau ini
+    // tombol buat munculin menu lain.
     setLabel() {
         const lb = document.getElementById("navMoreLabel");
         if (!lb) return;
@@ -254,11 +255,11 @@ const NavMore = {
             const item = r && document.querySelector('.nav-sheet-item[data-route="' + r + '"]');
             if (item) {
                 lb.textContent = (item.dataset && item.dataset.short) ||
-                    (item.querySelector(".nsi-text b") || {}).textContent || "";
+                    (item.querySelector(".nsi-text b") || {}).textContent || "Menu Lainnya";
                 return;
             }
         } catch (e) {}
-        lb.textContent = "";
+        lb.textContent = "Menu Lainnya";
     },
     // Ikon halaman sheet yang sedang aktif — diambil dari item sheet di DOM
     // (sumber tunggal, otomatis ikut kalau nambah menu baru di index.html).
@@ -280,6 +281,7 @@ const NavMore = {
         const bg = document.getElementById("navSheetBackdrop");
         const btn = document.getElementById("navMoreBtn");
         if (!sheet) return;
+        NavMore.tandaiDibuka();
         sheet.classList.add("open");
         if (bg) bg.classList.add("open");
         if (btn) btn.setAttribute("aria-expanded", "true");
@@ -299,6 +301,28 @@ const NavMore = {
         const sheet = document.getElementById("navSheet");
         if (sheet && sheet.classList.contains("open")) NavMore.tutup();
         else NavMore.buka();
+    },
+    // Pemandu sekali-lihat: goyang + tooltip + dot sampai user buka sheet.
+    // Disimpan di localStorage biar tidak ganggu user lama.
+    pemanduInit() {
+        try {
+            const btn = document.getElementById("navMoreBtn");
+            const dot = document.getElementById("navMoreDot");
+            if (!btn) return;
+            if (localStorage.getItem("navMoreOpened") === "1") {
+                btn.classList.remove("attn");
+                if (dot) dot.style.display = "none";
+                return;
+            }
+            btn.classList.add("attn");
+        } catch (e) {}
+    },
+    tandaiDibuka() {
+        try { localStorage.setItem("navMoreOpened", "1"); } catch (e) {}
+        const btn = document.getElementById("navMoreBtn");
+        if (btn) btn.classList.remove("attn");
+        const dot = document.getElementById("navMoreDot");
+        if (dot) dot.style.display = "none";
     }
 };
 
@@ -313,6 +337,7 @@ function onReady(fn) {
 
 onReady(() => FotoWeb.init());
 onReady(() => Router.init());
+onReady(() => { if (typeof NavMore !== "undefined") NavMore.pemanduInit(); });
 onReady(() => {
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && typeof NavMore !== "undefined") NavMore.tutup();
