@@ -12,6 +12,7 @@
 
   var LS_AUD = "push_audience";
   var LS_ON = "push_aktif";
+  var LS_POPUP = "push_popup_v1"; // popup ajakan awal — tampil sekali selamanya
 
   function toast(msg, tipe) {
     try {
@@ -570,6 +571,113 @@
     } catch {}
   }
 
+  // ---- Popup ajakan awal: tampil SEKALI selamanya per HP/browser ----
+  // Syarat tampil: push didukung + user belum pernah memutuskan (permission
+  // masih 'default') + belum subscribe + popup belum pernah tampil.
+  // Kalau user sudah izinkan / sudah blokir / sudah subscribe: tidak tampil.
+  function popupSudah() {
+    try {
+      return !!localStorage.getItem(LS_POPUP);
+    } catch {
+      return true; // storage mati = jangan ganggu
+    }
+  }
+
+  function tandaiPopup() {
+    try {
+      localStorage.setItem(LS_POPUP, "1");
+    } catch {}
+  }
+
+  function pasangCssPopup() {
+    if (document.getElementById("pushPopupCss")) return;
+    var st = document.createElement("style");
+    st.id = "pushPopupCss";
+    st.textContent =
+      ".push-pop{display:flex;gap:14px;align-items:flex-start}" +
+      ".push-pop-ico{width:56px;height:56px;flex-shrink:0;border-radius:16px;border:3px solid var(--ink,#1a1314);" +
+      "background:var(--yellow,#ffd21f);display:grid;place-items:center;font-size:1.5rem;color:var(--ink,#1a1314);" +
+      "animation:pushGoyang 1.6s ease-in-out infinite}" +
+      "@keyframes pushGoyang{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) scale(1.06)}}" +
+      ".push-pop h3{font-size:1.05rem;font-weight:900;letter-spacing:-.01em;margin:0 0 6px}" +
+      ".push-pop p{font-size:.82rem;font-weight:600;color:#3d3638;line-height:1.6;margin:0}" +
+      ".push-pop ul{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}" +
+      ".push-pop li{display:flex;gap:8px;align-items:flex-start;font-size:.78rem;font-weight:700}" +
+      ".push-pop li i{color:var(--red,#e11d2e);margin-top:2px}" +
+      ".push-pop-aksi{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}" +
+      ".push-pop-aksi .btn{flex:1;min-width:140px;justify-content:center}" +
+      ".push-pop-nanti{width:100%;background:none;border:none;font-family:inherit;font-size:.76rem;font-weight:700;" +
+      "color:var(--gray,#6f6668);cursor:pointer;padding:6px;margin-top:2px}";
+    try {
+      document.head.appendChild(st);
+    } catch {}
+  }
+
+  function tampilPopupSekali() {
+    if (popupSudah()) return;
+    if (izin() !== "default") {
+      tandaiPopup();
+      return;
+    }
+    var overlay = document.createElement("div");
+    overlay.className = "prestasi-form-overlay";
+    overlay.innerHTML =
+      '<div class="prestasi-form-box" style="max-width:400px">' +
+      '<div class="push-pop">' +
+      '<div class="push-pop-ico"><i class="fa-solid fa-bell"></i></div>' +
+      "<div><h3>Jangan Ketinggalan Info!</h3>" +
+      "<p>Nyalain notifikasi biar info terbaru langsung masuk ke HP kamu, walau web-nya lagi ditutup.</p>" +
+      "<ul>" +
+      '<li><i class="fa-solid fa-circle-check"></i> Pengumuman & jadwal libur terbaru</li>' +
+      '<li><i class="fa-solid fa-circle-check"></i> Acara, polling & galeri kegiatan</li>' +
+      '<li><i class="fa-solid fa-circle-check"></i> Gratis, bisa dimatikan kapan aja</li>' +
+      "</ul></div></div>" +
+      '<div class="push-pop-aksi">' +
+      '<button class="btn btn-red" id="pushPopOk"><i class="fa-solid fa-bell"></i> Nyalakan Notifikasi</button>' +
+      "</div>" +
+      '<button class="push-pop-nanti" id="pushPopNanti">Nanti saja</button>' +
+      "</div>";
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        overlay.classList.add("active");
+      });
+    });
+    tandaiPopup(); // sekali tampil = jatah habis, apa pun pilihannya
+    function tutup() {
+      overlay.classList.remove("active");
+      setTimeout(function () {
+        overlay.remove();
+      }, 200);
+    }
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) tutup();
+    });
+    overlay.querySelector("#pushPopNanti").addEventListener("click", tutup);
+    overlay.querySelector("#pushPopOk").addEventListener("click", function () {
+      tutup();
+      aktifkan();
+    });
+  }
+
+  function jadwalkanPopup() {
+    // Tunda ~4 detik biar halaman kebaca dulu + tidak tabrakan dengan
+    // toast/popup lain (mis. hint install iOS). Cek ulang status sebelum tampil.
+    setTimeout(async function () {
+      try {
+        if (popupSudah()) return;
+        if ((await status()) === "aktif") {
+          tandaiPopup();
+          return;
+        }
+        // Jangan timpa popup/form lain yang sedang terbuka.
+        if (document.querySelector(".prestasi-form-overlay.active")) return;
+        pasangCssPopup();
+        tampilPopupSekali();
+      } catch {}
+    }, 4000);
+  }
+
   function init() {
     if (!didukung()) return;
     function siap(fn) {
@@ -578,6 +686,7 @@
     }
     siap(function () {
       buatTombol();
+      jadwalkanPopup();
       suntikTombolKirim();
       setTimeout(suntikTombolKirim, 1500);
       setTimeout(suntikTombolKirim, 4000);
