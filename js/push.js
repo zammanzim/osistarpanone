@@ -393,6 +393,25 @@
     } catch {}
   }
 
+  // Terjemahkan rincian gagal Worker jadi teks (dipakai hasil kirim).
+  function teksRincian(rincian) {
+    if (!rincian || typeof rincian !== "object") return "";
+    var keys = Object.keys(rincian);
+    if (!keys.length) return "";
+    var ART = {
+      400: "payload ditolak (cek enkripsi Worker)",
+      401: "VAPID tidak cocok — samakan PUBLIC secret Worker dengan js/config.js",
+      403: "VAPID ditolak push service",
+      404: "basi",
+      410: "kadaluarsa",
+      429: "rate limit — coba lagi nanti",
+    };
+    return " Rincian: " + keys.map(function (k) {
+      if (String(k).indexOf("ERR:") === 0) return k + " ×" + rincian[k];
+      return k + " ×" + rincian[k] + " (" + (ART[String(k)] || "ditolak") + ")";
+    }).join("; ") + ".";
+  }
+
   // ---- Form kirim manual (dashboard OSIS) ----
   // prefill: { judul, isi, url, audience }
   function bukaFormKirim(prefill) {
@@ -478,9 +497,9 @@
         var r = await kirimManual({ judul: judul, isi: isi, url: urlV, audience: aud });
         var total = Number(r.total || 0);
         hasil.textContent = total
-          ? ("Terkirim ke " + (r.terkirim || 0) + " dari " + total + " HP" + (r.gagal ? (" (" + r.gagal + " gagal)") : "") + (r.dibersihkan ? ", " + r.dibersihkan + " basi dibersihkan." : "."))
+          ? ("Terkirim ke " + (r.terkirim || 0) + " dari " + total + " HP" + (r.gagal ? (" (" + r.gagal + " gagal)") : "") + (r.dibersihkan ? ", " + r.dibersihkan + " basi dibersihkan." : ".") + teksRincian(r.rincian))
           : "Belum ada HP yang aktifkan notif. Minta buka web → Aktifkan Notif dulu.";
-        toast("Selesai mengirim notif!");
+        toast((r.gagal || 0) === 0 ? "Selesai mengirim notif!" : "Selesai, tapi ada yang gagal — cek rincian.", (r.gagal || 0) === 0 ? "success" : "error");
         try {
           if (typeof catatAksi === "function") catatAksi("push_kirim", judul.slice(0, 60) + " [" + aud + "]");
         } catch {}

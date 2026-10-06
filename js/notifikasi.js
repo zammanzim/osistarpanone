@@ -80,6 +80,34 @@ const Notifikasi = {
 
     document.getElementById("btnNotifUji")?.addEventListener("click", () => Notifikasi.ujiLokal());
     document.getElementById("btnNotifKirim")?.addEventListener("click", () => Notifikasi.kirim());
+    document.getElementById("btnNotifStatus")?.addEventListener("click", () => Notifikasi.cekStatus());
+  },
+
+  // Diagnostik: tanya Worker apakah secret VAPID kepasang + cocok dengan frontend.
+  async cekStatus() {
+    Notifikasi.hasil("Mengecek status server...", true);
+    try {
+      const s = await supa.auth.getSession();
+      const token = (s && s.data && s.data.session && s.data.session.access_token) || "";
+      if (!token) throw new Error("Sesi habis — login ulang dulu.");
+      const base = String(typeof PUSH_KIRIM_URL === "string" ? PUSH_KIRIM_URL : "").replace(/\/push-kirim\/?$/, "");
+      const kunci = typeof VAPID_PUBLIC_KEY === "string" ? VAPID_PUBLIC_KEY : "";
+      const res = await fetch(base + "/push-status?k=" + encodeURIComponent(kunci), {
+        headers: { Authorization: "Bearer " + token },
+      });
+      const b = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((b && b.error) || ("Server balas " + res.status));
+      const sub = b.subscriber || {};
+      const baris = [
+        `VAPID public di server: ${b.vapid_public_ok ? "OK" : "RUSAK/HILANG"}`,
+        `VAPID private di server: ${b.vapid_private_ok ? "OK" : "RUSAK/HILANG"}`,
+        `Kunci frontend cocok dengan server: ${b.kunci_cocok_frontend === null ? "?" : b.kunci_cocok_frontend ? "YA" : "TIDAK — set ulang secret VAPID_PUBLIC + deploy"}`,
+        `Subscriber: total ${sub.total || 0} (publik ${sub.publik || 0}, osis ${sub.osis || 0}, semua ${sub.semua || 0})`,
+      ];
+      Notifikasi.hasil(baris.join(" · "), b.vapid_public_ok && b.vapid_private_ok);
+    } catch (e) {
+      Notifikasi.hasil("Gagal cek status: " + (e && e.message ? e.message : e), false);
+    }
   },
 
   hasil(msg, ok) {
@@ -87,6 +115,28 @@ const Notifikasi = {
     if (!el) return;
     el.className = ok ? "ok" : "err";
     el.textContent = msg;
+  },
+
+  // Terjemahkan rincian gagal dari Worker jadi petunjuk yang bisa ditindak.
+  teksRincian(rincian) {
+    if (!rincian || typeof rincian !== "object") return "";
+    const keys = Object.keys(rincian);
+    if (!keys.length) return "";
+    const ART = {
+      400: "payload ditolak push service (cek enkripsi Worker)",
+      401: "VAPID tidak cocok — PUBLIC di secret Worker beda dengan di js/config.js, set ulang + deploy",
+      403: "VAPID ditolak push service — cek secret + subject",
+      404: "subscription basi (dibersihkan otomatis)",
+      410: "subscription kadaluarsa (dibersihkan otomatis)",
+      429: "rate limit push service — coba lagi nanti",
+    };
+    const bagian = keys.map((k) => {
+      const n = rincian[k];
+      if (String(k).startsWith("ERR:")) return `${k} ×${n} (error internal Worker)`;
+      const art = ART[String(k)] || "push service menolak";
+      return `${k} ×${n} (${art})`;
+    });
+    return " Rincian: " + bagian.join("; ") + ".";
   },
 
   // Tes lokal: notif hanya muncul di HP ini, tidak terkirim ke siapa-siapa.
@@ -160,9 +210,9 @@ const Notifikasi = {
       const total = Number(r.total || 0);
       Notifikasi.hasil(
         total
-          ? `Terkirim ke ${r.terkirim || 0} dari ${total} HP${r.gagal ? ` (${r.gagal} gagal)` : ""}${r.dibersihkan ? `, ${r.dibersihkan} basi dibersihkan.` : "."}`
+          ? `Terkirim ke ${r.terkirim || 0} dari ${total} HP${r.gagal ? ` (${r.gagal} gagal)` : ""}${r.dibersihkan ? `, ${r.dibersihkan} basi dibersihkan.` : "."}${Notifikasi.teksRincian(r.rincian)}`
           : "Belum ada HP yang aktifkan notif di target ini. Minta buka web → Aktifkan Notif dulu.",
-        true,
+        (r.gagal || 0) === 0,
       );
       try {
         if (typeof catatAksi === "function") catatAksi("push_broadcast", f.judul.slice(0, 60) + " [" + f.audience + "]");

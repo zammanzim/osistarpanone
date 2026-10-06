@@ -228,7 +228,7 @@ async function cekSuper(env, authUserId) {
 // =========================================================================
 
 function b64uKeBytes(s) {
-  s = String(s || "").replace(/-/g, "+").replace(/_/g, "/");
+  s = String(s || "").trim().replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
   while (s.length % 4) s += "=";
   const bin = atob(s);
   const out = new Uint8Array(bin.length);
@@ -412,6 +412,11 @@ async function tanganiPushKirim(req, env) {
   const payload = { judul, isi, url: urlTarget, tag: "tarpan-" + Date.now() };
   let terkirim = 0, gagal = 0;
   const basi = [];
+  const rincian = {}; // "401" -> 2, "ERR:..." -> 1 (buat debugging)
+  function catatRincian(kunci) {
+    kunci = String(kunci);
+    rincian[kunci] = (rincian[kunci] || 0) + 1;
+  }
   const BATCH = 25;
   for (let i = 0; i < subs.length; i += BATCH) {
     const pot = subs.slice(i, i + BATCH);
@@ -420,8 +425,15 @@ async function tanganiPushKirim(req, env) {
       if (hsl.status === "fulfilled" && hsl.value >= 200 && hsl.value < 300) terkirim++;
       else {
         gagal++;
-        const st = hsl.status === "fulfilled" ? hsl.value : 0;
-        if (st === 404 || st === 410) basi.push(pot[k].endpoint);
+        let kunci = "ERR_UNKNOWN";
+        if (hsl.status === "fulfilled") {
+          kunci = String(hsl.value);
+          if (hsl.value === 404 || hsl.value === 410) basi.push(pot[k].endpoint);
+        } else {
+          const m = String((hsl.reason && hsl.reason.message) || hsl.reason || "unknown").slice(0, 80);
+          kunci = "ERR:" + m;
+        }
+        catatRincian(kunci);
       }
     });
   }
@@ -435,7 +447,55 @@ async function tanganiPushKirim(req, env) {
       ));
     } catch {}
   }
-  return jsonResponse({ ok: true, total: subs.length, terkirim, gagal, dibersihkan: basi.length }, 200, env, req);
+  return jsonResponse({ ok: true, total: subs.length, terkirim, gagal, dibersihkan: basi.length, rincian }, 200, env, req);
+}
+
+// Diagnostik (GET /push-status, wajib login OSIS): cek secret VAPID kepasang
+// atau tidak + jumlah subscriber per audience. TIDAK mengembalikan secret.
+async function tanganiPushStatus(req, env) {
+  const { state, authUserId } = await jwtValid(env, req);
+  if (state === "tanpa-token") return jsonResponse({ error: "Belum login — login dulu." }, 401, env, req);
+  if (state !== "ok") return jsonResponse({ error: "Sesi tidak valid — login ulang dulu." }, 401, env, req);
+  const osisId = await cekHakOsis(env, authUserId);
+  if (!osisId) return jsonResponse({ error: "Akun ini tidak punya hak." }, 403, env, req);
+  let pubOk = false, privOk = false;
+  try {
+    const pub = b64uKeBytes(env.VAPID_PUBLIC);
+    pubOk = pub.length === 65 && pub[0] === 4;
+  } catch { pubOk = false; }
+  try {
+    const priv = b64uKeBytes(env.VAPID_PRIVATE);
+    privOk = priv.length === 32;
+  } catch { privOk = false; }
+  const hitung = { total: 0, publik: 0, osis: 0, semua: 0 };
+  try {
+    const base = String(env.SUPABASE_URL).replace(/\/$/, "");
+    const h = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY };
+    const r = await fetch(`${base}/rest/v1/push_subscriptions?select=audience&limit=1000`, { headers: h });
+    if (r.ok) {
+      const arr = await r.json();
+      (arr || []).forEach((s) => {
+        hitung.total++;
+        const a = String(s.audience || "");
+        if (hitung[a] !== undefined) hitung[a]++;
+      });
+    }
+  } catch {}
+  // Cocok tidak PUBLIC di Worker dengan yang dipakai frontend subscribe?
+  // Frontend kirimkan kuncinya sebagai query (?k=...) buat dibandingin.
+  let kunciCocok = null;
+  try {
+    const k = new URL(req.url).searchParams.get("k") || "";
+    if (k) kunciCocok = String(k).trim() === String(env.VAPID_PUBLIC || "").trim();
+  } catch {}
+  return jsonResponse({
+    ok: true,
+    vapid_public_ok: pubOk,
+    vapid_private_ok: privOk,
+    vapid_subject: String(env.VAPID_SUBJECT || "mailto:admin@osistarpanone.my.id"),
+    kunci_cocok_frontend: kunciCocok,
+    subscriber: hitung,
+  }, 200, env, req);
 }
 
 export default {
@@ -450,8 +510,12 @@ export default {
       return tanganiPushKirim(req, env);
     }
 
+    if (url.pathname === "/push-status" && req.method === "GET") {
+      return tanganiPushStatus(req, env);
+    }
+
     if (url.pathname !== "/presign" || req.method !== "POST") {
-      return jsonResponse({ error: "Not found. Gunakan POST /presign atau POST /push-kirim." }, 404, env, req);
+      return jsonResponse({ error: "Not found. Gunakan POST /presign, POST /push-kirim, atau GET /push-status." }, 404, env, req);
     }
 
     if (!env.R2_ENDPOINT || !env.R2_BUCKET || !env.R2_ACCESS_KEY || !env.R2_SECRET_KEY) {
