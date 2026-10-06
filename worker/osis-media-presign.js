@@ -373,6 +373,10 @@ async function kirimSatuPush(sub, payloadObj, env) {
       "Content-Type": "application/octet-stream",
       "Content-Encoding": "aes128gcm",
       TTL: "2419200",
+      // high = bangunkan HP segera walau layar mati / mode hemat daya.
+      // Tanpa ini push dianggap prioritas normal dan bisa ditunda HP
+      // (Doze) sampai app dibuka — persis gejala "muncul pas buka app".
+      Urgency: "high",
       Authorization: "vapid t=" + jwt + ", k=" + String(env.VAPID_PUBLIC).trim(),
     },
     body,
