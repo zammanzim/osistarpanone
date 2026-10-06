@@ -63,6 +63,51 @@ function getFoto(pathFoto) {
   return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${bersih}`;
 }
 
+// ============ MEDIA: foto vs video ============
+// Dipakai Galeri, Arsip, Kegiatan, Prestasi: grid tampilkan thumbnail
+// video (frame pertama, tanpa autoplay) + tombol play; popup baru play.
+function isVideoPath(path) {
+  return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(String(path || ""));
+}
+function isVideoFile(file) {
+  return !!(file && file.type && String(file.type).startsWith("video/"));
+}
+// Ekstensi video yang diizinkan Worker (lihat CONTENT_BOLEH di worker).
+function isVideoOk(file) {
+  if (!isVideoFile(file)) return false;
+  const ext = ((file.name || "").split(".").pop() || "").toLowerCase();
+  return ["mp4", "webm", "mov", "m4v"].includes(ext);
+}
+// Validasi intake galeri/arsip/kegiatan/prestasi: foto bebas, video max 100MB.
+function pilahMedia(files, maxVideoMB = 100) {
+  const semua = files || [];
+  const valid = [];
+  let tolakTipe = 0, tolakBesar = 0;
+  for (const f of semua) {
+    if (!f || !f.type) { tolakTipe++; continue; }
+    if (f.type.startsWith("image/")) { valid.push(f); continue; }
+    if (f.type.startsWith("video/") && isVideoOk(f)) {
+      if (f.size > maxVideoMB * 1024 * 1024) { tolakBesar++; continue; }
+      valid.push(f);
+      continue;
+    }
+    tolakTipe++;
+  }
+  return { valid, tolakTipe, tolakBesar };
+}
+// HTML thumbnail untuk grid bento (.item): foto = <img>, video = <video>
+// (frame pertama via preload metadata, tanpa autoplay) + tombol play.
+function thumbBento(src, alt, extra = "") {
+  const esc = (typeof escapeHtml === "function" ? escapeHtml(String(alt || "")) : String(alt || ""));
+  if (isVideoPath(src)) {
+    return `<video src="${src}" alt="" muted playsinline preload="metadata" disablepictureinpicture onloadeddata="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" ${extra}></video>` +
+      `<span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>` +
+      `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
+  }
+  return `<img src="${src}" alt="${esc}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'">` +
+    `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
+}
+
 // Upload jawaban form publik (responden tanpa login) memakai path berpola
 // formulir/f-<id>-<timestamp>.<ext> — SATU-SATUNYA upload publik yang diizinkan
 // Worker (tanpa JWT). Semua path lain wajib JWT + akun OSIS terlink + punya hak.
@@ -2487,91 +2532,6 @@ async function hapusGallery(userId, id) {
 }
 
 // =========================================================================
-// MOMENTS - 1 baris = 1 momen (1 foto ATAU 1 video + thumbnail opsional).
-// DB hanya menyimpan metadata/key R2 (lihat migrasi-moments.sql).
-// Bentuk baris: {id, caption, event_name, media_type, media_key,
-// thumb_key, category, display_order, pengunggah, created_by, created_at}.
-// Filter frontend (All/Photos/Videos/Events/Random) jalan di atas
-// bentuk ini; kalau migrasi belum di-run, js/moments.js fallback ke
-// tabel gallery (foto) jadi halaman tetap tampil tanpa data palsu.
-// =========================================================================
-const MOMENTS_KOLOM =
-  "id, caption, event_name, media_type, media_key, thumb_key, category, display_order, created_by, pengunggah, created_at";
-
-// Tandai error "tabel/RPC belum ada" biar pemanggil bisa fallback
-// (mis. ke gallery) tanpa menelan error asli lain (koneksi, auth).
-function momentsBelumMigrasi(err) {
-  const msg = String((err && (err.message || err.hint || err.details)) || "");
-  return (
-    (err && (err.code === "42P01" || err.code === "PGRST202" || err.code === "42883")) ||
-    /does not exist|not found|schema cache|could not find|moments/i.test(msg)
-  );
-}
-
-async function getMoments() {
-  const { data, error } = await supa
-    .from("moments")
-    .select(MOMENTS_KOLOM)
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false })
-    .limit(100);
-  if (error) {
-    if (momentsBelumMigrasi(error)) {
-      const e = new Error("MOMENTS_NO_TABLE");
-      e.cause = error;
-      throw e;
-    }
-    throw error;
-  }
-  return data || [];
-}
-
-async function buatMoment(userId, f) {
-  const { data, error } = await supa.rpc("buat_moment", {
-    p_user_id: userId,
-    p_caption: f.caption || "",
-    p_event_name: f.event_name || "",
-    p_media_type: f.media_type || "photo",
-    p_media_key: f.media_key || "",
-    p_thumb_key: f.thumb_key || "",
-    p_category: f.category || "random",
-    p_display_order: f.display_order ?? 99,
-  });
-  if (error) {
-    if (momentsBelumMigrasi(error)) {
-      throw new Error("MOMENTS_NO_TABLE");
-    }
-    throw error;
-  }
-  cekId(data);
-  Cache.del("moments");
-  return data;
-}
-
-async function updateMoment(userId, id, f) {
-  const { data, error } = await supa.rpc("update_moment", {
-    p_user_id: userId,
-    p_id: id,
-    p_caption: f.caption ?? "",
-    p_event_name: f.event_name ?? "",
-    p_category: f.category ?? "random",
-  });
-  if (error) throw error;
-  cekOk(data);
-  Cache.del("moments");
-}
-
-async function hapusMoment(userId, id) {
-  const { data, error } = await supa.rpc("hapus_moment", {
-    p_user_id: userId,
-    p_id: id,
-  });
-  if (error) throw error;
-  cekOk(data);
-  Cache.del("moments");
-}
-
-// =========================================================================
 // FEED - scrolling foto + video ala IG (like, komen, share).
 // Upload bebas semua akun OSIS; hapus = pemilik / super_admin.
 // Komen wajib login; like/share bebas (user_key per perangkat).
@@ -3134,7 +3094,7 @@ async function compressImage(file, maxMB = 0.95, maxDim = 1920) {
   });
 }
 
-async function uploadFotoStorage(file, path) {
+async function uploadFotoStorage(file, path, opts) {
   let toUpload = file;
   if (file && file.type && file.type.startsWith("image/")) {
     try {
@@ -3148,6 +3108,14 @@ async function uploadFotoStorage(file, path) {
   if (r2Aktif()) {
     const tipe = (toUpload && toUpload.type) || (file && file.type) || "application/octet-stream";
     const pres = await r2MintaPresign("put", key, tipe);
+    // Lewat UploadManager (XHR) biar ada progress persen + chip background.
+    // Fallback fetch kalau manager belum ke-load (halaman tanpa upload.js).
+    if (typeof UploadManager !== "undefined" && UploadManager.putXHR) {
+      const label = (opts && opts.label) || (file && file.name) || key;
+      const onDone = (opts && typeof opts.onDone === "function") ? opts.onDone : null;
+      await UploadManager.putXHR(pres.url, toUpload, tipe, { label, name: file && file.name, path: key, onDone });
+      return key;
+    }
     const up = await fetch(pres.url, {
       method: "PUT",
       headers: { "Content-Type": tipe },

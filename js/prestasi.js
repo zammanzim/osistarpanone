@@ -98,9 +98,14 @@ const Prestasi = {
         const cover = fotos[0] ? (typeof fotos[0] === "string" ? fotos[0] : fotos[0].path) : "";
         const tag = escapeHtml(item.tag || "");
         const isEdit = (typeof OsisAuth !== "undefined" && OsisAuth.bisa && OsisAuth.bisa("prestasi"));
+        const coverUrl = cover ? getFoto(cover) : "";
+        const isVid = typeof isVideoPath === "function" && isVideoPath(cover);
+        const media = !coverUrl ? "" : isVid
+            ? `<video src="${coverUrl}" alt="" muted playsinline preload="metadata" disablepictureinpicture onloadeddata="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" onclick="Prestasi.bukaPopup(${item.id})"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>`
+            : `<img src="${coverUrl}" alt="${tag || "Prestasi"}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'" onclick="Prestasi.bukaPopup(${item.id})">`;
         return `
-            <div class="prestasi-card" data-prestasi-id="${item.id}" style="position:relative">
-                <div class="media-muat media-muat-tinggi"><img src="${getFoto(cover)}" alt="${tag || "Prestasi"}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'" onclick="Prestasi.bukaPopup(${item.id})"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></div>
+            <div class="prestasi-card${isVid ? " is-video" : ""}" data-prestasi-id="${item.id}" style="position:relative">
+                <div class="media-muat media-muat-tinggi">${media}<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></div>
                 ${tag || isEdit ? `<span class="prestasi-tag" data-prestasi-tag="${item.id}" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false">${tag || (isEdit ? "Tag" : "")}</span>` : ""}
                 <button class="foto-del-btn" onclick="event.stopPropagation(); Prestasi.hapus(${item.id})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button>
             </div>`;
@@ -256,12 +261,13 @@ const Prestasi = {
                 <div class="prestasi-drop" id="prestasiDrop">
                     <div class="prestasi-drop-inner" id="prestasiDropInner">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <span>Klik atau drag foto ke sini</span>
-                        <small>JPG/PNG, max 10MB (otomatis compress &lt;1MB)</small>
+                        <span>Klik atau drag foto/video ke sini</span>
+                        <small>JPG/PNG/MP4 (foto otomatis compress, video max 100MB)</small>
                     </div>
                     <img id="prestasiPreview" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:12px;">
+                    <video id="prestasiPreviewVid" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:12px;" muted playsinline loop preload="metadata"></video>
                 </div>
-                <input type="file" id="prestasiFormFile" accept="image/*" style="display:none">
+                <input type="file" id="prestasiFormFile" accept="image/*,video/mp4,video/webm,video/quicktime" style="display:none">
                 <div class="field" style="margin-top:12px">
                     <label>Tag kecil (judul kecil)</label>
                     <input type="text" id="prestasiTag" class="admin-input" placeholder="cth: Paskibra" maxlength="40">
@@ -315,12 +321,22 @@ const Prestasi = {
     },
 
     handlePickedFile(file, previewEl, innerEl) {
-        if (!file || !file.type.startsWith("image/")) { showToast("File harus gambar", "error"); return; }
+        const okImg = file && file.type && file.type.startsWith("image/");
+        const okVid = typeof isVideoOk === "function" && isVideoOk(file);
+        if (!okImg && !okVid) { showToast("File harus foto atau video (MP4/WEBM/MOV)", "error"); return; }
+        if (okVid && file.size > 100 * 1024 * 1024) { showToast("Video max 100MB biar ringan dibuka HP", "error"); return; }
         Prestasi.pendingFile = file;
         const url = URL.createObjectURL(file);
         const preview = previewEl || document.getElementById("prestasiPreview");
+        const previewVid = document.getElementById("prestasiPreviewVid");
         const inner = innerEl || document.getElementById("prestasiDropInner");
-        if (preview) { preview.src = url; preview.style.display = "block"; }
+        if (okVid) {
+            if (preview) preview.style.display = "none";
+            if (previewVid) { previewVid.src = url; previewVid.style.display = "block"; }
+        } else {
+            if (previewVid) { try { previewVid.pause(); } catch {} previewVid.removeAttribute("src"); previewVid.style.display = "none"; }
+            if (preview) { preview.src = url; preview.style.display = "block"; }
+        }
         if (inner) inner.style.display = "none";
         const drop = document.getElementById("prestasiDrop");
         if (drop) drop.classList.add("has-file");
@@ -333,7 +349,7 @@ const Prestasi = {
         const tag = document.getElementById("prestasiTag")?.value.trim() || "";
         const caption = document.getElementById("prestasiCaption")?.value.trim() || "";
         const file = Prestasi.pendingFile;
-        if (!file) { showToast("Pilih foto dulu", "error"); return; }
+        if (!file) { showToast("Pilih foto/video dulu", "error"); return; }
         const __presOrder = (() => {
             try {
                 const c = Prestasi.cache || [];
@@ -354,9 +370,10 @@ const Prestasi = {
         const btn = document.getElementById("btnSimpanPrestasi");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         try {
-            const ext = (file.name.split(".").pop()||"jpg").toLowerCase();
+            const isVid = typeof isVideoFile === "function" && isVideoFile(file);
+            const ext = ((file.name.split(".").pop() || (isVid ? "mp4" : "jpg")).toLowerCase().replace(/[^a-z0-9]/g, "") || (isVid ? "mp4" : "jpg")).slice(0, 8);
             const path = `prestasi/prestasi-${u.id}-${Date.now()}.${ext}`;
-            await uploadFotoStorage(file, path);
+            await uploadFotoStorage(file, path, { label: "Prestasi: " + String(tag || caption || "baru").slice(0, 42) });
             const maxOrder = Prestasi.cache.length ? Math.min(...Prestasi.cache.map(p => p.display_order ?? 99)) : 99;
             const newId = await buatPrestasi(u.id, tag, caption, [{ path, caption }], maxOrder - 1);
             if (!newId || newId<=0) throw new Error("Gagal simpan ("+newId+")");

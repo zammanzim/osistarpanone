@@ -136,7 +136,6 @@
       }
     </script>
     <link rel="stylesheet" href="css/style.css?v=26" />
-    <link rel="stylesheet" href="css/moments.css?v=10" />
     <link rel="stylesheet" href="css/feed.css?v=3" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
@@ -1032,24 +1031,24 @@
     </style>
     <script src="js/supabase.min.js?v=10"></script>
     <script src="js/config.js?v=14"></script>
-    <script src="js/db.js?v=21" defer></script>
+    <script src="js/db.js?v=23" defer></script>
     <script src="js/app.js?v=14" defer></script>
     <script src="js/toast.js?v=10" defer></script>
     <script src="js/notice.js?v=10" defer></script>
+    <script src="js/upload.js?v=10" defer></script>
     <script src="js/show-popup.js?v=13" defer></script>
     <script src="js/visitor.js?v=16" defer></script>
     <script src="js/aktivitas.js?v=11" defer></script>
-    <script src="js/home.js?v=20" defer></script>
-    <script src="js/prestasi.js?v=13" defer></script>
-    <script src="js/kegiatan.js?v=13" defer></script>
+    <script src="js/home.js?v=22" defer></script>
+    <script src="js/prestasi.js?v=14" defer></script>
+    <script src="js/kegiatan.js?v=14" defer></script>
     <script src="js/sekbid.js?v=11" defer></script>
     <script src="js/pengurus.js?v=11" defer></script>
     <script src="js/aspirasi.js?v=11" defer></script>
     <script src="js/lagu.js?v=12" defer></script>
-    <script src="js/galeri.js?v=13" defer></script>
-    <script src="js/moments.js?v=13" defer></script>
-    <script src="js/feed.js?v=5" defer></script>
-    <script src="js/arsip.js?v=13" defer></script>
+    <script src="js/galeri.js?v=14" defer></script>
+    <script src="js/feed.js?v=7" defer></script>
+    <script src="js/arsip.js?v=14" defer></script>
     <script src="js/informasi-view.js?v=2" defer></script>
     <script src="js/osis-auth.js?v=19" defer></script>
     <script src="js/site-edit.js?v=16" defer></script>
@@ -1631,7 +1630,7 @@
         <input
           type="file"
           id="galFileInput"
-          accept="image/*"
+          accept="image/*,video/mp4,video/webm,video/quicktime"
           multiple
           style="display: none"
         />
@@ -1644,72 +1643,6 @@
         style="display: none"
         title="Tambah galeri"
         aria-label="Tambah galeri"
-      >
-        <i class="fa-solid fa-plus"></i>
-      </button>
-    </section>
-
-    <!-- ============================================================
-         VIEW: MOMENTS (foto + video momen OSIS — Explore/Reels)
-         ============================================================ -->
-    <section class="view" data-view="moments">
-      <div class="wrap moments-wrap">
-        <div class="sec-head">
-          <div>
-            <div class="sec-tag">Momen Seru</div>
-            <h2 class="sec-title">Moments <span class="red">OSIS</span></h2>
-            <p class="sec-sub">
-              Dokumentasi kegiatan, momen random, dan bloopers seru keluarga
-              besar OSIS Tarpan One.
-            </p>
-          </div>
-          <button
-            class="btn btn-red"
-            id="btnMomentsRefresh"
-            onclick="Moments.muat(true)"
-            title="Muat ulang"
-          >
-            <i class="fa-solid fa-rotate"></i> Refresh
-          </button>
-        </div>
-
-        <div class="moments-hero">
-          <span class="moments-hero-tag"
-            ><i class="fa-solid fa-clapperboard"></i> Foto & Video</span
-          >
-          <h2>Behind the scene Tarpan One</h2>
-          <p>
-            Geser ke bawah buat nikmatin keseruannya. Di HP tampil ala Reels
-            (video autoplay), di laptop tampil grid ala Explore.
-          </p>
-          <div class="moments-hero-meta">
-            <span class="moments-count"
-              ><b id="momentsHitung">0</b>&nbsp;<span id="momentsSubHitung"
-                >Memuat…</span
-              ></span
-            >
-            <span class="moments-sumber" id="momentsSumber"></span>
-          </div>
-        </div>
-
-        <div class="moments-toolbar">
-          <div class="moments-chips" id="momentsChips"></div>
-        </div>
-
-        <div class="moments-feed" id="momentsFeed">
-          <div class="moments-empty moments-loading">
-            <i class="fa-solid fa-spinner fa-spin"></i> Memuat momen...
-          </div>
-        </div>
-      </div>
-      <!-- FAB tambah momen (cuma OSIS): di dalam view biar ikut sembunyi pas pindah halaman -->
-      <button
-        class="gal-fab"
-        id="btnTambahMoments"
-        onclick="Moments.bukaForm()"
-        style="display: none"
-        title="Tambah momen"
-        aria-label="Tambah momen"
       >
         <i class="fa-solid fa-plus"></i>
       </button>
@@ -2393,13 +2326,6 @@
             ><i class="fa-solid fa-bullhorn"></i></span
           ><span class="nsi-text"
             ><b>Informasi</b><small>Pengumuman & acara</small></span
-          ></a
-        >
-        <a href="#/moments" class="nav-sheet-item" data-route="moments" data-short="Moments"
-          ><span class="nsi-ico"
-            ><i class="fa-solid fa-clapperboard"></i></span
-          ><span class="nsi-text"
-            ><b>Moments</b><small>Foto & video seru</small></span
           ></a
         >
         <a href="#/pengurus" class="nav-sheet-item" data-route="pengurus" data-short="Pengurus"

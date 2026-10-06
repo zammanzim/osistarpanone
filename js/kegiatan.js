@@ -58,7 +58,7 @@ const Kegiatan = {
       const fi2 = document.createElement("input");
       fi2.type = "file";
       fi2.id = "kegiatanFileInput";
-      fi2.accept = "image/*";
+      fi2.accept = "image/*,video/mp4,video/webm,video/quicktime";
       fi2.multiple = true;
       fi2.style.display = "none";
       fi2.addEventListener("change", () => Kegiatan.tambahFotoDraft(fi2));
@@ -234,7 +234,10 @@ const Kegiatan = {
           idx === 0 && (badge || isEdit)
             ? `<span class="bento-badge" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="BADGE">${badge}</span>`
             : "";
-        return `<div class="item media-muat" data-foto-idx="${idx}"><img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>${badgeHtml}<button class="foto-del-btn" onclick="event.stopPropagation(); Kegiatan.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button></div>`;
+        const media = (typeof thumbBento === "function")
+          ? thumbBento(getFoto(path), judul)
+          : `<img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
+        return `<div class="item media-muat" data-foto-idx="${idx}">${media}${badgeHtml}<button class="foto-del-btn" onclick="event.stopPropagation(); Kegiatan.hapusFoto(${item.id}, ${idx})" title="Hapus foto/video"><i class="fa-solid fa-trash-can"></i></button></div>`;
       })
       .join("");
     return `
@@ -355,16 +358,22 @@ const Kegiatan = {
       fotosHtml += d.fotos
         .map((f) => {
           const p = typeof f === "string" ? f : f.path;
-          return `<div class="item"><img src="${getFoto(p)}" alt=""></div>`;
+          const media = (typeof thumbBento === "function")
+            ? thumbBento(getFoto(p), "")
+            : `<img src="${getFoto(p)}" alt="">`;
+          return `<div class="item media-muat">${media}</div>`;
         })
         .join("");
     }
-    // files preview
+    // files preview (bisa foto maupun video)
     (d.files || []).forEach((f) => {
       const url = URL.createObjectURL(f);
-      fotosHtml += `<div class="item"><img src="${url}" alt=""></div>`;
+      const isVid = typeof isVideoFile === "function" && isVideoFile(f);
+      fotosHtml += isVid
+        ? `<div class="item media-muat sudah-muat is-video"><video src="${url}" alt="" muted playsinline preload="metadata"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span></div>`
+        : `<div class="item"><img src="${url}" alt=""></div>`;
     });
-    fotosHtml += `<div class="up-slot" title="Tambah foto (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
+    fotosHtml += `<div class="up-slot" title="Tambah foto/video (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
     return `
             <div class="bento-block draft">
                 <div class="bento-meta">
@@ -428,15 +437,15 @@ const Kegiatan = {
 
   // Intake batch: dipakai input file (multiple), drop banyak file, maupun 1 file.
   // Render sekali di akhir biar preview banyak foto tetap ringan.
+  // Terima foto + video (MP4/WEBM/MOV, max 100MB).
   tambahFilesDraft(files) {
     if (!Kegiatan.draft) return;
     Kegiatan.bacaTeksDraft();
-    const semua = files || [];
-    const valid = semua.filter((f) => f && f.type && f.type.startsWith("image/"));
-    const ditolak = semua.length - valid.length;
-    if (ditolak > 0) showToast(ditolak + " file bukan gambar, dilewati", "error");
+    const { valid, tolakTipe, tolakBesar } = (typeof pilahMedia === "function" ? pilahMedia(files) : { valid: (files || []).filter((f) => f && f.type && f.type.startsWith("image/")), tolakTipe: 0, tolakBesar: 0 });
+    if (tolakTipe > 0) showToast(tolakTipe + " file bukan foto/video, dilewati", "error");
+    if (tolakBesar > 0) showToast(tolakBesar + " video >100MB, dilewati", "error");
     if (!valid.length) {
-      if (!semua.length || !ditolak) showToast("File harus gambar", "error");
+      if (!((files || []).length) || (!tolakTipe && !tolakBesar)) showToast("File harus foto atau video", "error");
       return;
     }
     if (!Kegiatan.draft.files) Kegiatan.draft.files = [];
@@ -468,7 +477,7 @@ const Kegiatan = {
       (!d.files || d.files.length === 0) &&
       (!d.fotos || d.fotos.length === 0)
     ) {
-      showToast("Tambah minimal 1 foto", "error");
+      showToast("Tambah minimal 1 foto/video", "error");
       return;
     }
     const __ord = (k) => {
@@ -514,7 +523,7 @@ const Kegiatan = {
         const f = d.files[i];
         const ext = ((f.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
         const path = `kegiatan/kegiatan-${u.id}-${Date.now()}-${i}.${ext}`;
-        await uploadFotoStorage(f, path);
+        await uploadFotoStorage(f, path, { label: "Kegiatan: " + String(d.judul || "").trim().slice(0, 42) });
         paths.push({ path, caption: "" });
       }
       // terbaru di atas — pakai min display_order -1 kayak agenda/prestasi

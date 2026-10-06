@@ -36,7 +36,7 @@ const FOLDER_BOLEH = new Set([
 const CONTENT_BOLEH = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif",
   "application/pdf",
-  "video/mp4", "video/webm",
+  "video/mp4", "video/webm", "video/quicktime", "video/x-m4v",
   "audio/mpeg", "audio/mp4", "audio/webm",
 ]);
 

@@ -15,7 +15,7 @@ const Aktivitas = {
     // Label rute SPA (index.html)
     LABEL: {
         home: "Beranda", pengurus: "Pengurus", sekbid: "Sekbid",
-        galeri: "Galeri", moments: "Moments", feed: "Feed", arsip: "Arsip",
+        galeri: "Galeri", feed: "Feed", arsip: "Arsip",
         aspirasi: "Aspirasi", kontak: "Kontak", musik: "Musik",
         informasi: "Informasi",
     },

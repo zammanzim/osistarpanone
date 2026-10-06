@@ -130,15 +130,15 @@ const Galeri = {
     },
 
     // Intake batch: render sekali di akhir biar preview banyak foto tetap ringan.
+    // Terima foto + video (MP4/WEBM/MOV, max 100MB).
     tambahFilesDraft(files) {
         if (!Galeri.draft) return;
         Galeri.bacaTeksDraft();
-        const semua = files || [];
-        const valid = semua.filter((f) => f && f.type && f.type.startsWith("image/"));
-        const ditolak = semua.length - valid.length;
-        if (ditolak > 0) showToast(ditolak + " file bukan gambar, dilewati", "error");
+        const { valid, tolakTipe, tolakBesar } = (typeof pilahMedia === "function" ? pilahMedia(files) : { valid: (files || []).filter((f) => f && f.type && f.type.startsWith("image/")), tolakTipe: 0, tolakBesar: 0 });
+        if (tolakTipe > 0) showToast(tolakTipe + " file bukan foto/video, dilewati", "error");
+        if (tolakBesar > 0) showToast(tolakBesar + " video >100MB, dilewati", "error");
         if (!valid.length) {
-            if (!semua.length || !ditolak) showToast("File harus gambar", "error");
+            if (!((files || []).length) || (!tolakTipe && !tolakBesar)) showToast("File harus foto atau video", "error");
             return;
         }
         if (!Galeri.draft.files) Galeri.draft.files = [];
@@ -165,7 +165,7 @@ const Galeri = {
             return;
         }
         if (files.length === 0) {
-            showToast("Tambah minimal 1 foto dulu!", "error");
+            showToast("Tambah minimal 1 foto/video dulu!", "error");
             return;
         }
 
@@ -190,7 +190,7 @@ const Galeri = {
                 const file = files[i];
                 const ext = ((file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
                 const path = `gallery/galeri-${u.id}-${Date.now()}-${i}.${ext}`;
-                await uploadFotoStorage(file, path);
+                await uploadFotoStorage(file, path, { label: "Galeri: " + String(judul).slice(0, 42) });
                 paths.push(path);
             }
             const newId = await buatGallery(u.id, judul, Galeri.draft.deskripsi || "", paths);
@@ -311,9 +311,12 @@ const Galeri = {
         const d = Galeri.draft;
         let fotoHtml = (d.files || []).map(file => {
             const url = URL.createObjectURL(file);
-            return `<div class="item"><img src="${url}" alt=""></div>`;
+            const isVid = typeof isVideoFile === "function" && isVideoFile(file);
+            return isVid
+                ? `<div class="item media-muat sudah-muat is-video"><video src="${url}" alt="" muted playsinline preload="metadata"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span></div>`
+                : `<div class="item"><img src="${url}" alt=""></div>`;
         }).join("");
-        fotoHtml += `<div class="up-slot" title="Tambah foto (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
+        fotoHtml += `<div class="up-slot" title="Tambah foto/video (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
 
         return `
             <div class="bento-block draft">
@@ -347,10 +350,13 @@ const Galeri = {
 
         let fotoHtml = "";
         fotos.forEach((path, idx) => {
+            const media = (typeof thumbBento === "function")
+                ? thumbBento(getFoto(path), judul)
+                : `<img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
             fotoHtml += `
                 <div class="item media-muat" data-foto-idx="${idx}" onclick="Galeri.bukaPopup(${item.id}, ${idx})">
-                    <img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>
-                    <button class="foto-del-btn" onclick="event.stopPropagation(); Galeri.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button>
+                    ${media}
+                    <button class="foto-del-btn" onclick="event.stopPropagation(); Galeri.hapusFoto(${item.id}, ${idx})" title="Hapus foto/video"><i class="fa-solid fa-trash-can"></i></button>
                 </div>`;
         });
 

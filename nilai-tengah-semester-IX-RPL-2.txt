@@ -1,0 +1,36 @@
+Daftar Nilai Tengah Semester Murni - Urut Highest ke Lowest
+Kelas: IX RPL 2 - Bahasa Inggris
+Rumus: (50% rata-rata Nilai harian) + (50% Nilai ASTS 1)
+
+Nizam Fhamer Arafli : 97,50
+Dila Kirana Destiani : 90,05
+Windi Maharani : 87,80
+Almira Tanisha Purnama : 86,15
+Moch Nazlan Rizqi Ramadhan : 85,70
+Latif Muhammad Fajar : 85,30
+Nabila Yulaika : 83,70
+Raka Pratama Sumitra : 80,45
+Neiyla Aprilia : 76,20
+Anna Silviana Ramadani : 75,40
+Alena Al Zahra : 72,50
+Rizky Khoerurrizal : 72,05
+Bintang Alim Mustofa : 70,15
+Anisa : 68,20
+Siti Nurindah : 67,90
+Nakisa Safa Hamida : 66,50
+Silva Rahmawati : 65,25
+M. Gilang Saputra : 62,95
+Sendi Hermansyah : 61,85
+Debby Nur Anisa : 61,25
+Keyla Arumi Fatimah. A : 56,25
+Faizar Reza Aditya : 55,45
+Muhammad Yusup Pratama : 54,30
+Raffi Juliansyah : 52,85
+Gista Nurpita : 51,30
+Sandra Puspita M : 50,50
+Excel Adila Putra : 48,50
+Risha Salsabila Nadifa : 46,50
+Aufa Fatimatul Azka : 45,95
+Muhamad Fachri Syahreza : 45,40
+Alhamd Ismail : 37,45
+Revan Hidayat : 21,75

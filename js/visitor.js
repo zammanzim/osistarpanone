@@ -224,7 +224,7 @@ const Visitor = {
             hapus_keuangan: "Hapus keuangan", simpan_absensi: "Catat absensi",
             vote_polling: "Vote polling", kirim_lagu: "Request lagu",
             kirim_aspirasi: "Kirim aspirasi", simpan_dokumen: "Upload dokumen",
-            upload_moments: "Upload moments", login: "Login", logout: "Logout",
+            login: "Login", logout: "Logout",
         };
         const k = String(aksi || "").toLowerCase();
         return M[k] || (String(aksi || "Aktivitas").replace(/_/g, " "));
