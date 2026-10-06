@@ -1,7 +1,9 @@
 // =========================================================================
 // PUSH NOTIF — Web Push murni (VAPID) untuk PWA OSIS TARPAN ONE
 // Subscribe 1x per HP/browser -> tersimpan di tabel push_subscriptions.
-// Target: 'publik' (semua pengunjung) / 'osis' (pengurus login) / 'semua'.
+// Audience OTOMATIS dari login: 'osis' kalau login OSIS, 'publik' kalau
+// belum login / akun biasa. Yang pilih target ('publik'/'osis'/'semua')
+// hanya PENGIRIM (dashboard OSIS) saat kirim, bukan penerima.
 // Kirim: via Worker POST PUSH_KIRIM_URL (JWT OSIS + hak).
 // Include: otomatis dimuat dari js/pwa.js (muatPush). Aman tanpa SW.
 // =========================================================================
@@ -58,17 +60,23 @@
     return reg;
   }
 
-  function audienceDefault() {
-    try {
-      var s = localStorage.getItem(LS_AUD) || "";
-      if (s === "osis" || s === "semua" || s === "publik") return s;
-    } catch {}
-    // OSIS login -> default 'osis', selain itu 'publik'
+  // Audience OTOMATIS dari status login — user tidak memilih.
+  // Login OSIS (mode "osis") -> 'osis'. Selain itu (belum login / akun biasa) -> 'publik'.
+  function audienceOtomatis() {
     try {
       var u = typeof OsisAuth !== "undefined" && OsisAuth.getUser ? OsisAuth.getUser() : null;
       if (u && u.mode === "osis") return "osis";
     } catch {}
     return "publik";
+  }
+
+  // Label mode buat ditampilkan di UI (baca simpanan terakhir).
+  function audienceTersimpan() {
+    try {
+      var s = localStorage.getItem(LS_AUD) || "";
+      if (s === "osis" || s === "publik") return s;
+    } catch {}
+    return audienceOtomatis();
   }
 
   function infoUser() {
@@ -88,9 +96,9 @@
     return { key: String(key || ""), did: String(did || "") };
   }
 
-  async function simpanKeDB(sub, audience) {
+  async function simpanKeDB(sub) {
     try {
-      var aud = audience || audienceDefault();
+      var aud = audienceOtomatis();
       var info = infoUser();
       // getKey() sync -> ArrayBuffer langsung
       var rawP = sub.getKey("p256dh");
@@ -130,8 +138,8 @@
   }
 
   // Aktifkan: minta izin -> subscribe -> simpan ke Supabase.
-  // audience: 'publik' | 'osis' | 'semua' (pilihan user di toggle).
-  async function aktifkan(audience) {
+  // Audience otomatis dari login (osis = pengurus, publik = sisanya).
+  async function aktifkan() {
     if (!didukung()) {
       // iOS Safari biasa (bukan PWA ter-install) masuk sini.
       toast("Perangkat ini belum dukung push. Di iPhone: Install dulu via Bagikan → Tambah ke Layar Utama.", "error");
@@ -151,8 +159,12 @@
           userVisibleOnly: true,
           applicationServerKey: kunciKeBytes(VAPID_PUBLIC_KEY),
         }));
-      await simpanKeDB(sub, audience || audienceDefault());
-      toast("Notifikasi HP aktif!");
+      await simpanKeDB(sub);
+      toast(
+        audienceOtomatis() === "osis"
+          ? "Notifikasi HP aktif (mode OSIS — info internal)!"
+          : "Notifikasi HP aktif (info umum)!",
+      );
       refreshTombol();
       return true;
     } catch (e) {
@@ -175,6 +187,7 @@
       }
       try {
         localStorage.removeItem(LS_ON);
+        localStorage.removeItem(LS_AUD);
       } catch {}
       toast("Notifikasi dimatikan.", "info");
       refreshTombol();
@@ -241,6 +254,11 @@
     return '<i class="fa-solid fa-bell"></i><span>Aktifkan Notif</span>';
   }
 
+  // Mode tampil: ikut status login saat ini (osis = pengurus, publik = sisanya).
+  function labelMode() {
+    return audienceOtomatis() === "osis" ? "OSIS (info internal)" : "Publik (info umum)";
+  }
+
   async function klikToggle() {
     var st = await status();
     if (st === "tak-dukung") {
@@ -252,69 +270,16 @@
       return;
     }
     if (st === "aktif") {
-      // Klik saat aktif = pilihan: ganti target atau matikan.
       pilihAksi();
       return;
     }
-    pilihAudienceDanAktifkan();
-  }
-
-  function pilihAudienceDanAktifkan() {
-    var def = audienceDefault();
-    var u = null;
-    try {
-      u = typeof OsisAuth !== "undefined" && OsisAuth.getUser ? OsisAuth.getUser() : null;
-    } catch {}
-    var isOsis = !!(u && u.mode === "osis");
-    // Publik selalu ada; OSIS dapat opsi tambahan.
-    var opsi = isOsis
-      ? "Pilih target notif:\n1 = Publik (info umum)\n2 = OSIS (internal)\n3 = Semua"
-      : "Aktifkan notif publik (info umum) di HP ini?";
-    if (!isOsis) {
-      if (typeof window.showPopup === "function") {
-        window.showPopup("Aktifkan notif info umum di HP ini?", "confirm").then(function (ok) {
-          if (ok) aktifkan("publik");
-        });
-      } else if (confirm(opsi)) aktifkan("publik");
-      return;
-    }
-    // OSIS: pakai popup pilihan sederhana (tanpa lib baru).
-    var overlay = document.createElement("div");
-    overlay.className = "prestasi-form-overlay";
-    overlay.innerHTML =
-      '<div class="prestasi-form-box" style="max-width:360px">' +
-      '<div class="form-head"><span><i class="fa-solid fa-bell"></i> Target Notif HP</span></div>' +
-      '<div class="field"><label>Pilih notif apa yang masuk ke HP ini</label>' +
-      '<select id="pushAudPick" class="admin-input">' +
-      '<option value="publik"' + (def === "publik" ? " selected" : "") + '>Publik — info umum</option>' +
-      '<option value="osis"' + (def === "osis" ? " selected" : "") + '>OSIS — internal pengurus</option>' +
-      '<option value="semua"' + (def === "semua" ? " selected" : "") + '>Semua</option>' +
-      "</select></div>" +
-      '<div class="form-actions-row" style="margin-top:12px">' +
-      '<button class="btn btn-white" id="pushAudBatal">Batal</button>' +
-      '<button class="btn btn-red" id="pushAudOk"><i class="fa-solid fa-check"></i> Aktifkan</button>' +
-      "</div></div>";
-    document.body.appendChild(overlay);
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        overlay.classList.add("active");
+    // Konfirmasi sekali, tanpa pilihan target (otomatis dari login).
+    var tanya = "Aktifkan notif " + labelMode() + " di HP ini?";
+    if (typeof window.showPopup === "function") {
+      window.showPopup(tanya, "confirm").then(function (ok) {
+        if (ok) aktifkan();
       });
-    });
-    function tutup() {
-      overlay.classList.remove("active");
-      setTimeout(function () {
-        overlay.remove();
-      }, 200);
-    }
-    overlay.addEventListener("click", function (e) {
-      if (e.target === overlay) tutup();
-    });
-    overlay.querySelector("#pushAudBatal").addEventListener("click", tutup);
-    overlay.querySelector("#pushAudOk").addEventListener("click", function () {
-      var v = overlay.querySelector("#pushAudPick").value || "publik";
-      tutup();
-      aktifkan(v);
-    });
+    } else if (confirm(tanya)) aktifkan();
   }
 
   function pilihAksi() {
@@ -323,9 +288,8 @@
     overlay.innerHTML =
       '<div class="prestasi-form-box" style="max-width:360px">' +
       '<div class="form-head"><span><i class="fa-solid fa-bell"></i> Notif Aktif</span></div>' +
-      '<p style="font-size:.82rem;font-weight:600;color:var(--gray)">HP ini sudah dapat notif. Mau ganti target atau matikan?</p>' +
+      '<p style="font-size:.82rem;font-weight:600;color:var(--gray)">HP ini terdaftar sebagai: <b>' + labelMode() + "</b> (otomatis dari akun).</p>" +
       '<div class="form-actions-row" style="margin-top:12px;flex-wrap:wrap;gap:8px">' +
-      '<button class="btn btn-white" id="pushAksiGanti"><i class="fa-solid fa-repeat"></i> Ganti Target</button>' +
       '<button class="btn btn-white" id="pushAksiMati"><i class="fa-solid fa-bell-slash"></i> Matikan</button>' +
       '<button class="btn btn-red" id="pushAksiTutup">Tutup</button>' +
       "</div></div>";
@@ -348,10 +312,6 @@
     overlay.querySelector("#pushAksiMati").addEventListener("click", function () {
       tutup();
       matikan();
-    });
-    overlay.querySelector("#pushAksiGanti").addEventListener("click", function () {
-      tutup();
-      pilihAudienceDanAktifkan();
     });
   }
 
@@ -594,15 +554,24 @@
       suntikTombolKirim();
       setTimeout(suntikTombolKirim, 1500);
       setTimeout(suntikTombolKirim, 4000);
-      // Sinkron ulang: kalau subscription masih ada tapi baris DB kehapus
-      // (mis. DB reset), daftarkan lagi diam-diam.
+      // Sinkron ulang diam-diam: kalau subscription masih ada tapi baris DB
+      // kehapus (mis. DB reset) ATAU status login berubah (baru login OSIS /
+      // baru logout), upsert lagi biar audience selalu ikut akun saat ini.
       (async function () {
         try {
           var reg = await navigator.serviceWorker.ready;
           var sub = await reg.pushManager.getSubscription();
           if (!sub) return;
           try {
-            if (!localStorage.getItem(LS_ON)) await simpanKeDB(sub, audienceDefault());
+            var perlu = false;
+            try {
+              perlu =
+                !localStorage.getItem(LS_ON) ||
+                (localStorage.getItem(LS_AUD) || "") !== audienceOtomatis();
+            } catch {
+              perlu = true;
+            }
+            if (perlu) await simpanKeDB(sub);
           } catch {}
         } catch {}
       })();
