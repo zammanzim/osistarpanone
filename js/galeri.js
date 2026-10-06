@@ -47,8 +47,8 @@ const Galeri = {
             grid.addEventListener("drop", (e) => {
                 const slot = e.target.closest(".up-slot");
                 if (!slot) return;
-                const file = e.dataTransfer.files && e.dataTransfer.files[0];
-                Galeri.tambahFileDraft(file);
+                const files = e.dataTransfer.files ? [...e.dataTransfer.files] : [];
+                Galeri.tambahFilesDraft(files);
             });
         }
         const fileInput = document.getElementById("galFileInput");
@@ -116,23 +116,33 @@ const Galeri = {
         if (d) Galeri.draft.deskripsi = d.textContent.trim();
     },
 
-    // Tambah foto ke draft — cuma preview lokal, belum upload
+    // Tambah foto ke draft — cuma preview lokal, belum upload.
+    // Bisa banyak sekaligus (input multiple / drop banyak file).
     tambahFotoDraft(input) {
         if (!Galeri.draft) return;
-        const file = input.files && input.files[0];
+        const files = input.files ? [...input.files] : [];
         input.value = "";
-        Galeri.tambahFileDraft(file);
+        Galeri.tambahFilesDraft(files);
     },
 
     tambahFileDraft(file) {
+        if (file) Galeri.tambahFilesDraft([file]);
+    },
+
+    // Intake batch: render sekali di akhir biar preview banyak foto tetap ringan.
+    tambahFilesDraft(files) {
         if (!Galeri.draft) return;
         Galeri.bacaTeksDraft();
-        if (!file || !file.type.startsWith("image/")) {
-            if (file) showToast("File harus gambar", "error");
+        const semua = files || [];
+        const valid = semua.filter((f) => f && f.type && f.type.startsWith("image/"));
+        const ditolak = semua.length - valid.length;
+        if (ditolak > 0) showToast(ditolak + " file bukan gambar, dilewati", "error");
+        if (!valid.length) {
+            if (!semua.length || !ditolak) showToast("File harus gambar", "error");
             return;
         }
         if (!Galeri.draft.files) Galeri.draft.files = [];
-        Galeri.draft.files.push(file);
+        valid.forEach((f) => Galeri.draft.files.push(f));
         Galeri.render();
         // fokus balik biar gampang tambah lagi
         const draftEl = document.querySelector(".bento-block.draft");
@@ -178,7 +188,7 @@ const Galeri = {
             const paths = [];
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+                const ext = ((file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
                 const path = `gallery/galeri-${u.id}-${Date.now()}-${i}.${ext}`;
                 await uploadFotoStorage(file, path);
                 paths.push(path);
@@ -303,7 +313,7 @@ const Galeri = {
             const url = URL.createObjectURL(file);
             return `<div class="item"><img src="${url}" alt=""></div>`;
         }).join("");
-        fotoHtml += `<div class="up-slot" title="Tambah foto"><i class="fa-solid fa-plus"></i></div>`;
+        fotoHtml += `<div class="up-slot" title="Tambah foto (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
 
         return `
             <div class="bento-block draft">

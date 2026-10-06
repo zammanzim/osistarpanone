@@ -29,7 +29,7 @@ const FOLDER_BOLEH = new Set([
   "gallery", "web", "angkatan", "prestasi", "kegiatan", "agenda",
   "profil", "anggota", "pengurus", "sekbid", "pimpinan", "notulensi", "proker",
   "program", "dokumen", "kas", "evaluasi", "formulir", "polling", "poster",
-  "moments", "feed",
+  "moments", "feed", "arsip", "informasi",
 ]);
 
 // Tipe konten yang boleh diupload. Tolak executable/script.

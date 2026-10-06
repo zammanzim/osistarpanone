@@ -3,7 +3,7 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v50";
+const VERSI = "tarpan-v54";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 

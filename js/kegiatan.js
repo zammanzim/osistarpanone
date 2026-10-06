@@ -50,8 +50,8 @@ const Kegiatan = {
       grid.addEventListener("drop", (e) => {
         const slot = e.target.closest(".up-slot");
         if (!slot) return;
-        const file = e.dataTransfer.files && e.dataTransfer.files[0];
-        Kegiatan.tambahFileDraft(file);
+        const files = e.dataTransfer.files ? [...e.dataTransfer.files] : [];
+        Kegiatan.tambahFilesDraft(files);
       });
     }
     if (!document.getElementById("kegiatanFileInput")) {
@@ -59,6 +59,7 @@ const Kegiatan = {
       fi2.type = "file";
       fi2.id = "kegiatanFileInput";
       fi2.accept = "image/*";
+      fi2.multiple = true;
       fi2.style.display = "none";
       fi2.addEventListener("change", () => Kegiatan.tambahFotoDraft(fi2));
       document.body.appendChild(fi2);
@@ -363,7 +364,7 @@ const Kegiatan = {
       const url = URL.createObjectURL(f);
       fotosHtml += `<div class="item"><img src="${url}" alt=""></div>`;
     });
-    fotosHtml += `<div class="up-slot" title="Tambah foto"><i class="fa-solid fa-plus"></i></div>`;
+    fotosHtml += `<div class="up-slot" title="Tambah foto (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
     return `
             <div class="bento-block draft">
                 <div class="bento-meta">
@@ -416,20 +417,30 @@ const Kegiatan = {
 
   tambahFotoDraft(input) {
     if (!Kegiatan.draft) return;
-    const file = input.files && input.files[0];
+    const files = input.files ? [...input.files] : [];
     input.value = "";
-    Kegiatan.tambahFileDraft(file);
+    Kegiatan.tambahFilesDraft(files);
   },
 
   tambahFileDraft(file) {
+    if (file) Kegiatan.tambahFilesDraft([file]);
+  },
+
+  // Intake batch: dipakai input file (multiple), drop banyak file, maupun 1 file.
+  // Render sekali di akhir biar preview banyak foto tetap ringan.
+  tambahFilesDraft(files) {
     if (!Kegiatan.draft) return;
     Kegiatan.bacaTeksDraft();
-    if (!file || !file.type.startsWith("image/")) {
-      if (file) showToast("File harus gambar", "error");
+    const semua = files || [];
+    const valid = semua.filter((f) => f && f.type && f.type.startsWith("image/"));
+    const ditolak = semua.length - valid.length;
+    if (ditolak > 0) showToast(ditolak + " file bukan gambar, dilewati", "error");
+    if (!valid.length) {
+      if (!semua.length || !ditolak) showToast("File harus gambar", "error");
       return;
     }
     if (!Kegiatan.draft.files) Kegiatan.draft.files = [];
-    Kegiatan.draft.files.push(file);
+    valid.forEach((f) => Kegiatan.draft.files.push(f));
     Kegiatan.render();
     const draftEl = document.querySelector("#kegiatanGrid .bento-block.draft");
     if (draftEl)
@@ -501,7 +512,7 @@ const Kegiatan = {
       }
       for (let i = 0; i < (d.files || []).length; i++) {
         const f = d.files[i];
-        const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
+        const ext = ((f.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
         const path = `kegiatan/kegiatan-${u.id}-${Date.now()}-${i}.${ext}`;
         await uploadFotoStorage(f, path);
         paths.push({ path, caption: "" });

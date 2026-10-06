@@ -17,6 +17,7 @@ const Pengurus = {
   superKuasa: false,
   editFile: null,
   editUrl: null,
+  hapusFoto: false,
 
   async init() {
     if (Pengurus.siap) {
@@ -529,6 +530,7 @@ const Pengurus = {
     if (!modal || !body) return;
     const d = k.data;
     Pengurus.editFile = null;
+    Pengurus.hapusFoto = false;
     if (Pengurus.editUrl) {
       try {
         URL.revokeObjectURL(Pengurus.editUrl);
@@ -563,6 +565,21 @@ const Pengurus = {
       cam.appendChild(inp);
       fotoWrap.appendChild(cam);
     }
+    // Tombol hapus foto — cuma muncul kalau lagi ada fotonya
+    if (fotoWrap && !fotoWrap.querySelector("#pgEditDel")) {
+      const del = document.createElement("button");
+      del.id = "pgEditDel";
+      del.type = "button";
+      del.className = "pg-edit-del";
+      del.title = "Hapus foto";
+      del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+      del.addEventListener("click", (e) => {
+        e.stopPropagation();
+        Pengurus.hapusFotoEdit();
+      });
+      fotoWrap.appendChild(del);
+    }
+    Pengurus.tampilTombolHapusFoto();
     // Kalau motto belum diatur (disembunyikan di view), munculkan kolom isiannya pas edit
     if (!body.querySelector('[data-f="motto"]')) {
       const mottoDiv = document.createElement("div");
@@ -593,6 +610,13 @@ const Pengurus = {
 
   batalEditInline() {
     Pengurus.editFile = null;
+    Pengurus.hapusFoto = false;
+    if (Pengurus.editUrl && Pengurus.editUrl.indexOf("blob:") === 0) {
+      try {
+        URL.revokeObjectURL(Pengurus.editUrl);
+      } catch {}
+    }
+    Pengurus.editUrl = null;
     Pengurus.isiBodyView();
   },
 
@@ -644,6 +668,8 @@ const Pengurus = {
       return;
     }
     Pengurus.editFile = f;
+    Pengurus.hapusFoto = false;
+    Pengurus.tampilTombolHapusFoto();
     if (Pengurus.editUrl && Pengurus.editUrl.indexOf("blob:") === 0) {
       try {
         URL.revokeObjectURL(Pengurus.editUrl);
@@ -682,6 +708,42 @@ const Pengurus = {
     }
   },
 
+  // Tombol hapus foto tampil cuma kalau preview lagi ada fotonya
+  tampilTombolHapusFoto() {
+    const del = document.getElementById("pgEditDel");
+    if (!del) return;
+    const wrap = document.querySelector("#pengurusModal .pg-pop-foto");
+    const ada = !!(wrap && wrap.querySelector("img"));
+    del.style.display = ada ? "" : "none";
+  },
+
+  async hapusFotoEdit() {
+    const k = Pengurus.tampil[Pengurus.viewIndex];
+    if (!Pengurus.bolehEdit(k)) return;
+    const wrap = document.querySelector("#pengurusModal .pg-pop-foto");
+    if (!wrap || !wrap.querySelector("img")) return;
+    let yakin = true;
+    try {
+      if (typeof showPopup === "function")
+        yakin = await showPopup("Hapus foto profil ini?", "confirm");
+    } catch {}
+    if (!yakin) return;
+    Pengurus.editFile = null;
+    Pengurus.hapusFoto = true;
+    if (Pengurus.editUrl && Pengurus.editUrl.indexOf("blob:") === 0) {
+      try {
+        URL.revokeObjectURL(Pengurus.editUrl);
+      } catch {}
+    }
+    Pengurus.editUrl = null;
+    const nama = (k && k.nama) || "?";
+    const inisial = String(nama).trim().charAt(0).toUpperCase() || "?";
+    wrap.innerHTML = `<span class="pg-initial">${escapeHtml(inisial)}</span>`;
+    Pengurus.tampilTombolHapusFoto();
+    if (typeof showToast === "function")
+      showToast("Foto dihapus (tersimpan pas tekan Simpan)", "info");
+  },
+
   async simpanEditInline() {
     const k = Pengurus.tampil[Pengurus.viewIndex];
     if (!Pengurus.bolehEdit(k)) {
@@ -708,17 +770,20 @@ const Pengurus = {
     }
     try {
       let foto = k.data.foto || "";
+      // Hapus file lama di storage HANYA setelah DB sukses (di bawah),
+      // biar gagal simpan tidak bikin foto yatim/rusak.
+      let fotoLamaBuang = "";
       if (Pengurus.editFile) {
         const f = Pengurus.editFile;
-        const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
+        const ext = ((f.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
         const path = `pengurus/pengurus-${k.data.tahun || Pengurus.tahunAktif}-${Date.now()}.${ext}`;
         await uploadFotoStorage(f, path);
-        if (foto && foto !== path) {
-          try {
-            await hapusFotoStorage(foto);
-          } catch {}
-        }
+        if (foto && foto !== path) fotoLamaBuang = foto;
         foto = path;
+      } else if (Pengurus.hapusFoto) {
+        // Foto dihapus via tombol trash: kosongkan DB, file dibersihkan pas sukses
+        if (foto) fotoLamaBuang = foto;
+        foto = "";
       }
       const milikSendiri = k.data.id === Pengurus.milikId;
       if (milikSendiri) {
@@ -735,7 +800,13 @@ const Pengurus = {
       }
       if (typeof showToast === "function")
         showToast("Biodatamu diperbarui!", "success");
+      if (fotoLamaBuang && fotoLamaBuang !== foto) {
+        try {
+          await hapusFotoStorage(fotoLamaBuang);
+        } catch {}
+      }
       Pengurus.editFile = null;
+      Pengurus.hapusFoto = false;
       Object.assign(k.data, bio, { foto });
       k.foto = foto;
       try {

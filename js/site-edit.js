@@ -10,6 +10,7 @@ const SiteEdit = {
     pendingModalFotos: {}, // tahun -> { ketua_foto, wakil_foto, foto_angkatan }
     pendingAnggotaFotos: {}, // "id:123" | "temp:t..." -> path foto, dieksekusi pas popup ditutup
     pendingHapusAnggota: {}, // tahun -> Set(id) yang di-X, dieksekusi pas popup ditutup
+    pendingHapusFotoAnggota: {}, // tahun -> [path] foto asli anggota yang dihapus, dibersihkan pas save sukses
 
     init() {
         const wrap = document.getElementById("editToggleWrap");
@@ -348,7 +349,132 @@ const SiteEdit = {
                 document.getElementById("siteEditFileInput").click();
             });
             wrap.appendChild(btn);
+            SiteEdit.tambahTombolHapusPimpinan(wrap, tahun, field);
         });
+        // foto anggota di dalam popup — tombol trash kecil di pojok foto
+        modal.querySelectorAll(".anggota-chip[data-anggota-id] .anggota-photo").forEach(av => {
+            const chip = av.closest(".anggota-chip");
+            if (!chip || av.querySelector(".anggota-photo-del")) return;
+            const kunci = "id:" + chip.dataset.anggotaId;
+            if (!av.querySelector("img")) return; // tidak ada foto = tidak perlu tombol hapus
+            const del = document.createElement("button");
+            del.type = "button";
+            del.className = "anggota-photo-del";
+            del.title = "Hapus foto";
+            del.setAttribute("aria-label", "Hapus foto");
+            del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+            del.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                SiteEdit.hapusFotoAnggota(tahun, kunci);
+            });
+            av.appendChild(del);
+        });
+    },
+
+    // Tombol trash untuk foto pimpinan/angkatan (dibuat sekali, tampil kalau ada foto)
+    tambahTombolHapusPimpinan(wrap, tahun, field) {
+        if (!wrap || wrap.querySelector(".photo-del-btn")) return;
+        const del = document.createElement("button");
+        del.className = "photo-del-btn";
+        del.type = "button";
+        del.title = "Hapus foto";
+        del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        del.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            SiteEdit.hapusFotoPimpinan(tahun, field);
+        });
+        wrap.appendChild(del);
+        SiteEdit.tampilTombolHapusPimpinan(wrap, tahun, field);
+    },
+
+    tampilTombolHapusPimpinan(wrap, tahun, field) {
+        const scope = wrap || document.querySelector(".struktur-modal");
+        if (!scope) return;
+        const del = scope.querySelector(".photo-del-btn");
+        if (!del) return;
+        const key = String(tahun);
+        const pending = (SiteEdit.pendingModalFotos[key] || {})[field];
+        const img = (wrap || scope).querySelector("img");
+        // pending "" = baru dihapus; ada img + tidak dihapus = ada foto
+        const ada = pending ? true : (pending === "" ? false : !!(img && img.getAttribute("src")));
+        del.style.display = ada ? "" : "none";
+    },
+
+    async hapusFotoPimpinan(tahun, field) {
+        const key = String(tahun);
+        const label = field === "ketua_foto" ? "foto Ketua OSIS"
+            : field === "wakil_foto" ? "foto Wakil Ketua OSIS" : "foto angkatan";
+        let yakin = true;
+        try {
+            if (typeof showPopup === "function")
+                yakin = await showPopup("Hapus " + label + "?", "confirm");
+        } catch {}
+        if (!yakin) return;
+        // File yang baru diupload tapi belum kesimpan (pending) langsung dibersihkan
+        const lamaPending = (SiteEdit.pendingModalFotos[key] || {})[field];
+        if (lamaPending) {
+            try { await hapusFotoStorage(lamaPending); } catch {}
+        }
+        if (!SiteEdit.pendingModalFotos[key]) SiteEdit.pendingModalFotos[key] = {};
+        SiteEdit.pendingModalFotos[key][field] = ""; // "" = dihapus eksplisit (bedakan dari "belum diubah")
+        const modal = document.querySelector(".struktur-modal");
+        if (modal) {
+            let img = null, wrap = null;
+            if (field === "ketua_foto") { wrap = modal.querySelectorAll(".pimp-photo")[0]; }
+            else if (field === "wakil_foto") { wrap = modal.querySelectorAll(".pimp-photo")[1]; }
+            else { wrap = modal.querySelector(".struktur-foto"); }
+            if (wrap) {
+                img = wrap.querySelector("img");
+                if (img) img.remove();
+                SiteEdit.tampilTombolHapusPimpinan(wrap, tahun, field);
+            }
+        }
+        if (typeof showToast === "function")
+            showToast("Foto dihapus (tersimpan pas popup ditutup)", "info");
+    },
+
+    // Hapus foto anggota di popup angkatan (edit mode). File baru yang belum
+    // kesimpan langsung dibersihkan; foto asli dibersihkan pas autosave.
+    async hapusFotoAnggota(tahun, kunci) {
+        let yakin = true;
+        try {
+            if (typeof showPopup === "function")
+                yakin = await showPopup("Hapus foto anggota ini?", "confirm");
+        } catch {}
+        if (!yakin) return;
+        const lamaPending = SiteEdit.pendingAnggotaFotos[kunci];
+        if (lamaPending) {
+            try { await hapusFotoStorage(lamaPending); } catch {}
+        }
+        SiteEdit.pendingAnggotaFotos[kunci] = ""; // "" = dihapus eksplisit
+        const modal = document.querySelector(".struktur-modal");
+        if (modal) {
+            let chip = null;
+            if (kunci.startsWith("id:")) {
+                chip = modal.querySelector(`.anggota-chip[data-anggota-id="${kunci.slice(3)}"]`);
+            } else if (kunci.startsWith("temp:")) {
+                chip = modal.querySelector(`.anggota-chip[data-temp-key="${kunci.slice(5)}"]`);
+            }
+            const av = chip && chip.querySelector(".anggota-photo");
+            if (av) {
+                const img = av.querySelector("img");
+                if (img) img.remove();
+                av.classList.add("kosong");
+                if (!av.querySelector(".anggota-inisial")) {
+                    const nama = chip.querySelector('[data-field="nama"]');
+                    const kata = String((nama && nama.textContent) || "?").trim().split(/\s+/).filter(Boolean);
+                    const inisial = ((kata[0] && kata[0][0]) || "?") + ((kata.length > 1 && kata[kata.length - 1][0]) || "");
+                    const sp = document.createElement("span");
+                    sp.className = "anggota-inisial";
+                    sp.textContent = inisial.toUpperCase();
+                    av.prepend(sp);
+                }
+                const del = av.querySelector(".anggota-photo-del");
+                if (del) del.remove();
+            }
+        }
+        if (typeof showToast === "function")
+            showToast("Foto dihapus (tersimpan pas popup ditutup)", "info");
     },
 
     async savePopup(tahun, modal) {
@@ -361,14 +487,18 @@ const SiteEdit = {
         const ketuaNama = ketuaEl ? ketuaEl.textContent.trim() : (lama.ketua_nama || "");
         const wakilNama = wakilEl ? wakilEl.textContent.trim() : (lama.wakil_nama || "");
         const pending = SiteEdit.pendingModalFotos[key] || {};
-        const ketuaFoto = pending.ketua_foto || lama.ketua_foto || "";
-        const wakilFoto = pending.wakil_foto || lama.wakil_foto || "";
-        const fotoAngkatan = pending.foto_angkatan || lama.foto_angkatan || "";
+        // Pakai key-presence (bukan ||) biar "" = "dihapus eksplisit" terbaca
+        // sebagai perubahan, bukan fallback ke foto lama.
+        const adaFoto = (f) => Object.prototype.hasOwnProperty.call(pending, f);
+        const ketuaFoto = adaFoto("ketua_foto") ? (pending.ketua_foto || "") : (lama.ketua_foto || "");
+        const wakilFoto = adaFoto("wakil_foto") ? (pending.wakil_foto || "") : (lama.wakil_foto || "");
+        const fotoAngkatan = adaFoto("foto_angkatan") ? (pending.foto_angkatan || "") : (lama.foto_angkatan || "");
 
-        const pimpChanged = ketuaNama !== (lama.ketua_nama || "") || wakilNama !== (lama.wakil_nama || "") || pending.ketua_foto || pending.wakil_foto || pending.foto_angkatan;
+        const pimpChanged = ketuaNama !== (lama.ketua_nama || "") || wakilNama !== (lama.wakil_nama || "") || adaFoto("ketua_foto") || adaFoto("wakil_foto") || adaFoto("foto_angkatan");
 
         const anggotaEls = modal.querySelectorAll(".anggota-chip[data-anggota-id]");
         const saves = [];
+        const fotoLamaBuang = []; // foto asli yang keganti/dihapus — dibersihkan pas save sukses
         anggotaEls.forEach(chip => {
             const id = chip.dataset.anggotaId;
             const orig = ((typeof Home !== "undefined" && Home.cacheAnggota && Home.cacheAnggota[key]) || []).find(a => String(a.id) === String(id));
@@ -377,10 +507,13 @@ const SiteEdit = {
             const jabEl = chip.querySelector('[data-field="jabatan"]');
             const nama = namaEl ? namaEl.textContent.trim() : orig.nama;
             const jabatan = jabEl ? jabEl.textContent.trim() : orig.jabatan;
-            const fotoPending = SiteEdit.pendingAnggotaFotos["id:" + id];
-            const fotoBaru = fotoPending || orig.foto || "";
-            if (nama !== orig.nama || jabatan !== orig.jabatan || (fotoPending && fotoPending !== (orig.foto || ""))) {
+            const kunciFoto = "id:" + id;
+            const adaFotoBaru = Object.prototype.hasOwnProperty.call(SiteEdit.pendingAnggotaFotos, kunciFoto);
+            const fotoPending = SiteEdit.pendingAnggotaFotos[kunciFoto];
+            const fotoBaru = adaFotoBaru ? (fotoPending || "") : (orig.foto || "");
+            if (nama !== orig.nama || jabatan !== orig.jabatan || (adaFotoBaru && fotoBaru !== (orig.foto || ""))) {
                 saves.push(updatePengurus(parseInt(id, 10), { nama, jabatan, urutan: orig.urutan, foto: fotoBaru }));
+                if (adaFotoBaru && orig.foto && orig.foto !== fotoBaru) fotoLamaBuang.push(orig.foto);
             }
         });
 
@@ -408,10 +541,10 @@ const SiteEdit = {
                         const cardImg = document.querySelector(`.year-card[onclick*="${tahun}"] img`);
                         if (cardImg && fotoAngkatan) cardImg.src = getFoto(fotoAngkatan);
                     }
-                    // hapus file lama yang keganti
-                    if (pending.ketua_foto && lama.ketua_foto && pending.ketua_foto !== lama.ketua_foto) { hapusFotoStorage(lama.ketua_foto).catch(()=>{}); }
-                    if (pending.wakil_foto && lama.wakil_foto && pending.wakil_foto !== lama.wakil_foto) { hapusFotoStorage(lama.wakil_foto).catch(()=>{}); }
-                    if (pending.foto_angkatan && lama.foto_angkatan && pending.foto_angkatan !== lama.foto_angkatan) { hapusFotoStorage(lama.foto_angkatan).catch(()=>{}); }
+                    // hapus file lama yang keganti ATAU dihapus eksplisit ("")
+                    if (adaFoto("ketua_foto") && lama.ketua_foto && pending.ketua_foto !== lama.ketua_foto) { hapusFotoStorage(lama.ketua_foto).catch(()=>{}); }
+                    if (adaFoto("wakil_foto") && lama.wakil_foto && pending.wakil_foto !== lama.wakil_foto) { hapusFotoStorage(lama.wakil_foto).catch(()=>{}); }
+                    if (adaFoto("foto_angkatan") && lama.foto_angkatan && pending.foto_angkatan !== lama.foto_angkatan) { hapusFotoStorage(lama.foto_angkatan).catch(()=>{}); }
                 })
             );
         }
@@ -424,11 +557,16 @@ const SiteEdit = {
         if (promises.length === 0) {
             delete SiteEdit.pendingModalFotos[key];
             delete SiteEdit.pendingHapusAnggota[key];
+            delete SiteEdit.pendingHapusFotoAnggota[key];
             SiteEdit.pendingAnggotaFotos = {};
             return;
         }
         try {
             await Promise.all(promises);
+            // bersihkan file foto anggota yang keganti/dihapus (best-effort)
+            fotoLamaBuang.forEach((p) => { try { hapusFotoStorage(p).catch(()=>{}); } catch {} });
+            ((SiteEdit.pendingHapusFotoAnggota[key]) || []).forEach((p) => { try { hapusFotoStorage(p).catch(()=>{}); } catch {} });
+            delete SiteEdit.pendingHapusFotoAnggota[key];
             // refresh anggota cache from DB biar urutan konsisten
             if ((saves.length > 0 || hapusPromises.length > 0) && typeof supa !== "undefined") {
                 try {
@@ -450,7 +588,7 @@ const SiteEdit = {
     },
 
     removePhotoButtons() {
-        document.querySelectorAll(".photo-edit-btn, .edit-del-btn, .edit-add-btn, .up-slot-kegiatan").forEach(b => b.remove());
+        document.querySelectorAll(".photo-edit-btn, .photo-del-btn, .anggota-photo-del, .edit-del-btn, .edit-add-btn, .up-slot-kegiatan").forEach(b => b.remove());
     },
 
 
@@ -484,21 +622,21 @@ const SiteEdit = {
         try {
             const ketuaFile = document.getElementById(`pimpKetuaFile-${tahun}`)?.files[0];
             if (ketuaFile) {
-                const ext = (ketuaFile.name.split(".").pop() || "jpg").toLowerCase();
+                const ext = ((ketuaFile.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
                 const p = `pimpinan/ketos${tahun}-${Date.now()}.${ext}`;
                 await uploadFotoStorage(ketuaFile, p);
                 ketuaFoto = p;
             }
             const wakilFile = document.getElementById(`pimpWakilFile-${tahun}`)?.files[0];
             if (wakilFile) {
-                const ext = (wakilFile.name.split(".").pop() || "jpg").toLowerCase();
+                const ext = ((wakilFile.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
                 const p = `pimpinan/waketos${tahun}-${Date.now()}.${ext}`;
                 await uploadFotoStorage(wakilFile, p);
                 wakilFoto = p;
             }
             const angFile = document.getElementById(`pimpAngkatanFile-${tahun}`)?.files[0];
             if (angFile) {
-                const ext = (angFile.name.split(".").pop() || "jpg").toLowerCase();
+                const ext = ((angFile.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
                 const p = `angkatan/foto-${tahun}-${Date.now()}.${ext}`;
                 await uploadFotoStorage(angFile, p);
                 fotoAngkatan = p;
@@ -607,12 +745,29 @@ const SiteEdit = {
         const btn = e && e.target && e.target.closest ? e.target.closest(".chip-x") : null;
         const chip = btn ? btn.closest(".anggota-chip") : document.querySelector(`.anggota-chip[data-anggota-id="${id}"]`);
         if (!chip) return;
-        // chip temp (belum kesimpan) — cukup buang dari DOM
-        if (chip.dataset.temp === "true") { chip.remove(); return; }
+        // chip temp (belum kesimpan) — buang dari DOM + bersihkan foto pendingnya
+        if (chip.dataset.temp === "true") {
+            const kunciTemp = "temp:" + (chip.dataset.tempKey || "");
+            const pathTemp = SiteEdit.pendingAnggotaFotos[kunciTemp];
+            if (pathTemp) { try { hapusFotoStorage(pathTemp).catch(()=>{}); } catch {} }
+            delete SiteEdit.pendingAnggotaFotos[kunciTemp];
+            chip.remove();
+            return;
+        }
         const key = String(tahun);
         if (!SiteEdit.pendingHapusAnggota[key]) SiteEdit.pendingHapusAnggota[key] = new Set();
         SiteEdit.pendingHapusAnggota[key].add(String(id));
+        // foto asli anggota yang dihapus ikut dibersihkan pas save sukses
+        try {
+            const orig = ((typeof Home !== "undefined" && Home.cacheAnggota && Home.cacheAnggota[key]) || []).find(a => String(a.id) === String(id));
+            if (orig && orig.foto) {
+                if (!SiteEdit.pendingHapusFotoAnggota[key]) SiteEdit.pendingHapusFotoAnggota[key] = [];
+                SiteEdit.pendingHapusFotoAnggota[key].push(orig.foto);
+            }
+        } catch {}
         // foto pending anggota ini ikut dibuang (tidak jadi disimpan)
+        const pathPending = SiteEdit.pendingAnggotaFotos["id:" + id];
+        if (pathPending) { try { hapusFotoStorage(pathPending).catch(()=>{}); } catch {} }
         delete SiteEdit.pendingAnggotaFotos["id:" + id];
         chip.remove();
         if (typeof showToast === "function") showToast("Dihapus (tersimpan pas popup ditutup)", "info");
@@ -674,7 +829,7 @@ const SiteEdit = {
             return;
         }
 
-        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const ext = ((file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
         try {
             if (target.type === "web_foto") {
                 const oldPath = FotoWeb.map[target.key];
@@ -763,11 +918,20 @@ const SiteEdit = {
                 SiteEdit.pendingModalFotos[tahun][field] = path;
                 const modal = document.querySelector(".struktur-modal");
                 if (modal) {
-                    let img;
-                    if (field === "ketua_foto") img = modal.querySelectorAll(".pimp-photo img")[0];
-                    else if (field === "wakil_foto") img = modal.querySelectorAll(".pimp-photo img")[1];
-                    else img = modal.querySelector(".struktur-foto img");
-                    if (img) img.src = getFoto(path);
+                    let wrap = null;
+                    if (field === "ketua_foto") wrap = modal.querySelectorAll(".pimp-photo")[0];
+                    else if (field === "wakil_foto") wrap = modal.querySelectorAll(".pimp-photo")[1];
+                    else wrap = modal.querySelector(".struktur-foto");
+                    if (wrap) {
+                        let img = wrap.querySelector("img");
+                        if (!img) {
+                            img = document.createElement("img");
+                            img.alt = "";
+                            wrap.prepend(img);
+                        }
+                        img.src = getFoto(path);
+                        SiteEdit.tampilTombolHapusPimpinan(wrap, tahun, field);
+                    }
                 }
                 if (field === "foto_angkatan") {
                     const card = document.querySelector(`.year-card[onclick*="${tahun}"] img`);
@@ -801,6 +965,21 @@ const SiteEdit = {
                         img.src = getFoto(path);
                         img.alt = "Foto anggota";
                         av.prepend(img);
+                        // pastikan tombol hapus ada (habis dihapus lalu ganti foto)
+                        if (!av.querySelector(".anggota-photo-del")) {
+                            const del = document.createElement("button");
+                            del.type = "button";
+                            del.className = "anggota-photo-del";
+                            del.title = "Hapus foto";
+                            del.setAttribute("aria-label", "Hapus foto");
+                            del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                            const kunciDel = target.kunci, tahunDel = String(target.tahun);
+                            del.addEventListener("click", (ev) => {
+                                ev.stopPropagation();
+                                SiteEdit.hapusFotoAnggota(tahunDel, kunciDel);
+                            });
+                            av.appendChild(del);
+                        }
                     }
                 }
                 showToast("Foto diganti (tersimpan pas tutup popup)", "success");

@@ -1604,6 +1604,33 @@ body.edit-mode .year-del-btn {
 body.edit-mode .anggota-chip .anggota-cam {
   display: inline-flex;
 }
+/* Tombol hapus foto anggota — kiri bawah foto, merah, cuma pas edit mode */
+.anggota-chip .anggota-photo-del {
+  display: none;
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  background: #e11d48;
+  color: #fff;
+  font-size: 0.68rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 1.5px 1.5px 0 var(--ink);
+  z-index: 2;
+}
+body.edit-mode .anggota-chip .anggota-photo-del {
+  display: inline-flex;
+}
+.anggota-chip .anggota-photo-del:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
 /* Slot tambah anggota: samakan tinggi kartu */
 .anggota-chip.tambah {
   min-height: 150px;
@@ -3986,6 +4013,34 @@ body.edit-mode .photo-edit-btn {
   box-shadow: none;
 }
 
+/* Tombol hapus foto di modal struktur — merah, di bawah tombol kamera */
+.photo-del-btn {
+  display: none;
+  position: absolute;
+  top: 42px;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--ink);
+  border-radius: 9px;
+  background: #e11d48;
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  cursor: pointer;
+  box-shadow: 1.5px 1.5px 0 var(--ink);
+  z-index: 2;
+  padding: 0;
+}
+body.edit-mode .photo-del-btn {
+  display: inline-flex;
+}
+.photo-del-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
 /* tambah/hapus di mode edit */
 .edit-add-btn {
   display: none;
@@ -5644,6 +5699,33 @@ body.edit-mode .prestasi-card .foto-del-btn {
 
 #pengurusModal.pg-editing .pg-edit-cam {
   display: grid;
+}
+
+/* Tombol hapus foto profil — kiri bawah, merah. Tampil pas edit + ada foto. */
+.pg-edit-del {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e11d48;
+  color: #fff;
+  border: 2.5px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  font-size: 1rem;
+  cursor: pointer;
+  display: none;
+  place-items: center;
+  z-index: 3;
+  padding: 0;
+}
+#pengurusModal.pg-editing .pg-edit-del {
+  display: grid;
+}
+.pg-edit-del:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
 }
 
 .pg-pop-sos-in {

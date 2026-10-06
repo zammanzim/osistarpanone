@@ -85,8 +85,8 @@ const Arsip = {
       grid.addEventListener("drop", (e) => {
         const slot = e.target.closest(".up-slot");
         if (!slot) return;
-        const file = e.dataTransfer.files && e.dataTransfer.files[0];
-        Arsip.tambahFileDraft(file);
+        const files = e.dataTransfer.files ? [...e.dataTransfer.files] : [];
+        Arsip.tambahFilesDraft(files);
       });
     }
     if (!document.getElementById("arsipFileInput")) {
@@ -94,6 +94,7 @@ const Arsip = {
       fi2.type = "file";
       fi2.id = "arsipFileInput";
       fi2.accept = "image/*";
+      fi2.multiple = true;
       fi2.style.display = "none";
       fi2.addEventListener("change", () => Arsip.tambahFotoDraft(fi2));
       document.body.appendChild(fi2);
@@ -380,7 +381,7 @@ const Arsip = {
       const url = URL.createObjectURL(f);
       fotosHtml += `<div class="item"><img src="${url}" alt=""></div>`;
     });
-    fotosHtml += `<div class="up-slot" title="Tambah foto"><i class="fa-solid fa-plus"></i></div>`;
+    fotosHtml += `<div class="up-slot" title="Tambah foto (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
     return `
             <div class="bento-block draft">
                 <div class="bento-meta">
@@ -433,20 +434,30 @@ const Arsip = {
 
   tambahFotoDraft(input) {
     if (!Arsip.draft) return;
-    const file = input.files && input.files[0];
+    const files = input.files ? [...input.files] : [];
     input.value = "";
-    Arsip.tambahFileDraft(file);
+    Arsip.tambahFilesDraft(files);
   },
 
   tambahFileDraft(file) {
+    if (file) Arsip.tambahFilesDraft([file]);
+  },
+
+  // Intake batch: dipakai input file (multiple), drop banyak file, maupun 1 file.
+  // Render sekali di akhir biar preview banyak foto tetap ringan.
+  tambahFilesDraft(files) {
     if (!Arsip.draft) return;
     Arsip.bacaTeksDraft();
-    if (!file || !file.type.startsWith("image/")) {
-      if (file) showToast("File harus gambar", "error");
+    const semua = files || [];
+    const valid = semua.filter((f) => f && f.type && f.type.startsWith("image/"));
+    const ditolak = semua.length - valid.length;
+    if (ditolak > 0) showToast(ditolak + " file bukan gambar, dilewati", "error");
+    if (!valid.length) {
+      if (!semua.length || !ditolak) showToast("File harus gambar", "error");
       return;
     }
     if (!Arsip.draft.files) Arsip.draft.files = [];
-    Arsip.draft.files.push(file);
+    valid.forEach((f) => Arsip.draft.files.push(f));
     Arsip.render();
     const draftEl = document.querySelector("#arsipGrid .bento-block.draft");
     if (draftEl)
@@ -509,7 +520,7 @@ const Arsip = {
       }
       for (let i = 0; i < (d.files || []).length; i++) {
         const f = d.files[i];
-        const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
+        const ext = ((f.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
         const path = `arsip/arsip-${u.id}-${Date.now()}-${i}.${ext}`;
         await uploadFotoStorage(f, path);
         paths.push({ path, caption: "" });
