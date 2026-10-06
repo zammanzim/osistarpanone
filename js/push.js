@@ -660,21 +660,50 @@
     });
   }
 
-  function jadwalkanPopup() {
+  function logPopup(kenapa) {
+    try {
+      console.log("[push] popup:", kenapa);
+    } catch {}
+  }
+
+  function jadwalkanPopup(ulang) {
     // Tunda ~4 detik biar halaman kebaca dulu + tidak tabrakan dengan
-    // toast/popup lain (mis. hint install iOS). Cek ulang status sebelum tampil.
-    setTimeout(async function () {
+    // toast/popup lain (mis. hint install iOS).
+    // Sengaja TIDAK menunggu serviceWorker.ready: di file:// atau SW yang
+    // belum siap, ready tidak pernah resolve dan popup jadi tidak tampil.
+    // Cukup permission + flag lokal sebagai penentu (cepat & pasti).
+    ulang = ulang || 0;
+    setTimeout(function () {
       try {
-        if (popupSudah()) return;
-        if ((await status()) === "aktif") {
+        if (popupSudah()) {
+          logPopup("dilewati — sudah pernah tampil");
+          return;
+        }
+        if (izin() !== "default") {
+          logPopup("dilewati — permission sudah '" + izin() + "'");
           tandaiPopup();
           return;
         }
-        // Jangan timpa popup/form lain yang sedang terbuka.
-        if (document.querySelector(".prestasi-form-overlay.active")) return;
+        try {
+          if (localStorage.getItem(LS_ON)) {
+            logPopup("dilewati — sudah subscribe");
+            tandaiPopup();
+            return;
+          }
+        } catch {}
+        // Jangan timpa popup/form lain yang sedang terbuka — coba lagi
+        // maksimal 3x (tiap 4 detik), habis itu tampil paksa.
+        if (document.querySelector(".prestasi-form-overlay.active") && ulang < 3) {
+          logPopup("ditunda — ada overlay lain, coba lagi");
+          jadwalkanPopup(ulang + 1);
+          return;
+        }
         pasangCssPopup();
         tampilPopupSekali();
-      } catch {}
+        logPopup("ditampilkan");
+      } catch (e) {
+        logPopup("gagal: " + (e && e.message ? e.message : e));
+      }
     }, 4000);
   }
 
@@ -714,6 +743,16 @@
     });
   }
 
+  // Paksa tampilkan popup ajakan (buat testing): reset jatah + tampilkan.
+  // Contoh di console: PushNotif.tesPopup()
+  function tesPopup() {
+    try {
+      localStorage.removeItem(LS_POPUP);
+    } catch {}
+    pasangCssPopup();
+    tampilPopupSekali();
+  }
+
   window.PushNotif = {
     didukung: didukung,
     status: status,
@@ -722,6 +761,7 @@
     kirimManual: kirimManual,
     bukaFormKirim: bukaFormKirim,
     refreshTombol: refreshTombol,
+    tesPopup: tesPopup,
   };
 
   init();
