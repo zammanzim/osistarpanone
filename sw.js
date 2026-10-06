@@ -3,7 +3,7 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v54";
+const VERSI = "tarpan-v55";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 
@@ -75,6 +75,7 @@ const APP_SHELL = [
   "./js/profil.js",
   "./js/proker.js",
   "./js/pwa.js",
+  "./js/push.js",
   "./js/outbox.js",
   "./js/sekbid.js",
   "./js/show-popup.js",
@@ -133,6 +134,60 @@ self.addEventListener("sync", (e) => {
       }),
     );
   }
+});
+
+// Web Push: tampilkan notif dari server (Worker /push-kirim) walau web tertutup.
+// Payload: { judul, isi, url, tag }. Klik = buka URL target di tab/app.
+self.addEventListener("push", (e) => {
+  var data = {};
+  try {
+    data = e.data ? e.data.json() : {};
+  } catch {
+    try {
+      data = { isi: e.data ? e.data.text() : "" };
+    } catch {
+      data = {};
+    }
+  }
+  var judul = String(data.judul || "OSIS TARPAN ONE").slice(0, 80);
+  var isi = String(data.isi || data.body || "Ada info baru.").slice(0, 180);
+  var url = String(data.url || "./#/informasi").slice(0, 300);
+  var tag = String(data.tag || "tarpan-" + Date.now()).slice(0, 80);
+  e.waitUntil(
+    self.registration.showNotification(judul, {
+      body: isi,
+      icon: "./icons/icon-192.png",
+      badge: "./icons/favicon-32.png",
+      tag: tag,
+      renotify: false,
+      requireInteraction: false,
+      data: { url: url },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  var target = (e.notification.data && e.notification.data.url) || "./#/informasi";
+  // Samakan dengan scope SW (subpath /osis/ vs root).
+  var jadi = target;
+  try {
+    jadi = new URL(target, self.location.href).href;
+  } catch {
+    jadi = self.location.origin + "/";
+  }
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((daftar) => {
+      for (var i = 0; i < daftar.length; i++) {
+        try {
+          // Fokuskan tab yang sudah buka app, lalu arahkan ke target.
+          daftar[i].navigate(jadi);
+          return daftar[i].focus();
+        } catch {}
+      }
+      return self.clients.openWindow(jadi);
+    }),
+  );
 });
 
 // Jangan cache API/auth Supabase - selalu network (data live + milik localStorage SWR).

@@ -237,6 +237,20 @@
     } catch (e) {}
   }
 
+  // ---- 4) Push notif — muat sibling js/push.js (tombol lonceng + subscribe) ----
+  function muatPush() {
+    try {
+      if (document.querySelector('script[data-push]')) return;
+      if (!("Notification" in window) || !("PushManager" in window)) return;
+      var dalamSub = location.pathname.split("/").filter(Boolean).length > 1;
+      var s = document.createElement("script");
+      s.src = (dalamSub ? "../" : "") + "js/push.js";
+      s.defer = true;
+      s.setAttribute("data-push", "1");
+      document.head.appendChild(s);
+    } catch (e) {}
+  }
+
   // Pesan dari SW (Background Sync) — teruskan ke Outbox bila sudah termuat.
   try {
     if ("serviceWorker" in navigator) {
@@ -253,6 +267,7 @@
     tampilIOS();
     hintIOS();
     muatOutbox();
+    muatPush();
   });
 
   // Buat HeaderMore (titik-tiga mobile): kapan menu boleh tampil.

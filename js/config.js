@@ -17,3 +17,9 @@ const R2_ENABLED = true;
 // Domain email sintetis akun OSIS di Supabase Auth: osis-<id>@domain.
 // Pakai id (BUKAN username) biar ganti username tidak merusak login.
 const AUTH_EMAIL_DOMAIN = "osistarpanone.my.id";
+// Web Push (PWA notif ke HP). PUBLIC boleh di frontend, PRIVATE hanya di Worker secret.
+// Dibuat via: node tools/gen-vapid.cjs (P-256, base64url).
+const VAPID_PUBLIC_KEY = "BMhwL_JnB_g5zvGW013uuoxgWBYLKn6ChyGnD54M2nTiDQ7gYwVfZ8VjeAsm8WeNL1cKCpSfzytW1JmvSXDYAVM";
+// URL pengirim push (Worker yang sama dengan presign, route /push-kirim).
+// Ganti host bila Worker di-deploy ulang dengan nama lain.
+const PUSH_KIRIM_URL = "https://osis-media-presign.nizzcuy.workers.dev/push-kirim";
