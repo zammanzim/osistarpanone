@@ -27,6 +27,7 @@ const OsisSidebar = {
     { href: "profil", label: "Profil Saya", icon: "fa-solid fa-circle-user" },
     { href: "akses", label: "Akses", icon: "fa-solid fa-key", super: true },
     { href: "logs", label: "Logs", icon: "fa-solid fa-clock-rotate-left", super: true },
+    { href: "notifikasi", label: "Notifikasi", icon: "fa-solid fa-paper-plane", super: true },
   ],
 
   // Kompatibel ke belakang: kode lama baca OsisSidebar.MENU (array).
@@ -45,6 +46,7 @@ const OsisSidebar = {
     ["profil", "Profil Saya", "fa-solid fa-circle-user"],
     ["akses", "Akses", "fa-solid fa-key", "super"],
     ["logs", "Logs", "fa-solid fa-clock-rotate-left", "super"],
+    ["notifikasi", "Notifikasi", "fa-solid fa-paper-plane", "super"],
   ],
 
   // Pilihan ikon siap pakai di form tambah/edit.
@@ -68,6 +70,8 @@ const OsisSidebar = {
     "fa-solid fa-key",
     "fa-solid fa-gear",
     "fa-solid fa-link",
+    "fa-solid fa-paper-plane",
+    "fa-solid fa-bell",
   ],
 
   // Config dari server (null = belum dimuat / tidak ada -> pakai bawaan).

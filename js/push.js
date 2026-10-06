@@ -216,7 +216,15 @@
     var res = await fetch(PUSH_KIRIM_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-      body: JSON.stringify({ judul: judul, isi: isi, url: url, audience: audience }),
+      body: JSON.stringify({
+        judul: judul,
+        isi: isi,
+        url: url,
+        audience: audience,
+        // Halaman broadcast super admin (osis/notifikasi) kirim true;
+        // Worker lalu wajibkan pengirim super admin (403 kalau bukan).
+        only_super: !!(o && o.only_super),
+      }),
     });
     var body = null;
     try {

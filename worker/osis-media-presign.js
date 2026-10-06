@@ -197,6 +197,27 @@ async function cekHakOsis(env, authUserId) {
   }
 }
 
+// Cek super admin (tabel osis_super_admins, kolom username).
+// return true kalau username OSIS pengirim terdaftar sebagai super admin.
+async function cekSuper(env, authUserId) {
+  if (!authUserId || !env.SUPABASE_SERVICE_KEY) return false;
+  try {
+    const base = String(env.SUPABASE_URL).replace(/\/$/, "");
+    const h = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY };
+    const r1 = await fetch(`${base}/rest/v1/osis_users?auth_id=eq.${authUserId}&select=username`, { headers: h });
+    if (!r1.ok) return false;
+    const arr = await r1.json();
+    const uname = arr && arr[0] && String(arr[0].username || "").trim();
+    if (!uname) return false;
+    const r2 = await fetch(`${base}/rest/v1/osis_super_admins?username=eq.${encodeURIComponent(uname)}&select=username`, { headers: h });
+    if (!r2.ok) return false;
+    const arr2 = await r2.json();
+    return Array.isArray(arr2) && arr2.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 // =========================================================================
 // WEB PUSH (/push-kirim) — kirim notif ke HP subscriber (PWA).
 // Secret baru (npx wrangler secret put ...):
@@ -356,6 +377,12 @@ async function tanganiPushKirim(req, env) {
   let body;
   try { body = await req.json(); }
   catch { return jsonResponse({ error: "Body harus JSON." }, 400, env, req); }
+  // Broadcast bebas (osis/notifikasi) khusus super admin — server tolak
+  // kalau bukan, walau halaman client sudah digate juga.
+  if (body && body.only_super) {
+    const superUser = await cekSuper(env, authUserId);
+    if (!superUser) return jsonResponse({ error: "Halaman ini khusus super admin." }, 403, env, req);
+  }
 
   const judul = String(body.judul || "").trim().slice(0, 80);
   const isi = String(body.isi || "").trim().slice(0, 180);
