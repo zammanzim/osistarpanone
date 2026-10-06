@@ -285,23 +285,42 @@ async function vapidJwt(asalPush, env) {
   const pay = bytesKeB64u(new TextEncoder().encode(JSON.stringify({ aud: asalPush, exp, sub })));
   const data = new TextEncoder().encode(head + "." + pay);
   const raw = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, kunci, data));
-  // DER -> raw r||s (64 byte) untuk JWT
-  function derKeRaw(der) {
-    let o = 2; // skip 0x30 len
-    if (der[1] & 0x80) o = 2 + (der[1] & 0x7f);
-    o += 1; // 0x02
-    let lenR = der[o]; o += 1;
-    let r = der.slice(o, o + lenR); o += lenR;
-    o += 1; // 0x02
-    let lenS = der[o]; o += 1;
-    let s = der.slice(o, o + lenS);
-    const pad = (b) => { while (b.length > 32) b = b.slice(b.length - 32); while (b.length < 32) b = new Uint8Array([0, ...b]); return b.slice(-32); };
-    const out = new Uint8Array(64);
-    out.set(pad(r), 0); out.set(pad(s), 32);
-    return out;
-  }
-  const sig = bytesKeB64u(derKeRaw(raw));
+  const sig = bytesKeB64u(signatureKeRaw(raw));
   return head + "." + pay + "." + sig;
+}
+
+// Samakan format tanda tangan ECDSA ke raw r||s (64 byte) untuk JWT.
+// Beda runtime beda format: browser & workerd = DER ASN.1 (70-72 byte),
+// Node.js = P1363 mentah (64 byte). Terima keduanya biar benar di mana pun.
+function signatureKeRaw(sig) {
+  const der = sig instanceof Uint8Array ? sig : new Uint8Array(sig);
+  if (der.length === 64) return der.slice();
+  if (der.length < 70 || der.length > 72 || der[0] !== 0x30) {
+    throw new Error("Format tanda tangan tak dikenal (" + der.length + " byte).");
+  }
+  let o = 2; // skip 0x30 len
+  if (der[1] & 0x80) o = 2 + (der[1] & 0x7f);
+  if (der[o] !== 0x02) throw new Error("DER R tak dikenal.");
+  o += 1;
+  const lenR = der[o]; o += 1;
+  let r = der.slice(o, o + lenR); o += lenR;
+  if (der[o] !== 0x02) throw new Error("DER S tak dikenal.");
+  o += 1;
+  const lenS = der[o]; o += 1;
+  const s = der.slice(o, o + lenS);
+  const pad = (b) => {
+    let x = b instanceof Uint8Array ? b : new Uint8Array(b);
+    while (x.length > 32) x = x.slice(x.length - 32);
+    if (x.length < 32) {
+      const y = new Uint8Array(32);
+      y.set(x, 32 - x.length);
+      return y;
+    }
+    return x.slice(-32);
+  };
+  const out = new Uint8Array(64);
+  out.set(pad(r), 0); out.set(pad(s), 32);
+  return out;
 }
 
 // Enkripsi payload untuk satu subscription (RFC8291 aes128gcm, 1 record).
