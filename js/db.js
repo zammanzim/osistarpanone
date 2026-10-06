@@ -101,8 +101,7 @@ function thumbBento(src, alt, extra = "") {
   const esc = (typeof escapeHtml === "function" ? escapeHtml(String(alt || "")) : String(alt || ""));
   if (isVideoPath(src)) {
     return `<video src="${src}" alt="" muted playsinline preload="metadata" disablepictureinpicture onloadeddata="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" ${extra}></video>` +
-      `<span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>` +
-      `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
+      `<span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>`;
   }
   return `<img src="${src}" alt="${esc}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'">` +
     `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;

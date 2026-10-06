@@ -255,7 +255,6 @@ const Feed = {
                 : `<div class="feed-loading" id="feedSentinel"><div class="spinner"></div> Memuat...</div>`);
         Feed.amatiVideo();
         Feed.amatiSentinel();
-        Feed.pasangVideoEvents();
         Feed.jadwalPilihVideo();
     },
 
@@ -264,12 +263,9 @@ const Feed = {
         const esc = (typeof escapeHtml === "function" ? escapeHtml : String);
         const isVideo = it.media_type === "video";
         const media = isVideo
-            ? `<div class="feed-media is-video" onclick="Feed.togglePlay(${id}, event)">` +
-              `<video muted loop playsinline preload="metadata" data-src="${(typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key)}"${it.thumb_key ? ` poster="${(typeof getFoto === "function" ? getFoto(it.thumb_key) : it.thumb_key)}"` : ""}></video>` +
+            ? `<div class="feed-media" onclick="Feed.togglePlay(${id}, event)">` +
+              `<video muted loop playsinline preload="metadata" data-src="${(typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key)}"></video>` +
               `<span class="feed-play"><i class="fa-solid fa-play"></i></span>` +
-              `<span class="feed-spin" aria-hidden="true"><span class="spinner"></span></span>` +
-              `<span class="feed-err" hidden><i class="fa-solid fa-triangle-exclamation"></i><b>Video gagal dimuat</b><small>Ketuk untuk coba lagi</small></span>` +
-              `<span class="feed-prog" aria-hidden="true"><span></span></span>` +
               `<button type="button" class="feed-mute" onclick="event.stopPropagation(); Feed.toggleMute(${id}, this)" title="Suara"><i class="fa-solid fa-volume-xmark"></i></button>` +
               `</div>`
             : `<div class="feed-media"><span class="media-muat media-muat-tinggi" style="width:100%"><img src="${(typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key)}" alt="${esc(it.caption || "Postingan feed")}" loading="lazy" decoding="async" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span></div>`;
@@ -378,8 +374,6 @@ const Feed = {
 
     // Satu-satunya yang boleh play: kartu yang cukup terlihat (>=40%)
     // dan paling dekat ke tengah layar. Sisanya dipaksa jeda.
-    // Kartu yang di-pause manual user tidak di-autoplay lagi sampai
-    // kartunya keluar layar lalu masuk lagi (flag _userJeda).
     pilihVideoAktif() {
         if (document.hidden) return;
         try {
@@ -393,13 +387,7 @@ const Feed = {
             const video = card.querySelector ? card.querySelector("video") : null;
             if (!video) return;
             const box = card.getBoundingClientRect();
-            if (!box.height || box.bottom <= 0 || box.top >= window.innerHeight) {
-                // keluar layar: jeda + lupakan pause-manual biar nanti autoplay lagi
-                try { video.pause(); } catch {}
-                Feed.tampilJeda(card);
-                try { delete card._userJeda; } catch {}
-                return;
-            }
+            if (!box.height || box.bottom <= 0 || box.top >= window.innerHeight) return;
             const tampak = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0);
             if (tampak < box.height * 0.4) return;
             const skor = Math.abs((box.top + box.bottom) / 2 - tengah);
@@ -409,7 +397,6 @@ const Feed = {
             const video = card.querySelector ? card.querySelector("video") : null;
             if (!video) return;
             if (terbaik && video === terbaik.video) {
-                if (card._userJeda) return; // hormati pause manual
                 Feed.pastikanSrc(video);
                 Feed.putar(terbaik.card, video);
             } else {
@@ -445,89 +432,17 @@ const Feed = {
         }
     },
 
-    // Status visual kartu video — dipanggil dari event elemen <video>
-    // (bukan dari putar()/jeda()) biar ikon tidak desync pas buffering.
-    tampilMain(card) {
-        if (!card) return;
-        card.classList.add("playing");
-        card.classList.remove("is-loading", "is-error");
-        const ic = card.querySelector(".feed-play i");
-        if (ic) ic.className = "fa-solid fa-pause";
-        const err = card.querySelector(".feed-err");
-        if (err) err.hidden = true;
-    },
-
-    tampilJeda(card) {
-        if (!card) return;
-        card.classList.remove("playing");
-        const ic = card.querySelector(".feed-play i");
-        if (ic) ic.className = "fa-solid fa-play";
-    },
-
-    tampilLoading(card, nyala) {
-        if (!card) return;
-        card.classList.toggle("is-loading", !!nyala);
-        if (nyala) {
-            const err = card.querySelector(".feed-err");
-            if (err) err.hidden = true;
-            card.classList.remove("is-error");
-        }
-    },
-
-    tampilError(card) {
-        if (!card) return;
-        card.classList.remove("playing", "is-loading");
-        card.classList.add("is-error");
-        const ic = card.querySelector(".feed-play i");
-        if (ic) ic.className = "fa-solid fa-play";
-        const err = card.querySelector(".feed-err");
-        if (err) err.hidden = false;
-    },
-
-    // Pasang listener event ke tiap <video> hasil render (event video tidak
-    // bubble, jadi tidak bisa delegasi). Idempoten via dataset.
-    pasangVideoEvents() {
-        document.querySelectorAll("#feedList .feed-card").forEach(card => {
-            const video = card.querySelector ? card.querySelector("video") : null;
-            if (!video || video.dataset.evTerpasang) return;
-            video.dataset.evTerpasang = "1";
-            video.addEventListener("playing", () => Feed.tampilMain(card));
-            video.addEventListener("pause", () => Feed.tampilJeda(card));
-            video.addEventListener("waiting", () => Feed.tampilLoading(card, true));
-            video.addEventListener("stalled", () => Feed.tampilLoading(card, true));
-            video.addEventListener("canplay", () => {
-                Feed.tampilLoading(card, false);
-                const bar = card.querySelector(".feed-prog");
-                if (bar && video.duration) bar.style.setProperty("--d", video.duration);
-            });
-            video.addEventListener("loadeddata", () => Feed.tampilLoading(card, false));
-            video.addEventListener("timeupdate", () => {
-                const fill = card.querySelector(".feed-prog > span");
-                if (fill && video.duration) {
-                    fill.style.width = Math.max(0, Math.min(100, (video.currentTime / video.duration) * 100)) + "%";
-                }
-            });
-            video.addEventListener("error", () => {
-                if (!video.getAttribute("src")) return;
-                Feed.tampilError(card);
-            });
-        });
-    },
-
     putar(card, video) {
         if (!video) return;
         if (Feed.playing && Feed.playing !== video) {
             try { Feed.playing.pause(); } catch {}
             const prev = Feed.playing.closest ? Feed.playing.closest(".feed-card") : null;
-            if (prev) Feed.tampilJeda(prev);
+            if (prev) prev.classList.remove("playing");
         }
         Feed.playing = video;
         // Kalau user pernah unmute: coba bersuara, browser nolak -> balik muted.
         if (Feed.suaraMau() && video.muted) video.muted = false;
         Feed.sinkronIkonMute(card, video);
-        // Tampilkan spinner sampai event 'playing' beneran fires.
-        // (Sebelumnya ikon langsung jadi pause padahal frame belum jalan = "stuck".)
-        Feed.tampilLoading(card, true);
         try {
             const p = video.play();
             if (p && p.then) p.then(() => {
@@ -542,21 +457,27 @@ const Feed = {
                         const p2 = video.play();
                         if (p2 && p2.then) p2.then(() => {
                             if (Feed.playing !== video) { try { video.pause(); } catch {} }
-                        }).catch(() => Feed.tampilError(card));
-                    } catch { Feed.tampilError(card); }
-                } else {
-                    Feed.tampilError(card);
+                        }).catch(() => {});
+                    } catch {}
                 }
             });
-        } catch { Feed.tampilError(card); }
+        } catch {}
+        if (card) {
+            card.classList.add("playing");
+            const ic = card.querySelector(".feed-play i");
+            if (ic) ic.className = "fa-solid fa-pause";
+        }
     },
 
     jeda(card, video) {
         if (!video) return;
         try { video.pause(); } catch {}
         if (Feed.playing === video) Feed.playing = null;
-        Feed.tampilLoading(card, false);
-        Feed.tampilJeda(card);
+        if (card) {
+            card.classList.remove("playing");
+            const ic = card.querySelector(".feed-play i");
+            if (ic) ic.className = "fa-solid fa-play";
+        }
     },
 
     jedaSemua() {
@@ -566,41 +487,20 @@ const Feed = {
         Feed.playing = null;
         try {
             document.querySelectorAll("#feedList .feed-card.playing").forEach(c => {
-                Feed.tampilJeda(c);
-                Feed.tampilLoading(c, false);
+                c.classList.remove("playing");
+                const ic = c.querySelector(".feed-play i");
+                if (ic) ic.className = "fa-solid fa-play";
             });
         } catch {}
     },
 
-    // Ketuk video: error -> coba lagi (reset src); pause-manual dicatat
-    // biar autoplay tidak langsung merebut lagi.
     togglePlay(id, ev) {
         if (ev) ev.stopPropagation();
         const { card, video } = Feed.videoDariId(id);
-        if (!video || !card) return;
-        if (card.classList.contains("is-error")) {
-            card.classList.remove("is-error");
-            const err = card.querySelector(".feed-err");
-            if (err) err.hidden = true;
-            video.removeAttribute("src");
-            try { video.load(); } catch {}
-            const ds = video.getAttribute("data-src");
-            if (ds) {
-                video.src = ds;
-                try { video.load(); } catch {}
-            }
-            try { delete card._userJeda; } catch {}
-            Feed.putar(card, video);
-            return;
-        }
+        if (!video) return;
         Feed.pastikanSrc(video);
-        if (video.paused) {
-            try { delete card._userJeda; } catch {}
-            Feed.putar(card, video);
-        } else {
-            try { card._userJeda = true; } catch {}
-            Feed.jeda(card, video);
-        }
+        if (video.paused) Feed.putar(card, video);
+        else Feed.jeda(card, video);
     },
 
     toggleMute(id, btn) {
@@ -962,7 +862,6 @@ const Feed = {
         }
         Feed.pendingFile = file;
         Feed.pendingKind = isVid ? "video" : "photo";
-        Feed.pendingThumb = null;
         const url = URL.createObjectURL(file);
         const img = document.getElementById("feedPreviewImg");
         const vid = document.getElementById("feedPreviewVid");
@@ -972,11 +871,6 @@ const Feed = {
         if (isVid) {
             if (img) img.style.display = "none";
             if (vid) { vid.src = url; vid.style.display = "block"; try { vid.play().catch(() => {}); } catch {} }
-            // Bikin thumbnail (frame tengah) biar feed tidak blank-hitam
-            // sebelum video ke-load. Gagal = thumbnail dikosongkan, aman.
-            Feed.buatThumb(file).then(function (blob) {
-                Feed.pendingThumb = blob;
-            }).catch(function () { Feed.pendingThumb = null; });
         } else {
             if (vid) { try { vid.pause(); } catch {} vid.removeAttribute("src"); vid.style.display = "none"; }
             if (img) { img.src = url; img.style.display = "block"; }
@@ -991,49 +885,6 @@ const Feed = {
         }
         const drop = document.getElementById("feedDrop");
         if (drop) drop.classList.add("has-file");
-    },
-
-    // Ambil 1 frame video jadi thumbnail JPEG (max 640px). Dipakai biar
-    // kartu feed langsung ada gambarnya tanpa nunggu video ke-download.
-    buatThumb(file) {
-        return new Promise(function (res, rej) {
-            let selesai = false;
-            const done = (v) => { if (!selesai) { selesai = true; cleanup(); res(v); } };
-            const gagal = (e) => { if (!selesai) { selesai = true; cleanup(); rej(e || new Error("thumb gagal")); } };
-            const v = document.createElement("video");
-            v.muted = true;
-            v.playsInline = true;
-            v.preload = "auto";
-            const url = URL.createObjectURL(file);
-            const cleanup = () => { try { URL.revokeObjectURL(url); } catch (e) {} };
-            const timer = setTimeout(() => gagal(new Error("thumb timeout")), 10000);
-            v.addEventListener("loadedmetadata", () => {
-                try {
-                    const d = v.duration || 0;
-                    v.currentTime = d > 1 ? Math.min(2, d / 2) : 0.1;
-                } catch (e) { gagal(e); }
-            });
-            v.addEventListener("seeked", () => {
-                try {
-                    const w = v.videoWidth || 0, h = v.videoHeight || 0;
-                    if (!w || !h) { gagal(new Error("dimensi 0")); return; }
-                    const skala = Math.min(1, 640 / Math.max(w, h));
-                    const c = document.createElement("canvas");
-                    c.width = Math.max(2, Math.round(w * skala));
-                    c.height = Math.max(2, Math.round(h * skala));
-                    c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
-                    clearTimeout(timer);
-                    if (c.toBlob) {
-                        c.toBlob((b) => {
-                            if (b) done(new File([b], "thumb.jpg", { type: "image/jpeg" }));
-                            else gagal(new Error("toBlob kosong"));
-                        }, "image/jpeg", 0.72);
-                    } else gagal(new Error("tanpa toBlob"));
-                } catch (e) { gagal(e); }
-            });
-            v.addEventListener("error", () => gagal(new Error("video error")));
-            try { v.src = url; } catch (e) { gagal(e); }
-        });
     },
 
     async simpanForm() {
@@ -1059,21 +910,11 @@ const Feed = {
         let postId = 0;
         try {
             const ext = ((file.name.split(".").pop() || (Feed.pendingKind === "video" ? "mp4" : "jpg")).toLowerCase()).replace(/[^a-z0-9]/g, "") || "bin";
-            const ts = Date.now();
-            const path = `feed/feed-${u.id}-${ts}.${ext}`;
-            // Thumbnail dulu (kecil, cepat, di-await) biar kartu feed
-            // langsung ada gambarnya; video utama menyusul di background.
-            let thumbKey = "";
-            if (Feed.pendingKind === "video" && Feed.pendingThumb) {
-                try {
-                    thumbKey = `feed/thumb-${u.id}-${ts}.jpg`;
-                    await uploadFotoStorage(Feed.pendingThumb, thumbKey, { label: "Feed thumbnail" });
-                } catch (e) { thumbKey = ""; }
-            }
+            const path = `feed/feed-${u.id}-${Date.now()}.${ext}`;
             postId = await feedPostBuat(u.id, {
                 media_type: Feed.pendingKind,
                 media_key: path,
-                thumb_key: thumbKey,
+                thumb_key: "",
                 caption,
                 kategori,
             });

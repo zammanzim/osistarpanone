@@ -102,126 +102,15 @@ const Home = {
     },
 
     // ============ POPUP FOTO ============
-    // Media popup: foto = <img>, video = player custom (bukan controls
-    // bawaan browser): tombol play besar, seekbar, waktu, mute, fullscreen.
-    // Thumbnail di grid tidak autoplay; di popup langsung coba play
-    // bersuara, fallback muted kalau browser menolak.
+    // Media popup: foto = <img>, video = <video controls> (thumbnail di
+    // grid tidak autoplay; di popup langsung coba play bersuara, fallback
+    // muted kalau browser menolak).
     mediaPopupHtml(src, judul) {
         const j = escapeHtml(judul || "");
         if (typeof isVideoPath === "function" && isVideoPath(src)) {
-            return `<div class="vp" data-vp>` +
-                `<video src="${src}" playsinline preload="metadata"></video>` +
-                `<button type="button" class="vp-big" aria-label="Putar atau jeda"><i class="fa-solid fa-play"></i></button>` +
-                `<span class="vp-spin" aria-hidden="true"><span class="spinner"></span></span>` +
-                `<button type="button" class="vp-err" hidden><i class="fa-solid fa-triangle-exclamation"></i><b>Video gagal dimuat</b><small>Ketuk untuk coba lagi</small></button>` +
-                `<div class="vp-bar">` +
-                `<button type="button" class="vp-btn" data-a="play" aria-label="Putar atau jeda"><i class="fa-solid fa-play"></i></button>` +
-                `<span class="vp-time"><b data-t="cur">0:00</b> / <span data-t="dur">0:00</span></span>` +
-                `<input type="range" class="vp-seek" min="0" max="1000" value="0" step="1" aria-label="Geser posisi video">` +
-                `<button type="button" class="vp-btn" data-a="mute" aria-label="Suara"><i class="fa-solid fa-volume-xmark"></i></button>` +
-                `<button type="button" class="vp-btn" data-a="full" aria-label="Layar penuh"><i class="fa-solid fa-expand"></i></button>` +
-                `</div></div>`;
+            return `<video src="${src}" controls playsinline preload="metadata"></video>`;
         }
         return `<span class="media-muat media-muat-tinggi" style="width:100%"><img src="${src}" alt="${j}" draggable="false" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span>`;
-    },
-
-    fmtDetik(s) {
-        s = Math.max(0, Math.floor(Number(s) || 0));
-        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
-    },
-
-    // Ikat 1 player custom di popup yang sedang terbuka.
-    pasangPlayer(modal) {
-        const box = modal ? modal.querySelector(".foto-pop [data-vp]") : null;
-        if (!box) return;
-        const v = box.querySelector("video");
-        if (!v || v.dataset.vpBound) return;
-        v.dataset.vpBound = "1";
-        const big = box.querySelector(".vp-big");
-        const spin = box.querySelector(".vp-spin");
-        const errBox = box.querySelector(".vp-err");
-        const btnPlay = box.querySelector('[data-a="play"]');
-        const btnMute = box.querySelector('[data-a="mute"]');
-        const btnFull = box.querySelector('[data-a="full"]');
-        const seek = box.querySelector(".vp-seek");
-        const tCur = box.querySelector('[data-t="cur"]');
-        const tDur = box.querySelector('[data-t="dur"]');
-        let scrub = false;
-
-        const spinNyala = (nyala) => { if (spin) spin.style.display = nyala ? "grid" : "none"; };
-        const sync = () => {
-            const main = !v.paused && !v.ended;
-            box.classList.toggle("is-playing", main);
-            const cls = main ? "fa-solid fa-pause" : "fa-solid fa-play";
-            if (btnPlay) btnPlay.innerHTML = '<i class="' + cls + '"></i>';
-            if (big) big.innerHTML = '<i class="' + cls + '"></i>';
-            const icMute = btnMute ? btnMute.querySelector("i") : null;
-            if (icMute) icMute.className = v.muted ? "fa-solid fa-volume-xmark" : "fa-solid fa-volume-high";
-        };
-        const toggle = () => {
-            if (errBox && !errBox.hidden) {
-                errBox.hidden = true;
-                try { v.load(); } catch (e) {}
-            }
-            if (v.paused) { try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
-            else { try { v.pause(); } catch (e) {} }
-        };
-
-        v.addEventListener("play", () => { spinNyala(false); sync(); });
-        v.addEventListener("pause", sync);
-        v.addEventListener("playing", () => { spinNyala(false); sync(); });
-        v.addEventListener("waiting", () => spinNyala(true));
-        v.addEventListener("stalled", () => spinNyala(true));
-        v.addEventListener("canplay", () => spinNyala(false));
-        v.addEventListener("loadeddata", () => spinNyala(false));
-        v.addEventListener("loadedmetadata", () => {
-            if (tDur) tDur.textContent = Home.fmtDetik(v.duration);
-            sync();
-        });
-        v.addEventListener("timeupdate", () => {
-            if (tCur) tCur.textContent = Home.fmtDetik(v.currentTime);
-            if (seek && !scrub && v.duration) {
-                seek.value = Math.round((v.currentTime / v.duration) * 1000);
-            }
-        });
-        v.addEventListener("ended", sync);
-        v.addEventListener("error", () => {
-            spinNyala(false);
-            if (errBox) errBox.hidden = false;
-            sync();
-        });
-        v.addEventListener("click", (e) => { e.stopPropagation(); toggle(); });
-        if (big) big.addEventListener("click", (e) => { e.stopPropagation(); toggle(); });
-        if (errBox) errBox.addEventListener("click", (e) => { e.stopPropagation(); toggle(); });
-        if (btnPlay) btnPlay.addEventListener("click", (e) => { e.stopPropagation(); toggle(); });
-        if (btnMute) btnMute.addEventListener("click", (e) => {
-            e.stopPropagation();
-            v.muted = !v.muted;
-            sync();
-        });
-        if (btnFull) btnFull.addEventListener("click", async (e) => {
-            e.stopPropagation();
-            try {
-                if (document.fullscreenElement) { await document.exitFullscreen(); return; }
-                if (box.requestFullscreen) { await box.requestFullscreen(); return; }
-            } catch (err) {}
-            try {
-                // iPhone Safari: fullscreen elemen tidak ada, pakai player native video
-                if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
-                else if (v.requestFullscreen) await v.requestFullscreen();
-            } catch (err) {}
-        });
-        if (seek) {
-            seek.addEventListener("input", () => { scrub = true; });
-            seek.addEventListener("change", () => {
-                scrub = false;
-                if (v.duration) {
-                    try { v.currentTime = (Number(seek.value) / 1000) * v.duration; } catch (e) {}
-                }
-            });
-        }
-        spinNyala(true);
-        sync();
     },
 
     cobaPutarPopup(modal) {
@@ -298,7 +187,6 @@ const Home = {
         if (pop && multi) Home.pasangSwipe(pop, (arah) => Home.geserFotoPopup(arah));
         document.body.appendChild(modal);
         document.body.style.overflow = "hidden";
-        Home.pasangPlayer(modal);
         Home.cobaPutarPopup(modal);
         if (Home.fotoPopup && typeof Home.fotoPopup.onChange === "function") {
             Home.fotoPopup.onChange(Home.fotoPopup.index, modal);
@@ -329,10 +217,9 @@ const Home = {
             olehEl.style.display = oleh ? "" : "none";
             olehEl.textContent = oleh ? "Diupload oleh " + oleh : "";
         }
-        // Render ulang medianya (bisa pindah foto<->video) + ikat player + auto-play kalau video.
+        // Render ulang medianya (bisa pindah foto<->video) + auto-play kalau video.
         if (mediaWrap) {
             mediaWrap.innerHTML = Home.mediaPopupHtml(item.src || "", item.judul || "");
-            Home.pasangPlayer(modal);
             Home.cobaPutarPopup(modal);
         } else {
             const img = modal.querySelector(".foto-pop img");
