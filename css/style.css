@@ -3303,6 +3303,167 @@ body.edit-mode .bento-meta .gal-del {
 .arsip-pageinfo b {
   color: var(--ink);
 }
+/* RUANG KHUSUS PELANTIKAN (terkunci) */
+.vault-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: var(--shadow-hard);
+  flex-wrap: wrap;
+}
+.vault-ico {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: 3px solid var(--ink);
+  background: var(--yellow);
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+.vault-txt { flex: 1; min-width: 200px; }
+.vault-txt b { font-size: 0.95rem; font-weight: 900; }
+.vault-txt p { font-size: 0.76rem; color: var(--gray); font-weight: 600; margin-top: 3px; }
+.vault-badge {
+  font-size: 0.62rem;
+  font-weight: 900;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 9px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+/* Penjelasan pembuka halaman pelantikan */
+#pelantikanGate { display: flex; flex-direction: column; gap: 12px; }
+#pelantikanGate .vault-card { margin-top: 0; }
+/* Tombol kecil arsip pelantikan di bawah judul arsip */
+.vault-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--red);
+  text-decoration: none;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--white);
+  padding: 5px 12px;
+  box-shadow: 2px 2px 0 var(--ink);
+  width: fit-content;
+}
+.vault-link:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0 0 0 var(--ink);
+}
+.vault-link .fa-chevron-right { font-size: 0.62rem; }
+/* Bar pemilik di halaman pelantikan: hemat ruang, 1 baris */
+.vault-ownerbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+/* Grid pelantikan: tombol kelola cuma buat owner (mode-osis) */
+#pelantikanGrid .bento-block.draft .bento-meta {
+  position: relative;
+  padding-right: 82px;
+}
+#pelantikanGrid.mode-osis .bento-block.draft .gal-save,
+#pelantikanGrid.mode-osis .bento-block.draft .gal-del,
+#pelantikanGrid.mode-osis .bento-block:not(.draft) .gal-del,
+#pelantikanGrid.mode-osis .item .foto-del-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+#pelantikanGrid .bento-block:not(.draft) .gal-del {
+  position: absolute;
+  top: 8px;
+  right: 0;
+}
+.vault-info ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 0.76rem;
+  color: var(--gray);
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.vault-info ul b { color: var(--ink); }
+.vault-owner {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--white);
+  border: 3px dashed var(--ink);
+  border-radius: 18px;
+}
+.vault-owner-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+.vault-req {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #fff;
+  flex-wrap: wrap;
+}
+.vault-req .nm { font-weight: 900; font-size: 0.85rem; }
+.vault-req .sub { font-size: 0.7rem; color: var(--gray); font-weight: 700; }
+.vault-req .st {
+  font-size: 0.62rem; font-weight: 900; border-radius: 999px; padding: 2px 9px;
+  border: 2px solid var(--ink);
+}
+.vault-req .st.pending { background: var(--yellow); }
+.vault-req .st.setuju { background: #d6f5d6; }
+.vault-req .st.tolak { background: #ffd9d9; }
+/* Modal vault */
+.vault-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 10, 11, 0.8);
+  z-index: 220;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 18px;
+  overflow-y: auto;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+.vault-modal.open { opacity: 1; visibility: visible; pointer-events: auto; }
+.vault-modal-inner {
+  width: min(860px, 100%);
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
+  margin: auto 0;
+}
 @media (max-width: 480px) {
   .arsip-bar {
     padding: 10px;

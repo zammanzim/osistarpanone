@@ -1497,6 +1497,80 @@ async function getArsipPage(page = 1, perPage = 6) {
   if (error) throw error;
   return data || [];
 }
+// Ruang khusus pelantikan: tabel sendiri (pelantikan), baca via RPC bertanda.
+// Hanya owner (bisa 'kegiatan') + yang sudah disetujui. Tulis khusus owner.
+async function authIdSaya() {
+  try {
+    const r = await supa.auth.getSession();
+    const id = r && r.data && r.data.session && r.data.session.user && r.data.session.user.id;
+    if (id) return id;
+  } catch {}
+  try {
+    const u = typeof OsisAuth !== "undefined" && OsisAuth.getUser ? OsisAuth.getUser() : null;
+    if (u && u.auth_id) return u.auth_id;
+  } catch {}
+  return null;
+}
+async function statusAksesPelantikan() {
+  const authId = await authIdSaya();
+  if (!authId) return "butuh_login";
+  const { data, error } = await supa.rpc("status_akses_pelantikan", { p_auth_id: authId });
+  if (error) throw error;
+  return String(data || "belum");
+}
+async function mintaAksesPelantikan(alasan) {
+  const authId = await authIdSaya();
+  if (!authId) throw new Error("Login dulu yaa.");
+  const { data, error } = await supa.rpc("minta_akses_pelantikan", { p_auth_id: authId, p_alasan: alasan || "" });
+  if (error) throw error;
+  return String(data || "");
+}
+async function daftarMintaPelantikan(userId) {
+  const { data, error } = await supa.rpc("daftar_minta_pelantikan", { p_user_id: userId });
+  if (error) throw error;
+  return data || [];
+}
+async function putusMintaPelantikan(userId, mintaId, setuju) {
+  const { data, error } = await supa.rpc("putus_minta_pelantikan", {
+    p_user_id: userId, p_minta_id: mintaId, p_setuju: !!setuju,
+  });
+  if (error) throw error;
+  if (data !== "OK") throw new Error(data === "ERR_NO_AUTH" ? "Kamu tidak punya kendali atas halaman ini." : String(data));
+  return data;
+}
+async function getPelantikan(page = 1, perPage = 6) {
+  const authId = await authIdSaya();
+  if (!authId) throw new Error("ERR_LOGIN");
+  const { data, error } = await supa.rpc("get_pelantikan", {
+    p_auth_id: authId, p_page: page, p_per: perPage,
+  });
+  if (error) throw error;
+  return { total: (data && data.total) || 0, rows: (data && data.rows) || [] };
+}
+async function buatPelantikan(userId, judul, deskripsi, badge, fotos, order = 99) {
+  const { data, error } = await supa.rpc("buat_pelantikan", {
+    p_user_id: userId, p_judul: judul, p_deskripsi: deskripsi,
+    p_badge: badge, p_fotos: fotos, p_display_order: order,
+  });
+  if (error) throw error;
+  cekId(data);
+  return data;
+}
+async function updatePelantikan(userId, id, judul, deskripsi, badge, fotos, order) {
+  const { data, error } = await supa.rpc("update_pelantikan", {
+    p_user_id: userId, p_id: id, p_judul: judul, p_deskripsi: deskripsi,
+    p_badge: badge, p_fotos: fotos, p_display_order: order,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+async function hapusPelantikan(userId, id) {
+  const { data, error } = await supa.rpc("hapus_pelantikan", {
+    p_user_id: userId, p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
 // Order global terkecil — buat insert baru selalu paling atas (0 itu valid)
 async function getArsipMinOrder() {
   const { data, error } = await supa

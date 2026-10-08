@@ -113,7 +113,7 @@ function ikatRupiah(id) {
 // =========================================================================
 
 const Router = {
-    daftarView: ["home", "pengurus", "sekbid", "galeri", "feed", "arsip", "aspirasi", "kontak", "musik", "informasi"],
+    daftarView: ["home", "pengurus", "sekbid", "galeri", "feed", "arsip", "pelantikan", "aspirasi", "kontak", "musik", "informasi"],
     initFns: {},       // init lazy per view
     selesai: {},       // flag view sudah pernah di-init
     current: "home",

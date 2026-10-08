@@ -135,7 +135,7 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="css/style.css?v=26" />
+    <link rel="stylesheet" href="css/style.css?v=29" />
     <link rel="stylesheet" href="css/feed.css?v=3" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
@@ -1048,7 +1048,7 @@
     <script src="js/lagu.js?v=12" defer></script>
     <script src="js/galeri.js?v=14" defer></script>
     <script src="js/feed.js?v=6" defer></script>
-    <script src="js/arsip.js?v=14" defer></script>
+    <script src="js/arsip.js?v=18" defer></script>
     <script src="js/informasi-view.js?v=2" defer></script>
     <script src="js/osis-auth.js?v=19" defer></script>
     <script src="js/site-edit.js?v=16" defer></script>
@@ -1711,6 +1711,9 @@
             <p class="sec-sub">
               Semua dokumentasi kegiatan OSIS Tarpan One, halaman per halaman.
             </p>
+            <a class="vault-link" id="btnVaultBuka" href="#/pelantikan">
+              <i class="fa-solid fa-lock"></i> <span id="btnVaultLabel">Lihat arsip pelantikan</span> <i class="fa-solid fa-chevron-right"></i>
+            </a>
           </div>
           <button
             class="btn btn-red"
@@ -1729,6 +1732,37 @@
           </div>
         </div>
         <div class="arsip-bar" id="arsipBar"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         VIEW: FOTO PELANTIKAN (ruang khusus, minta akses ke pemilik arsip)
+         ============================================================ -->
+    <section class="view" data-view="pelantikan">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Ruang Khusus</div>
+            <h2 class="sec-title">Foto <span class="red">Pelantikan</span></h2>
+            <p class="sec-sub">
+              Dokumentasi pelantikan &amp; penyematan pengurus OSIS. Bersifat sensitif — wajib izin pemilik arsip.
+            </p>
+          </div>
+          <a class="btn btn-white" href="#/arsip">
+            <i class="fa-solid fa-arrow-left"></i> Arsip
+          </a>
+        </div>
+
+        <div id="pelantikanGate"></div>
+
+        <!-- Bar pemilik: Tambah + Permintaan (popup biar hemat ruang) -->
+        <div class="vault-ownerbar" id="pelantikanOwnerBar" style="display:none">
+          <button class="btn btn-red btn-sm" onclick="ArsipPelantikan.buatDraft()"><i class="fa-solid fa-plus"></i> Tambah</button>
+          <button class="btn btn-white btn-sm" onclick="ArsipPelantikan.bukaPermintaan()"><i class="fa-solid fa-inbox"></i> Permintaan masuk <span id="pelantikanOwnerCount"></span></button>
+        </div>
+
+        <div class="bento-stack" id="pelantikanGrid" style="display:none"></div>
+        <div class="arsip-bar" id="pelantikanBar" style="display:none"></div>
       </div>
     </section>
 
