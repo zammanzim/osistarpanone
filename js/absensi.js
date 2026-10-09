@@ -803,11 +803,26 @@ const Absensi = {
             return;
         }
         try {
-            const hapusIds = originalIds.filter(id => !rows.some(r => String(r.id) === String(id)));
-            for (const hid of hapusIds) await hapusAbsensi(u.id, hid);
-            for (const r of rows) {
-                if (r.id) await updateAbsensi(u.id, r.id, { tanggal, nama: r.nama, status: r.status, alasan: r.alasan, kegiatan });
-                else await buatAbsensi(u.id, { tanggal, nama: r.nama, status: r.status, alasan: r.alasan, kegiatan });
+            const btn = document.getElementById("btnSimpanAbsensi");
+            const btnHtml = btn ? btn.innerHTML : "";
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
+            try {
+                const hapusIds = originalIds.filter(id => !rows.some(r => String(r.id) === String(id)));
+                // Hapus + tulis paralel per batch (sebelumnya serial 1-per-1).
+                const BATCH = 6;
+                for (let i = 0; i < hapusIds.length; i += BATCH) {
+                    if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menghapus ${Math.min(i + BATCH, hapusIds.length)}/${hapusIds.length}...`;
+                    await Promise.all(hapusIds.slice(i, i + BATCH).map(hid => hapusAbsensi(u.id, hid)));
+                }
+                for (let i = 0; i < rows.length; i += BATCH) {
+                    if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan ${Math.min(i + BATCH, rows.length)}/${rows.length}...`;
+                    await Promise.all(rows.slice(i, i + BATCH).map(r => {
+                        if (r.id) return updateAbsensi(u.id, r.id, { tanggal, nama: r.nama, status: r.status, alasan: r.alasan, kegiatan });
+                        return buatAbsensi(u.id, { tanggal, nama: r.nama, status: r.status, alasan: r.alasan, kegiatan });
+                    }));
+                }
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = btnHtml || '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }
             }
             showToast("Absensi tersimpan!", "success");
             catatAksi("simpan_absensi", String(tanggal || "") + " (" + rows.length + " orang)");
@@ -832,14 +847,37 @@ const Absensi = {
         const nHadir = rows.filter(r => r.status === "hadir").length;
         const yakin = await showPopup(`Hapus semua data absensi (${Absensi.fmtTanggalPanjang(tanggal)})? ${rows.length} baris${nHadir ? ` (termasuk ${nHadir} hadir)` : ""} akan dihapus dari kedua tab.`, "confirm");
         if (!yakin) return;
+        if (Absensi._hapusBusy) return;
+        Absensi._hapusBusy = true;
+        // Kunci tombol hapus tanggal ini biar tidak dobel-klik + kasih status.
+        const btns = [...document.querySelectorAll('[data-abs-delhari="' + String(tanggal).replace(/"/g, "") + '"]')];
+        const btnHtml = btns.map(b => b.innerHTML);
+        btns.forEach(b => { b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...'; });
         try {
-            for (const r of rows) await hapusAbsensi(u.id, r.id);
-            showToast("Data sehari dihapus.", "success");
+            // Optimis: buang dari cache + render dulu biar UI langsung hilang,
+            // RPC jalan di background paralel per batch.
+            const ids = rows.map(r => String(r.id));
+            const idSet = new Set(ids);
+            Absensi.cache = (Absensi.cache || []).filter(r => !idSet.has(String(r.id)));
+            try { Absensi.render(); } catch {}
+            const BATCH = 6;
+            let gagal = 0;
+            for (let i = 0; i < ids.length; i += BATCH) {
+                const potong = ids.slice(i, i + BATCH);
+                btns.forEach(b => { b.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${Math.min(i + BATCH, ids.length)}/${ids.length}...`; });
+                const hasil = await Promise.allSettled(potong.map(id => hapusAbsensi(u.id, id)));
+                hasil.forEach(h => { if (h.status === "rejected") { console.error(h.reason); gagal++; } });
+            }
+            if (gagal) showToast(`Terhapus sebagian, ${gagal} gagal.`, "error");
+            else showToast("Data sehari dihapus.", "success");
             Absensi.segarkan();
         } catch (err) {
             console.error(err);
             showToast("Gagal hapus: " + err.message, "error");
             Absensi.segarkan();
+        } finally {
+            Absensi._hapusBusy = false;
+            btns.forEach((b, i) => { if (b.isConnected) { b.disabled = false; b.innerHTML = btnHtml[i]; } });
         }
     },
 
@@ -1232,25 +1270,51 @@ const Absensi = {
         if (!yakin) return;
         L.saving = true;
         const btn = document.getElementById("btnSelesaiLangsung");
+        const btnHtml = btn ? btn.innerHTML : "";
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         let ok = 0, gagal = 0;
         try {
-            for (const nama of d.belum) {
-                const k = Absensi.norm(nama);
-                const ada = (Absensi.cache || []).find(r => String(r.tanggal) === String(tanggal) && Absensi.norm(r.nama) === k);
-                if (ada) continue;
-                try {
-                    const nid = await buatAbsensi(u.id, { tanggal, nama, status: "alpha", alasan: "", kegiatan });
-                    (Absensi.cache = Absensi.cache || []).push({ id: nid, tanggal, nama, status: "alpha", alasan: "", kegiatan });
-                    ok++;
-                } catch (e) { console.error(e); gagal++; }
+            // Saring yang benar-benar belum tercatat (hindari RPC sia-sia).
+            const antre = [];
+            const temuCache = new Set((Absensi.cache || [])
+                .filter(r => String(r.tanggal) === String(tanggal))
+                .map(r => Absensi.norm(r.nama)));
+            for (const o of d.belum) {
+                const nama = String((o && typeof o === "object" ? o.nama : o) || "").trim();
+                if (!nama) continue;
+                if (temuCache.has(Absensi.norm(nama))) continue;
+                temuCache.add(Absensi.norm(nama));
+                antre.push(nama);
             }
-            await Absensi.segarkan();
+            // Simpan paralel per batch (6) biar 30 alpha tidak nunggu 30x serial.
+            // Tiap selesai 1 batch, tombol kasih progres 5/30...
+            const BATCH = 6;
+            let done = 0;
+            for (let i = 0; i < antre.length; i += BATCH) {
+                const potong = antre.slice(i, i + BATCH);
+                const hasil = await Promise.allSettled(potong.map(nama =>
+                    buatAbsensi(u.id, { tanggal, nama, status: "alpha", alasan: "", kegiatan })
+                        .then(nid => ({ nid, nama }))
+                ));
+                hasil.forEach(h => {
+                    done++;
+                    if (h.status === "fulfilled") {
+                        (Absensi.cache = Absensi.cache || []).push({ id: h.value.nid, tanggal, nama: h.value.nama, status: "alpha", alasan: "", kegiatan });
+                        ok++;
+                    } else { console.error(h.reason); gagal++; }
+                });
+                if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan ${done}/${antre.length}...`;
+            }
+            // Kembalikan tombol dulu sebelum refresh (refresh bisa lama di jaringan lambat).
+            L.saving = false;
+            if (btn) { btn.disabled = false; btn.innerHTML = btnHtml || '<i class="fa-solid fa-check"></i> Selesai'; }
             Absensi.tutupLangsung();
-            showToast(`Selesai! ${d.hadirCount} hadir, ${ok} alpha tanpa keterangan.${gagal ? ` ${gagal} gagal.` : ""}`, "success");
+            showToast(`Selesai! ${d.hadirCount} hadir, ${ok} alpha tanpa keterangan.${gagal ? ` ${gagal} gagal.` : ""}`, gagal ? "error" : "success");
+            Absensi.segarkan();
+            return;
         } finally {
             L.saving = false;
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Selesai'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = btnHtml || '<i class="fa-solid fa-check"></i> Selesai'; }
         }
     },
 
