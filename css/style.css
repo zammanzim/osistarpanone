@@ -4543,18 +4543,24 @@ body.edit-mode {
   font-size: 0.68rem;
   box-shadow: 1.5px 1.5px 0 var(--ink);
 }
-@media (max-width: 500px) {
+/* Header desktop (index): yang tampil di luar cuma visitor, Dashboard OSIS,
+   user-chip, Edit. Sisanya (Pengaturan, Keluar, Notif, Install) masuk titik-tiga.
+   - Logout icon di areaAuth disembunyikan kalau titik-tiga aktif (ada di index).
+     Di halaman tanpa menu itu (polling, changelog, /osis), icon tetap tampil.
+   - Pill Notif/Install disembunyikan di index (pakai item menu), di halaman lain tetap. */
+.top-nav:has(#headerMoreWrap.show) #areaAuth .icon-btn {
+  display: none !important;
+}
+#headerMoreWrap.show {
+  display: inline-flex !important;
+}
+.top-nav:has(#headerMoreMenu) #pushBellBtn,
+.top-nav:has(#headerMoreMenu) #pwaInstallBtn {
+  display: none !important;
+}
+@media (max-width: 700px) {
   #editToggleWrap {
     display: none !important;
-  }
-  /* Tombol logout icon disembunyikan HANYA kalau menu titik-tiga aktif
-     (ada di index). Di halaman tanpa menu itu (polling, changelog, /osis),
-     tombol icon tetap tampil biar logout tetap bisa di HP. */
-  .top-nav:has(#headerMoreWrap.show) #areaAuth .icon-btn {
-    display: none !important;
-  }
-  #headerMoreWrap.show {
-    display: inline-flex !important;
   }
 }
 /* kegiatan home: tombol hapus di kanan atas meta (jangan nutupin judul) */

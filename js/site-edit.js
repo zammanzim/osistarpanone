@@ -1046,13 +1046,15 @@ const HeaderMore = {
         const narrow = window.innerWidth <= 700;
         if (wrap) {
             // Tamu mobile tetap dapat titik-tiga kalau install app tersedia.
+            // Desktop: titik-tiga selalu tampil (isi: Pengaturan, Notif, Install, Keluar).
+            // Yang tampil di luar cuma: visitor, Dashboard OSIS, user-chip, Edit.
             var pwaSiap = false;
             try {
               pwaSiap = !!(window.PwaInstall && window.PwaInstall.tersedia && window.PwaInstall.tersedia());
             } catch (e) {}
             var itemInstall = document.getElementById("headerMoreInstall");
-            if (itemInstall) itemInstall.style.display = narrow && pwaSiap ? "" : "none";
-            const showWrap = narrow && (isLogged || pwaSiap);
+            if (itemInstall) itemInstall.style.display = pwaSiap ? "" : "none";
+            const showWrap = narrow ? (isLogged || pwaSiap) : true;
             wrap.classList.toggle("show", showWrap);
             wrap.style.display = showWrap ? "" : "none";
         }
@@ -1062,7 +1064,9 @@ const HeaderMore = {
         }
         if (moreOsisDash) moreOsisDash.style.display = (isOsis && narrow) ? "" : "none";
         const superUser = (typeof OsisAuth.isSuper === "function") && OsisAuth.isSuper();
-        if (editRow) editRow.style.display = superUser ? "" : "none";
+        // Edit mode di desktop pakai toggle pill di luar (editToggleWrap),
+        // di titik-tiga cuma tampil saat mobile.
+        if (editRow) editRow.style.display = (superUser && narrow) ? "" : "none";
         if (logoutBtn) logoutBtn.style.display = isLogged ? "" : "none";
         if (moreEdit) {
             const main = document.getElementById("editToggle");
