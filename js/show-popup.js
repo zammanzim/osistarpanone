@@ -296,7 +296,8 @@ window.closePopup = function () {
 //   (#agendaForm, #absensiForm, #absenLangsung, #kasForm, #kasDetail,
 //    #tabForm, #tabDetail, #dokumenForm, #dokumenDetail, #evaluasiForm,
 //    #evaluasiDetail, #notulensiForm, #notulensiDetail, #prokerForm,
-//    #prokerDetail, #taskForm, #taskDetail, #anggotaPopup, #sekbidPopup)
+//    #prokerDetail, #taskForm, #taskDetail, #anggotaPopup, #sekbidPopup,
+//    #wwCalonForm, #wwTanyaForm, #wwTanyaEdit)
 // File ini dimuat di semua halaman (publik + osis), jadi satu
 // tempat ini cukup untuk meng-cover semuanya tanpa edit tiap modul:
 //   - ESC (cadangan untuk popup yang belum punya handler sendiri)
@@ -311,7 +312,8 @@ window.ModalNav = (function () {
         "kasForm", "kasDetail", "tabForm", "tabDetail", "aksDetail",
         "dokumenForm", "dokumenDetail", "evaluasiForm", "evaluasiDetail",
         "notulensiForm", "notulensiDetail", "prokerForm", "prokerDetail",
-        "taskForm", "taskDetail", "anggotaPopup", "sekbidPopup"
+        "taskForm", "taskDetail", "anggotaPopup", "sekbidPopup",
+        "wwCalonForm", "wwTanyaForm", "wwTanyaEdit"
     ];
 
     const ambil = (nama) => (typeof window[nama] !== "undefined" ? window[nama] : null);
@@ -467,6 +469,21 @@ window.ModalNav = (function () {
                 case "sekbidPopup": {
                     const A = ambil("Anggota");
                     if (A && A.tutupPopupSekbid) { A.tutupPopupSekbid(); return; }
+                    break;
+                }
+                case "wwCalonForm": {
+                    const W = ambil("Wawancara");
+                    if (W && W.tutupFormCalon) { W.tutupFormCalon(); return; }
+                    break;
+                }
+                case "wwTanyaForm": {
+                    const W = ambil("Wawancara");
+                    if (W && W.tutupKelolaTanya) { W.tutupKelolaTanya(); return; }
+                    break;
+                }
+                case "wwTanyaEdit": {
+                    const W = ambil("Wawancara");
+                    if (W && W.tutupFormTanya) { W.tutupFormTanya(); return; }
                     break;
                 }
             }

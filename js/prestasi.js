@@ -262,7 +262,7 @@ const Prestasi = {
                     <div class="prestasi-drop-inner" id="prestasiDropInner">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                         <span>Klik atau drag foto/video ke sini</span>
-                        <small>JPG/PNG/MP4 (foto otomatis compress, video max 100MB)</small>
+                        <small>JPG/PNG/MP4 (foto + video otomatis compress 720p)</small>
                     </div>
                     <img id="prestasiPreview" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:12px;">
                     <video id="prestasiPreviewVid" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:12px;" muted playsinline loop preload="metadata"></video>

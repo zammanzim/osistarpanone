@@ -6130,6 +6130,19 @@ body.edit-mode .prestasi-card .foto-del-btn {
   width: min(860px, 100%);
 }
 
+/* Penting: jangan kena layout 2-kolom popup angkatan desktop
+   (@media min-width:1024px .struktur-modal-body { display:grid; ... }).
+   Popup biodata harus tetap 1 kolom (atas = foto+info, bawah = visi/misi),
+   kalau tidak .pg-pop-top kejepit 360px dan teksnya wrapping per-huruf. */
+@media (min-width: 1024px) {
+  .pg-pop-box .struktur-modal-body {
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+}
+
 .pg-pop-top {
   display: flex;
   flex-direction: row;

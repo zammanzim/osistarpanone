@@ -135,7 +135,7 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="css/style.css?v=29" />
+    <link rel="stylesheet" href="css/style.css?v=30" />
     <link rel="stylesheet" href="css/feed.css?v=3" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
@@ -1032,7 +1032,8 @@
     <script src="js/supabase.min.js?v=10"></script>
     <script src="js/config.js?v=14"></script>
     <script src="js/db.js?v=22" defer></script>
-    <script src="js/app.js?v=14" defer></script>
+    <script src="js/compress-video.js?v=8" defer></script>
+    <script src="js/app.js?v=15" defer></script>
     <script src="js/toast.js?v=10" defer></script>
     <script src="js/notice.js?v=10" defer></script>
     <script src="js/upload.js?v=10" defer></script>
@@ -1047,7 +1048,7 @@
     <script src="js/aspirasi.js?v=11" defer></script>
     <script src="js/lagu.js?v=12" defer></script>
     <script src="js/galeri.js?v=14" defer></script>
-    <script src="js/feed.js?v=6" defer></script>
+    <script src="js/feed.js?v=7" defer></script>
     <script src="js/arsip.js?v=18" defer></script>
     <script src="js/informasi-view.js?v=2" defer></script>
     <script src="js/osis-auth.js?v=19" defer></script>
@@ -1055,6 +1056,7 @@
     <script src="js/bottomnav.js?v=10" defer></script>
     <script src="js/nav-atur.js?v=12" defer></script>
     <script src="js/pwa.js?v=11" defer></script>
+    <script src="js/pengaturan.js?v=1" defer></script>
   </head>
   <body>
     <!-- ===== TOP NAV ===== -->
@@ -1113,6 +1115,13 @@
             <i class="fa-solid fa-ellipsis-vertical"></i>
           </button>
           <div class="header-more-menu" id="headerMoreMenu">
+            <a
+              href="#/pengaturan"
+              class="header-more-item"
+              id="headerMorePengaturan"
+              onclick="HeaderMore.close()"
+              ><i class="fa-solid fa-gear"></i> Pengaturan</a
+            >
             <a
               href="osis/index"
               class="header-more-item"
@@ -2204,6 +2213,30 @@
       </div>
     </section>
 
+    <!-- ============================================================
+         VIEW: PENGATURAN
+         ============================================================ -->
+    <section class="view" data-view="pengaturan">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-tag">Preferensi</div>
+            <h2 class="sec-title">Pengaturan <span class="red">Pengguna</span></h2>
+            <p class="sec-sub">
+              Semua preferensi tersimpan di perangkat ini dan langsung berlaku.
+            </p>
+          </div>
+        </div>
+
+        <div id="setelanBody">
+          <div class="loading-block">
+            <div class="spinner"></div>
+            Memuat pengaturan...
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== SITE FOOTER ===== -->
     <footer class="site-footer">
       <div class="site-footer-stripes" aria-hidden="true"></div>
@@ -2386,6 +2419,13 @@
             ><i class="fa-solid fa-box-archive"></i></span
           ><span class="nsi-text"
             ><b>Arsip Galeri</b><small>Semua dokumentasi</small></span
+          ></a
+        >
+        <a href="#/pengaturan" class="nav-sheet-item" data-route="pengaturan" data-short="Atur"
+          ><span class="nsi-ico"
+            ><i class="fa-solid fa-gear"></i></span
+          ><span class="nsi-text"
+            ><b>Pengaturan</b><small>Preferensi pengguna</small></span
           ></a
         >
         <!-- Tambah menu baru tinggal copy <a class="nav-sheet-item"> di sini -->

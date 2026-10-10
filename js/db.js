@@ -3072,6 +3072,212 @@ async function aksesMatriks(adminId) {
   return data || [];
 }
 
+// =========================================================================
+// WAWANCARA CALON OSIS - daftar calon + sesi + jawaban (halaman osis/wawancara)
+// Baca langsung (RLS: khusus login OSIS). Tulis jawaban/status/catatan HANYA
+// oleh petugas sesi yang ditugaskan (+ super_admin); kelola calon/pertanyaan/
+// petugas butuh hak "wawancara". Buka/lihat boleh semua login OSIS.
+// Belum migrasi (tabel/RPC tidak ada) -> error BUTUH_MIGRASI agar UI bisa
+// menampilkan panduan, bukan pesan teknis.
+// =========================================================================
+function wawancaraButuhMigrasi(err) {
+  return !!err && String((err && err.message) || err || "").match(
+    /BUTUH_MIGRASI|wawancara_|relation .* does not exist|schema cache|PGRST202|42883|function .* does not exist/i);
+}
+async function getWawancaraCalon() {
+  try {
+    const { data, error } = await supa
+      .from("wawancara_calon")
+      .select("id, nama, kelas, keterangan, tanggal, display_order, created_by, created_at, updated_at")
+      .order("display_order", { ascending: true })
+      .order("nama", { ascending: true });
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    throw err;
+  }
+}
+async function getWawancaraPertanyaan() {
+  try {
+    const { data, error } = await supa
+      .from("wawancara_pertanyaan")
+      .select("id, teks, urutan, parent_id, aktif, created_at")
+      .order("urutan", { ascending: true })
+      .order("id", { ascending: true });
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    throw err;
+  }
+}
+async function getWawancaraSesi() {
+  try {
+    const { data, error } = await supa
+      .from("wawancara_sesi")
+      .select("id, calon_id, status, pewawancara1_id, pewawancara2_id, catatan_akhir, mulai_at, selesai_at, updated_at")
+      .order("updated_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    throw err;
+  }
+}
+async function getWawancaraJawaban(sesiId) {
+  try {
+    const { data, error } = await supa
+      .from("wawancara_jawaban")
+      .select("id, sesi_id, calon_id, pertanyaan_id, pertanyaan_teks, jawaban_teks, is_spontan, updated_by, updated_at")
+      .eq("sesi_id", sesiId)
+      .order("id", { ascending: true });
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    throw err;
+  }
+}
+// Roster senior ringkas buat dropdown petugas (id, nama, jabatan).
+async function getOsisUsersRingkas() {
+  const { data, error } = await supa
+    .from("osis_users")
+    .select("id, nama, username, jabatan")
+    .order("nama", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+async function wawancaraCalonTambah(userId, f) {
+  const { data, error } = await supa.rpc("wawancara_calon_tambah", {
+    p_user_id: userId, p_nama: f.nama || "", p_kelas: f.kelas || "",
+    p_keterangan: f.keterangan || "", p_order: f.order ?? 99,
+    p_tanggal: f.tanggal || null,
+  });
+  if (error) throw error;
+  cekId(data);
+  Cache.del("wawancara_calon");
+  return data;
+}
+async function wawancaraCalonUbah(userId, id, f) {
+  const { data, error } = await supa.rpc("wawancara_calon_ubah", {
+    p_user_id: userId, p_id: id, p_nama: f.nama || "",
+    p_kelas: f.kelas ?? null, p_keterangan: f.keterangan ?? null,
+    p_order: f.order ?? null, p_tanggal: f.tanggal || null,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("wawancara_calon");
+}
+async function wawancaraCalonHapus(userId, id) {
+  const { data, error } = await supa.rpc("wawancara_calon_hapus", {
+    p_user_id: userId, p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("wawancara_calon");
+}
+async function wawancaraPertanyaanSimpan(userId, id, teks, parentId, urutan, aktif) {
+  const { data, error } = await supa.rpc("wawancara_pertanyaan_simpan", {
+    p_user_id: userId, p_id: id || null, p_teks: teks || "",
+    p_parent_id: parentId || null, p_urutan: urutan ?? null,
+    p_aktif: aktif ?? null,
+  });
+  if (error) throw error;
+  cekId(data);
+  Cache.del("wawancara_tanya");
+  return data;
+}
+async function wawancaraPertanyaanHapus(userId, id) {
+  const { data, error } = await supa.rpc("wawancara_pertanyaan_hapus", {
+    p_user_id: userId, p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("wawancara_tanya");
+}
+async function wawancaraSesiPastikan(userId, calonId) {
+  const { data, error } = await supa.rpc("wawancara_sesi_pastikan", {
+    p_user_id: userId, p_calon_id: calonId,
+  });
+  if (error) throw error;
+  cekId(data);
+  return data;
+}
+async function wawancaraSesiPetugas(userId, sesiId, pewawancara1Id, pewawancara2Id) {
+  const { data, error } = await supa.rpc("wawancara_sesi_petugas", {
+    p_user_id: userId, p_sesi_id: sesiId,
+    p_pewawancara1_id: pewawancara1Id || null, p_pewawancara2_id: pewawancara2Id || null,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+async function wawancaraSesiStatus(userId, sesiId, status) {
+  const { data, error } = await supa.rpc("wawancara_sesi_status", {
+    p_user_id: userId, p_sesi_id: sesiId, p_status: status,
+  });
+  if (error) throw error;
+  if (data === "ERR_ALUR") throw new Error("Alur status tidak valid.");
+  cekOk(data);
+}
+async function wawancaraSesiCatatan(userId, sesiId, catatan) {
+  const { data, error } = await supa.rpc("wawancara_sesi_catatan", {
+    p_user_id: userId, p_sesi_id: sesiId, p_catatan: catatan || "",
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+// Autosave jawaban. Master: (sesiId, pertanyaanId). Spontan: jawabanId null =
+// baris baru (kembalikan id-nya), terisi = edit baris itu.
+async function wawancaraJawabanSimpan(userId, sesiId, o) {
+  const { data, error } = await supa.rpc("wawancara_jawaban_simpan", {
+    p_user_id: userId, p_sesi_id: sesiId,
+    p_pertanyaan_id: (o && o.pertanyaanId) || null,
+    p_pertanyaan_teks: (o && o.pertanyaanTeks) || "",
+    p_jawaban_teks: (o && o.jawabanTeks) || "",
+    p_is_spontan: !!((o && o.spontan)),
+    p_jawaban_id: (o && o.jawabanId) || null,
+  });
+  if (error) throw error;
+  cekId(data);
+  return data;
+}
+async function wawancaraSpontanHapus(userId, jawabanId) {
+  const { data, error } = await supa.rpc("wawancara_spontan_hapus", {
+    p_user_id: userId, p_jawaban_id: jawabanId,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+// Urutan pertanyaan PER SESI (tiap calon bisa beda susunan; bawaan = master).
+async function getWawancaraUrutan(sesiId) {
+  try {
+    const { data, error } = await supa
+      .from("wawancara_urutan")
+      .select("sesi_id, pertanyaan_id, urutan")
+      .eq("sesi_id", sesiId);
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    throw err;
+  }
+}
+async function wawancaraUrutanPastikan(userId, sesiId) {
+  const { data, error } = await supa.rpc("wawancara_urutan_pastikan", {
+    p_user_id: userId, p_sesi_id: sesiId,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+async function wawancaraUrutanAtur(userId, sesiId, ids) {
+  const { data, error } = await supa.rpc("wawancara_urutan_atur", {
+    p_user_id: userId, p_sesi_id: sesiId, p_ids: ids || [],
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+
 // Kompres gambar di browser biar <1MB sebelum upload
 // - resize max 1920px, iterative quality 0.85 -> 0.4
 async function compressImage(file, maxMB = 0.95, maxDim = 1920) {
@@ -3167,6 +3373,36 @@ async function compressImage(file, maxMB = 0.95, maxDim = 1920) {
   });
 }
 
+// Muat js/compress-video.js on-demand (halaman selain index.html yang tidak
+// include tag-nya). Path dihitung dari lokasi db.js sendiri biar benar untuk
+// "js/..." maupun "../js/...".
+function pastikanCompressVideo() {
+  if (typeof compressVideo === "function") return Promise.resolve(true);
+  var src = "";
+  try {
+    var daftar = document.getElementsByTagName("script");
+    for (var i = 0; i < daftar.length; i++) {
+      var s = daftar[i].getAttribute("src") || "";
+      if (/(^|\/)db\.js(\?|#|$)/.test(s)) { src = s; break; }
+    }
+  } catch (e) {}
+  var url = src
+    ? src.replace(/(^|\/)db\.js(\?|#|$).*/, "$1compress-video.js?v=8")
+    : "js/compress-video.js?v=8";
+  return new Promise(function (res, rej) {
+    try {
+      var el = document.createElement("script");
+      el.src = url;
+      el.async = true;
+      el.onload = function () { res(typeof compressVideo === "function"); };
+      el.onerror = function () { rej(new Error("gagal muat compress-video.js")); };
+      document.head.appendChild(el);
+    } catch (e) {
+      rej(e);
+    }
+  });
+}
+
 async function uploadFotoStorage(file, path, opts) {
   let toUpload = file;
   if (file && file.type && file.type.startsWith("image/")) {
@@ -3174,6 +3410,24 @@ async function uploadFotoStorage(file, path, opts) {
       toUpload = await compressImage(file);
     } catch (e) {
       console.warn("compress gagal, pakai asli:", e);
+    }
+  } else if (file && file.type && file.type.startsWith("video/")) {
+    // Preferensi pengguna (Pengaturan > Media): default native, FFmpeg
+    // hanya kalau dipilih. compressVideo() selalu fallback ke asli kalau
+    // gagal — upload tetap jalan.
+    try {
+      if (typeof compressVideo !== "function") {
+        try {
+          await pastikanCompressVideo();
+        } catch (e) {
+          console.warn("compress-video.js tidak termuat, pakai asli:", e);
+        }
+      }
+      if (typeof compressVideo === "function") {
+        toUpload = await compressVideo(file, { onProgress: opts && opts.onCompress });
+      }
+    } catch (e) {
+      console.warn("compress video gagal, pakai asli:", e);
     }
   }
   const key = String(path).replace(/^\/+/, "");

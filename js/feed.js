@@ -166,6 +166,18 @@ const Feed = {
         catch {}
     },
 
+    // Preferensi putar-otomatis (hemat data): mati = video tidak play
+    // sendiri pas scroll, user ketuk manual. Default nyala (perilaku lama).
+    putarOtomatis() {
+        try { return localStorage.getItem("feed_autoplay") !== "0"; }
+        catch { return true; }
+    },
+
+    putarSet(mau) {
+        try { localStorage.setItem("feed_autoplay", mau ? "1" : "0"); }
+        catch {}
+    },
+
     sinkronIkonMute(card, video) {
         const ic = card ? card.querySelector(".feed-mute i") : null;
         if (ic) ic.className = video.muted ? "fa-solid fa-volume-xmark" : "fa-solid fa-volume-high";
@@ -376,6 +388,8 @@ const Feed = {
     // dan paling dekat ke tengah layar. Sisanya dipaksa jeda.
     pilihVideoAktif() {
         if (document.hidden) return;
+        // Hemat data: putar-otomatis mati = semua dijeda, user mainkan manual.
+        if (!Feed.putarOtomatis()) { Feed.jedaSemua(); return; }
         try {
             const r = (typeof Router !== "undefined" && Router.current) || "";
             if (r && r !== "feed") return;
@@ -765,7 +779,7 @@ const Feed = {
             `<div class="prestasi-drop-inner" id="feedDropInner">` +
             `<i class="fa-solid fa-cloud-arrow-up"></i>` +
             `<span>Klik atau drag foto/video ke sini</span>` +
-            `<small>JPG/PNG/WEBP/MP4/WEBM (foto otomatis compress, video max ±100MB)</small>` +
+            `<small>JPG/PNG/WEBP/MP4/WEBM (foto + video otomatis compress 720p)</small>` +
             `</div>` +
             `<img id="feedPreviewImg" style="display:none; max-width:100%; max-height:320px; object-fit:contain; border-radius:12px;">` +
             `<video id="feedPreviewVid" style="display:none; max-width:100%; max-height:320px; object-fit:contain; border-radius:12px;" muted playsinline loop preload="metadata"></video>` +
