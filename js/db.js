@@ -3277,6 +3277,46 @@ async function wawancaraUrutanAtur(userId, sesiId, ids) {
   if (error) throw error;
   cekOk(data);
 }
+// Turunan PER SESI (dibuat pewawancara saat sesi, hanya untuk calon itu).
+async function getWawancaraTurunan(sesiId) {
+  try {
+    const { data, error } = await supa
+      .from("wawancara_turunan")
+      .select("id, sesi_id, calon_id, parent_id, teks, jawaban_teks, urutan, updated_by, updated_at")
+      .eq("sesi_id", sesiId)
+      .order("urutan", { ascending: true })
+      .order("id", { ascending: true });
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    throw err;
+  }
+}
+async function wawancaraTurunanTambah(userId, sesiId, parentId, teks) {
+  const { data, error } = await supa.rpc("wawancara_turunan_tambah", {
+    p_user_id: userId, p_sesi_id: sesiId, p_parent_id: parentId, p_teks: teks || "",
+  });
+  if (error) throw error;
+  cekId(data);
+  return data;
+}
+async function wawancaraTurunanSimpan(userId, id, teks, jawaban) {
+  const { data, error } = await supa.rpc("wawancara_turunan_simpan", {
+    p_user_id: userId, p_id: id,
+    p_teks: teks === undefined ? null : teks,
+    p_jawaban: jawaban === undefined ? null : jawaban,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+async function wawancaraTurunanHapus(userId, id) {
+  const { data, error } = await supa.rpc("wawancara_turunan_hapus", {
+    p_user_id: userId, p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
 
 // Kompres gambar di browser biar <1MB sebelum upload
 // - resize max 1920px, iterative quality 0.85 -> 0.4

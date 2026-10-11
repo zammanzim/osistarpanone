@@ -5,7 +5,8 @@
 // - Satu sesi per calon; 1–2 pewawancara dengan HAK SAMA. Jawaban dipakai
 //   bersama dalam sesi yang sama -> cukup SATU yang mencatat, tidak perlu
 //   keduanya mengisi terpisah.
-// - Pertanyaan utama sama untuk semua calon; tiap utama bisa punya turunan.
+// - Pertanyaan utama sama untuk semua calon (susunan bisa beda per sesi);
+//   tiap utama bisa punya TURUNAN KHUSUS SESI itu (dibuat pewawancara).
 // - Pertanyaan spontan (di luar daftar) + jawabannya, per sesi.
 // - Autosave ke Supabase (debounce) + draft localStorage biar progres lanjut.
 // - Selesai = read-only, bisa dibuka kembali untuk dibaca.
@@ -22,6 +23,8 @@ const Wawancara = {
     sesi: null,       // baris wawancara_sesi yang sedang dibuka
     calonAktif: null, // baris wawancara_calon yang sedang dibuka
     jawaban: [],      // baris wawancara_jawaban sesi aktif
+    turunan: [],      // baris wawancara_turunan sesi aktif (per calon)
+    urutanSesi: {},   // susunan utama per sesi {pertanyaan_id: urutan}
     filterQ: "",
     filterStatus: "",
     hanyaTugasku: false,
@@ -93,6 +96,42 @@ const Wawancara = {
         });
     },
 
+    // Tombol back HP = mundur satu step (soal sebelumnya / mode atur /
+    // daftar), bukan keluar halaman. Popup diurus sistemnya masing-masing
+    // (ModalNav/uniPopup terdaftar duluan — event yang mereka konsumsi di-skip).
+    pasangBack() {
+        if (Wawancara._backPasang) return;
+        Wawancara._backPasang = true;
+        window.addEventListener("popstate", (e) => {
+            if (e.__modalKonsumsi) return;
+            if ((window.__abaikanBack | 0) > 0) {
+                window.__abaikanBack--;
+                e.__modalKonsumsi = true;
+                return;
+            }
+            if (document.getElementById("uniOverlay")) return;
+            try {
+                if (window.ModalNav && ModalNav.adaYangTerbuka && ModalNav.adaYangTerbuka()) return;
+            } catch {}
+            if (!Wawancara.sesi || !Wawancara.calonAktif) return; // di daftar: biarkan default
+            const d = document.getElementById("wwDetail");
+            if (!d || d.style.display === "none") return;
+            e.__modalKonsumsi = true;
+            if (Wawancara.mode === "wawancara" && Wawancara.idx > 0) {
+                Wawancara.idx--;
+                Wawancara.renderSesi();
+            } else if (Wawancara.mode === "wawancara") {
+                Wawancara.mode = "atur";
+                Wawancara.renderSesi();
+            } else {
+                Wawancara.muatDaftar();
+                return; // pop dibiarkan keluar dari detail
+            }
+            // Jangkar lagi biar back berikut juga mundur satu step.
+            try { history.pushState({ wwback: true }, ""); } catch {}
+        });
+    },
+
     // ================= INIT =================
     async init() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
@@ -102,6 +141,7 @@ const Wawancara = {
         }
         try { if (typeof OsisAuth.refreshAkses === "function") await OsisAuth.refreshAkses(); } catch {}
         Wawancara.pasangPopup();
+        Wawancara.pasangBack();
         // Deep link ?calon=<id> -> langsung buka sesi calon itu.
         let dariUrl = null;
         try {
@@ -314,6 +354,7 @@ const Wawancara = {
 
     // ================= DETAIL SESI =================
     async bukaCalon(calonId) {
+        const masukBaru = !Wawancara.sesi;
         const detail = document.getElementById("wwDetail");
         if (detail) {
             detail.style.display = "";
@@ -346,6 +387,7 @@ const Wawancara = {
             Wawancara.urutanSesi = {};
             await wawancaraUrutanPastikan(Wawancara.uid(), Wawancara.sesi.id);
             await Wawancara.muatUrutanSesi();
+            await Wawancara.muatTurunan();
             Wawancara.mode = "atur"; // buka = mode atur (tanpa form jawaban)
             Wawancara.idx = 0;
             // Pulihkan mode wawancara dari URL (?calon=X&test=true&soal=N).
@@ -359,6 +401,11 @@ const Wawancara = {
                 }
             } catch {}
             Wawancara.tulisUrl();
+            // Jangkar riwayat (sekali per masuk detail) agar back HP pertama
+            // ditangkap pasangBack. Refresh dalam sesi tidak push lagi.
+            if (masukBaru) {
+                try { history.pushState({ wwback: true }, ""); } catch {}
+            }
         } catch (err) {
             console.error(err);
             if (String((err && err.message) || "") === "BUTUH_MIGRASI") {
@@ -417,9 +464,13 @@ const Wawancara = {
     },
 
     turunanUntuk(parentId) {
-        return (Wawancara.pertanyaan || [])
-            .filter(p => String(p.parent_id) === String(parentId))
-            .sort((a, b) => (Wawancara.urutEfektif(a) - Wawancara.urutEfektif(b)) || (a.id - b.id));
+        return (Wawancara.turunan || [])
+            .filter(t => String(t.parent_id) === String(parentId))
+            .sort((a, b) => (a.urutan - b.urutan) || (a.id - b.id));
+    },
+
+    async muatTurunan() {
+        Wawancara.turunan = await getWawancaraTurunan(Wawancara.sesi.id);
     },
 
     // Urutan efektif: susunan sesi ini bila ada, kalau tidak bawaan master.
@@ -437,13 +488,17 @@ const Wawancara = {
     },
 
     progres() {
-        const utama = Wawancara.pertanyaanUtama().map(p => [p, ...Wawancara.turunanUntuk(p.id)]).flat();
-        if (!utama.length) return { isi: 0, total: 0 };
-        const isi = utama.filter(p => {
+        let total = 0, isi = 0;
+        Wawancara.pertanyaanUtama().forEach(p => {
+            total++;
             const j = Wawancara.jawabanUntuk(p.id);
-            return j && String(j.jawaban_teks || "").trim() !== "";
-        }).length;
-        return { isi, total: utama.length };
+            if (j && String(j.jawaban_teks || "").trim()) isi++;
+            Wawancara.turunanUntuk(p.id).forEach(a => {
+                total++;
+                if (String(a.jawaban_teks || "").trim()) isi++;
+            });
+        });
+        return { isi, total };
     },
 
     renderSesi() {
@@ -596,10 +651,7 @@ const Wawancara = {
             const it = ur[i];
             if (it.kind === "master") {
                 if (!Wawancara.jawabTeksUntuk(it).trim()) return i;
-                const anakKosong = Wawancara.turunanUntuk(it.q.id).some(a => {
-                    const j = Wawancara.jawabanUntuk(a.id);
-                    return !j || !String(j.jawaban_teks || "").trim();
-                });
+                const anakKosong = Wawancara.turunanUntuk(it.q.id).some(a => !String(a.jawaban_teks || "").trim());
                 if (anakKosong) return i;
             } else if (!Wawancara.jawabTeksUntuk(it).trim()) {
                 return i;
@@ -871,6 +923,8 @@ const Wawancara = {
         const drag = list.find(x => String(x.id) === String(dragId));
         const target = list.find(x => String(x.id) === String(targetId));
         if (!drag || !target) return;
+        // Urutan sesi hanya untuk UTAMA (turunan mengikuti induknya).
+        if (drag.parent_id || target.parent_id) return;
         if (String(drag.parent_id || "") !== String(target.parent_id || "")) {
             try { if (typeof showToast === "function") showToast("Turunan hanya bisa digeser sesama satu induk.", "error"); } catch {}
             return;
@@ -903,18 +957,21 @@ const Wawancara = {
         const opsMaster = (p) => {
             if (!kelola || selesai) return "";
             return `<span class="ww-mini-ops">
-                ${p.parent_id ? "" : `<button class="icon-btn icon-btn-sm" title="Tambah turunan" onclick="Wawancara.formTanya(null, ${p.id})"><i class="fa-solid fa-plus"></i></button>`}
+                ${p.parent_id ? "" : `<button class="icon-btn icon-btn-sm" title="Tambah turunan" onclick="Wawancara.formTurunan(${p.id})"><i class="fa-solid fa-plus"></i></button>`}
                 <button class="icon-btn icon-btn-sm" title="Edit" onclick="Wawancara.formTanya(${p.id}, ${p.parent_id ? p.parent_id : "null"})"><i class="fa-solid fa-pen"></i></button>
                 <button class="icon-btn icon-btn-sm" title="Hapus" onclick="Wawancara.hapusTanya(${p.id})"><i class="fa-solid fa-trash"></i></button>
             </span>`;
         };
         const daftar = Wawancara.pertanyaanUtama().map((p, i) => {
+            const bolehUbah = (kelola || tulis) && !selesai;
             const anak = Wawancara.turunanUntuk(p.id).map(a => `
-                <div class="ww-atur-row ww-atur-anak" data-tid="${a.id}" data-parent="${p.id}" ${(kelola || tulis) && !selesai ? `draggable="true"` : ""}>
-                    ${(kelola || tulis) && !selesai ? `<span class="ww-grip" title="Geser"><i class="fa-solid fa-grip-vertical"></i></span>` : ""}
+                <div class="ww-atur-row ww-atur-anak">
                     <span class="ww-nomor ww-nomor-anak">⤷</span>
                     <span class="ww-atur-teks">${escapeHtml(a.teks)}</span>
-                    ${opsMaster(a)}
+                    ${bolehUbah ? `<span class="ww-mini-ops">
+                        <button class="icon-btn icon-btn-sm" title="Edit" onclick="Wawancara.editTurunan(${a.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="icon-btn icon-btn-sm" title="Hapus" onclick="Wawancara.hapusTurunan(${a.id})"><i class="fa-solid fa-trash"></i></button>
+                    </span>` : ""}
                 </div>`).join("");
             return `<div class="ww-atur-row" data-tid="${p.id}" data-parent="" ${(kelola || tulis) && !selesai ? `draggable="true"` : ""}>
                     ${(kelola || tulis) && !selesai ? `<span class="ww-grip" title="Geser"><i class="fa-solid fa-grip-vertical"></i></span>` : ""}
@@ -1001,12 +1058,11 @@ const Wawancara = {
         } else {
             const j = Wawancara.jawabanUntuk(step.q.id);
             const anakHtml = Wawancara.turunanUntuk(step.q.id).map(a => {
-                const ja = Wawancara.jawabanUntuk(a.id);
                 return `<div class="ww-anak">
                     <div class="ww-tanya"><span class="ww-nomor ww-nomor-anak">⤷</span><span>${escapeHtml(a.teks)}</span></div>
                     <textarea class="admin-input admin-textarea ww-jawab" rows="3" maxlength="5000"
-                        data-qid="${a.id}" data-jid="${ja ? ja.id : ""}" ${bacaSaja ? "disabled" : ""}
-                        placeholder="Ketik jawaban... (otomatis tersimpan)">${escapeHtml(ja ? String(ja.jawaban_teks || "") : "")}</textarea>
+                        data-ttid="${a.id}" ${bacaSaja ? "disabled" : ""}
+                        placeholder="Ketik jawaban... (otomatis tersimpan)">${escapeHtml(a.jawaban_teks || "")}</textarea>
                 </div>`;
             }).join("");
             isi = `<div class="ww-qnomor"><i class="fa-solid fa-list-ol"></i> Pertanyaan ${Math.min(Wawancara.idx + 1, total)} dari ${total}</div>
@@ -1047,10 +1103,7 @@ const Wawancara = {
     masterTuntas(p) {
         const j = Wawancara.jawabanUntuk(p.id);
         if (!j || !String(j.jawaban_teks || "").trim()) return false;
-        return Wawancara.turunanUntuk(p.id).every(a => {
-            const ja = Wawancara.jawabanUntuk(a.id);
-            return ja && String(ja.jawaban_teks || "").trim();
-        });
+        return Wawancara.turunanUntuk(p.id).every(a => String(a.jawaban_teks || "").trim() !== "");
     },
 
     renderNavGrid() {
@@ -1109,8 +1162,7 @@ const Wawancara = {
             const j = Wawancara.jawabanUntuk(p.id);
             html += item(n, p.teks, j && j.jawaban_teks);
             Wawancara.turunanUntuk(p.id).forEach(a => {
-                const ja = Wawancara.jawabanUntuk(a.id);
-                html += `<div style="margin-left:16px">${item("⤷", a.teks, ja && ja.jawaban_teks)}</div>`;
+                html += `<div style="margin-left:16px">${item("⤷", a.teks, a.jawaban_teks)}</div>`;
             });
         });
         if (Wawancara.spontanList().length) {
@@ -1148,6 +1200,7 @@ const Wawancara = {
 
     kunciDraft(textarea) {
         if (textarea.id === "wwCatatan") return `ww_draft_${Wawancara.sesi.id}_catatan`;
+        if (textarea.dataset.ttid) return `ww_draft_${Wawancara.sesi.id}_t${textarea.dataset.ttid}`;
         return `ww_draft_${Wawancara.sesi.id}_${textarea.dataset.qid || "?"}_${textarea.dataset.jid || "baru"}`;
     },
 
@@ -1217,6 +1270,7 @@ const Wawancara = {
         try { localStorage.setItem(Wawancara.kunciDraft(textarea), textarea.value); } catch {}
         Wawancara.setPill("simpan");
         const kunci = textarea.id === "wwCatatan" ? "catatan"
+            : textarea.dataset.ttid ? `t${textarea.dataset.ttid}`
             : `j${textarea.dataset.qid}_${textarea.dataset.jid || "baru"}`;
         clearTimeout(Wawancara.timerSimpan[kunci]);
         Wawancara.timerSimpan[kunci] = setTimeout(async () => {
@@ -1225,6 +1279,12 @@ const Wawancara = {
                 if (textarea.id === "wwCatatan") {
                     await wawancaraSesiCatatan(uid, sesiId, textarea.value);
                     Wawancara.sesi.catatan_akhir = textarea.value;
+                } else if (textarea.dataset.ttid) {
+                    // Jawaban turunan sesi (menempel di baris turunannya).
+                    const tid = parseInt(textarea.dataset.ttid, 10);
+                    await wawancaraTurunanSimpan(uid, tid, null, textarea.value);
+                    const row = (Wawancara.turunan || []).find(t => String(t.id) === String(tid));
+                    if (row) row.jawaban_teks = textarea.value;
                 } else if (textarea.dataset.qid === "spontan") {
                     const wrap = textarea.closest(".ww-spontan, .ww-spontan-atur, .ww-atur-row");
                     const inp = wrap ? wrap.querySelector(".ww-spontan-teks") : null;
@@ -1410,10 +1470,80 @@ const Wawancara = {
             return;
         }
         try {
-            await wawancaraPertanyaanSimpan(Wawancara.uid(), null, teks, utamaId);
+            await wawancaraTurunanTambah(Wawancara.uid(), Wawancara.sesi.id, utamaId, teks);
             try { if (typeof showToast === "function") showToast("Turunan ditambah.", "success"); } catch {}
-            Wawancara.pertanyaan = (await getWawancaraPertanyaan()).filter(p => p.aktif !== false);
+            await Wawancara.muatTurunan();
             Wawancara.renderSesi(); // idx tetap: turunan gabung satu layar
+        } catch (err) {
+            try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+        }
+    },
+
+    // Tambah turunan sesi dari mode atur via popup form standar.
+    async formTurunan(parentId) {
+        if (!Wawancara.bolehKelola() && !Wawancara.bolehTulisSesi()) return;
+        if (Wawancara.sesi && Wawancara.sesi.status === "selesai") return;
+        let v = null;
+        try {
+            if (typeof showPopup !== "function") return;
+            v = await showPopup("Tambah pertanyaan turunan", "form", {
+                title: "Turunan Baru",
+                fields: [{ name: "teks", label: "Pertanyaan", type: "text", value: "" }],
+            });
+        } catch { return; }
+        if (v == null) return; // batal
+        const teks = String(v).trim();
+        if (!teks) return;
+        try {
+            await wawancaraTurunanTambah(Wawancara.uid(), Wawancara.sesi.id, parentId, teks);
+            try { if (typeof showToast === "function") showToast("Turunan ditambah.", "success"); } catch {}
+            await Wawancara.muatTurunan();
+            Wawancara.renderSesi();
+        } catch (err) {
+            try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+        }
+    },
+
+    // Edit teks turunan sesi via popup form standar (konsisten popup lain).
+    async editTurunan(id) {
+        if (!Wawancara.bolehKelola() && !Wawancara.bolehTulisSesi()) return;
+        if (Wawancara.sesi && Wawancara.sesi.status === "selesai") return;
+        const t = (Wawancara.turunan || []).find(x => String(x.id) === String(id));
+        if (!t) return;
+        let v = null;
+        try {
+            if (typeof showPopup !== "function") return;
+            v = await showPopup("Edit pertanyaan turunan", "form", {
+                title: "Edit Turunan",
+                fields: [{ name: "teks", label: "Pertanyaan", type: "text", value: t.teks || "" }],
+            });
+        } catch { return; }
+        if (v == null) return; // batal
+        const teks = String(v).trim();
+        if (!teks || teks === t.teks) return;
+        try {
+            await wawancaraTurunanSimpan(Wawancara.uid(), t.id, teks, null);
+            try { if (typeof showToast === "function") showToast("Turunan diperbarui.", "success"); } catch {}
+            await Wawancara.muatTurunan();
+            Wawancara.renderSesi();
+        } catch (err) {
+            try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+        }
+    },
+
+    async hapusTurunan(id) {
+        if (!Wawancara.bolehKelola() && !Wawancara.bolehTulisSesi()) return;
+        if (Wawancara.sesi && Wawancara.sesi.status === "selesai") return;
+        try {
+            if (typeof showPopup === "function") {
+                if (!(await showPopup("Hapus turunan ini beserta jawabannya?", "confirm"))) return;
+            }
+        } catch {}
+        try {
+            await wawancaraTurunanHapus(Wawancara.uid(), id);
+            try { if (typeof showToast === "function") showToast("Turunan dihapus.", "success"); } catch {}
+            await Wawancara.muatTurunan();
+            Wawancara.renderSesi();
         } catch (err) {
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
         }
@@ -1545,8 +1675,6 @@ const Wawancara = {
             return;
         }
         wrap.innerHTML = utama.map((p, i) => {
-            const anak = (Wawancara.pertanyaan || []).filter(x => String(x.parent_id) === String(p.id))
-                .sort((a, b) => (a.urutan - b.urutan) || (a.id - b.id));
             return `
             <div class="ww-kelola-grup">
                 <div class="ww-kelola-row">
@@ -1554,18 +1682,9 @@ const Wawancara = {
                     ${p.aktif === false ? `<span class="ww-st ww-st-belum">nonaktif</span>` : ""}
                     <span class="ww-mini-ops">
                         <button class="icon-btn icon-btn-sm" title="Edit" onclick="Wawancara.formTanya(${p.id}, null, true)"><i class="fa-solid fa-pen"></i></button>
-                        <button class="icon-btn icon-btn-sm" title="Hapus (+ turunannya)" onclick="Wawancara.hapusTanya(${p.id}, true)"><i class="fa-solid fa-trash"></i></button>
+                        <button class="icon-btn icon-btn-sm" title="Hapus" onclick="Wawancara.hapusTanya(${p.id}, true)"><i class="fa-solid fa-trash"></i></button>
                     </span>
                 </div>
-                ${anak.map(a => `
-                <div class="ww-kelola-row ww-kelola-anak">
-                    <span>⤷ ${escapeHtml(a.teks)}</span>
-                    <span class="ww-mini-ops">
-                        <button class="icon-btn icon-btn-sm" title="Edit" onclick="Wawancara.formTanya(${a.id}, ${p.id}, true)"><i class="fa-solid fa-pen"></i></button>
-                        <button class="icon-btn icon-btn-sm" title="Hapus" onclick="Wawancara.hapusTanya(${a.id}, true)"><i class="fa-solid fa-trash"></i></button>
-                    </span>
-                </div>`).join("")}
-                <button class="btn btn-white btn-sm" onclick="Wawancara.formTanya(null, ${p.id}, true)"><i class="fa-solid fa-plus"></i> Turunan</button>
             </div>`;
         }).join("");
     },
@@ -1626,7 +1745,7 @@ const Wawancara = {
         if (Wawancara.sesi && Wawancara.sesi.status === "selesai") return;
         try {
             if (typeof showPopup === "function") {
-                if (!(await showPopup("Hapus pertanyaan ini? Turunan + jawaban yang sudah tercatat ikut terhapus.", "confirm"))) return;
+                if (!(await showPopup("Hapus pertanyaan utama ini? Turunan + jawaban sesi yang tercatat ikut terhapus.", "confirm"))) return;
             }
         } catch {}
         try {

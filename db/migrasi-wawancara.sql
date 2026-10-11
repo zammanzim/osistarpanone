@@ -634,6 +634,94 @@ END $$;
 GRANT EXECUTE ON FUNCTION public.wawancara_urutan_pastikan(bigint, bigint) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.wawancara_urutan_atur(bigint, bigint, bigint[]) TO anon, authenticated;
 
+-- ================= 7. TURUNAN PER SESI =================
+-- Pertanyaan lanjutan dibuat pewawancara saat sesi dan hanya berlaku untuk
+-- calon itu (tidak lagi dari master global). Jawaban menempel di baris yang
+-- sama sehingga terikat sesi + calon + induk utama sekaligus.
+-- Tulis HANYA lewat RPC (fail closed), baca khusus login OSIS.
+CREATE TABLE IF NOT EXISTS public.wawancara_turunan (
+  id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  sesi_id      bigint NOT NULL REFERENCES public.wawancara_sesi (id) ON DELETE CASCADE,
+  calon_id     bigint NOT NULL REFERENCES public.wawancara_calon (id) ON DELETE CASCADE,
+  parent_id    bigint NOT NULL REFERENCES public.wawancara_pertanyaan (id) ON DELETE CASCADE,
+  teks         text NOT NULL DEFAULT '',
+  jawaban_teks text NOT NULL DEFAULT '',
+  urutan       integer NOT NULL DEFAULT 99,
+  updated_by   bigint REFERENCES public.osis_users (id) ON DELETE SET NULL,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS wawancara_turunan_sesi_idx ON public.wawancara_turunan (sesi_id);
+CREATE INDEX IF NOT EXISTS wawancara_turunan_parent_idx ON public.wawancara_turunan (parent_id);
+ALTER TABLE public.wawancara_turunan ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS wawancara_osis_select ON public.wawancara_turunan;
+CREATE POLICY wawancara_osis_select ON public.wawancara_turunan
+  FOR SELECT TO anon, authenticated
+  USING (EXISTS (SELECT 1 FROM public.osis_users u WHERE u.auth_id = auth.uid()));
+GRANT SELECT ON public.wawancara_turunan TO anon, authenticated;
+
+-- Hak tulis turunan: pemegang hak "wawancara" ATAU petugas sesi.
+CREATE OR REPLACE FUNCTION public.wawancara_turunan_boleh(p_user_id bigint, p_sesi_id bigint)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
+BEGIN
+  IF p_user_id IS NULL THEN RETURN false; END IF;
+  IF public.osis_bisa(p_user_id, 'wawancara') THEN RETURN true; END IF;
+  RETURN public.wawancara_boleh(p_user_id, p_sesi_id);
+END $$;
+
+CREATE OR REPLACE FUNCTION public.wawancara_turunan_tambah(
+  p_user_id bigint, p_sesi_id bigint, p_parent_id bigint, p_teks text)
+RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE nid bigint; v_calon bigint; v_urut integer;
+BEGIN
+  IF NOT public.wawancara_turunan_boleh(p_user_id, p_sesi_id) THEN RETURN -1; END IF;
+  SELECT calon_id INTO v_calon FROM public.wawancara_sesi WHERE id = p_sesi_id;
+  IF NOT FOUND THEN RETURN -2; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.wawancara_pertanyaan
+                 WHERE id = p_parent_id AND parent_id IS NULL) THEN RETURN -3; END IF;
+  p_teks := left(btrim(COALESCE(p_teks, '')), 500);
+  IF p_teks = '' THEN RETURN -4; END IF;
+  SELECT COALESCE(MAX(urutan), 0) + 10 INTO v_urut FROM public.wawancara_turunan
+  WHERE sesi_id = p_sesi_id AND parent_id = p_parent_id;
+  INSERT INTO public.wawancara_turunan (sesi_id, calon_id, parent_id, teks, urutan, updated_by)
+  VALUES (p_sesi_id, v_calon, p_parent_id, p_teks, v_urut, p_user_id)
+  RETURNING id INTO nid;
+  RETURN nid;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.wawancara_turunan_simpan(
+  p_user_id bigint, p_id bigint, p_teks text DEFAULT NULL, p_jawaban text DEFAULT NULL)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_sesi bigint;
+BEGIN
+  SELECT sesi_id INTO v_sesi FROM public.wawancara_turunan WHERE id = p_id;
+  IF NOT FOUND THEN RETURN 'ERR_NOT_FOUND'; END IF;
+  IF NOT public.wawancara_turunan_boleh(p_user_id, v_sesi) THEN RETURN 'ERR_NO_AUTH'; END IF;
+  IF p_teks IS NOT NULL AND btrim(p_teks) = '' THEN RETURN 'ERR_KOSONG'; END IF;
+  UPDATE public.wawancara_turunan SET
+    teks = CASE WHEN p_teks IS NULL THEN teks ELSE left(btrim(p_teks), 500) END,
+    jawaban_teks = CASE WHEN p_jawaban IS NULL THEN jawaban_teks ELSE left(p_jawaban, 5000) END,
+    updated_by = p_user_id, updated_at = now()
+  WHERE id = p_id;
+  RETURN 'OK';
+END $$;
+
+CREATE OR REPLACE FUNCTION public.wawancara_turunan_hapus(p_user_id bigint, p_id bigint)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_sesi bigint;
+BEGIN
+  SELECT sesi_id INTO v_sesi FROM public.wawancara_turunan WHERE id = p_id;
+  IF NOT FOUND THEN RETURN 'ERR_NOT_FOUND'; END IF;
+  IF NOT public.wawancara_turunan_boleh(p_user_id, v_sesi) THEN RETURN 'ERR_NO_AUTH'; END IF;
+  DELETE FROM public.wawancara_turunan WHERE id = p_id;
+  RETURN 'OK';
+END $$;
+
+GRANT EXECUTE ON FUNCTION public.wawancara_turunan_boleh(bigint, bigint) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.wawancara_turunan_tambah(bigint, bigint, bigint, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.wawancara_turunan_simpan(bigint, bigint, text, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.wawancara_turunan_hapus(bigint, bigint) TO anon, authenticated;
+
   -- ================= 5. OPSIONAL: daftarkan ke sidebar + halaman akses =================
   -- Sidebar /osis diambil dari site_content.kunci='sidebar_menu' (diatur lewat tombol
   -- "Atur Menu" oleh pemegang hak "site"). Cukup tambah via UI Atur Menu setelah
