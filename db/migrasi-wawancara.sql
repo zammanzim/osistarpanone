@@ -304,22 +304,23 @@ BEGIN
   RETURN 'OK';
 END $$;
 
-  -- Pindah status: belum -> berlangsung -> selesai, plus selesai -> berlangsung
-  -- (buka kembali untuk koreksi). Stempel waktu otomatis.
-  CREATE OR REPLACE FUNCTION public.wawancara_sesi_status(
-    p_user_id bigint, p_sesi_id bigint, p_status text)
-  RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
-  DECLARE v_lama text;
-  BEGIN
-    IF NOT public.wawancara_boleh(p_user_id, p_sesi_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
-    p_status := btrim(COALESCE(p_status, ''));
-    IF p_status NOT IN ('belum', 'berlangsung', 'selesai') THEN RETURN 'ERR_STATUS'; END IF;
-    SELECT status INTO v_lama FROM public.wawancara_sesi WHERE id = p_sesi_id;
-    IF NOT FOUND THEN RETURN 'ERR_NOT_FOUND'; END IF;
-    IF p_status = v_lama THEN RETURN 'OK'; END IF;
-    IF NOT ((v_lama = 'belum' AND p_status = 'berlangsung')
-        OR (v_lama = 'berlangsung' AND p_status = 'selesai')
-        OR (v_lama = 'selesai' AND p_status = 'berlangsung')) THEN RETURN 'ERR_ALUR'; END IF;
+-- Pindah status: belum -> berlangsung -> selesai, selesai -> berlangsung
+-- (buka kembali untuk koreksi), berlangsung -> belum (STOP: jeda, jawaban
+-- tetap tersimpan, bisa dimulai lagi). Stempel waktu otomatis.
+CREATE OR REPLACE FUNCTION public.wawancara_sesi_status(
+  p_user_id bigint, p_sesi_id bigint, p_status text)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_lama text;
+BEGIN
+  IF NOT public.wawancara_boleh(p_user_id, p_sesi_id) THEN RETURN 'ERR_NO_AUTH'; END IF;
+  p_status := btrim(COALESCE(p_status, ''));
+  IF p_status NOT IN ('belum', 'berlangsung', 'selesai') THEN RETURN 'ERR_STATUS'; END IF;
+  SELECT status INTO v_lama FROM public.wawancara_sesi WHERE id = p_sesi_id;
+  IF NOT FOUND THEN RETURN 'ERR_NOT_FOUND'; END IF;
+  IF p_status = v_lama THEN RETURN 'OK'; END IF;
+  IF NOT ((v_lama = 'belum' AND p_status = 'berlangsung')
+       OR (v_lama = 'berlangsung' AND p_status IN ('selesai', 'belum'))
+       OR (v_lama = 'selesai' AND p_status = 'berlangsung')) THEN RETURN 'ERR_ALUR'; END IF;
     UPDATE public.wawancara_sesi SET
       status = p_status,
       mulai_at = CASE WHEN mulai_at IS NULL AND p_status = 'berlangsung' THEN now() ELSE mulai_at END,

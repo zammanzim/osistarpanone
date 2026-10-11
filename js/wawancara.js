@@ -526,14 +526,16 @@ const Wawancara = {
             ? `<button class="btn btn-white btn-sm" onclick="Wawancara.aturStatus('berlangsung')"><i class="fa-solid fa-rotate-left"></i> Buka kembali</button>` : "";
         const btnSelesai = (tulis && s.status === "berlangsung")
             ? `<button class="btn btn-yellow btn-sm" onclick="Wawancara.aturStatus('selesai')"><i class="fa-solid fa-flag-checkered"></i> Selesaikan</button>` : "";
+        const btnStop = (tulis && s.status === "berlangsung")
+            ? `<button class="btn btn-white btn-sm" onclick="Wawancara.aturStatus('belum')"><i class="fa-solid fa-stop"></i> Stop</button>` : "";
         const btnHasil = (Wawancara.mode !== "hasil")
             ? `<button class="btn btn-white btn-sm" onclick="Wawancara.lihatHasil()"><i class="fa-solid fa-eye"></i> Hasil</button>` : "";
         const btnAtur = (Wawancara.mode !== "atur")
             ? `<button class="btn btn-white btn-sm" onclick="Wawancara.lihatAtur()"><i class="fa-solid fa-list-ol"></i> Atur</button>` : "";
         // Mode atur: Spontan paling kiri, Lanjutkan paling kanan.
         const btnAksi = Wawancara.mode === "atur"
-            ? [btnSpontan, btnSelesai, btnBuka, btnHasil, btnLanjut].join("")
-            : [btnLanjut, btnSpontan, btnBuka, btnSelesai, btnHasil, btnAtur].join("");
+            ? [btnSpontan, btnSelesai, btnStop, btnBuka, btnHasil, btnLanjut].join("")
+            : [btnLanjut, btnSpontan, btnBuka, btnSelesai, btnStop, btnHasil, btnAtur].join("");
 
         detail.innerHTML = `
             <div style="display:flex;align-items:center;gap:10px">${Wawancara.mode === "wawancara" ? `<button class="btn btn-white btn-sm" onclick="Wawancara.lihatAtur()"><i class="fa-solid fa-arrow-left"></i> Kembali</button>` : `<button class="btn btn-white btn-sm" onclick="Wawancara.kembali()"><i class="fa-solid fa-arrow-left"></i> Daftar calon</button>`}<hr class="ww-hr"></div>
@@ -1340,7 +1342,9 @@ const Wawancara = {
     async aturStatus(status) {
         const s = Wawancara.sesi;
         if (!s) return;
-        const label = status === "selesai" ? "Selesaikan wawancara? Hasil jadi read-only." : "Mulai wawancara sekarang?";
+        const label = status === "selesai" ? "Selesaikan wawancara? Hasil jadi read-only."
+            : status === "belum" ? "Stop wawancara? Status kembali ke Belum dimulai (jawaban tetap tersimpan)."
+            : (s.status === "selesai" ? "Buka kembali wawancara?" : "Mulai wawancara sekarang?");
         try {
             if (typeof showPopup === "function") {
                 if (!(await showPopup(label, "confirm"))) return;
@@ -1348,7 +1352,7 @@ const Wawancara = {
         } catch {}
         try {
             await wawancaraSesiStatus(Wawancara.uid(), s.id, status);
-            try { if (typeof showToast === "function") showToast(status === "selesai" ? "Wawancara selesai." : "Wawancara dimulai.", "success"); } catch {}
+            try { if (typeof showToast === "function") showToast(status === "selesai" ? "Wawancara selesai." : status === "belum" ? "Wawancara di-stop." : "Wawancara dimulai.", "success"); } catch {}
             try { if (typeof catatAksi === "function") catatAksi("wawancara_status_" + status, "calon #" + Wawancara.calonAktif.id); } catch {}
             Wawancara.jawaban = await getWawancaraJawaban(s.id);
             const fresh = await getWawancaraSesi();
@@ -1360,6 +1364,8 @@ const Wawancara = {
                 Wawancara.idx = Wawancara.idxPertamaKosong();
             } else if (status === "selesai") {
                 Wawancara.mode = "hasil";
+            } else {
+                Wawancara.mode = "atur";
             }
             Wawancara.renderSesi();
         } catch (err) {
