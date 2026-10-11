@@ -722,6 +722,23 @@ GRANT EXECUTE ON FUNCTION public.wawancara_turunan_tambah(bigint, bigint, bigint
 GRANT EXECUTE ON FUNCTION public.wawancara_turunan_simpan(bigint, bigint, text, text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.wawancara_turunan_hapus(bigint, bigint) TO anon, authenticated;
 
+-- ================= 8. TANDA PENTING PERTANYAAN UTAMA =================
+-- Master bisa ditandai paling penting (bintang) — tampil sebagai badge di
+-- mode atur/wawancara/hasil. Hanya untuk pertanyaan UTAMA.
+ALTER TABLE public.wawancara_pertanyaan
+  ADD COLUMN IF NOT EXISTS penting boolean NOT NULL DEFAULT false;
+CREATE OR REPLACE FUNCTION public.wawancara_pertanyaan_penting(
+  p_user_id bigint, p_id bigint, p_penting boolean)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  IF NOT public.osis_bisa(p_user_id, 'wawancara') THEN RETURN 'ERR_NO_AUTH'; END IF;
+  UPDATE public.wawancara_pertanyaan SET penting = COALESCE(p_penting, false), updated_at = now()
+  WHERE id = p_id AND parent_id IS NULL;
+  IF NOT FOUND THEN RETURN 'ERR_NOT_FOUND'; END IF;
+  RETURN 'OK';
+END $$;
+GRANT EXECUTE ON FUNCTION public.wawancara_pertanyaan_penting(bigint, bigint, boolean) TO anon, authenticated;
+
   -- ================= 5. OPSIONAL: daftarkan ke sidebar + halaman akses =================
   -- Sidebar /osis diambil dari site_content.kunci='sidebar_menu' (diatur lewat tombol
   -- "Atur Menu" oleh pemegang hak "site"). Cukup tambah via UI Atur Menu setelah

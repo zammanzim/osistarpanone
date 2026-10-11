@@ -973,11 +973,12 @@ const Wawancara = {
                         <button class="icon-btn icon-btn-sm" title="Hapus" onclick="Wawancara.hapusTurunan(${a.id})"><i class="fa-solid fa-trash"></i></button>
                     </span>` : ""}
                 </div>`).join("");
-            return `<div class="ww-atur-row" data-tid="${p.id}" data-parent="" ${(kelola || tulis) && !selesai ? `draggable="true"` : ""}>
+            return `<div class="ww-atur-row${p.penting ? " penting" : ""}" data-tid="${p.id}" data-parent="" ${(kelola || tulis) && !selesai ? `draggable="true"` : ""}>
                     ${(kelola || tulis) && !selesai ? `<span class="ww-grip" title="Geser"><i class="fa-solid fa-grip-vertical"></i></span>` : ""}
                     <span class="ww-nomor">${i + 1}</span>
                     <span class="ww-atur-teks">${escapeHtml(p.teks)}</span>
                     ${opsMaster(p)}
+                    ${p.penting ? `<span class="ww-bintang" title="Paling penting"><i class="fa-solid fa-star"></i></span>` : ""}
                 </div>${anak}`;
         }).join("");
         const spontan = Wawancara.spontanList().map(j => `
@@ -1065,7 +1066,7 @@ const Wawancara = {
                         placeholder="Ketik jawaban... (otomatis tersimpan)">${escapeHtml(a.jawaban_teks || "")}</textarea>
                 </div>`;
             }).join("");
-            isi = `<div class="ww-qnomor"><i class="fa-solid fa-list-ol"></i> Pertanyaan ${Math.min(Wawancara.idx + 1, total)} dari ${total}</div>
+            isi = `<div class="ww-qnomor"><i class="fa-solid fa-list-ol"></i> Pertanyaan ${Math.min(Wawancara.idx + 1, total)} dari ${total}${step.q.penting ? `<span class="ww-bintang" title="Paling penting"><i class="fa-solid fa-star"></i></span>` : ""}</div>
                 <div class="ww-qteks">${escapeHtml(step.q.teks)}</div>
                 <textarea class="admin-input admin-textarea ww-jawab" rows="3" maxlength="5000"
                     data-qid="${step.q.id}" data-jid="${j ? j.id : ""}" ${bacaSaja ? "disabled" : ""}
@@ -1150,9 +1151,9 @@ const Wawancara = {
     // ---- Mode HASIL: baca semua jawaban ----
     renderHasil(wrap) {
         const s = Wawancara.sesi;
-        const item = (nomor, teks, jawab) => `
+        const item = (nomor, teks, jawab, bintang) => `
             <div class="ww-hasil-item">
-                <div class="ww-tanya"><span class="ww-nomor">${nomor}</span><span>${escapeHtml(teks)}</span></div>
+                <div class="ww-tanya"><span class="ww-nomor">${nomor}</span><span>${escapeHtml(teks)}</span>${bintang ? `<span class="ww-bintang" title="Paling penting"><i class="fa-solid fa-star"></i></span>` : ""}</div>
                 <div class="ww-hasil-jawab">${jawab && String(jawab).trim() ? escapeHtml(jawab) : `<span class="kosong">Belum dijawab</span>`}</div>
             </div>`;
         let n = 0;
@@ -1160,7 +1161,7 @@ const Wawancara = {
         Wawancara.pertanyaanUtama().forEach(p => {
             n++;
             const j = Wawancara.jawabanUntuk(p.id);
-            html += item(n, p.teks, j && j.jawaban_teks);
+            html += item(n, p.teks, j && j.jawaban_teks, !!p.penting);
             Wawancara.turunanUntuk(p.id).forEach(a => {
                 html += `<div style="margin-left:16px">${item("⤷", a.teks, a.jawaban_teks)}</div>`;
             });
@@ -1681,6 +1682,7 @@ const Wawancara = {
                     <b>${i + 1}. ${escapeHtml(p.teks)}</b>
                     ${p.aktif === false ? `<span class="ww-st ww-st-belum">nonaktif</span>` : ""}
                     <span class="ww-mini-ops">
+                        <button class="icon-btn icon-btn-sm" title="${p.penting ? "Cabut tanda penting" : "Tandai paling penting"}" onclick="Wawancara.tandaiPenting(${p.id})"><i class="${p.penting ? "fa-solid" : "fa-regular"} fa-star"${p.penting ? ` style="color:var(--red)"` : ""}></i></button>
                         <button class="icon-btn icon-btn-sm" title="Edit" onclick="Wawancara.formTanya(${p.id}, null, true)"><i class="fa-solid fa-pen"></i></button>
                         <button class="icon-btn icon-btn-sm" title="Hapus" onclick="Wawancara.hapusTanya(${p.id}, true)"><i class="fa-solid fa-trash"></i></button>
                     </span>
@@ -1764,6 +1766,23 @@ const Wawancara = {
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
         }
     },
+
+    // Tandai/batalkan "paling penting" pada pertanyaan utama (khusus kelola).
+    async tandaiPenting(id) {
+        if (!Wawancara.bolehKelola()) return;
+        const p = (Wawancara.pertanyaan || []).find(x => String(x.id) === String(id));
+        if (!p || p.parent_id) return;
+        try {
+            await wawancaraPertanyaanPenting(Wawancara.uid(), p.id, !p.penting);
+            p.penting = !p.penting;
+            try { if (typeof showToast === "function") showToast(p.penting ? "Ditandai penting." : "Tanda penting dicabut.", "success"); } catch {}
+            Wawancara.renderKelolaTanya();
+            if (Wawancara.sesi) Wawancara.renderSesi();
+        } catch (err) {
+            try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+        }
+    },
+
 };
 
 document.addEventListener("DOMContentLoaded", () => Wawancara.init());

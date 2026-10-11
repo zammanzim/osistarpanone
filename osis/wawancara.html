@@ -135,7 +135,7 @@
       #wwTurunanTeks{flex:1;min-width:0}
       /* Mode wawancara: bersih, satu pertanyaan */
       .ww-qnomor {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 8px;
         font-size: 0.72rem;
@@ -143,6 +143,36 @@
         text-transform: uppercase;
         letter-spacing: 0.06em;
         color: var(--red);
+      }
+      .ww-atur-row.penting {
+        background: linear-gradient(180deg, #ffe45c, #ffd11a);
+      }
+      .ww-bintang {
+        color: var(--red);
+        flex-shrink: 0;
+        font-size: 0.85rem;
+      }
+      .ww-atur-row {
+        position: relative;
+      }
+      .ww-atur-row > .ww-bintang {
+        position: absolute;
+        top: -12px;
+        left: -12px;
+        margin: 0;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--white);
+        border: 2.5px solid var(--ink);
+        display: grid;
+        place-items: center;
+        font-size: 0.68rem;
+        box-shadow: 2px 2px 0 var(--ink);
+      }
+      .ww-tanya .ww-bintang,
+      .ww-qnomor .ww-bintang {
+        margin-left: auto;
       }
       .ww-qteks {
         font-size: 1.3rem;

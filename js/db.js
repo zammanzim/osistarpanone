@@ -3102,11 +3102,11 @@ async function getWawancaraPertanyaan() {
   try {
     const { data, error } = await supa
       .from("wawancara_pertanyaan")
-      .select("id, teks, urutan, parent_id, aktif, created_at")
+      .select("id, teks, urutan, parent_id, aktif, penting, created_at")
       .order("urutan", { ascending: true })
       .order("id", { ascending: true });
     if (error) throw error;
-    return data || [];
+    return (data || []).map(r => ({ ...r, penting: !!r.penting }));
   } catch (err) {
     if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
     throw err;
@@ -3191,6 +3191,14 @@ async function wawancaraPertanyaanSimpan(userId, id, teks, parentId, urutan, akt
 async function wawancaraPertanyaanHapus(userId, id) {
   const { data, error } = await supa.rpc("wawancara_pertanyaan_hapus", {
     p_user_id: userId, p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+  Cache.del("wawancara_tanya");
+}
+async function wawancaraPertanyaanPenting(userId, id, penting) {
+  const { data, error } = await supa.rpc("wawancara_pertanyaan_penting", {
+    p_user_id: userId, p_id: id, p_penting: !!penting,
   });
   if (error) throw error;
   cekOk(data);
