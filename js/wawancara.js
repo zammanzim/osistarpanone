@@ -957,11 +957,15 @@ const Wawancara = {
         const opsMaster = (p) => {
             if (!kelola || selesai) return "";
             return `<span class="ww-mini-ops">
-                ${p.parent_id ? "" : `<button class="icon-btn icon-btn-sm" title="Tambah turunan" onclick="Wawancara.formTurunan(${p.id})"><i class="fa-solid fa-plus"></i></button>`}
                 <button class="icon-btn icon-btn-sm" title="Edit" onclick="Wawancara.formTanya(${p.id}, ${p.parent_id ? p.parent_id : "null"})"><i class="fa-solid fa-pen"></i></button>
                 <button class="icon-btn icon-btn-sm" title="Hapus" onclick="Wawancara.hapusTanya(${p.id})"><i class="fa-solid fa-trash"></i></button>
             </span>`;
         };
+        // Tombol + turunan: semua pewawancara sesi ini (hak tidak wajib),
+        // karena turunan hanya milik calon ini. Edit/hapus utama tetap kelola.
+        const btnPlus = (p) => ((kelola || tulis) && !selesai && !p.parent_id)
+            ? `<span class="ww-mini-ops"><button class="icon-btn icon-btn-sm" title="Tambah turunan" onclick="Wawancara.formTurunan(${p.id})"><i class="fa-solid fa-plus"></i></button></span>`
+            : "";
         const daftar = Wawancara.pertanyaanUtama().map((p, i) => {
             const bolehUbah = (kelola || tulis) && !selesai;
             const anak = Wawancara.turunanUntuk(p.id).map(a => `
@@ -978,6 +982,7 @@ const Wawancara = {
                     <span class="ww-nomor">${i + 1}</span>
                     <span class="ww-atur-teks">${escapeHtml(p.teks)}</span>
                     ${opsMaster(p)}
+                    ${btnPlus(p)}
                     ${p.penting ? `<span class="ww-bintang" title="Paling penting"><i class="fa-solid fa-star"></i></span>` : ""}
                 </div>${anak}`;
         }).join("");
