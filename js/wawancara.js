@@ -96,6 +96,66 @@ const Wawancara = {
         });
     },
 
+    // Keyboard wawancara: Esc = mundur bertingkat (soal sebelumnya / mode
+    // atur / daftar calon), ←/→ = pindah soal. Panah hanya saat fokus di luar
+    // kolom ketik (biar caret textarea tidak dibajak). Popup/modal yang terbuka
+    // selalu diutamakan (diurus sistemnya masing-masing).
+    pasangNavigasiKeyboard() {
+        if (Wawancara._navKeyPasang) return;
+        Wawancara._navKeyPasang = true;
+        const popupTerbuka = () => {
+            if (document.getElementById("uniOverlay")) return true;
+            try {
+                if (window.ModalNav && ModalNav.adaYangTerbuka && ModalNav.adaYangTerbuka()) return true;
+            } catch {}
+            return ["wwCalonForm", "wwTanyaForm", "wwTanyaEdit"].some(id =>
+                document.getElementById(id)?.classList.contains("open"));
+        };
+        const diDetail = () => {
+            if (!Wawancara.sesi || !Wawancara.calonAktif) return false;
+            const d = document.getElementById("wwDetail");
+            return !!(d && d.style.display !== "none");
+        };
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                if (popupTerbuka()) return; // biar popup yang tutup duluan
+                // Editor turunan inline: Esc = batalkan.
+                const inline = document.getElementById("wwTurunanBaru");
+                if (inline) { inline.remove(); return; }
+                if (!diDetail()) return;
+                if (Wawancara.mode === "wawancara" && Wawancara.idx > 0) {
+                    Wawancara.idx--;
+                    Wawancara.renderSesi();
+                } else if (Wawancara.mode === "wawancara") {
+                    Wawancara.mode = "atur";
+                    Wawancara.renderSesi();
+                } else {
+                    Wawancara.kembali();
+                }
+                return;
+            }
+            if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+            if (Wawancara.mode !== "wawancara" || !diDetail()) return;
+            if (popupTerbuka()) return;
+            // Lagi mengetik di kolom: panah buat geser caret, bukan pindah soal.
+            try {
+                const tag = (e.target && e.target.tagName) || "";
+                if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
+                if (e.target && e.target.isContentEditable) return;
+            } catch {}
+            if (e.key === "ArrowLeft" && Wawancara.idx > 0) {
+                e.preventDefault();
+                Wawancara.geserLangkah(-1);
+            } else if (e.key === "ArrowRight") {
+                const ur = Wawancara.bangunUrutan();
+                if (Wawancara.idx < ur.length - 1) {
+                    e.preventDefault();
+                    Wawancara.geserLangkah(1);
+                }
+            }
+        });
+    },
+
     // Tombol back HP = mundur satu step (soal sebelumnya / mode atur /
     // daftar), bukan keluar halaman. Popup diurus sistemnya masing-masing
     // (ModalNav/uniPopup terdaftar duluan — event yang mereka konsumsi di-skip).
@@ -142,6 +202,7 @@ const Wawancara = {
         try { if (typeof OsisAuth.refreshAkses === "function") await OsisAuth.refreshAkses(); } catch {}
         Wawancara.pasangPopup();
         Wawancara.pasangBack();
+        Wawancara.pasangNavigasiKeyboard();
         // Deep link ?calon=<id> -> langsung buka sesi calon itu.
         let dariUrl = null;
         try {
@@ -539,6 +600,8 @@ const Wawancara = {
 
         detail.innerHTML = `
             <div style="display:flex;align-items:center;gap:10px">${Wawancara.mode === "wawancara" ? `<button class="btn btn-white btn-sm" onclick="Wawancara.lihatAtur()"><i class="fa-solid fa-arrow-left"></i> Kembali</button>` : `<button class="btn btn-white btn-sm" onclick="Wawancara.kembali()"><i class="fa-solid fa-arrow-left"></i> Daftar calon</button>`}<hr class="ww-hr"></div>
+            <div class="ww-layout">
+            <div class="ww-side">
             <div class="osis-panel">
                 <div class="ww-head-top">
                     <div class="ww-ava ww-ava-lg">${escapeHtml((String(c.nama || "?").trim().charAt(0) || "?").toUpperCase())}</div>
@@ -561,7 +624,9 @@ const Wawancara = {
                 <div class="ww-bar"><span id="wwHeadBar" style="width:${persen}%"></span></div>
                 <div class="ww-status-btns" style="margin-top:12px">${btnAksi}</div>
             </div>
-            <div id="wwModeWrap"></div>`;
+            </div>
+            <div id="wwModeWrap" class="ww-main"></div>
+            </div>`;
 
         Wawancara.renderMode();
         Wawancara.tulisUrl();
@@ -1083,12 +1148,13 @@ const Wawancara = {
                 ${(kelola || tulis) && !selesai ? `<button class="btn btn-white btn-sm" style="margin-top:6px" onclick="Wawancara.tambahTurunanLangsung(${step.q.id})"><i class="fa-solid fa-plus"></i> Turunan</button>` : ""}`;
         }
         wrap.innerHTML = `
-            <div class="osis-panel">
+            <div class="osis-panel${(step.kind === "master" && step.q.penting) ? " ww-card-penting" : ""}">
                 ${isi}
                 <div class="ww-nav">
                     <button class="btn btn-white" onclick="Wawancara.geserLangkah(-1)" ${Wawancara.idx <= 0 ? "disabled" : ""}><i class="fa-solid fa-arrow-left"></i> Sebelumnya</button>
                     <button class="btn btn-red" onclick="Wawancara.geserLangkah(1)" ${Wawancara.idx >= ur.length - 1 ? "disabled" : ""}>Berikutnya <i class="fa-solid fa-arrow-right"></i></button>
                 </div>
+                ${bacaSaja ? "" : `<div class="ww-sub" style="margin:8px 0 0"><b>Enter</b> lanjut · <b>←/→</b> pindah · <b>Esc</b> kembali · <b>Shift+Enter</b> baris baru</div>`}
             </div>
             <div class="osis-panel">
                 <div class="ww-nav-grid" id="wwNavGrid">${Wawancara.renderNavGrid()}</div>
@@ -1234,6 +1300,14 @@ const Wawancara = {
                 grow(el);
                 Wawancara.antreSimpan(el);
             });
+            // Mode wawancara: Enter = lanjut soal berikut (Shift+Enter = baris baru).
+            el.addEventListener("keydown", (e) => {
+                if (e.key !== "Enter" || e.shiftKey) return;
+                if (Wawancara.mode !== "wawancara" || !Wawancara.sesi) return;
+                if (el.disabled) return;
+                e.preventDefault();
+                Wawancara.enterNext(el);
+            });
         });
         document.querySelectorAll("#wwDetail input.ww-spontan-teks").forEach(el => {
             el.addEventListener("input", () => {
@@ -1271,18 +1345,48 @@ const Wawancara = {
         }, 800);
     },
 
+    // Enter di mode wawancara: simpan jawaban sekarang juga lalu next.
+    // (Debounce biasa tidak ditunggu biar teks tidak hilang saat pindah.)
+    async enterNext(textarea) {
+        if (!Wawancara.sesi || !Wawancara.bolehTulisSesi()) { Wawancara.geserLangkah(1); return; }
+        try { localStorage.setItem(Wawancara.kunciDraft(textarea), textarea.value); } catch {}
+        Wawancara.setPill("simpan");
+        try {
+            await Wawancara.eksekusiSimpan(textarea);
+        } catch (err) {
+            console.error(err);
+            Wawancara.setPill("gagal");
+            try { if (typeof showToast === "function") showToast("Gagal menyimpan: " + (err.message || err), "error"); } catch {}
+            return;
+        }
+        Wawancara.geserLangkah(1);
+    },
+
+    kunciUntuk(textarea) {
+        return textarea.id === "wwCatatan" ? "catatan"
+            : textarea.dataset.ttid ? `t${textarea.dataset.ttid}`
+            : `j${textarea.dataset.qid}_${textarea.dataset.jid || "baru"}`;
+    },
+
     antreSimpan(textarea, teksSpontanOverride) {
         if (!Wawancara.sesi || !Wawancara.bolehTulisSesi()) return;
-        const sesiId = Wawancara.sesi.id;
         // Backup lokal dulu (progres tidak hilang walau offline).
         try { localStorage.setItem(Wawancara.kunciDraft(textarea), textarea.value); } catch {}
         Wawancara.setPill("simpan");
-        const kunci = textarea.id === "wwCatatan" ? "catatan"
-            : textarea.dataset.ttid ? `t${textarea.dataset.ttid}`
-            : `j${textarea.dataset.qid}_${textarea.dataset.jid || "baru"}`;
+        const kunci = Wawancara.kunciUntuk(textarea);
         clearTimeout(Wawancara.timerSimpan[kunci]);
-        Wawancara.timerSimpan[kunci] = setTimeout(async () => {
-            try {
+        Wawancara.timerSimpan[kunci] = setTimeout(() => {
+            Wawancara.eksekusiSimpan(textarea, teksSpontanOverride).catch(() => {});
+        }, 800);
+    },
+
+    // Isi simpan autosave (dipakai debounce antreSimpan + instan enterNext).
+    async eksekusiSimpan(textarea, teksSpontanOverride) {
+        if (!Wawancara.sesi || !Wawancara.bolehTulisSesi()) return;
+        const sesiId = Wawancara.sesi.id;
+        const kunci = Wawancara.kunciUntuk(textarea);
+        clearTimeout(Wawancara.timerSimpan[kunci]);
+        try {
                 const uid = Wawancara.uid();
                 if (textarea.id === "wwCatatan") {
                     await wawancaraSesiCatatan(uid, sesiId, textarea.value);
@@ -1319,12 +1423,12 @@ const Wawancara = {
                 try { localStorage.removeItem(Wawancara.kunciDraft(textarea)); } catch {}
                 Wawancara.setPill("ok");
                 Wawancara.updateNavProgress();
-            } catch (err) {
-                console.error(err);
-                Wawancara.setPill("gagal");
-                try { if (typeof showToast === "function") showToast("Gagal menyimpan: " + (err.message || err), "error"); } catch {}
-            }
-        }, 800);
+        } catch (err) {
+            console.error(err);
+            Wawancara.setPill("gagal");
+            try { if (typeof showToast === "function") showToast("Gagal menyimpan: " + (err.message || err), "error"); } catch {}
+            throw err;
+        }
     },
 
     // Ambil ulang jawaban dari server TANPA render ulang (jaga fokus mengetik).

@@ -321,9 +321,11 @@ BEGIN
   IF NOT ((v_lama = 'belum' AND p_status = 'berlangsung')
        OR (v_lama = 'berlangsung' AND p_status IN ('selesai', 'belum'))
        OR (v_lama = 'selesai' AND p_status = 'berlangsung')) THEN RETURN 'ERR_ALUR'; END IF;
-    UPDATE public.wawancara_sesi SET
-      status = p_status,
-      mulai_at = CASE WHEN mulai_at IS NULL AND p_status = 'berlangsung' THEN now() ELSE mulai_at END,
+  UPDATE public.wawancara_sesi SET
+    status = p_status,
+    mulai_at = CASE WHEN p_status = 'belum' THEN NULL
+                    WHEN mulai_at IS NULL AND p_status = 'berlangsung' THEN now()
+                    ELSE mulai_at END,
       selesai_at = CASE WHEN p_status = 'selesai' THEN now()
                         WHEN p_status = 'berlangsung' AND v_lama = 'selesai' THEN NULL
                         ELSE selesai_at END,

@@ -32,6 +32,10 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
     <style>
+      /* Halaman ini saja: konten lebih lebar ke pinggir (tidak ubah global) */
+      .osis-wrap {
+        max-width: 1280px;
+      }
       /* Detail sesi: panel-panel dikumpulin di #wwDetail -> kasih jarak */
       #wwDetail {
         display: flex;
@@ -43,6 +47,31 @@
         display: flex;
         flex-direction: column;
         gap: 14px;
+        min-width: 0;
+      }
+      /* Layout detail 2 kolom di desktop: kiri = kartu calon,
+         kanan = konten mode (atur/wawancara/hasil). Mobile tetap susun. */
+      .ww-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .ww-side {
+        min-width: 0;
+      }
+      @media (min-width: 900px) {
+        .ww-layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: 14px;
+          align-items: start;
+        }
+        .ww-side {
+          position: sticky;
+          /* Header atas (.top-nav) itu sticky ±75px — panel berhenti
+             di bawahnya, bukan selip ke kolong header. */
+          top: 88px;
+        }
       }
       /* Pembatas grup per tanggal */
       .ww-grup {
@@ -145,6 +174,10 @@
         color: var(--red);
       }
       .ww-atur-row.penting {
+        background: linear-gradient(180deg, #ffe45c, #ffd11a);
+      }
+      /* Kartu soal mode wawancara: kuning kalau pertanyaannya penting */
+      .osis-panel.ww-card-penting {
         background: linear-gradient(180deg, #ffe45c, #ffd11a);
       }
       .ww-bintang {
@@ -754,7 +787,7 @@
     <script src="../js/osis-sidebar.js?v=18" defer></script>
     <script src="../js/osis-header.js?v=12" defer></script>
     <script src="../js/form-persist.js?v=12" defer></script>
-    <script src="../js/wawancara.js?v=6" defer></script>
+    <script src="../js/wawancara.js?v=11" defer></script>
     <script src="../js/pwa.js?v=13" defer></script>
   </head>
   <body>
