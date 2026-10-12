@@ -3084,7 +3084,22 @@ function wawancaraButuhMigrasi(err) {
   return !!err && String((err && err.message) || err || "").match(
     /BUTUH_MIGRASI|wawancara_|relation .* does not exist|schema cache|PGRST202|42883|function .* does not exist/i);
 }
+// Baca cache-first (offline): sukses network -> Cache.set; gagal jaringan ->
+// pakai cache terakhir; tanpa cache -> throw asli. Prioritas BUTUH_MIGRASI
+// tetap dijaga agar UI menampilkan panduan migrasi, bukan pesan teknis.
+function wawancaraCacheAmbil(kunci) {
+  try {
+    if (typeof Cache !== "undefined" && Cache.get) return Cache.get(kunci);
+  } catch {}
+  return null;
+}
+function wawancaraCacheSimpan(kunci, rows) {
+  try {
+    if (typeof Cache !== "undefined" && Cache.set) Cache.set(kunci, rows || []);
+  } catch {}
+}
 async function getWawancaraCalon() {
+  const kunci = "wawancara_calon";
   try {
     const { data, error } = await supa
       .from("wawancara_calon")
@@ -3092,13 +3107,18 @@ async function getWawancaraCalon() {
       .order("display_order", { ascending: true })
       .order("nama", { ascending: true });
     if (error) throw error;
-    return data || [];
+    const rows = data || [];
+    wawancaraCacheSimpan(kunci, rows);
+    return rows;
   } catch (err) {
     if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    const c = wawancaraCacheAmbil(kunci);
+    if (c) return c;
     throw err;
   }
 }
 async function getWawancaraPertanyaan() {
+  const kunci = "wawancara_tanya";
   try {
     const { data, error } = await supa
       .from("wawancara_pertanyaan")
@@ -3106,26 +3126,36 @@ async function getWawancaraPertanyaan() {
       .order("urutan", { ascending: true })
       .order("id", { ascending: true });
     if (error) throw error;
-    return (data || []).map(r => ({ ...r, penting: !!r.penting }));
+    const rows = (data || []).map(r => ({ ...r, penting: !!r.penting }));
+    wawancaraCacheSimpan(kunci, rows);
+    return rows;
   } catch (err) {
     if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    const c = wawancaraCacheAmbil(kunci);
+    if (c) return c;
     throw err;
   }
 }
 async function getWawancaraSesi() {
+  const kunci = "wawancara_sesi";
   try {
     const { data, error } = await supa
       .from("wawancara_sesi")
       .select("id, calon_id, status, pewawancara1_id, pewawancara2_id, catatan_akhir, mulai_at, selesai_at, updated_at")
       .order("updated_at", { ascending: false });
     if (error) throw error;
-    return data || [];
+    const rows = data || [];
+    wawancaraCacheSimpan(kunci, rows);
+    return rows;
   } catch (err) {
     if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    const c = wawancaraCacheAmbil(kunci);
+    if (c) return c;
     throw err;
   }
 }
 async function getWawancaraJawaban(sesiId) {
+  const kunci = "wawancara_jawaban_" + sesiId;
   try {
     const { data, error } = await supa
       .from("wawancara_jawaban")
@@ -3133,9 +3163,13 @@ async function getWawancaraJawaban(sesiId) {
       .eq("sesi_id", sesiId)
       .order("id", { ascending: true });
     if (error) throw error;
-    return data || [];
+    const rows = data || [];
+    wawancaraCacheSimpan(kunci, rows);
+    return rows;
   } catch (err) {
     if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    const c = wawancaraCacheAmbil(kunci);
+    if (c) return c;
     throw err;
   }
 }
@@ -3259,15 +3293,20 @@ async function wawancaraSpontanHapus(userId, jawabanId) {
 }
 // Urutan pertanyaan PER SESI (tiap calon bisa beda susunan; bawaan = master).
 async function getWawancaraUrutan(sesiId) {
+  const kunci = "wawancara_urutan_" + sesiId;
   try {
     const { data, error } = await supa
       .from("wawancara_urutan")
       .select("sesi_id, pertanyaan_id, urutan")
       .eq("sesi_id", sesiId);
     if (error) throw error;
-    return data || [];
+    const rows = data || [];
+    wawancaraCacheSimpan(kunci, rows);
+    return rows;
   } catch (err) {
     if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    const c = wawancaraCacheAmbil(kunci);
+    if (c) return c;
     throw err;
   }
 }
@@ -3287,6 +3326,7 @@ async function wawancaraUrutanAtur(userId, sesiId, ids) {
 }
 // Turunan PER SESI (dibuat pewawancara saat sesi, hanya untuk calon itu).
 async function getWawancaraTurunan(sesiId) {
+  const kunci = "wawancara_turunan_" + sesiId;
   try {
     const { data, error } = await supa
       .from("wawancara_turunan")
@@ -3295,9 +3335,13 @@ async function getWawancaraTurunan(sesiId) {
       .order("urutan", { ascending: true })
       .order("id", { ascending: true });
     if (error) throw error;
-    return data || [];
+    const rows = data || [];
+    wawancaraCacheSimpan(kunci, rows);
+    return rows;
   } catch (err) {
     if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    const c = wawancaraCacheAmbil(kunci);
+    if (c) return c;
     throw err;
   }
 }

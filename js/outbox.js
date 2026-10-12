@@ -60,6 +60,7 @@
     formbuilder: "Formulir",
     akses: "Akses",
     profil: "Profil",
+    wawancara: "Wawancara",
   };
 
   function labelModul(m) {
@@ -946,6 +947,52 @@
     var p = op.payload || {};
     await setAkses(uid, p.targetId, p.halaman || [], null, false);
   };
+
+  // ---- Wawancara (khusus isi sesi/calon: jawaban, turunan, spontan, urutan)
+  // Payload SELALU snapshot penuh per target (replace semantics) — antrean
+  // digabung per target di sisi modul, jadi yang tersinkron = versi terakhir.
+  // Master: upsert server per (sesi, pertanyaan) sehingga jawabanId temp/null
+  // aman dilepas. Spontan temp: dibuat baru dari snapshot (teks + jawaban).
+  Outbox.handlers.wawancara = async function (op) {
+    if (typeof wawancaraJawabanSimpan !== "function")
+      throw new Error("Buka halaman Wawancara saat online untuk mengirim antrean ini.");
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    if (p.jenis === "jawaban") {
+      var o = {
+        pertanyaanId: p.spontan ? null : (p.pertanyaanId || null),
+        pertanyaanTeks: p.pertanyaanTeks || "",
+        jawabanTeks: p.jawabanTeks || "",
+        spontan: !!p.spontan,
+        jawabanId: null,
+      };
+      // ID jawaban server yang sudah dikenal (angka) dipakai untuk edit;
+      // ID temp lokal (string "tmp...") dilepas -> upsert/buat dari snapshot.
+      if (p.jawabanId != null && String(p.jawabanId).match(/^[0-9]+$/)) {
+        o.jawabanId = parseInt(p.jawabanId, 10);
+      }
+      await wawancaraJawabanSimpan(uid, p.sesiId, o);
+    } else if (p.jenis === "catatan") {
+      await wawancaraSesiCatatan(uid, p.sesiId, p.catatan || "");
+    } else if (p.jenis === "turunan_jawab") {
+      await wawancaraTurunanSimpan(uid, p.id, null, p.jawaban || "");
+    } else if (p.jenis === "turunan_teks") {
+      await wawancaraTurunanSimpan(uid, p.id, p.teks || "", null);
+    } else if (p.jenis === "turunan_tambah") {
+      var nid = await wawancaraTurunanTambah(uid, p.sesiId, p.parentId, p.teks || "");
+      if (String(p.jawaban || "").trim()) {
+        await wawancaraTurunanSimpan(uid, nid, null, p.jawaban);
+      }
+    } else if (p.jenis === "turunan_hapus") {
+      await wawancaraTurunanHapus(uid, p.id);
+    } else if (p.jenis === "spontan_hapus") {
+      await wawancaraSpontanHapus(uid, p.jawabanId);
+    } else if (p.jenis === "urutan") {
+      await wawancaraUrutanAtur(uid, p.sesiId, p.ids || []);
+    } else {
+      throw new Error("Jenis antrean wawancara tidak dikenal: " + (p.jenis || "?"));
+    }
+  };
   Outbox.handlers.profil = async function (op) {
     var uid = Outbox.butuhLogin(op);
     var p = op.payload || {};
@@ -1033,6 +1080,24 @@
   });
   Outbox.refreshers.evaluasi = coba(function () {
     return Evaluasi.muat();
+  });
+  Outbox.refreshers.wawancara = coba(async function () {
+    if (typeof Wawancara === "undefined" || !Wawancara.sesi) return;
+    // Muat ulang data sesi aktif (getter cache-first ikut perbarui cache).
+    try { Wawancara.jawaban = await getWawancaraJawaban(Wawancara.sesi.id); } catch {}
+    try { await Wawancara.muatTurunan(); } catch {}
+    try { await Wawancara.muatUrutanSesi(); } catch {}
+    try {
+      var ae = document.activeElement;
+      var mengetik = ae && /^(TEXTAREA|INPUT|SELECT)$/.test(ae.tagName || "");
+      if (mengetik) {
+        // Jangan cabut fokus: cukup segarkan angka + grid navigasi.
+        if (typeof Wawancara.updateNavProgress === "function") Wawancara.updateNavProgress();
+        else if (typeof Wawancara.renderSesi === "function") Wawancara.renderSesi();
+      } else if (typeof Wawancara.renderSesi === "function") {
+        Wawancara.renderSesi();
+      }
+    } catch {}
   });
 
   function fmtWaktu(ts) {

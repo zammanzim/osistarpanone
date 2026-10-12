@@ -439,14 +439,29 @@ const Wawancara = {
             if (!c) throw new Error("Calon tidak ditemukan (mungkin sudah dihapus).");
             Wawancara.calonAktif = c;
             // Pastikan sesi ada (satu per calon) agar jawaban punya cantolan.
-            const sid = await wawancaraSesiPastikan(Wawancara.uid(), c.id);
+            // Offline: pakai sesi dari cache (tambah calon baru butuh online).
+            let sid = null;
+            try {
+                sid = await wawancaraSesiPastikan(Wawancara.uid(), c.id);
+            } catch (errP) {
+                if (Wawancara.jaringanPutus(errP)) {
+                    const s0 = (Wawancara.sesiSemua || []).find(x => String(x.calon_id) === String(c.id));
+                    if (!s0) throw new Error("Calon ini belum pernah dibuka saat online — hubungkan internet sekali untuk memuat datanya.");
+                    sid = s0.id;
+                } else throw errP;
+            }
             const fresh = await getWawancaraSesi();
             Wawancara.sesiSemua = fresh || [];
             Wawancara.sesi = (fresh || []).find(s => String(s.id) === String(sid));
             Wawancara.jawaban = await getWawancaraJawaban(Wawancara.sesi.id);
             // Susunan khusus sesi ini (bawaan = master bila belum diatur).
             Wawancara.urutanSesi = {};
-            await wawancaraUrutanPastikan(Wawancara.uid(), Wawancara.sesi.id);
+            try {
+                await wawancaraUrutanPastikan(Wawancara.uid(), Wawancara.sesi.id);
+            } catch (errU) {
+                if (!Wawancara.jaringanPutus(errU)) throw errU;
+                // Offline: lanjut pakai cache/master, antrean menyusul.
+            }
             await Wawancara.muatUrutanSesi();
             await Wawancara.muatTurunan();
             Wawancara.mode = "atur"; // buka = mode atur (tanpa form jawaban)
@@ -474,7 +489,10 @@ const Wawancara = {
                 Wawancara.renderButuhMigrasi();
                 return;
             }
-            if (detail) detail.innerHTML = `<div class="osis-panel"><div class="pesan-empty">Gagal membuka: ${escapeHtml(err.message || err)}</div>
+            const pesan = Wawancara.jaringanPutus(err)
+                ? "Kamu offline dan data calon ini belum tersimpan di HP — buka sekali saat online dulu."
+                : String(err.message || err);
+            if (detail) detail.innerHTML = `<div class="osis-panel"><div class="pesan-empty">Gagal membuka: ${escapeHtml(pesan)}</div>
                 <div style="margin-top:10px"><button class="btn btn-white btn-sm" onclick="Wawancara.kembali()"><i class="fa-solid fa-arrow-left"></i> Kembali</button></div></div>`;
             return;
         }
@@ -1002,6 +1020,29 @@ const Wawancara = {
         let ti = tanpa.findIndex(x => String(x.id) === String(target.id));
         if (ti < 0) return;
         tanpa.splice(atas ? ti : ti + 1, 0, drag);
+        // Offline: susun lokal + antre (gabung per sesi).
+        if (Wawancara.jaringanPutus() && Wawancara.outboxSiap()) {
+            try {
+                const ids = tanpa.map(x => x.id);
+                ids.forEach((id, i) => { Wawancara.urutanSesi[String(id)] = (i + 1) * 10; });
+                try {
+                    if (typeof wawancaraCacheSimpan === "function") {
+                        wawancaraCacheSimpan("wawancara_urutan_" + Wawancara.sesi.id,
+                            ids.map((id, i) => ({ sesi_id: Wawancara.sesi.id, pertanyaan_id: id, urutan: (i + 1) * 10 })));
+                    }
+                } catch {}
+                await Wawancara.antreTulis("Susunan pertanyaan", {
+                    jenis: "urutan", target: "ww-u:" + Wawancara.sesi.id,
+                    sesiId: Wawancara.sesi.id, ids: ids,
+                });
+                Wawancara.setPill("lokal");
+                Wawancara.renderSesi();
+            } catch (err) {
+                console.error(err);
+                try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+            }
+            return;
+        }
         try {
             // Tersimpan sebagai susunan KHUSUS sesi/calon ini saja.
             const ids = tanpa.map(x => x.id);
@@ -1010,6 +1051,23 @@ const Wawancara = {
             try { if (typeof showToast === "function") showToast("Urutan diperbarui untuk calon ini.", "success"); } catch {}
             Wawancara.renderSesi();
         } catch (err) {
+            if (Wawancara.jaringanPutus(err) && Wawancara.outboxSiap()) {
+                // Putus di tengah: ulangi via jalur offline yang sama.
+                try {
+                    const ids = tanpa.map(x => x.id);
+                    ids.forEach((id, i) => { Wawancara.urutanSesi[String(id)] = (i + 1) * 10; });
+                    await Wawancara.antreTulis("Susunan pertanyaan", {
+                        jenis: "urutan", target: "ww-u:" + Wawancara.sesi.id,
+                        sesiId: Wawancara.sesi.id, ids: ids,
+                    });
+                    Wawancara.setPill("lokal");
+                    Wawancara.renderSesi();
+                } catch (e2) {
+                    console.error(e2);
+                    try { if (typeof showToast === "function") showToast("Gagal: " + (e2.message || e2), "error"); } catch {}
+                }
+                return;
+            }
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
         }
     },
@@ -1269,7 +1327,107 @@ const Wawancara = {
         } else if (mode === "gagal") {
             pill.classList.add("gagal");
             pill.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Gagal tersimpan — cek koneksi`;
+        } else if (mode === "lokal") {
+            pill.classList.add("simpan");
+            pill.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> Tersimpan offline — kirim otomatis`;
         }
+    },
+
+    // ============ OFFLINE — khusus isi sesi (jawaban/turunan/spontan/urutan)
+    // Tulis antre ke Outbox sebagai snapshot penuh per target; antrean lama
+    // untuk target yang sama dibuang dulu (yang tersinkron = versi terakhir).
+    // ID temp ("tmp...") untuk baris baru buatan offline; diganti ID server
+    // saat sync + refresh (lihat Outbox.refreshers.wawancara).
+    tmpId() {
+        try {
+            return "tmp" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        } catch { return "tmp" + Math.floor(Math.random() * 1e9); }
+    },
+
+    isTmp(id) {
+        return typeof id === "string" && String(id).slice(0, 3) === "tmp";
+    },
+
+    outboxSiap() {
+        try {
+            return (typeof Outbox !== "undefined" && Outbox.enqueue && Outbox.daftar && Outbox.hapus)
+                ? Outbox : null;
+        } catch { return null; }
+    },
+
+    jaringanPutus(err) {
+        try {
+            if (typeof OutboxOffline === "function" && OutboxOffline()) return true;
+            if (typeof Outbox !== "undefined" && Outbox.isNetErr) return Outbox.isNetErr(err);
+        } catch {}
+        try {
+            if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+        } catch {}
+        return false;
+    },
+
+    // Hapus antrean pending modul wawancara untuk target yang sama (gabung).
+    async buangAntreanTarget(target) {
+        const OB = Wawancara.outboxSiap();
+        if (!OB || !target) return;
+        try {
+            const ops = await OB.daftar();
+            for (const o of ops || []) {
+                if (o && o.modul === "wawancara" && o.status === "pending"
+                    && o.payload && o.payload.target === target) {
+                    try { await OB.hapus(o.id); } catch {}
+                }
+            }
+        } catch {}
+    },
+
+    async antreTulis(label, payload) {
+        const OB = Wawancara.outboxSiap();
+        if (!OB) throw new Error("Antrean offline belum siap — coba lagi sebentar.");
+        if (payload && payload.target) await Wawancara.buangAntreanTarget(payload.target);
+        await OB.enqueue({
+            modul: "wawancara", op: "create", label: label,
+            payload: payload || {}, files: [], cacheKeys: [],
+        });
+        try { if (typeof showToast === "function") showToast("Offline — tersimpan, terkirim otomatis saat online.", "info"); } catch {}
+    },
+
+    // Tempel patch ke op tambah-turunan yang masih antre (baris temp).
+    async patchTambahTertunda(tmpId, patch) {
+        const OB = Wawancara.outboxSiap();
+        if (!OB) return false;
+        try {
+            const ops = await OB.daftar();
+            for (const o of ops || []) {
+                if (o && o.modul === "wawancara" && o.status === "pending"
+                    && o.payload && o.payload.jenis === "turunan_tambah" && o.payload.tmpId === tmpId) {
+                    const baru = Object.assign({}, o.payload, patch || {});
+                    await Wawancara.buangAntreanTarget(o.payload.target);
+                    await OB.enqueue({
+                        modul: "wawancara", op: "create", label: o.label,
+                        payload: baru, files: [], cacheKeys: [],
+                    });
+                    return true;
+                }
+            }
+        } catch {}
+        return false;
+    },
+
+    simpanCacheJawaban() {
+        try {
+            if (typeof wawancaraCacheSimpan === "function" && Wawancara.sesi) {
+                wawancaraCacheSimpan("wawancara_jawaban_" + Wawancara.sesi.id, Wawancara.jawaban || []);
+            }
+        } catch {}
+    },
+
+    simpanCacheTurunan() {
+        try {
+            if (typeof wawancaraCacheSimpan === "function" && Wawancara.sesi) {
+                wawancaraCacheSimpan("wawancara_turunan_" + Wawancara.sesi.id, Wawancara.turunan || []);
+            }
+        } catch {}
     },
 
     kunciDraft(textarea) {
@@ -1332,12 +1490,36 @@ const Wawancara = {
         Wawancara.timerSimpan["st" + jid] = setTimeout(async () => {
             try {
                 const row = (Wawancara.jawaban || []).find(j => String(j.id) === String(jid));
+                const jidKirim = Wawancara.isTmp(jid) ? null : jid;
                 await wawancaraJawabanSimpan(Wawancara.uid(), Wawancara.sesi.id, {
-                    spontan: true, jawabanId: jid,
+                    spontan: true, jawabanId: jidKirim,
                     pertanyaanTeks: teks, jawabanTeks: row ? (row.jawaban_teks || "") : "",
                 });
+                if (row) row.pertanyaan_teks = teks;
+                Wawancara.simpanCacheJawaban();
                 Wawancara.setPill("ok");
             } catch (err) {
+                if (Wawancara.jaringanPutus(err) && Wawancara.outboxSiap()) {
+                    const sesiId = Wawancara.sesi.id;
+                    const row = (Wawancara.jawaban || []).find(j => String(j.id) === String(jid));
+                    if (row) {
+                        row.pertanyaan_teks = teks;
+                        Wawancara.simpanCacheJawaban();
+                    }
+                    try {
+                        await Wawancara.antreTulis("Teks spontan", {
+                            jenis: "jawaban", target: "ww-j:" + sesiId + ":s" + jid,
+                            sesiId: sesiId, spontan: true, jawabanId: jid,
+                            pertanyaanTeks: teks, jawabanTeks: row ? (row.jawaban_teks || "") : "",
+                        });
+                    } catch (e2) {
+                        console.error(e2);
+                        Wawancara.setPill("gagal");
+                        return;
+                    }
+                    Wawancara.setPill("lokal");
+                    return;
+                }
                 console.error(err);
                 Wawancara.setPill("gagal");
                 try { if (typeof showToast === "function") showToast("Gagal menyimpan: " + (err.message || err), "error"); } catch {}
@@ -1381,54 +1563,141 @@ const Wawancara = {
     },
 
     // Isi simpan autosave (dipakai debounce antreSimpan + instan enterNext).
+    // Offline (putus jaringan + Outbox siap) -> antre snapshot + update lokal,
+    // lalu return normal (tanpa throw) agar enterNext tetap pindah soal.
     async eksekusiSimpan(textarea, teksSpontanOverride) {
         if (!Wawancara.sesi || !Wawancara.bolehTulisSesi()) return;
         const sesiId = Wawancara.sesi.id;
         const kunci = Wawancara.kunciUntuk(textarea);
         clearTimeout(Wawancara.timerSimpan[kunci]);
         try {
-                const uid = Wawancara.uid();
-                if (textarea.id === "wwCatatan") {
-                    await wawancaraSesiCatatan(uid, sesiId, textarea.value);
-                    Wawancara.sesi.catatan_akhir = textarea.value;
-                } else if (textarea.dataset.ttid) {
-                    // Jawaban turunan sesi (menempel di baris turunannya).
-                    const tid = parseInt(textarea.dataset.ttid, 10);
-                    await wawancaraTurunanSimpan(uid, tid, null, textarea.value);
-                    const row = (Wawancara.turunan || []).find(t => String(t.id) === String(tid));
-                    if (row) row.jawaban_teks = textarea.value;
-                } else if (textarea.dataset.qid === "spontan") {
-                    const wrap = textarea.closest(".ww-spontan, .ww-spontan-atur, .ww-atur-row");
-                    const inp = wrap ? wrap.querySelector(".ww-spontan-teks") : null;
-                    const teks = teksSpontanOverride !== undefined ? teksSpontanOverride : (inp ? inp.value : "");
-                    const jid = textarea.dataset.jid ? parseInt(textarea.dataset.jid, 10) : null;
-                    if (!String(teks || "").trim()) {
-                        Wawancara.setPill("ok");
-                        return; // pertanyaan spontan wajib ada teksnya
-                    }
-                    const idBaru = await wawancaraJawabanSimpan(uid, sesiId, {
-                        spontan: true, jawabanId: jid, pertanyaanTeks: teks, jawabanTeks: textarea.value,
-                    });
-                    textarea.dataset.jid = String(idBaru);
-                    await Wawancara.segarkanJawaban(false);
-                } else {
-                    const qid = parseInt(textarea.dataset.qid, 10);
-                    const jid = textarea.dataset.jid ? parseInt(textarea.dataset.jid, 10) : null;
-                    const idBaru = await wawancaraJawabanSimpan(uid, sesiId, {
-                        pertanyaanId: qid, jawabanId: jid, jawabanTeks: textarea.value,
-                    });
-                    textarea.dataset.jid = String(idBaru);
-                    await Wawancara.segarkanJawaban(false);
+            const uid = Wawancara.uid();
+            if (textarea.id === "wwCatatan") {
+                await wawancaraSesiCatatan(uid, sesiId, textarea.value);
+                Wawancara.sesi.catatan_akhir = textarea.value;
+            } else if (textarea.dataset.ttid) {
+                // Jawaban turunan sesi (menempel di baris turunannya).
+                const tidRaw = textarea.dataset.ttid;
+                const tid = Wawancara.isTmp(tidRaw) ? tidRaw : parseInt(tidRaw, 10);
+                await wawancaraTurunanSimpan(uid, tid, null, textarea.value);
+                const row = (Wawancara.turunan || []).find(t => String(t.id) === String(tid));
+                if (row) row.jawaban_teks = textarea.value;
+                Wawancara.simpanCacheTurunan();
+            } else if (textarea.dataset.qid === "spontan") {
+                const wrap = textarea.closest(".ww-spontan, .ww-spontan-atur, .ww-atur-row");
+                const inp = wrap ? wrap.querySelector(".ww-spontan-teks") : null;
+                const teks = teksSpontanOverride !== undefined ? teksSpontanOverride : (inp ? inp.value : "");
+                const jidRaw = textarea.dataset.jid || null;
+                const jid = (jidRaw && !Wawancara.isTmp(jidRaw)) ? parseInt(jidRaw, 10) : null;
+                if (!String(teks || "").trim()) {
+                    Wawancara.setPill("ok");
+                    return; // pertanyaan spontan wajib ada teksnya
                 }
-                try { localStorage.removeItem(Wawancara.kunciDraft(textarea)); } catch {}
-                Wawancara.setPill("ok");
-                Wawancara.updateNavProgress();
+                const idBaru = await wawancaraJawabanSimpan(uid, sesiId, {
+                    spontan: true, jawabanId: jid, pertanyaanTeks: teks, jawabanTeks: textarea.value,
+                });
+                textarea.dataset.jid = String(idBaru);
+                await Wawancara.segarkanJawaban(false);
+            } else {
+                const qid = parseInt(textarea.dataset.qid, 10);
+                const jidRaw = textarea.dataset.jid || null;
+                const jid = (jidRaw && !Wawancara.isTmp(jidRaw)) ? parseInt(jidRaw, 10) : null;
+                const idBaru = await wawancaraJawabanSimpan(uid, sesiId, {
+                    pertanyaanId: qid, jawabanId: jid, jawabanTeks: textarea.value,
+                });
+                textarea.dataset.jid = String(idBaru);
+                await Wawancara.segarkanJawaban(false);
+            }
+            try { localStorage.removeItem(Wawancara.kunciDraft(textarea)); } catch {}
+            Wawancara.setPill("ok");
+            Wawancara.updateNavProgress();
         } catch (err) {
+            if (Wawancara.jaringanPutus(err) && Wawancara.outboxSiap()) {
+                await Wawancara.simpanOffline(textarea, teksSpontanOverride);
+                return;
+            }
             console.error(err);
             Wawancara.setPill("gagal");
             try { if (typeof showToast === "function") showToast("Gagal menyimpan: " + (err.message || err), "error"); } catch {}
             throw err;
         }
+    },
+
+    // Jalur offline eksekusiSimpan: snapshot penuh + update lokal optimistis.
+    async simpanOffline(textarea, teksSpontanOverride) {
+        const sesiId = Wawancara.sesi.id;
+        if (textarea.id === "wwCatatan") {
+            Wawancara.sesi.catatan_akhir = textarea.value;
+            await Wawancara.antreTulis("Catatan akhir (" + (Wawancara.calonAktif ? Wawancara.calonAktif.nama : "") + ")", {
+                jenis: "catatan", target: "ww-c:" + sesiId,
+                sesiId: sesiId, catatan: textarea.value,
+            });
+        } else if (textarea.dataset.ttid) {
+            const tid = String(textarea.dataset.ttid);
+            const row = (Wawancara.turunan || []).find(t => String(t.id) === tid);
+            if (row) row.jawaban_teks = textarea.value;
+            Wawancara.simpanCacheTurunan();
+            if (Wawancara.isTmp(tid)) {
+                // Baris temp: gabung ke op tambah yang masih antre.
+                if (!(await Wawancara.patchTambahTertunda(tid, { jawaban: textarea.value }))) {
+                    await Wawancara.antreTulis("Jawaban turunan", {
+                        jenis: "turunan_tambah", target: "ww-t:" + sesiId + ":" + tid, tmpId: tid,
+                        sesiId: sesiId, parentId: row ? row.parent_id : null,
+                        teks: row ? (row.teks || "") : "", jawaban: textarea.value,
+                    });
+                }
+            } else {
+                await Wawancara.antreTulis("Jawaban turunan", {
+                    jenis: "turunan_jawab", target: "ww-t:" + sesiId + ":" + tid,
+                    id: parseInt(tid, 10), jawaban: textarea.value,
+                });
+            }
+        } else if (textarea.dataset.qid === "spontan") {
+            const wrap = textarea.closest(".ww-spontan, .ww-spontan-atur, .ww-atur-row");
+            const inp = wrap ? wrap.querySelector(".ww-spontan-teks") : null;
+            const teks = teksSpontanOverride !== undefined ? teksSpontanOverride : (inp ? inp.value : "");
+            if (!String(teks || "").trim()) {
+                Wawancara.setPill("ok");
+                return;
+            }
+            let jid = textarea.dataset.jid || Wawancara.tmpId();
+            textarea.dataset.jid = String(jid);
+            let row = (Wawancara.jawaban || []).find(j => String(j.id) === String(jid));
+            if (!row) {
+                row = { id: jid, sesi_id: sesiId, calon_id: Wawancara.sesi.calon_id,
+                    pertanyaan_id: null, pertanyaan_teks: teks, jawaban_teks: "",
+                    is_spontan: true, _tmp: true };
+                Wawancara.jawaban.push(row);
+            }
+            row.pertanyaan_teks = teks;
+            row.jawaban_teks = textarea.value;
+            Wawancara.simpanCacheJawaban();
+            await Wawancara.antreTulis("Jawaban spontan", {
+                jenis: "jawaban", target: "ww-j:" + sesiId + ":s" + jid,
+                sesiId: sesiId, spontan: true, jawabanId: jid,
+                pertanyaanTeks: teks, jawabanTeks: textarea.value,
+            });
+        } else {
+            const qid = parseInt(textarea.dataset.qid, 10);
+            const jidRaw = textarea.dataset.jid || null;
+            const jid = (jidRaw && !Wawancara.isTmp(jidRaw)) ? parseInt(jidRaw, 10) : null;
+            let row = (Wawancara.jawaban || []).find(j => !j.is_spontan && String(j.pertanyaan_id) === String(qid));
+            if (!row) {
+                row = { id: jid || ("tmpj" + qid), sesi_id: sesiId, calon_id: Wawancara.sesi.calon_id,
+                    pertanyaan_id: qid, pertanyaan_teks: "", jawaban_teks: "", is_spontan: false };
+                Wawancara.jawaban.push(row);
+            }
+            row.jawaban_teks = textarea.value;
+            Wawancara.simpanCacheJawaban();
+            await Wawancara.antreTulis("Jawaban pertanyaan", {
+                jenis: "jawaban", target: "ww-j:" + sesiId + ":q" + qid,
+                sesiId: sesiId, spontan: false, pertanyaanId: qid,
+                jawabanId: jid, jawabanTeks: textarea.value,
+            });
+        }
+        try { localStorage.removeItem(Wawancara.kunciDraft(textarea)); } catch {}
+        Wawancara.setPill("lokal");
+        Wawancara.updateNavProgress();
     },
 
     // Ambil ulang jawaban dari server TANPA render ulang (jaga fokus mengetik).
@@ -1504,11 +1773,7 @@ const Wawancara = {
         const uid = Wawancara.uid();
         const s = Wawancara.sesi;
         if (!uid || !s) return;
-        try {
-            const idBaru = await wawancaraJawabanSimpan(uid, s.id, {
-                spontan: true, pertanyaanTeks: "Pertanyaan spontan", jawabanTeks: "",
-            });
-            Wawancara.jawaban = await getWawancaraJawaban(s.id);
+        const sBaru = async (idBaru) => {
             if (Wawancara.mode === "wawancara") {
                 const ur = Wawancara.bangunUrutan();
                 const i = ur.findIndex(x => x.kind === "spontan" && String(x.j.id) === String(idBaru));
@@ -1520,7 +1785,43 @@ const Wawancara = {
             if (inp) { inp.focus(); inp.select(); return; }
             const area = document.querySelector(`#wwDetail textarea[data-jid="${idBaru}"]`);
             if (area) area.focus();
+        };
+        // Offline: baris temp lokal + antre snapshot (ID server menyusul).
+        if (Wawancara.jaringanPutus() && Wawancara.outboxSiap()) {
+            await Wawancara.tambahSpontanOffline(s, sBaru);
+            return;
+        }
+        try {
+            const idBaru = await wawancaraJawabanSimpan(uid, s.id, {
+                spontan: true, pertanyaanTeks: "Pertanyaan spontan", jawabanTeks: "",
+            });
+            Wawancara.jawaban = await getWawancaraJawaban(s.id);
+            await sBaru(idBaru);
         } catch (err) {
+            if (Wawancara.jaringanPutus(err) && Wawancara.outboxSiap()) {
+                await Wawancara.tambahSpontanOffline(s, sBaru);
+                return;
+            }
+            try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+        }
+    },
+
+    async tambahSpontanOffline(s, sBaru) {
+        try {
+            const tmp = Wawancara.tmpId();
+            Wawancara.jawaban.push({ id: tmp, sesi_id: s.id, calon_id: s.calon_id,
+                pertanyaan_id: null, pertanyaan_teks: "Pertanyaan spontan",
+                jawaban_teks: "", is_spontan: true, _tmp: true });
+            Wawancara.simpanCacheJawaban();
+            await Wawancara.antreTulis("Spontan baru", {
+                jenis: "jawaban", target: "ww-j:" + s.id + ":s" + tmp,
+                sesiId: s.id, spontan: true, jawabanId: tmp,
+                pertanyaanTeks: "Pertanyaan spontan", jawabanTeks: "",
+            });
+            Wawancara.setPill("lokal");
+            await sBaru(tmp);
+        } catch (err) {
+            console.error(err);
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
         }
     },
@@ -1531,6 +1832,27 @@ const Wawancara = {
                 if (!(await showPopup("Hapus pertanyaan spontan ini beserta jawabannya?", "confirm"))) return;
             }
         } catch {}
+        const jid = String(jawabanId);
+        // Offline: hapus lokal + antre penghapusan (temp: cukup buang antreannya).
+        if (Wawancara.jaringanPutus() && Wawancara.outboxSiap()) {
+            try {
+                await Wawancara.buangAntreanTarget("ww-j:" + Wawancara.sesi.id + ":s" + jid);
+                Wawancara.jawaban = (Wawancara.jawaban || []).filter(j => String(j.id) !== jid);
+                Wawancara.simpanCacheJawaban();
+                if (!Wawancara.isTmp(jid)) {
+                    await Wawancara.antreTulis("Hapus spontan", {
+                        jenis: "spontan_hapus", target: "ww-x:" + Wawancara.sesi.id + ":s" + jid,
+                        jawabanId: parseInt(jid, 10),
+                    });
+                }
+                Wawancara.setPill("lokal");
+                Wawancara.renderSesi();
+            } catch (err) {
+                console.error(err);
+                try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+            }
+            return;
+        }
         try {
             await wawancaraSpontanHapus(Wawancara.uid(), jawabanId);
             Wawancara.jawaban = await getWawancaraJawaban(Wawancara.sesi.id);
@@ -1585,12 +1907,44 @@ const Wawancara = {
             if (inp) inp.focus();
             return;
         }
+        if (Wawancara.jaringanPutus() && Wawancara.outboxSiap()) {
+            await Wawancara.turunanTambahOffline(utamaId, teks);
+            return;
+        }
         try {
             await wawancaraTurunanTambah(Wawancara.uid(), Wawancara.sesi.id, utamaId, teks);
             try { if (typeof showToast === "function") showToast("Turunan ditambah.", "success"); } catch {}
             await Wawancara.muatTurunan();
             Wawancara.renderSesi(); // idx tetap: turunan gabung satu layar
         } catch (err) {
+            if (Wawancara.jaringanPutus(err) && Wawancara.outboxSiap()) {
+                await Wawancara.turunanTambahOffline(utamaId, teks);
+                return;
+            }
+            try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+        }
+    },
+
+    // Jalur offline tambah turunan: baris temp lokal + antre (gabung jawaban).
+    async turunanTambahOffline(utamaId, teks) {
+        try {
+            const s = Wawancara.sesi;
+            const tmp = Wawancara.tmpId();
+            const maxUrut = (Wawancara.turunan || [])
+                .filter(t => String(t.parent_id) === String(utamaId))
+                .reduce((a, t) => Math.max(a, t.urutan || 0), 0);
+            Wawancara.turunan.push({ id: tmp, sesi_id: s.id, calon_id: s.calon_id,
+                parent_id: utamaId, teks: teks, jawaban_teks: "", urutan: maxUrut + 10,
+                _tmp: true });
+            Wawancara.simpanCacheTurunan();
+            await Wawancara.antreTulis("Turunan baru", {
+                jenis: "turunan_tambah", target: "ww-t:" + s.id + ":" + tmp, tmpId: tmp,
+                sesiId: s.id, parentId: utamaId, teks: teks, jawaban: "",
+            });
+            Wawancara.setPill("lokal");
+            Wawancara.renderSesi();
+        } catch (err) {
+            console.error(err);
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
         }
     },
@@ -1610,12 +1964,20 @@ const Wawancara = {
         if (v == null) return; // batal
         const teks = String(v).trim();
         if (!teks) return;
+        if (Wawancara.jaringanPutus() && Wawancara.outboxSiap()) {
+            await Wawancara.turunanTambahOffline(parentId, teks);
+            return;
+        }
         try {
             await wawancaraTurunanTambah(Wawancara.uid(), Wawancara.sesi.id, parentId, teks);
             try { if (typeof showToast === "function") showToast("Turunan ditambah.", "success"); } catch {}
             await Wawancara.muatTurunan();
             Wawancara.renderSesi();
         } catch (err) {
+            if (Wawancara.jaringanPutus(err) && Wawancara.outboxSiap()) {
+                await Wawancara.turunanTambahOffline(parentId, teks);
+                return;
+            }
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
         }
     },
@@ -1637,6 +1999,27 @@ const Wawancara = {
         if (v == null) return; // batal
         const teks = String(v).trim();
         if (!teks || teks === t.teks) return;
+        // Offline: update lokal + antre (temp: gabung ke op tambah tertunda).
+        if (Wawancara.jaringanPutus() && Wawancara.outboxSiap()) {
+            try {
+                t.teks = teks;
+                Wawancara.simpanCacheTurunan();
+                if (Wawancara.isTmp(t.id)) {
+                    await Wawancara.patchTambahTertunda(String(t.id), { teks: teks });
+                } else {
+                    await Wawancara.antreTulis("Edit turunan", {
+                        jenis: "turunan_teks", target: "ww-t:" + Wawancara.sesi.id + ":" + t.id,
+                        id: t.id, teks: teks,
+                    });
+                }
+                Wawancara.setPill("lokal");
+                Wawancara.renderSesi();
+            } catch (err) {
+                console.error(err);
+                try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+            }
+            return;
+        }
         try {
             await wawancaraTurunanSimpan(Wawancara.uid(), t.id, teks, null);
             try { if (typeof showToast === "function") showToast("Turunan diperbarui.", "success"); } catch {}
@@ -1655,6 +2038,27 @@ const Wawancara = {
                 if (!(await showPopup("Hapus turunan ini beserta jawabannya?", "confirm"))) return;
             }
         } catch {}
+        const tid = String(id);
+        // Offline: hapus lokal + antre (temp: cukup buang op tambah tertunda).
+        if (Wawancara.jaringanPutus() && Wawancara.outboxSiap()) {
+            try {
+                await Wawancara.buangAntreanTarget("ww-t:" + Wawancara.sesi.id + ":" + tid);
+                Wawancara.turunan = (Wawancara.turunan || []).filter(t => String(t.id) !== tid);
+                Wawancara.simpanCacheTurunan();
+                if (!Wawancara.isTmp(tid)) {
+                    await Wawancara.antreTulis("Hapus turunan", {
+                        jenis: "turunan_hapus", target: "ww-x:" + Wawancara.sesi.id + ":t" + tid,
+                        id: parseInt(tid, 10),
+                    });
+                }
+                Wawancara.setPill("lokal");
+                Wawancara.renderSesi();
+            } catch (err) {
+                console.error(err);
+                try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+            }
+            return;
+        }
         try {
             await wawancaraTurunanHapus(Wawancara.uid(), id);
             try { if (typeof showToast === "function") showToast("Turunan dihapus.", "success"); } catch {}
