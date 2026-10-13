@@ -143,6 +143,9 @@ const Galeri = {
         }
         if (!Galeri.draft.files) Galeri.draft.files = [];
         valid.forEach((f) => Galeri.draft.files.push(f));
+        const total = Galeri.draft.files.length;
+        const batas = (typeof BATAS_PREVIEW_DRAFT !== "undefined" ? BATAS_PREVIEW_DRAFT : 24);
+        if (total > batas) showToast(`Preview dibatasi ${batas} biar ringan, ${total} tetap ke-upload semua`, "info");
         Galeri.render();
         // fokus balik biar gampang tambah lagi
         const draftEl = document.querySelector(".bento-block.draft");
@@ -196,6 +199,7 @@ const Galeri = {
             const newId = await buatGallery(u.id, judul, Galeri.draft.deskripsi || "", paths);
             if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
             showToast("Kegiatan berhasil dipublish!", "success");
+            try { if (typeof lepasPreview === "function") lepasPreview(files); } catch {}
             Galeri.draft = null;
             Cache.del("gallery");
             Galeri.cache = [];
@@ -217,6 +221,7 @@ const Galeri = {
 
     // Buang draft lokal (belum ke-DB jadi langsung hilang)
     buangDraft() {
+        try { if (typeof lepasPreview === "function") lepasPreview(Galeri.draft && Galeri.draft.files); } catch {}
         Galeri.draft = null;
         Galeri.render();
     },
@@ -309,13 +314,18 @@ const Galeri = {
     // Struktur draft = persis kartu kegiatan: judul -> subjudul -> foto [+]
     kartuDraft() {
         const d = Galeri.draft;
-        let fotoHtml = (d.files || []).map(file => {
-            const url = URL.createObjectURL(file);
+        const semua = d.files || [];
+        const batas = (typeof BATAS_PREVIEW_DRAFT !== "undefined" ? BATAS_PREVIEW_DRAFT : 24);
+        const tampil = semua.slice(0, batas);
+        const sisa = semua.length - tampil.length;
+        let fotoHtml = tampil.map(file => {
+            const url = (typeof previewURL === "function" ? previewURL(file) : URL.createObjectURL(file));
             const isVid = typeof isVideoFile === "function" && isVideoFile(file);
             return isVid
-                ? `<div class="item media-muat sudah-muat is-video"><video src="${url}" alt="" muted playsinline preload="metadata"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span></div>`
-                : `<div class="item"><img src="${url}" alt=""></div>`;
+                ? `<div class="item media-muat sudah-muat is-video"><video src="${url}" alt="" muted playsinline preload="none"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span></div>`
+                : `<div class="item"><img src="${url}" alt="" loading="lazy" decoding="async"></div>`;
         }).join("");
+        if (sisa > 0) fotoHtml += `<div class="item" style="display:grid;place-items:center;text-align:center;font-weight:800;font-size:.9rem">+${sisa} lainnya<br><small style="font-weight:600">tetap ke-upload</small></div>`;
         fotoHtml += `<div class="up-slot" title="Tambah foto/video (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
 
         return `

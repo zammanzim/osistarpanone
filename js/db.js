@@ -95,6 +95,24 @@ function pilahMedia(files, maxVideoMB = 100) {
   }
   return { valid, tolakTipe, tolakBesar };
 }
+// Preview draft hemat RAM: blob URL di-cache per File (render ulang tidak
+// bikin URL baru), tampil cukup 24 pertama + counter. Sisanya tetap ke-upload.
+const BATAS_PREVIEW_DRAFT = 24;
+function previewURL(file) {
+  if (!file) return "";
+  try {
+    if (file._previewURL) return file._previewURL;
+    const url = URL.createObjectURL(file);
+    try { file._previewURL = url; } catch {}
+    return url;
+  } catch { return ""; }
+}
+function lepasPreview(files) {
+  (files || []).forEach((f) => {
+    try { if (f && f._previewURL) URL.revokeObjectURL(f._previewURL); } catch {}
+    try { if (f) f._previewURL = null; } catch {}
+  });
+}
 // HTML thumbnail untuk grid bento (.item): foto = <img>, video = <video>
 // (frame pertama via preload metadata, tanpa autoplay) + tombol play.
 function thumbBento(src, alt, extra = "") {
@@ -3368,6 +3386,55 @@ async function wawancaraTurunanHapus(userId, id) {
   });
   if (error) throw error;
   cekOk(data);
+}
+// DOKUMENTASI PER CALON (foto/video di R2 prefix dokumen/wawancara-*).
+// Baca cache-first (offline); tulis via RPC (hak wawancara / petugas sesi).
+async function getWawancaraDokumentasi(sesiId) {
+  const kunci = "wawancara_dokumentasi_" + sesiId;
+  try {
+    const { data, error } = await supa
+      .from("wawancara_dokumentasi")
+      .select("id, sesi_id, calon_id, file_path, file_type, mime, ukuran_bytes, keterangan, pengunggah, created_by, created_at")
+      .eq("sesi_id", sesiId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    const rows = data || [];
+    wawancaraCacheSimpan(kunci, rows);
+    return rows;
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI");
+    const c = wawancaraCacheAmbil(kunci);
+    if (c) return c;
+    throw err;
+  }
+}
+async function wawancaraDokumentasiTambah(userId, sesiId, f) {
+  const { data, error } = await supa.rpc("wawancara_dokumentasi_tambah", {
+    p_user_id: userId, p_sesi_id: sesiId,
+    p_file_path: (f && f.file_path) || "",
+    p_file_type: (f && f.file_type) || "",
+    p_mime: (f && f.mime) || "",
+    p_ukuran: (f && f.ukuran_bytes) || 0,
+    p_keterangan: (f && f.keterangan) || "",
+    p_pengunggah: (f && f.pengunggah) || "",
+  });
+  if (error) throw error;
+  cekId(data);
+  return data;
+}
+async function wawancaraDokumentasiHapus(userId, id) {
+  const { data, error } = await supa.rpc("wawancara_dokumentasi_hapus", {
+    p_user_id: userId, p_id: id,
+  });
+  if (error) throw error;
+  cekOk(data);
+}
+// Nama file R2 untuk dokumentasi wawancara (folder "dokumen" = allowlist
+// Worker, tanpa redeploy). Ekstensi dibersihkan agar lolos validasi server.
+function pathDokumentasiWawancara(sesiId, file, idx) {
+  const mentah = String((file && file.name) || "file").split(".").pop() || "bin";
+  const ext = (mentah.replace(/[^a-z0-9]/gi, "") || "bin").slice(0, 8).toLowerCase();
+  return `dokumen/wawancara-${sesiId}-${Date.now()}-${idx || 0}.${ext}`;
 }
 
 // Kompres gambar di browser biar <1MB sebelum upload

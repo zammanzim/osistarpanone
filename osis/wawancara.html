@@ -655,6 +655,121 @@
       .ww-spontan {
         background: var(--paper-2);
       }
+      /* Grid dokumentasi foto/video */
+      .ww-dok-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+      }
+      .ww-dok-item {
+        position: relative;
+        border: 2.5px solid var(--ink);
+        border-radius: 12px;
+        background: var(--white);
+        box-shadow: 2px 2px 0 var(--ink);
+        overflow: hidden;
+      }
+      .ww-dok-item img,
+      .ww-dok-item video {
+        display: block;
+        width: 100%;
+        height: 130px;
+        object-fit: cover;
+        background: var(--ink);
+      }
+      .ww-dok-item img {
+        cursor: zoom-in;
+      }
+      .ww-dok-ket {
+        font-size: 0.74rem;
+        font-weight: 800;
+        padding: 7px 9px 0;
+        overflow-wrap: anywhere;
+      }
+      .ww-dok-meta {
+        font-size: 0.66rem;
+        font-weight: 600;
+        color: var(--gray);
+        padding: 1px 9px 8px;
+      }
+      .ww-dok-pending {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        font-size: 0.62rem;
+        font-weight: 900;
+        background: var(--yellow);
+        color: var(--ink);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        padding: 2px 8px;
+      }
+      .ww-dok-hapus {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: var(--white);
+      }
+      .ww-dok-audio {
+        background: var(--ink);
+        color: #fff;
+        padding: 12px 10px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+      }
+      .ww-dok-audio > i {
+        color: var(--yellow);
+        font-size: 1.3rem;
+        text-align: center;
+      }
+      .ww-dok-audio audio {
+        width: 100%;
+        height: 34px;
+      }
+      .ww-dok-audio-pop {
+        border-radius: 12px;
+      }
+      .ww-dok-thumb {
+        position: relative;
+        display: block;
+        cursor: zoom-in;
+      }
+      .ww-dok-thumb video {
+        pointer-events: none;
+      }
+      /* Lightbox dokumentasi (rangka ikut .struktur-modal galeri) */
+      .struktur-head .ww-dok-count {
+        font-size: 0.72rem;
+        font-weight: 800;
+        opacity: 0.9;
+        white-space: nowrap;
+      }
+      .ww-dok-prev,
+      .ww-dok-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 2.5px solid var(--ink);
+        background: var(--white);
+        font-size: 1.3rem;
+        font-weight: 900;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 2px 2px 0 var(--ink);
+        z-index: 2;
+      }
+      .ww-dok-prev:active,
+      .ww-dok-next:active {
+        transform: translate(1px, calc(-50% + 1px));
+        box-shadow: none;
+      }
+      .ww-dok-prev { left: 10px; }
+      .ww-dok-next { right: 10px; }
       .ww-mini-ops {
         margin-left: auto;
         display: flex;
@@ -776,7 +891,7 @@
     </style>
     <script src="../js/supabase.min.js?v=11"></script>
     <script src="../js/config.js?v=16"></script>
-    <script src="../js/db.js?v=25" defer></script>
+    <script src="../js/db.js?v=26" defer></script>
     <script src="../js/aktivitas.js?v=12" defer></script>
     <script src="../js/app.js?v=12" defer></script>
     <script src="../js/toast.js?v=12" defer></script>
@@ -787,7 +902,7 @@
     <script src="../js/osis-sidebar.js?v=18" defer></script>
     <script src="../js/osis-header.js?v=12" defer></script>
     <script src="../js/form-persist.js?v=12" defer></script>
-    <script src="../js/wawancara.js?v=12" defer></script>
+    <script src="../js/wawancara.js?v=18" defer></script>
     <script src="../js/pwa.js?v=13" defer></script>
   </head>
   <body>

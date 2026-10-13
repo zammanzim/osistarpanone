@@ -1963,6 +1963,25 @@ body.edit-mode .bento-meta .gal-del {
   background: var(--red);
 }
 
+/* Album ringkas arsip/pelantikan: cover 4 + overlay sisa + tombol lihat semua */
+.album-lebih {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  cursor: pointer;
+  background: rgba(10, 10, 15, 0.62);
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.05rem;
+  display: grid;
+  place-items: center;
+}
+.album-foot {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
 /* ============================================================
    SEKBID PAGE (section per orang, gaya pembina)
    ============================================================ */

@@ -989,6 +989,26 @@
       await wawancaraSpontanHapus(uid, p.jawabanId);
     } else if (p.jenis === "urutan") {
       await wawancaraUrutanAtur(uid, p.sesiId, p.ids || []);
+    } else if (p.jenis === "dok_tambah") {
+      if (typeof wawancaraDokumentasiTambah !== "function")
+        throw new Error("Buka halaman Wawancara saat online untuk mengirim antrean ini.");
+      var path = p.file_path || "";
+      if (op.files && op.files.length) {
+        path = await Outbox.uploadSlot(op.files[0], 0, function () { return p.file_path; }, uid);
+      }
+      if (!path) throw new Error("File antrean hilang.");
+      await wawancaraDokumentasiTambah(uid, p.sesiId, {
+        file_path: path, file_type: p.file_type || "",
+        mime: p.mime || "", ukuran_bytes: p.ukuran_bytes || 0,
+        keterangan: p.keterangan || "",
+      });
+    } else if (p.jenis === "dok_hapus") {
+      await wawancaraDokumentasiHapus(uid, p.id);
+      if (p.file_path) {
+        try {
+          if (typeof hapusFotoStorage === "function") await hapusFotoStorage(p.file_path);
+        } catch {}
+      }
     } else {
       throw new Error("Jenis antrean wawancara tidak dikenal: " + (p.jenis || "?"));
     }
@@ -1087,11 +1107,14 @@
     try { Wawancara.jawaban = await getWawancaraJawaban(Wawancara.sesi.id); } catch {}
     try { await Wawancara.muatTurunan(); } catch {}
     try { await Wawancara.muatUrutanSesi(); } catch {}
+    try { await Wawancara.muatDokumentasi(); } catch {}
     try {
       var ae = document.activeElement;
       var mengetik = ae && /^(TEXTAREA|INPUT|SELECT)$/.test(ae.tagName || "");
-      if (mengetik) {
-        // Jangan cabut fokus: cukup segarkan angka + grid navigasi.
+      var bukaDok = false;
+      try { bukaDok = typeof Wawancara.dokLightboxBuka === "function" && Wawancara.dokLightboxBuka(); } catch (e2) {}
+      if (mengetik || bukaDok) {
+        // Jangan cabut fokus / tutup lightbox: cukup segarkan angka + grid.
         if (typeof Wawancara.updateNavProgress === "function") Wawancara.updateNavProgress();
         else if (typeof Wawancara.renderSesi === "function") Wawancara.renderSesi();
       } else if (typeof Wawancara.renderSesi === "function") {

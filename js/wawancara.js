@@ -25,6 +25,9 @@ const Wawancara = {
     jawaban: [],      // baris wawancara_jawaban sesi aktif
     turunan: [],      // baris wawancara_turunan sesi aktif (per calon)
     urutanSesi: {},   // susunan utama per sesi {pertanyaan_id: urutan}
+    dokumentasi: [],  // baris wawancara_dokumentasi sesi aktif (foto/video)
+    dokBlobs: {},     // tmpId -> File (pratinjau offline, hilang saat reload)
+    dokUrls: {},      // tmpId -> objectURL (memo, jangan bocor)
     filterQ: "",
     filterStatus: "",
     hanyaTugasku: false,
@@ -119,6 +122,8 @@ const Wawancara = {
         document.addEventListener("keydown", (e) => {
             if (e.key === "Escape") {
                 if (popupTerbuka()) return; // biar popup yang tutup duluan
+                // Lightbox dokumentasi: Esc = tutup.
+                if (Wawancara.dokLightboxBuka()) { Wawancara.dokTutup(); return; }
                 // Editor turunan inline: Esc = batalkan.
                 const inline = document.getElementById("wwTurunanBaru");
                 if (inline) { inline.remove(); return; }
@@ -135,6 +140,13 @@ const Wawancara = {
                 return;
             }
             if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+            // Lightbox dokumentasi: panah = geser foto.
+            if (Wawancara.dokLightboxBuka()) {
+                if (popupTerbuka()) return;
+                e.preventDefault();
+                Wawancara.dokGeser(e.key === "ArrowLeft" ? -1 : 1);
+                return;
+            }
             if (Wawancara.mode !== "wawancara" || !diDetail()) return;
             if (popupTerbuka()) return;
             // Lagi mengetik di kolom: panah buat geser caret, bukan pindah soal.
@@ -173,6 +185,12 @@ const Wawancara = {
             try {
                 if (window.ModalNav && ModalNav.adaYangTerbuka && ModalNav.adaYangTerbuka()) return;
             } catch {}
+            // Lightbox dokumentasi: back = tutup (konsumsi event).
+            if (Wawancara.dokLightboxBuka()) {
+                e.__modalKonsumsi = true;
+                Wawancara.dokTutup(true);
+                return;
+            }
             if (!Wawancara.sesi || !Wawancara.calonAktif) return; // di daftar: biarkan default
             const d = document.getElementById("wwDetail");
             if (!d || d.style.display === "none") return;
@@ -464,6 +482,8 @@ const Wawancara = {
             }
             await Wawancara.muatUrutanSesi();
             await Wawancara.muatTurunan();
+            try { await Wawancara.muatDokumentasi(); }
+            catch (eDok) { if (!Wawancara.jaringanPutus(eDok)) throw eDok; Wawancara.dokumentasi = []; }
             Wawancara.mode = "atur"; // buka = mode atur (tanpa form jawaban)
             Wawancara.idx = 0;
             // Pulihkan mode wawancara dari URL (?calon=X&test=true&soal=N).
@@ -1098,8 +1118,8 @@ const Wawancara = {
                     <span class="ww-nomor ww-nomor-anak">⤷</span>
                     <span class="ww-atur-teks">${escapeHtml(a.teks)}</span>
                     ${bolehUbah ? `<span class="ww-mini-ops">
-                        <button class="icon-btn icon-btn-sm" title="Edit" onclick="Wawancara.editTurunan(${a.id})"><i class="fa-solid fa-pen"></i></button>
-                        <button class="icon-btn icon-btn-sm" title="Hapus" onclick="Wawancara.hapusTurunan(${a.id})"><i class="fa-solid fa-trash"></i></button>
+                        <button class="icon-btn icon-btn-sm" title="Edit" onclick="Wawancara.editTurunan('${a.id}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="icon-btn icon-btn-sm" title="Hapus" onclick="Wawancara.hapusTurunan('${a.id}')"><i class="fa-solid fa-trash"></i></button>
                     </span>` : ""}
                 </div>`).join("");
             return `<div class="ww-atur-row${p.penting ? " penting" : ""}" data-tid="${p.id}" data-parent="" ${(kelola || tulis) && !selesai ? `draggable="true"` : ""}>
@@ -1141,6 +1161,16 @@ const Wawancara = {
                 <p class="ww-sub">Pertanyaan dadakan di luar daftar — khusus sesi ini.</p>
                 <div>${spontan || `<div class="osis-empty">Belum ada pertanyaan spontan.</div>`}</div>
                 ${tulis && !selesai ? `<button class="btn btn-white btn-sm" onclick="Wawancara.tambahSpontan()"><i class="fa-solid fa-plus"></i> Tambah spontan</button>` : ""}
+            </div>
+            <div class="osis-panel">
+                <h3 class="ww-judul"><i class="fa-solid fa-camera"></i> Dokumentasi</h3>
+                <p class="ww-sub">Foto/video/suara kegiatan wawancara calon ini.</p>
+                <div id="wwDokGrid">${Wawancara.dokGrid(tulis && !selesai)}</div>
+                ${tulis && !selesai ? `<div class="field" style="margin-top:10px"><label>Keterangan (opsional, untuk file yang diupload)</label><input type="text" id="wwDokKet" class="admin-input" maxlength="300" placeholder="cth: sesi tanya jawab" autocomplete="off"></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+                    <button class="btn btn-red btn-sm" id="wwDokBtn" onclick="document.getElementById('wwDokFile').click()"><i class="fa-solid fa-cloud-arrow-up"></i> Tambah file</button>
+                </div>
+                <input type="file" id="wwDokFile" accept="image/*,video/*,audio/*" multiple hidden onchange="Wawancara.dokUpload(this)">` : ""}
             </div>
             <div class="osis-panel">
                 <h3 class="ww-judul"><i class="fa-solid fa-clipboard-check"></i> Catatan akhir</h3>
@@ -1190,7 +1220,7 @@ const Wawancara = {
             const j = Wawancara.jawabanUntuk(step.q.id);
             const anakHtml = Wawancara.turunanUntuk(step.q.id).map(a => {
                 return `<div class="ww-anak">
-                    <div class="ww-tanya"><span class="ww-nomor ww-nomor-anak">⤷</span><span>${escapeHtml(a.teks)}</span></div>
+                    <div class="ww-tanya"><span class="ww-nomor ww-nomor-anak">⤷</span><span>${escapeHtml(a.teks)}</span>${(kelola || tulis) && !selesai ? `<button class="icon-btn icon-btn-sm" style="margin-left:auto" title="Hapus turunan ini" onclick="Wawancara.hapusTurunan('${a.id}')"><i class="fa-solid fa-trash"></i></button>` : ""}</div>
                     <textarea class="admin-input admin-textarea ww-jawab" rows="3" maxlength="5000"
                         data-ttid="${a.id}" ${bacaSaja ? "disabled" : ""}
                         placeholder="Ketik jawaban... (otomatis tersimpan)">${escapeHtml(a.jawaban_teks || "")}</textarea>
@@ -1303,6 +1333,8 @@ const Wawancara = {
                 html += item("⚡", j.pertanyaan_teks, j.jawaban_teks);
             });
         }
+        html += `<h3 class="ww-judul" style="margin-top:14px"><i class="fa-solid fa-camera"></i> Dokumentasi</h3>
+            ${Wawancara.dokGrid(false)}`;
         html += `<h3 class="ww-judul" style="margin-top:14px"><i class="fa-solid fa-clipboard-check"></i> Catatan akhir</h3>
             <div class="ww-hasil-jawab" style="margin-left:0">${s.catatan_akhir && String(s.catatan_akhir).trim() ? escapeHtml(s.catatan_akhir) : `<span class="kosong">—</span>`}</div>`;
         wrap.innerHTML = `<div class="osis-panel">
@@ -1381,13 +1413,13 @@ const Wawancara = {
         } catch {}
     },
 
-    async antreTulis(label, payload) {
+    async antreTulis(label, payload, files) {
         const OB = Wawancara.outboxSiap();
         if (!OB) throw new Error("Antrean offline belum siap — coba lagi sebentar.");
         if (payload && payload.target) await Wawancara.buangAntreanTarget(payload.target);
         await OB.enqueue({
             modul: "wawancara", op: "create", label: label,
-            payload: payload || {}, files: [], cacheKeys: [],
+            payload: payload || {}, files: files || [], cacheKeys: [],
         });
         try { if (typeof showToast === "function") showToast("Offline — tersimpan, terkirim otomatis saat online.", "info"); } catch {}
     },
@@ -1428,6 +1460,221 @@ const Wawancara = {
                 wawancaraCacheSimpan("wawancara_turunan_" + Wawancara.sesi.id, Wawancara.turunan || []);
             }
         } catch {}
+    },
+
+    simpanCacheDokumentasi() {
+        try {
+            if (typeof wawancaraCacheSimpan === "function" && Wawancara.sesi) {
+                wawancaraCacheSimpan("wawancara_dokumentasi_" + Wawancara.sesi.id, Wawancara.dokumentasi || []);
+            }
+        } catch {}
+    },
+
+    async muatDokumentasi() {
+        Wawancara.dokumentasi = await getWawancaraDokumentasi(Wawancara.sesi.id);
+        // Bersihkan blob pratinjau yang barisnya sudah tidak ada (mis. usai sync).
+        try {
+            const ada = {};
+            (Wawancara.dokumentasi || []).forEach(d => { ada[String(d.id)] = true; });
+            Object.keys(Wawancara.dokBlobs || {}).forEach(k => {
+                if (!ada[k]) {
+                    try { if (Wawancara.dokUrls[k]) URL.revokeObjectURL(Wawancara.dokUrls[k]); } catch {}
+                    delete Wawancara.dokBlobs[k];
+                    delete Wawancara.dokUrls[k];
+                }
+            });
+        } catch {}
+    },
+
+    // URL tampil: blob lokal untuk baris temp offline, R2 untuk sisanya.
+    dokUrl(d) {
+        if (d && d._tmp) {
+            if (!Wawancara.dokUrls[d.id] && Wawancara.dokBlobs[d.id]) {
+                try { Wawancara.dokUrls[d.id] = URL.createObjectURL(Wawancara.dokBlobs[d.id]); } catch {}
+            }
+            return Wawancara.dokUrls[d.id] || "";
+        }
+        try { return getFoto(d.file_path); } catch { return ""; }
+    },
+
+    dokUkuran(b) {
+        const n = Number(b) || 0;
+        if (!n) return "";
+        if (n < 1024 * 1024) return Math.max(1, Math.round(n / 1024)) + " KB";
+        return (n / (1024 * 1024)).toFixed(1) + " MB";
+    },
+
+    // Grid dokumentasi dipakai mode atur (kelola) + hasil (baca saja).
+    // Klik = lightbox ala galeri (swipe + autoplay video), bukan buka tab.
+    dokGrid(editable) {
+        const rows = Wawancara.dokumentasi || [];
+        if (!rows.length) return `<div class="osis-empty">Belum ada dokumentasi.</div>`;
+        return `<div class="ww-dok-grid">` + rows.map((d, i) => {
+            const src = Wawancara.dokUrl(d);
+            const isVid = d.file_type === "video";
+            const isAud = d.file_type === "audio";
+            const media = isAud
+                ? `<div class="ww-dok-audio"><i class="fa-solid fa-microphone"></i><audio src="${src}" controls preload="metadata"></audio></div>`
+                : isVid
+                ? `<span class="ww-dok-thumb" onclick="Wawancara.dokBuka(${i})"><video src="${src}" preload="metadata" playsinline muted></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span></span>`
+                : `<img src="${src}" alt="" loading="lazy" onclick="Wawancara.dokBuka(${i})">`;
+            const labelBawaan = isAud ? "Rekaman suara" : isVid ? "Video" : "Foto";
+            return `<div class="ww-dok-item">
+                ${media}
+                ${d._tmp ? `<span class="ww-dok-pending">menunggu kirim</span>` : ""}
+                <div class="ww-dok-ket">${escapeHtml(d.keterangan || labelBawaan)}</div>
+                <div class="ww-dok-meta">${escapeHtml(Wawancara.dokUkuran(d.ukuran_bytes))}${d.ukuran_bytes && d.pengunggah ? " · " : ""}${escapeHtml(d.pengunggah || "")}</div>
+                ${editable ? `<button class="icon-btn icon-btn-sm ww-dok-hapus" title="Hapus" onclick="Wawancara.dokHapus(${typeof d.id === "number" ? d.id : `'${d.id}'`})"><i class="fa-solid fa-trash"></i></button>` : ""}
+            </div>`;
+        }).join("") + `</div>`;
+    },
+
+    // ============ LIGHTBOX DOKUMENTASI (visual ikut galeri/arsip) ============
+    dokGaleri() {
+        return (Wawancara.dokumentasi || []).map(d => ({
+            id: d.id,
+            src: Wawancara.dokUrl(d),
+            isVid: d.file_type === "video",
+            isAud: d.file_type === "audio",
+            judul: d.keterangan || (d.file_type === "video" ? "Video" : d.file_type === "audio" ? "Rekaman suara" : "Foto"),
+            oleh: d.pengunggah || "",
+        }));
+    },
+
+    dokLightboxBuka() {
+        return !!document.querySelector("#wwDokModal");
+    },
+
+    dokMediaHtml(item) {
+        if (item.isVid) {
+            return `<video src="${item.src}" controls playsinline preload="metadata"></video>`;
+        }
+        if (item.isAud) {
+            return `<div class="ww-dok-audio ww-dok-audio-pop"><i class="fa-solid fa-microphone"></i><audio src="${item.src}" controls preload="metadata" style="width:100%"></audio></div>`;
+        }
+        return `<span class="media-muat media-muat-tinggi" style="width:100%"><img src="${item.src}" alt="" draggable="false" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span>`;
+    },
+
+    dokPutar(modal) {
+        const v = modal ? modal.querySelector(".foto-pop video") : null;
+        if (!v) return;
+        try {
+            v.muted = false;
+            const p = v.play();
+            if (p && p.catch) p.catch(() => { try { v.muted = true; v.play().catch(() => {}); } catch {} });
+        } catch {}
+    },
+
+    dokBuka(i) {
+        const galeri = Wawancara.dokGaleri();
+        if (!galeri.length) return;
+        Wawancara.dokTutup(true);
+        const idx = Math.max(0, Math.min(i || 0, galeri.length - 1));
+        Wawancara._dokIdx = idx;
+        const item = galeri[idx];
+        const nama = Wawancara.calonAktif ? (Wawancara.calonAktif.nama || "") : "";
+        const multi = galeri.length > 1;
+        const modal = document.createElement("div");
+        modal.id = "wwDokModal";
+        modal.className = "struktur-modal foto-modal";
+        try { modal.dataset.seq = String((window.__seqModal = (window.__seqModal || 0) + 1)); } catch {}
+        modal.innerHTML = `
+            <div class="struktur-modal-bg"></div>
+            <div class="struktur-modal-box foto-only">
+                <div class="struktur-head">
+                    <h4>${escapeHtml(nama || "Dokumentasi")}${multi ? ` <span class="ww-dok-count">${idx + 1} / ${galeri.length}</span>` : ""}</h4>
+                    <button class="struktur-close" type="button">&times;</button>
+                </div>
+                <div class="foto-pop">
+                    <div class="foto-media" style="width:100%">${Wawancara.dokMediaHtml(item)}</div>
+                    <div class="foto-oleh"${item.oleh ? "" : ` style="display:none"`}>${item.oleh ? "Diupload oleh " + escapeHtml(item.oleh) : ""}</div>
+                    ${item.judul ? `<div class="foto-caption"><span class="foto-caption-pill">${escapeHtml(item.judul)}</span></div>` : ""}
+                </div>
+                ${multi ? `<button class="ww-dok-prev" type="button" title="Sebelumnya">‹</button>
+                <button class="ww-dok-next" type="button" title="Berikutnya">›</button>` : ""}
+            </div>`;
+        modal.querySelector(".struktur-modal-bg").addEventListener("click", () => Wawancara.dokTutup());
+        modal.querySelector(".struktur-close").addEventListener("click", () => Wawancara.dokTutup());
+        const prev = modal.querySelector(".ww-dok-prev");
+        const next = modal.querySelector(".ww-dok-next");
+        if (prev) prev.addEventListener("click", (e) => { e.stopPropagation(); Wawancara.dokGeser(-1); });
+        if (next) next.addEventListener("click", (e) => { e.stopPropagation(); Wawancara.dokGeser(1); });
+        // Swipe sentuh: geser horizontal dominan = pindah foto.
+        try {
+            let sx = 0, sy = 0, track = false;
+            const pop = modal.querySelector(".foto-pop");
+            if (pop && multi) {
+                pop.addEventListener("touchstart", (e) => {
+                    const t = e.touches && e.touches[0];
+                    if (!t) return;
+                    track = true; sx = t.clientX; sy = t.clientY;
+                }, { passive: true });
+                pop.addEventListener("touchend", (e) => {
+                    if (!track) return;
+                    track = false;
+                    const t = e.changedTouches && e.changedTouches[0];
+                    if (!t) return;
+                    const dx = t.clientX - sx, dy = t.clientY - sy;
+                    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+                        Wawancara.dokGeser(dx < 0 ? 1 : -1);
+                    }
+                });
+            }
+        } catch {}
+        document.body.appendChild(modal);
+        document.body.style.overflow = "hidden";
+        Wawancara.dokPutar(modal);
+        try { history.pushState({ wwdok: true }, ""); Wawancara._dokPush = true; }
+        catch { Wawancara._dokPush = false; }
+    },
+
+    dokGeser(arah) {
+        const galeri = Wawancara.dokGaleri();
+        if (galeri.length < 2) return;
+        const modal = document.getElementById("wwDokModal");
+        if (!modal) return;
+        Wawancara._dokIdx = (((Wawancara._dokIdx || 0) + arah) % galeri.length + galeri.length) % galeri.length;
+        const item = galeri[Wawancara._dokIdx];
+        try { modal.querySelectorAll("video").forEach(v => v.pause()); } catch {}
+        const mediaWrap = modal.querySelector(".foto-pop .foto-media");
+        if (mediaWrap) {
+            mediaWrap.innerHTML = Wawancara.dokMediaHtml(item);
+            Wawancara.dokPutar(modal);
+        }
+        const olehEl = modal.querySelector(".foto-oleh");
+        if (olehEl) {
+            olehEl.style.display = item.oleh ? "" : "none";
+            olehEl.textContent = item.oleh ? "Diupload oleh " + item.oleh : "";
+        }
+        const capEl = modal.querySelector(".foto-caption-pill");
+        if (capEl) capEl.textContent = item.judul || "";
+        const cnt = modal.querySelector(".struktur-head .ww-dok-count");
+        if (cnt) cnt.textContent = (Wawancara._dokIdx + 1) + " / " + galeri.length;
+    },
+
+    dokTutup(dariBack) {
+        const modal = document.getElementById("wwDokModal");
+        // Guard tutup ganda (double-tap X): tanpa ini history.back() jalan
+        // 2x untuk 1 push → riwayat geser.
+        if (modal && !modal._wwTutup) {
+            modal._wwTutup = true;
+            try { modal.querySelectorAll("video").forEach(v => v.pause()); } catch {}
+            modal.classList.add("tutup");
+            setTimeout(() => { try { if (modal.parentNode) modal.remove(); } catch {} }, 200);
+        }
+        Wawancara._dokIdx = 0;
+        if (!document.querySelector(".struktur-modal")) {
+            try { document.body.style.overflow = ""; } catch {}
+        }
+        if (!dariBack && Wawancara._dokPush) {
+            Wawancara._dokPush = false;
+            try {
+                window.__abaikanBack = (window.__abaikanBack | 0) + 1;
+                history.back();
+            } catch { window.__abaikanBack--; }
+        } else {
+            Wawancara._dokPush = false;
+        }
     },
 
     kunciDraft(textarea) {
@@ -2063,6 +2310,170 @@ const Wawancara = {
             await wawancaraTurunanHapus(Wawancara.uid(), id);
             try { if (typeof showToast === "function") showToast("Turunan dihapus.", "success"); } catch {}
             await Wawancara.muatTurunan();
+            Wawancara.renderSesi();
+        } catch (err) {
+            try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+        }
+    },
+
+    // ================= DOKUMENTASI (foto/video per calon) =================
+    // Audio yang boleh naik ke R2 (ikut allowlist Worker).
+    audioBoleh() {
+        return ["audio/mpeg", "audio/mp4", "audio/webm"];
+    },
+
+    async dokUpload(input) {
+        const files = Array.from((input && input.files) || []);
+        if (!files.length) return;
+        const s = Wawancara.sesi;
+        if (!s || !Wawancara.bolehTulisSesi() || s.status === "selesai") { input.value = ""; return; }
+        const ketEl = document.getElementById("wwDokKet");
+        const keterangan = ketEl ? String(ketEl.value || "").trim().slice(0, 300) : "";
+        // Audio dipilah manual (pilahMedia cuma terima foto/video).
+        const audios = files.filter(f => String(f.type || "").startsWith("audio/"));
+        const sisanya = files.filter(f => !String(f.type || "").startsWith("audio/"));
+        let valid = [], tolakTipe = 0, tolakBesar = 0;
+        audios.forEach(f => {
+            if (!Wawancara.audioBoleh().includes(f.type)) { tolakTipe++; return; }
+            if ((f.size || 0) > 100 * 1024 * 1024) { tolakBesar++; return; }
+            valid.push(f);
+        });
+        try {
+            if (typeof pilahMedia === "function") {
+                const pil = pilahMedia(sisanya, 100);
+                valid = valid.concat(pil.valid);
+                tolakTipe += pil.tolakTipe; tolakBesar += pil.tolakBesar;
+            } else {
+                valid = valid.concat(sisanya);
+            }
+        } catch {}
+        if (tolakTipe || tolakBesar) {
+            try { if (typeof showToast === "function") showToast(`Ditolak: ${tolakTipe} tipe tak didukung, ${tolakBesar} file >100MB.`, "error"); } catch {}
+        }
+        if (!valid.length) { input.value = ""; return; }
+        const pengunggah = (typeof namaPengunggah === "function") ? namaPengunggah() : "";
+        const btn = document.getElementById("wwDokBtn");
+        if (btn) btn.disabled = true;
+        let ok = 0;
+        for (let i = 0; i < valid.length; i++) {
+            const f = valid[i];
+            const tipe = String(f.type || "").startsWith("video/") ? "video"
+                : String(f.type || "").startsWith("audio/") ? "audio" : "foto";
+            const path = (typeof pathDokumentasiWawancara === "function")
+                ? pathDokumentasiWawancara(s.id, f, i) : "";
+            if (!path) continue;
+            if (await Wawancara.dokKirimFile(f, path, tipe, keterangan, pengunggah)) ok++;
+        }
+        input.value = "";
+        if (btn) btn.disabled = false;
+        try { await Wawancara.muatDokumentasi(); } catch {}
+        Wawancara.renderSesi();
+        if (ok) {
+            try { if (typeof showToast === "function") showToast(ok + " file dokumentasi tersimpan.", "success"); } catch {}
+        }
+    },
+
+    // Kirim 1 file (online langsung, offline antre). true = berhasil/antre.
+    async dokKirimFile(f, path, tipe, keterangan, pengunggah) {
+        const s = Wawancara.sesi;
+        // Offline: antre file (maks 25MB/blob); tanpa Outbox = gagal jujur.
+        if (Wawancara.jaringanPutus() && Wawancara.outboxSiap()) {
+            if ((f.size || 0) > 25 * 1024 * 1024) {
+                try { if (typeof showToast === "function") showToast(`"${f.name}": >25MB, upload pas online saja.`, "error"); } catch {}
+                return false;
+            }
+            try {
+                await Wawancara.dokTambahOffline(f, path, tipe, keterangan, pengunggah);
+                return true;
+            } catch (err) {
+                console.error(err);
+                try { if (typeof showToast === "function") showToast("Gagal antre " + f.name, "error"); } catch {}
+                return false;
+            }
+        }
+        try {
+            await uploadFotoStorage(f, path, { label: "Dokumentasi " + (Wawancara.calonAktif ? Wawancara.calonAktif.nama : "") });
+            await wawancaraDokumentasiTambah(Wawancara.uid(), s.id, {
+                file_path: path, file_type: tipe, mime: f.type || "",
+                ukuran_bytes: f.size || 0, keterangan: keterangan, pengunggah: pengunggah,
+            });
+            return true;
+        } catch (err) {
+            if (Wawancara.jaringanPutus(err) && Wawancara.outboxSiap() && (f.size || 0) <= 25 * 1024 * 1024) {
+                try {
+                    await Wawancara.dokTambahOffline(f, path, tipe, keterangan, pengunggah);
+                    return true;
+                } catch (e2) {
+                    console.error(e2);
+                    try { if (typeof showToast === "function") showToast("Gagal antre " + f.name, "error"); } catch {}
+                    return false;
+                }
+            }
+            console.error(err);
+            try { if (typeof showToast === "function") showToast(`Gagal upload ${f.name}: ` + (err.message || err), "error"); } catch {}
+            return false;
+        }
+    },
+
+    // Jalur offline tambah dokumentasi: baris temp + pratinjau blob + antre file.
+    async dokTambahOffline(f, path, tipe, keterangan, pengunggah) {
+        const s = Wawancara.sesi;
+        const tmp = Wawancara.tmpId();
+        Wawancara.dokumentasi.push({ id: tmp, sesi_id: s.id, calon_id: s.calon_id,
+            file_path: path, file_type: tipe, mime: f.type || "", ukuran_bytes: f.size || 0,
+            keterangan: keterangan || "", pengunggah: pengunggah || "", _tmp: true });
+        Wawancara.dokBlobs[tmp] = f;
+        Wawancara.simpanCacheDokumentasi();
+        await Wawancara.antreTulis("Dokumentasi (" + (f.name || "file") + ")", {
+            jenis: "dok_tambah", target: "ww-d:" + s.id + ":" + tmp, tmpId: tmp,
+            sesiId: s.id, file_path: path, file_type: tipe, mime: f.type || "",
+            ukuran_bytes: f.size || 0, keterangan: keterangan || "",
+        }, [{ slot: "dok", file: f, name: f.name || "file", type: f.type || "" }]);
+        Wawancara.setPill("lokal");
+    },
+
+    async dokHapus(id) {
+        const s = Wawancara.sesi;
+        if (!s || !Wawancara.bolehTulisSesi() || s.status === "selesai") return;
+        const rid = String(id);
+        const row = (Wawancara.dokumentasi || []).find(d => String(d.id) === rid);
+        try {
+            if (typeof showPopup === "function") {
+                if (!(await showPopup("Hapus dokumentasi ini?", "confirm"))) return;
+            }
+        } catch {}
+        // Offline: hapus lokal + antre (temp: cukup buang antre tambahannya).
+        if (Wawancara.jaringanPutus() && Wawancara.outboxSiap()) {
+            try {
+                await Wawancara.buangAntreanTarget("ww-d:" + s.id + ":" + rid);
+                Wawancara.dokumentasi = (Wawancara.dokumentasi || []).filter(d => String(d.id) !== rid);
+                try {
+                    if (Wawancara.dokUrls[rid]) URL.revokeObjectURL(Wawancara.dokUrls[rid]);
+                } catch {}
+                delete Wawancara.dokBlobs[rid];
+                delete Wawancara.dokUrls[rid];
+                Wawancara.simpanCacheDokumentasi();
+                if (!Wawancara.isTmp(rid)) {
+                    await Wawancara.antreTulis("Hapus dokumentasi", {
+                        jenis: "dok_hapus", target: "ww-x:" + s.id + ":d" + rid,
+                        id: parseInt(rid, 10), file_path: row ? (row.file_path || "") : "",
+                    });
+                }
+                Wawancara.setPill("lokal");
+                Wawancara.renderSesi();
+            } catch (err) {
+                console.error(err);
+                try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
+            }
+            return;
+        }
+        try {
+            await wawancaraDokumentasiHapus(Wawancara.uid(), id);
+            try { if (row && row.file_path) await hapusFotoStorage(row.file_path); } catch (eDel) {
+                console.warn("Bersih file R2 gagal:", eDel);
+            }
+            await Wawancara.muatDokumentasi();
+            try { if (typeof showToast === "function") showToast("Dokumentasi dihapus.", "success"); } catch {}
             Wawancara.renderSesi();
         } catch (err) {
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}

@@ -9,6 +9,7 @@
 const Arsip = {
   rows: [], // baris halaman aktif (page-scoped, urutan dari server)
   draft: null, // { judul, deskripsi, badge, fotos:[], files:[File] }
+  buka: {}, // id kegiatan -> true kalau album di-expand (default: cover 4 aja)
   page: 1,
   perPage: 6,
   total: 0,
@@ -102,7 +103,7 @@ const Arsip = {
     // Klik foto = buka popup (draft, tombol hapus & teks editable dikecualikan)
     if (grid)
       grid.addEventListener("click", (e) => {
-        if (e.target.closest(".up-slot, .foto-del-btn")) return;
+        if (e.target.closest(".up-slot, .foto-del-btn, .album-lebih, .album-toggle")) return;
         if (
           e.target.closest(
             "[data-arsip-field][contenteditable='true'], .bento-badge[contenteditable='true']",
@@ -244,6 +245,12 @@ const Arsip = {
     const deskripsi = escapeHtml(item.deskripsi || "");
     const badge = escapeHtml(item.badge || "");
     const fotos = Array.isArray(item.fotos) ? item.fotos : [];
+    // Album ringkas: default cuma 4 cover, sisanya di balik tombol.
+    const buka = !!Arsip.buka[String(item.id)];
+    const BATAS = 4;
+    const penuh = buka || fotos.length <= BATAS;
+    const tampil = penuh ? fotos : fotos.slice(0, BATAS);
+    const sisa = fotos.length - BATAS;
     // Editable HANYA pas state edit nyala + punya hak kegiatan.
     // Di luar itu kartu statis (tidak bisa diketik).
     const isEdit =
@@ -251,7 +258,7 @@ const Arsip = {
       typeof OsisAuth !== "undefined" &&
       OsisAuth.bisa &&
       OsisAuth.bisa("kegiatan");
-    const fotosHtml = fotos
+    const fotosHtml = tampil
       .map((f, idx) => {
         const path = typeof f === "string" ? f : f.path;
         if (!path) return "";
@@ -262,9 +269,15 @@ const Arsip = {
         const media = (typeof thumbBento === "function")
           ? thumbBento(getFoto(path), judul)
           : `<img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
-        return `<div class="item media-muat" data-foto-idx="${idx}">${media}${badgeHtml}<button class="foto-del-btn" onclick="event.stopPropagation(); Arsip.hapusFoto(${item.id}, ${idx})" title="Hapus foto/video"><i class="fa-solid fa-trash-can"></i></button></div>`;
+        const lebih = (!penuh && idx === BATAS - 1 && sisa > 0)
+          ? `<button class="album-lebih" onclick="event.stopPropagation(); Arsip.toggleAlbum(${item.id})">+${sisa} lainnya</button>`
+          : "";
+        return `<div class="item media-muat" data-foto-idx="${idx}">${media}${badgeHtml}${lebih}<button class="foto-del-btn" onclick="event.stopPropagation(); Arsip.hapusFoto(${item.id}, ${idx})" title="Hapus foto/video"><i class="fa-solid fa-trash-can"></i></button></div>`;
       })
       .join("");
+    const foot = fotos.length > BATAS
+      ? `<div class="album-foot"><button class="btn btn-white btn-sm album-toggle" onclick="Arsip.toggleAlbum(${item.id})">${buka ? `<i class="fa-solid fa-chevron-up"></i> Tutup` : `<i class="fa-solid fa-images"></i> Lihat semua ${fotos.length} foto`}</button></div>`
+      : "";
     return `
             <div class="bento-block" data-arsip-id="${item.id}">
                 <div class="bento-meta">
@@ -273,8 +286,14 @@ const Arsip = {
                     ${olehLabel(item) ? `<div>${olehLabel(item)}</div>` : ""}
                     <button class="icon-btn gal-del" onclick="event.stopPropagation(); Arsip.hapus(${item.id})" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
-                <div class="bento-grid">${fotosHtml}</div>
+                <div class="bento-grid">${fotosHtml}</div>${foot}
             </div>`;
+  },
+
+  toggleAlbum(id) {
+    const k = String(id);
+    Arsip.buka[k] = !Arsip.buka[k];
+    Arsip.render();
   },
 
   getFotoCaption(item, fotoIdx) {
@@ -389,13 +408,16 @@ const Arsip = {
         })
         .join("");
     }
-    (d.files || []).forEach((f) => {
-      const url = URL.createObjectURL(f);
+    const batasPv = (typeof BATAS_PREVIEW_DRAFT !== "undefined" ? BATAS_PREVIEW_DRAFT : 24);
+    (d.files || []).slice(0, batasPv).forEach((f) => {
+      const url = (typeof previewURL === "function" ? previewURL(f) : URL.createObjectURL(f));
       const isVid = typeof isVideoFile === "function" && isVideoFile(f);
       fotosHtml += isVid
-        ? `<div class="item media-muat sudah-muat is-video"><video src="${url}" alt="" muted playsinline preload="metadata"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span></div>`
-        : `<div class="item"><img src="${url}" alt=""></div>`;
+        ? `<div class="item media-muat sudah-muat is-video"><video src="${url}" alt="" muted playsinline preload="none"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span></div>`
+        : `<div class="item"><img src="${url}" alt="" loading="lazy" decoding="async"></div>`;
     });
+    const sisaDraft = (d.files || []).length - Math.min((d.files || []).length, batasPv);
+    if (sisaDraft > 0) fotosHtml += `<div class="item" style="display:grid;place-items:center;text-align:center;font-weight:800;font-size:.9rem">+${sisaDraft} lainnya<br><small style="font-weight:600">tetap ke-upload</small></div>`;
     fotosHtml += `<div class="up-slot" title="Tambah foto/video (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
     return `
             <div class="bento-block draft">
@@ -473,6 +495,9 @@ const Arsip = {
     }
     if (!Arsip.draft.files) Arsip.draft.files = [];
     valid.forEach((f) => Arsip.draft.files.push(f));
+    const total = Arsip.draft.files.length;
+    const batas = (typeof BATAS_PREVIEW_DRAFT !== "undefined" ? BATAS_PREVIEW_DRAFT : 24);
+    if (total > batas) showToast(`Preview dibatasi ${batas} biar ringan, ${total} tetap ke-upload semua`, "info");
     Arsip.render();
     const draftEl = document.querySelector("#arsipGrid .bento-block.draft");
     if (draftEl)
@@ -480,6 +505,7 @@ const Arsip = {
   },
 
   buangDraft() {
+    try { if (typeof lepasPreview === "function") lepasPreview(Arsip.draft && Arsip.draft.files); } catch {}
     Arsip.draft = null;
     Arsip.render();
   },
@@ -550,6 +576,7 @@ const Arsip = {
       );
       if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
       showToast("Arsip ditambah!", "success");
+      try { if (typeof lepasPreview === "function") lepasPreview(d.files); } catch {}
       Arsip.draft = null;
       Arsip.go(1);
     } catch (err) {
@@ -739,6 +766,7 @@ const ArsipPelantikan = {
   total: 0,
   rows: [],
   draft: null, // { judul, deskripsi, badge, files:[File] }
+  buka: {}, // id -> true kalau album di-expand
   _minta: [],
 
   isOwner() {
@@ -996,21 +1024,32 @@ const ArsipPelantikan = {
     html += rows.map((item) => {
       const judul = escapeHtml(item.judul || "");
       const fotos = Array.isArray(item.fotos) ? item.fotos : [];
-      const fotosHtml = fotos.map((f, idx) => {
+      const buka = !!ArsipPelantikan.buka[String(item.id)];
+      const BATAS = 4;
+      const penuh = buka || fotos.length <= BATAS;
+      const tampil = penuh ? fotos : fotos.slice(0, BATAS);
+      const sisa = fotos.length - BATAS;
+      const fotosHtml = tampil.map((f, idx) => {
         const path = typeof f === "string" ? f : f.path;
         if (!path) return "";
         const media = (typeof thumbBento === "function")
           ? thumbBento(getFoto(path), judul)
           : `<img src="${getFoto(path)}" alt="${judul}" loading="lazy">`;
-        return `<div class="item media-muat" data-vault-id="${item.id}" data-foto-idx="${idx}">${media}<button class="foto-del-btn" onclick="event.stopPropagation(); ArsipPelantikan.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button></div>`;
+        const lebih = (!penuh && idx === BATAS - 1 && sisa > 0)
+          ? `<button class="album-lebih" onclick="event.stopPropagation(); ArsipPelantikan.toggleAlbum(${item.id})">+${sisa} lainnya</button>`
+          : "";
+        return `<div class="item media-muat" data-vault-id="${item.id}" data-foto-idx="${idx}">${media}${lebih}<button class="foto-del-btn" onclick="event.stopPropagation(); ArsipPelantikan.hapusFoto(${item.id}, ${idx})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button></div>`;
       }).join("");
+      const foot = fotos.length > BATAS
+        ? `<div class="album-foot"><button class="btn btn-white btn-sm album-toggle" onclick="ArsipPelantikan.toggleAlbum(${item.id})">${buka ? `<i class="fa-solid fa-chevron-up"></i> Tutup` : `<i class="fa-solid fa-images"></i> Lihat semua ${fotos.length} foto`}</button></div>`
+        : "";
       return `<div class="bento-block" data-vault-id="${item.id}">
         <div class="bento-meta">
           <h4>${judul}</h4>
           ${item.deskripsi ? `<p>${escapeHtml(item.deskripsi)}</p>` : ""}
           <button class="icon-btn gal-del" onclick="event.stopPropagation(); ArsipPelantikan.hapus(${item.id})" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>
         </div>
-        <div class="bento-grid">${fotosHtml}</div>
+        <div class="bento-grid">${fotosHtml}</div>${foot}
       </div>`;
     }).join("");
     box.innerHTML = html;
@@ -1025,12 +1064,19 @@ const ArsipPelantikan = {
       bar.innerHTML = "";
     }
     box.querySelectorAll(".item").forEach((el) => {
-      el.addEventListener("click", () => {
+      el.addEventListener("click", (e) => {
+        if (e.target.closest(".album-lebih")) return;
         const id = el.dataset.vaultId;
         const idx = Number(el.dataset.fotoIdx || 0);
         ArsipPelantikan.bukaPopup(id, idx);
       });
     });
+  },
+
+  toggleAlbum(id) {
+    const k = String(id);
+    ArsipPelantikan.buka[k] = !ArsipPelantikan.buka[k];
+    ArsipPelantikan.renderIsi();
   },
 
   bukaPopup(id, fotoIdx) {
@@ -1081,13 +1127,16 @@ const ArsipPelantikan = {
   kartuDraft() {
     const d = ArsipPelantikan.draft || { judul: "", deskripsi: "", badge: "", files: [] };
     let fotosHtml = "";
-    (d.files || []).forEach((f) => {
-      const url = URL.createObjectURL(f);
+    const batasPv = (typeof BATAS_PREVIEW_DRAFT !== "undefined" ? BATAS_PREVIEW_DRAFT : 24);
+    (d.files || []).slice(0, batasPv).forEach((f) => {
+      const url = (typeof previewURL === "function" ? previewURL(f) : URL.createObjectURL(f));
       const isVid = typeof isVideoFile === "function" && isVideoFile(f);
       fotosHtml += isVid
-        ? `<div class="item media-muat sudah-muat is-video"><video src="${url}" alt="" muted playsinline preload="metadata"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span></div>`
-        : `<div class="item"><img src="${url}" alt=""></div>`;
+        ? `<div class="item media-muat sudah-muat is-video"><video src="${url}" alt="" muted playsinline preload="none"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span></div>`
+        : `<div class="item"><img src="${url}" alt="" loading="lazy" decoding="async"></div>`;
     });
+    const sisaDraft = (d.files || []).length - Math.min((d.files || []).length, batasPv);
+    if (sisaDraft > 0) fotosHtml += `<div class="item" style="display:grid;place-items:center;text-align:center;font-weight:800;font-size:.9rem">+${sisaDraft} lainnya<br><small style="font-weight:600">tetap ke-upload</small></div>`;
     fotosHtml += `<div class="up-slot" title="Tambah foto/video (bisa banyak sekaligus)"><i class="fa-solid fa-plus"></i></div>`;
     return `
       <div class="bento-block draft">
@@ -1125,10 +1174,14 @@ const ArsipPelantikan = {
     if (!pilah.valid.length) return;
     if (!ArsipPelantikan.draft.files) ArsipPelantikan.draft.files = [];
     pilah.valid.forEach((f) => ArsipPelantikan.draft.files.push(f));
+    const total = ArsipPelantikan.draft.files.length;
+    const batas = (typeof BATAS_PREVIEW_DRAFT !== "undefined" ? BATAS_PREVIEW_DRAFT : 24);
+    if (total > batas) showToast(`Preview dibatasi ${batas} biar ringan, ${total} tetap ke-upload semua`, "info");
     ArsipPelantikan.renderIsi();
   },
 
   buangDraft() {
+    try { if (typeof lepasPreview === "function") lepasPreview(ArsipPelantikan.draft && ArsipPelantikan.draft.files); } catch {}
     ArsipPelantikan.draft = null;
     ArsipPelantikan.renderIsi();
   },
@@ -1161,6 +1214,7 @@ const ArsipPelantikan = {
       const newId = await buatPelantikan(u.id, d.judul.trim(), d.deskripsi || "", d.badge || "", paths, order);
       if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
       showToast("Foto pelantikan ditambah!", "success");
+      try { if (typeof lepasPreview === "function") lepasPreview(d.files); } catch {}
       ArsipPelantikan.draft = null;
       ArsipPelantikan.muatIsi(1);
     } catch (err) {
