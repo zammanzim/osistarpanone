@@ -51,53 +51,58 @@
     return (n / MB).toFixed(n >= 10 * MB ? 0 : 1) + " MB";
   }
 
-  // --- Progres via Notice kanan-atas (tanpa elemen baru) ---------------------
-  // Satu pill id "kompres" (upsert, tidak dobel), terpisah dari chip upload
-  // "mengupload" milik UploadManager: pill kompres tampil selama kompres,
-  // disembunyikan pas selesai, lalu chip upload yang meneruskan. Kelar ada
-  // toast hematnya; gagal ada toast + upload file asli tetap jalan.
-  // Kalau Notice belum ke-load di halaman ini, diam saja (tanpa bikin DOM).
-  var NOTIF_ID = "kompres";
-  var NOTIF_ICON = "fa-solid fa-file-video";
-  var _notifLast = 0;
-
-  function notifAda() {
+  // --- Progres via bar upload bawah (UploadManager) -------------------------
+  // compressVideo() jalan di dalam uploadFotoStorage() SEBELUM task upload
+  // dibuat, jadi progres dilaporkan sebagai "tugas kompres" ke bar bawah
+  // (bukan pill kanan-atas). Selesai/gagal ada toast singkat; gagal = upload
+  // file asli tetap jalan. Kalau UploadManager belum ke-load, diam saja.
+  function barMulai(label) {
     try {
-      return typeof Notice !== "undefined" && Notice && typeof Notice.show === "function";
-    } catch (e) {
-      return false;
-    }
+      if (typeof UploadManager !== "undefined" && UploadManager.kompresMulai)
+        return UploadManager.kompresMulai(label);
+    } catch (e) {}
+    return null;
   }
 
-  function notifTampil(teks, paksa) {
+  function barLapor(id, frac, msg) {
     try {
-      if (!notifAda()) return;
-      var now = Date.now();
-      if (!paksa && now - _notifLast < 200) return; // throttle biar hemat render
-      _notifLast = now;
-      Notice.show(NOTIF_ID, {
-        text: String(teks || "Mengompres video…"),
-        icon: NOTIF_ICON,
-        type: "yellow",
-        title: "Video dikompres dulu biar ringan",
-      });
+      if (id && typeof UploadManager !== "undefined" && UploadManager.kompresLapor)
+        UploadManager.kompresLapor(id, frac, msg);
     } catch (e) {}
   }
 
-  function notifTutup() {
+  function barTutup(id) {
     try {
-      if (notifAda() && typeof Notice.hide === "function") Notice.hide(NOTIF_ID);
+      if (id && typeof UploadManager !== "undefined" && UploadManager.kompresSelesai)
+        UploadManager.kompresSelesai(id);
     } catch (e) {}
   }
 
-  function notifSelesai(hemat) {
-    notifTutup();
+  function kabarSelesai(kid, hemat) {
+    barTutup(kid);
     toast("Video dikompres: " + hemat + " ✓", "success");
   }
 
-  function notifGagal() {
-    notifTutup();
+  function kabarTutup(kid) {
+    barTutup(kid);
+  }
+
+  function kabarGagal(kid) {
+    barTutup(kid);
     toast("Kompres gagal — upload file asli…", "info");
+  }
+
+  // Error khusus "user membatalkan": wajib diteruskan mentah (tanpa fallback
+  // ke file asli) sampai ke db.js yang juga meneruskannya — batal = file
+  // tersebut tidak jadi diupload sama sekali.
+  function errBatal() {
+    var e = new Error("Kompres dibatalkan");
+    try { e.batalKompres = true; } catch (err) {}
+    return e;
+  }
+
+  function cekBatal(st) {
+    if (st && st.batal) throw errBatal();
   }
 
   // --- Deteksi device ------------------------------------------------------
@@ -289,8 +294,8 @@
 
   // =========================================================================
   // ENGINE 1: NATIVE — canvas.captureStream + MediaRecorder. Ringan, tanpa
-  // download. Catatan: autoplay butuh muted di sebagian browser, jadi audio
-  // dipertahankan best-effort (track audio ditempel kalau ketangkap).
+  // download. Video diputar muted (audio hasil tetap ada via captureStream),
+  // jadi HP user tidak bunyi pas kompres.
   // =========================================================================
   function pickRecorderMime() {
     var daftar = [
@@ -325,6 +330,7 @@
 
     var meta = await getVideoMetadata(file);
     if (!meta || !meta.width || !meta.height) throw new Error("metadata video kosong");
+    cekBatal(opts.batal);
     if (file.size <= targetMB * MB && Math.max(meta.width, meta.height) <= maxDim) return file;
 
     var dim = hitungDimensi(meta.width, meta.height, maxDim) || { w: meta.width, h: meta.height };
@@ -338,15 +344,32 @@
     try {
       video.playsInline = true;
     } catch (e) {}
-    video.muted = false;
+    // WAJIB mute: elemen tak-terpasang pun tetap bunyi kalau di-play dengan
+    // suara. captureStream() tetap dapat track audio walau muted (mute cuma
+    // matikan output speaker, bukan sumber yang direkam).
+    video.muted = true;
+    try {
+      video.volume = 0;
+    } catch (e) {}
     video.src = url;
     var stream = null;
     var rec = null;
-    var gambarTimer = null;
+    var gambarRAF = 0;
+    var gambarJalan = false;
+    var progresTimer = null;
     var batasTimer = null;
     function bersih() {
       try {
-        if (gambarTimer) clearInterval(gambarTimer);
+        gambarJalan = false;
+      } catch (e) {}
+      try {
+        if (gambarRAF) {
+          if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(gambarRAF);
+          else clearInterval(gambarRAF);
+        }
+      } catch (e) {}
+      try {
+        if (progresTimer) clearInterval(progresTimer);
       } catch (e) {}
       try {
         if (batasTimer) clearTimeout(batasTimer);
@@ -362,14 +385,14 @@
       } catch (e) {}
     }
     try {
-      // Coba dengan suara dulu (biar audio ketangkap); kalau autoplay
-      // ditolak browser, fallback mute (hasil tanpa suara).
+      // Main muted (lihat atas) biar HP user tidak bunyi pas kompres.
       try {
         await video.play();
       } catch (e) {
-        video.muted = true;
+        await new Promise(function (r) { setTimeout(r, 300); });
         await video.play();
       }
+      cekBatal(opts.batal);
       canvas.width = dim.w;
       canvas.height = dim.h;
       var ctx = canvas.getContext("2d");
@@ -410,16 +433,39 @@
           } catch (e) {}
         }, 350);
       });
-      gambarTimer = setInterval(function () {
+      // Gambar tiap frame layar (rAF, ~60fps) — JANGAN interval 100ms:
+      // captureStream(30) ngerekam 30fps, jadi canvas wajib diisi tiap frame
+      // biar hasilnya mulus, bukan patah-patah. Progres + cek batal jalan di
+      // timer terpisah 200ms biar tidak ganggu gambar.
+      function mintaFrame(fn) {
+        try {
+          if (typeof requestAnimationFrame === "function") return requestAnimationFrame(fn);
+        } catch (e) {}
+        return setInterval(function () { fn(); }, 33);
+      }
+      gambarJalan = true;
+      function loopGambar() {
+        if (!gambarJalan) return;
         try {
           if (video.readyState >= 2) ctx.drawImage(video, 0, 0, dim.w, dim.h);
+        } catch (e) {}
+        gambarRAF = mintaFrame(loopGambar);
+      }
+      gambarRAF = mintaFrame(loopGambar);
+      progresTimer = setInterval(function () {
+        try {
+          // Batal = hentikan rekaman; cek setelah await selesai melempar.
+          if (opts.batal && opts.batal.batal) {
+            try { if (rec && rec.state !== "inactive") rec.stop(); } catch (eStop) {}
+            return;
+          }
         } catch (e) {}
         if (onProgress && dur > 1) {
           try {
             onProgress("native", Math.min(0.99, (video.currentTime || 0) / dur), "Mengompres video…");
           } catch (e2) {}
         }
-      }, 100);
+      }, 200);
       // Pengaman: jangan lebih dari 5 menit / 4x durasi.
       var maxMs = Math.min(300000, Math.max(60000, (dur || 60) * 4000 + 30000));
       batasTimer = setTimeout(function () {
@@ -433,6 +479,7 @@
         rec.start();
       }
       await selesai;
+      cekBatal(opts.batal);
       if (!chunks.length) throw new Error("hasil rekam kosong");
       var blob = new Blob(chunks, { type: pick.type });
       if (!blob.size) throw new Error("hasil rekam kosong");
@@ -593,6 +640,7 @@
     var outN = "out_" + tag + ".mp4";
     var outN2 = "out2_" + tag + ".mp4";
     try {
+      cekBatal(opts.batal);
       await ff.writeFile(inN, await U.fetchFile(file));
       async function Olah(crf, preset, audioKb, d, namaOut) {
         var args = ["-i", inN];
@@ -603,6 +651,7 @@
           "-movflags", "+faststart", "-y", namaOut,
         );
         await ff.exec(args, 300000);
+        cekBatal(opts.batal);
         var data = await ff.readFile(namaOut);
         if (!data || !data.length) throw new Error("hasil encode kosong");
         return new Blob([data], { type: "video/mp4" });
@@ -647,10 +696,23 @@
     var maxDim = Number(opts.maxDim) || getMaxDim();
     var silent = !!opts.silent;
     var luar = typeof opts.onProgress === "function" ? opts.onProgress : null;
-    // Progres untuk pill Notice + teruskan ke pemanggil (db.js / halaman).
+    var kid = null; // tugas kompres di bar bawah (dibuat pas kerja beneran mulai)
+    var stBatal = { batal: false }; // dibalik tombol Batal (bar / daftar detail)
+    function pastikanKid() {
+      if (silent) return null;
+      if (!kid) {
+        kid = barMulai(file.name);
+        try {
+          if (kid && typeof UploadManager !== "undefined" && UploadManager.kompresBisaBatal)
+            UploadManager.kompresBisaBatal(kid, function () { stBatal.batal = true; });
+        } catch (e) {}
+      }
+      return kid;
+    }
+    // Progres ke bar bawah + teruskan ke pemanggil (db.js / halaman).
     function laporkan(tahap, frac, msg) {
       try {
-        if (!silent) notifTampil(msg, frac >= 1);
+        if (!silent) barLapor(pastikanKid(), frac, msg);
       } catch (e) {}
       try {
         if (luar) luar(tahap, frac, msg);
@@ -672,11 +734,8 @@
         // metadata gagal dibaca: native tidak bisa, tapi ffmpeg masih boleh coba.
         if (engine === "native") throw e;
       }
-      if (!silent) {
-        _notifLast = 0;
-        notifTampil(engine === "ffmpeg" ? "Menyiapkan encoder…" : "Menyiapkan perekam…", true);
-      }
-      var o = { engine: engine, targetMB: targetMB, maxDim: maxDim, onProgress: laporkan };
+      if (!silent && !kid) pastikanKid();
+      var o = { engine: engine, targetMB: targetMB, maxDim: maxDim, onProgress: laporkan, batal: stBatal };
       // Hasil wajib lolos validasi (tipe video/* + ukuran >0) sebelum dipakai;
       // gagal validasi = pakai file asli. File asli tidak pernah dihapus.
       function pakai(h) {
@@ -690,23 +749,25 @@
         try {
           var h1 = pakai(await compressVideoFfmpeg(file, o));
           if (!silent) {
-            if (h1 !== file) notifSelesai(hemat(h1));
-            else notifTutup();
+            if (h1 !== file) kabarSelesai(kid, hemat(h1));
+            else kabarTutup(kid);
           }
           return h1;
         } catch (e) {
+          if (e && e.batalKompres) { barTutup(kid); throw e; }
           console.warn("ffmpeg gagal, coba native:", e);
-          if (!silent) notifTampil("Encoder gagal, coba cara ringan…", true);
+          if (!silent) barLapor(pastikanKid(), 0, "Encoder gagal, coba cara ringan…");
           try {
             var h2 = pakai(await compressVideoNative(file, o));
             if (!silent) {
-              if (h2 !== file) notifSelesai(hemat(h2));
-              else notifTutup();
+              if (h2 !== file) kabarSelesai(kid, hemat(h2));
+              else kabarTutup(kid);
             }
             return h2;
           } catch (e2) {
+            if (e2 && e2.batalKompres) { barTutup(kid); throw e2; }
             console.warn("compress video gagal, pakai asli:", e2);
-            if (!silent) notifGagal();
+            if (!silent) kabarGagal(kid);
             return file;
           }
         }
@@ -715,18 +776,20 @@
       try {
         var h3 = pakai(await compressVideoNative(file, o));
         if (!silent) {
-          if (h3 !== file) notifSelesai(hemat(h3));
-          else notifTutup();
+          if (h3 !== file) kabarSelesai(kid, hemat(h3));
+          else kabarTutup(kid);
         }
         return h3;
       } catch (e) {
+        if (e && e.batalKompres) { barTutup(kid); throw e; }
         console.warn("compress video gagal, pakai asli:", e);
-        if (!silent) notifGagal();
+        if (!silent) kabarGagal(kid);
         return file;
       }
     } catch (e) {
+      if (e && e.batalKompres) { try { barTutup(kid); } catch (err) {} throw e; }
       console.warn("compress video gagal, pakai asli:", e);
-      if (!silent) notifGagal();
+      if (!silent) kabarGagal(kid);
       return file;
     }
   }

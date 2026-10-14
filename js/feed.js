@@ -919,7 +919,7 @@ const Feed = {
         const btn = document.getElementById("btnSimpanFeed");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memposting...'; }
         // Row-first: baris DB dibuat dulu biar popup bisa ketutup otomatis
-        // 1.2 dtk setelah Simpan; file mengupload di background via chip.
+        // 1.2 dtk setelah Simpan; file mengupload di background via bar bawah.
         // Thumb sempat broken sebentar sampai upload kelar lalu auto-refresh.
         let postId = 0;
         try {

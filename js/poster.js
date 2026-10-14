@@ -140,7 +140,7 @@ const Poster = {
                 </div>
                 <div class="field">
                     <label>Caption</label>
-                    <textarea id="posterCaption" class="admin-input admin-textarea" placeholder="Caption poster..." maxlength="500" rows="3"></textarea>
+                    <textarea id="posterCaption" class="admin-input admin-textarea" placeholder="Caption poster..." rows="3"></textarea>
                 </div>
                 <div class="form-actions-row" style="margin-top:14px">
                     <button class="btn btn-white" onclick="Poster.tutupForm()">Batal</button>

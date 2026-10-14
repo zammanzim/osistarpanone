@@ -6,6 +6,10 @@ const Lagu = {
     terinisialisasi: false,
     cache: [],
     editingId: null,
+    ambil: 30,     // paging: jumlah request yang dimuat (nambah tiap klik)
+    langkah: 30,   // nambah berapa per klik "Muat lebih banyak"
+    habis: false,  // true kalau server udah ngasih semua (fetch < ambil)
+    lagiMuat: false,
 
     async init() {
         if (Lagu.terinisialisasi) return;
@@ -116,12 +120,17 @@ const Lagu = {
                 }).join("");
                 return sep + items;
             }).join("");
+            // Paging: kasih tombol kalau kemungkinan masih ada sisa di server.
+            if (!Lagu.habis && data.length >= Lagu.langkah) {
+                list.innerHTML += `<div style="text-align:center;padding:12px 0 4px"><button class="btn btn-white btn-sm" id="btnMuatLagu" onclick="Lagu.muatLagi()"><i class="fa-solid fa-angles-down"></i> Muat lebih banyak</button></div>`;
+            }
         };
 
         const cached = Cache.get("lagu");
         if (cached) {
             render(cached);
-            getRequestLagu().then(fresh => {
+            getRequestLagu(Lagu.ambil).then(fresh => {
+                Lagu.habis = (fresh || []).length < Lagu.ambil;
                 if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
                     Cache.set("lagu", fresh);
                     render(fresh);
@@ -131,13 +140,40 @@ const Lagu = {
         }
 
         try {
-            const data = await getRequestLagu();
+            const data = await getRequestLagu(Lagu.ambil);
+            Lagu.habis = (data || []).length < Lagu.ambil;
             Cache.set("lagu", data);
             render(data);
         } catch (err) {
             console.error(err);
             list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat playlist. Cek koneksi.</div>`;
         }
+    },
+
+    // ============ PAGING — tombol "Muat lebih banyak" (+30 per klik) ============
+    async muatLagi() {
+        if (Lagu.lagiMuat || Lagu.habis) return;
+        const btn = document.getElementById("btnMuatLagu");
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...';
+        }
+        Lagu.lagiMuat = true;
+        Lagu.ambil += Lagu.langkah;
+        Cache.del("lagu"); // paksa jalur network biar 1x fetch
+        try {
+            await Lagu.muatDaftar();
+        } catch (err) {
+            console.error(err);
+            Lagu.ambil -= Lagu.langkah;
+            const b = document.getElementById("btnMuatLagu");
+            if (b) {
+                b.disabled = false;
+                b.innerHTML = '<i class="fa-solid fa-angles-down"></i> Muat lebih banyak';
+            }
+            showToast("Gagal memuat. Cek koneksi lalu coba lagi.", "error");
+        }
+        Lagu.lagiMuat = false;
     },
 
     formatWaktu(t) {

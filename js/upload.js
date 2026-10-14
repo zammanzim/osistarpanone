@@ -4,31 +4,48 @@
 // Semua upload (foto/video) lewat sini via db.js uploadFotoStorage() yang
 // memakai XHR (satu-satunya cara dapat progress persen; fetch tidak bisa).
 // Karena upload hidup di konteks halaman (bukan di tombol form), user bebas
-// pindah halaman (SPA) selagi upload jalan — progress terpantau lewat chip.
+// pindah halaman (SPA) selagi upload jalan — progress terpantau lewat bar.
 //
 // UI:
-// - Chip "Mengupload N file · P%" (Notice pill, kanan atas). Muncul hanya
-//   kalau ada upload yang lambat (>1.2 dtk) biar upload kilat tidak kedip.
-//   Diketuk -> buka daftar progress.
-// - Daftar: tiap file ada progress bar + %, status, tombol Batal / Coba
-//   lagi / Hapus. Tutup daftar = upload TETAP jalan di background.
+// - Bar fixed di bawah layar (di atas bottom-nav kalau ada). Isi lengkap:
+//   nama file + "file ke-X dari Y" + persen + MB + sisa waktu + tombol
+//   Detail / Batal. Kompres video juga lapor ke bar ini ("Mengompres video")
+//   karena kompres jalan sebelum task upload dibuat. Muncul hanya kalau ada
+//   upload lambat (>1.2 dtk) biar upload kilat tidak kedip. Ketuk bar -> buka daftar progress.
+//   upload kilat tidak kedip. Ketuk bar -> buka daftar progress.
+// - Daftar: tiap file + tiap video yang lagi dikompres ada progress bar +
+//   %, status, tombol Batal / Coba lagi / Hapus. Kompres video bisa
+//   dibatalkan (file-nya ikut batal upload). Tutup daftar = upload TETAP
+//   jalan di background.
 // - Reload/tutup tab saat upload aktif -> browser tanya konfirmasi.
 // =========================================================================
 
 (function () {
   "use strict";
 
-  var CHIP_ID = "mengupload";
-  var TUNDA_CHIP_MS = 1200; // tampilkan chip hanya kalau upload > 1.2 dtk
-  var TICK_MS = 200; // throttle refresh chip + daftar
+  var TUNDA_BAR_MS = 1200; // tampilkan bar hanya kalau upload > 1.2 dtk
+  var TICK_MS = 200; // throttle refresh bar + daftar
   var MAKS_RIWAYAT = 30;
 
   var seq = 0;
   var tasks = []; // terbaru di depan
-  var chipTimer = null;
-  var chipTampil = false;
+  var barTimer = null;
+  var barTampil = false;
+  var pernahLambat = false;
   var lastTick = 0;
   var overlay = null;
+  var bar = null;
+  // Counter sesi berjalan (reset tiap antrean habis) buat "file ke-X dari Y".
+  var sesiTotal = 0;
+  var sesiSelesai = 0;
+  var sesiBytes = 0;
+  var sesiDoneBytes = 0;
+  var sesiT0 = 0;
+  // Tugas kompres video (compress-video.js lapor ke sini SEBELUM task
+  // upload dibuat). id -> { label, frac, msg }.
+  var kompres = {};
+  var kompresSeq = 0;
+  var kompresLast = 0;
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -53,6 +70,19 @@
     return tasks.filter(function (t) { return t.status === "uploading"; });
   }
 
+  function kompresAktif() {
+    var out = [];
+    try {
+      for (var id in kompres) {
+        if (Object.prototype.hasOwnProperty.call(kompres, id) && kompres[id]) {
+          kompres[id].id = id;
+          out.push(kompres[id]);
+        }
+      }
+    } catch (e) {}
+    return out;
+  }
+
   function gagal() {
     return tasks.filter(function (t) { return t.status === "error" || t.status === "canceled"; });
   }
@@ -68,52 +98,171 @@
     return fmtPersen(loaded, total);
   }
 
+  function totalGlobal() {
+    return sesiBytes || 0;
+  }
+
+  function dimuatGlobal() {
+    var a = aktif();
+    var n = sesiDoneBytes || 0;
+    a.forEach(function (t) {
+      var tot = t.total || t.size || 0;
+      n += Math.min(t.loaded || 0, tot);
+    });
+    return Math.min(n, sesiBytes || n);
+  }
+
+  function fmtSisa(detik) {
+    var s = Math.round(detik);
+    if (!isFinite(s) || s < 0) return "";
+    if (s < 5) return "bentar lagi";
+    if (s < 90) return "~" + s + " dtk lagi";
+    var m = Math.round(s / 60);
+    if (m < 90) return "~" + m + " mnt lagi";
+    return "~" + Math.round(m / 60) + " jam lagi";
+  }
+
+  function etaGlobal() {
+    var tot = totalGlobal();
+    var muat = dimuatGlobal();
+    if (!tot || muat <= 0 || !sesiT0) return "";
+    var jalan = (Date.now() - sesiT0) / 1000;
+    if (jalan < 2) return "";
+    var speed = muat / jalan;
+    if (!speed || speed <= 0) return "";
+    return fmtSisa((tot - muat) / speed);
+  }
+
   function tick() {
     var now = Date.now();
     if (now - lastTick < TICK_MS) return;
     lastTick = now;
-    refreshChip();
+    refreshBar();
     if (overlay && overlay.style.display !== "none") renderDaftar();
   }
 
-  function refreshChip() {
+  function aturPosisiBar() {
+    if (!bar) return;
+    try {
+      bar.classList.toggle("tanpa-nav", !document.getElementById("bottomNav"));
+    } catch (e) {}
+  }
+
+  function buatBar() {
+    bar = document.createElement("div");
+    bar.id = "uploadBar";
+    bar.setAttribute("role", "status");
+    bar.style.display = "none";
+    bar.innerHTML =
+      '<div class="uploadbar-ico"><i class="fa-solid fa-cloud-arrow-up"></i></div>' +
+      '<div class="uploadbar-info"><b id="uploadBarLabel">Mengupload…</b>' +
+      '<small id="uploadBarSub"></small>' +
+      '<div class="uploadbar-track"><div class="uploadbar-fill" id="uploadBarFill"></div></div></div>' +
+      '<div class="uploadbar-aksi"><button type="button" class="btn btn-white btn-sm" id="uploadBarDetail">Detail</button>' +
+      '<button type="button" class="btn btn-red btn-sm" id="uploadBarAksi">Batal</button></div>';
+    document.body.appendChild(bar);
+    bar.querySelector("#uploadBarDetail").addEventListener("click", function (e) {
+      e.stopPropagation();
+      UploadManager.bukaDaftar();
+    });
+    bar.querySelector("#uploadBarAksi").addEventListener("click", function (e) {
+      e.stopPropagation();
+      var mode = "";
+      try { mode = bar.querySelector("#uploadBarAksi").dataset.mode || ""; } catch (err) {}
+      if (mode === "ulangi") UploadManager.ulangiSemua();
+      else UploadManager.batalkanSemua();
+    });
+    bar.addEventListener("click", function () {
+      UploadManager.bukaDaftar();
+    });
+    aturPosisiBar();
+  }
+
+  function refreshBar() {
     var a = aktif();
     var g = gagal();
+    var k = kompresAktif();
     try {
+      if (!bar && (a.length > 0 || g.length > 0 || k.length > 0)) buatBar();
+      if (!bar) return;
+      var label = bar.querySelector("#uploadBarLabel");
+      var sub = bar.querySelector("#uploadBarSub");
+      var fill = bar.querySelector("#uploadBarFill");
+      var aksi = bar.querySelector("#uploadBarAksi");
+      var ikon = bar.querySelector(".uploadbar-ico i");
       if (a.length > 0) {
+        aturPosisiBar();
+        bar.style.display = "flex";
+        barTampil = true;
+        bar.dataset.status = "uploading";
+        var judul = a.length > 1
+          ? "Mengupload " + a.length + " file"
+          : String(a[0].label || a[0].name || "File");
+        if (label) label.textContent = judul;
         var p = persenGlobal();
-        var teks = "Mengupload " + a.length + " file" + (p ? " · " + p : "…");
-        if (typeof Notice !== "undefined" && Notice.show) {
-          Notice.show(CHIP_ID, {
-            text: teks,
-            icon: "fa-solid fa-cloud-arrow-up fa-bounce",
-            type: "yellow",
-            title: "Ketuk buat lihat progress",
-            onClick: function () { UploadManager.bukaDaftar(); },
-          });
-          chipTampil = true;
+        var pct = p ? parseInt(p, 10) || 0 : 0;
+        var ke = Math.min(sesiSelesai + 1, Math.max(sesiTotal, 1));
+        var ket = "File ke-" + ke + " dari " + Math.max(sesiTotal, a.length);
+        if (a.length === 1 && a[0].name) ket += " · " + a[0].name;
+        var tot = totalGlobal();
+        if (tot > 0) ket += " · " + fmtSize(dimuatGlobal()) + " / " + fmtSize(tot);
+        if (p) ket += " · " + p;
+        var eta = etaGlobal();
+        if (eta) ket += " · " + eta;
+        if (g.length > 0) ket += " · " + g.length + " gagal";
+        if (sub) sub.textContent = ket;
+        if (fill) fill.style.width = pct + "%";
+        if (ikon) ikon.className = "fa-solid fa-cloud-arrow-up fa-bounce";
+        if (aksi) {
+          aksi.style.display = "";
+          aksi.textContent = a.length > 1 ? "Batal semua" : "Batal";
+          aksi.dataset.mode = "batal";
+        }
+        return;
+      }
+      // Kompres video jalan SEBELUM task upload dibuat — tampilkan di bar
+      // biar user tahu HP-nya lagi kerja, bukan hang.
+      if (k.length > 0) {
+        var kk = k[k.length - 1];
+        aturPosisiBar();
+        bar.style.display = "flex";
+        barTampil = true;
+        bar.dataset.status = "uploading";
+        if (label) label.textContent = "Mengompres video";
+        var kpct = Math.round((kk.frac || 0) * 100);
+        var kket = String(kk.label || "video");
+        if (kpct > 0) kket += " · " + kpct + "%";
+        if (kk.msg) kket += " · " + kk.msg;
+        if (sub) sub.textContent = kket;
+        if (fill) fill.style.width = kpct + "%";
+        if (ikon) ikon.className = "fa-solid fa-file-video";
+        if (aksi) {
+          aksi.style.display = "";
+          aksi.textContent = "Batal";
+          aksi.dataset.mode = "batal";
         }
         return;
       }
       if (g.length > 0) {
-        if (typeof Notice !== "undefined" && Notice.show) {
-          Notice.show(CHIP_ID, {
-            text: g.length + " upload gagal — ketuk buat coba lagi",
-            icon: "fa-solid fa-triangle-exclamation",
-            type: "red",
-            title: "Ketuk buat lihat daftar",
-            onClick: function () { UploadManager.bukaDaftar(); },
-          });
-          chipTampil = true;
+        aturPosisiBar();
+        bar.style.display = "flex";
+        barTampil = true;
+        bar.dataset.status = "error";
+        if (label) label.textContent = g.length + " upload gagal";
+        if (sub) sub.textContent = "Ketuk buat lihat & coba lagi — file tetap tersimpan di HP";
+        if (fill) fill.style.width = "100%";
+        if (ikon) ikon.className = "fa-solid fa-triangle-exclamation";
+        if (aksi) {
+          aksi.style.display = "";
+          aksi.textContent = "Coba semua";
+          aksi.dataset.mode = "ulangi";
         }
         return;
       }
-      // tidak ada aktif/gagal -> sembunyikan chip
-      if (chipTampil) {
-        chipTampil = false;
-        try {
-          if (typeof Notice !== "undefined" && Notice.hide) Notice.hide(CHIP_ID);
-        } catch (e) {}
+      // tidak ada aktif/gagal -> sembunyikan bar
+      if (barTampil) {
+        barTampil = false;
+        bar.style.display = "none";
         var selesai = tasks.filter(function (t) { return t.status === "done"; });
         if (selesai.length > 0 && pernahLambat) {
           pernahLambat = false;
@@ -121,24 +270,27 @@
             if (typeof showToast === "function") showToast("Semua upload selesai ✓", "success");
           } catch (e) {}
         }
+        sesiTotal = 0;
+        sesiSelesai = 0;
+        sesiBytes = 0;
+        sesiDoneBytes = 0;
+        sesiT0 = 0;
       }
     } catch (e) {}
   }
 
-  var pernahLambat = false;
-
-  function refreshChipSoon() {
-    // Tunda tampil chip biar upload kilat (<1.2 dtk) tidak bikin kedip.
-    if (chipTampil) { tick(); return; }
-    if (!chipTimer) {
-      chipTimer = setTimeout(function () {
-        chipTimer = null;
+  function tampilBarSegera() {
+    // Tunda tampil bar biar upload kilat (<1.2 dtk) tidak bikin kedip.
+    if (barTampil) { tick(); return; }
+    if (!barTimer) {
+      barTimer = setTimeout(function () {
+        barTimer = null;
         if (aktif().length > 0) {
           pernahLambat = true;
           lastTick = 0;
           tick();
         }
-      }, TUNDA_CHIP_MS);
+      }, TUNDA_BAR_MS);
     }
   }
 
@@ -180,7 +332,10 @@
       };
       tasks.unshift(task);
       prune();
-      refreshChipSoon();
+      if (sesiTotal === 0) { sesiT0 = Date.now(); sesiDoneBytes = 0; sesiBytes = 0; sesiSelesai = 0; }
+      sesiTotal++;
+      sesiBytes += task.size || 0;
+      tampilBarSegera();
       return new Promise(function (res, rej) {
         var xhr;
         try {
@@ -227,6 +382,8 @@
             task.status = "done";
             task.loaded = task.total || task.size || task.loaded;
             task.doneAt = Date.now();
+            sesiSelesai++;
+            sesiDoneBytes += task.size || 0;
             lastTick = 0;
             tick();
             try { if (typeof task.onDone === "function") task.onDone(task); } catch (e) {}
@@ -261,6 +418,9 @@
     },
 
     batalkanSemua: function () {
+      kompresAktif().forEach(function (t) {
+        try { UploadManager.batalkanKompres(t.id); } catch (e) {}
+      });
       aktif().forEach(function (t) {
         try { if (t.xhr) t.xhr.abort(); } catch (e) {}
       });
@@ -276,11 +436,77 @@
       var label = t.label;
       var blob = t.blob;
       var path = t.path;
+      var ukuran = t.size || (blob && blob.size) || 0;
       UploadManager.hapus(id);
+      // putXHR di bawah nambah counter lagi — kurangi dulu biar "dari Y" stabil.
+      sesiTotal = Math.max(0, sesiTotal - 1);
+      sesiBytes = Math.max(0, sesiBytes - ukuran);
       try {
         var p = uploadFotoStorage(blob, path, { label: label, onDone: onDone });
         if (p && typeof p.catch === "function") p.catch(function () {});
       } catch (e) {}
+      return true;
+    },
+
+    // Coba lagi semua yang gagal (dipakai tombol bar).
+    ulangiSemua: function () {
+      var ids = gagal().map(function (t) { return t.id; });
+      if (!ids.length) return false;
+      ids.forEach(function (id) {
+        try { UploadManager.ulangi(id); } catch (e) {}
+      });
+      return true;
+    },
+
+    // Tugas kompres video (compress-video.js): lapor SEBELUM task upload
+    // ada, biar bar bawah bisa nampilin "Mengompres video …%".
+    kompresMulai: function (label) {
+      var id = "k" + (++kompresSeq) + "_" + Date.now().toString(36);
+      kompres[id] = { label: String(label || "video"), frac: 0, msg: "Menyiapkan…" };
+      lastTick = 0;
+      refreshBar();
+      return id;
+    },
+
+    kompresLapor: function (id, frac, msg) {
+      var t = kompres[id];
+      if (!t) return false;
+      if (typeof frac === "number" && isFinite(frac))
+        t.frac = Math.max(0, Math.min(1, frac));
+      if (msg) t.msg = String(msg);
+      var now = Date.now();
+      if (now - kompresLast < 200) return true;
+      kompresLast = now;
+      lastTick = 0;
+      refreshBar();
+      return true;
+    },
+
+    kompresSelesai: function (id) {
+      if (!id || !kompres[id]) return false;
+      try { delete kompres[id]; } catch (e) {}
+      lastTick = 0;
+      refreshBar();
+      if (overlay && overlay.style.display !== "none") renderDaftar();
+      return true;
+    },
+
+    // Daftarkan fungsi pembatal kompres (dipanggil tombol Batal).
+    kompresBisaBatal: function (id, fn) {
+      var t = kompres[id];
+      if (!t) return false;
+      t.fnBatal = (typeof fn === "function") ? fn : null;
+      return true;
+    },
+
+    batalkanKompres: function (id) {
+      var t = kompres[id];
+      if (!t) return false;
+      t.batalDiminta = true;
+      try { if (t.fnBatal) t.fnBatal(); } catch (e) {}
+      lastTick = 0;
+      refreshBar();
+      if (overlay && overlay.style.display !== "none") renderDaftar();
       return true;
     },
 
@@ -360,6 +586,7 @@
       var id = btn.getAttribute("data-id");
       var aksi = btn.getAttribute("data-aksi");
       if (aksi === "batal") UploadManager.batalkan(id);
+      else if (aksi === "batal-kompres") UploadManager.batalkanKompres(id);
       else if (aksi === "ulangi") UploadManager.ulangi(id);
       else if (aksi === "hapus") UploadManager.hapus(id);
     });
@@ -368,11 +595,24 @@
   function renderDaftar() {
     var list = overlay ? overlay.querySelector("#uploadList") : null;
     if (!list) return;
-    if (!tasks.length) {
+    // Baris kompres dulu (kerja berjalan), lalu antrean upload.
+    var htmlKompres = kompresAktif().map(function (t) {
+      var pct = Math.round((t.frac || 0) * 100);
+      var ket = (t.batalDiminta ? "Membatalkan… · " : "") + String(t.msg || "Mengompres…");
+      if (pct > 0) ket += " · " + pct + "%";
+      return '<div class="upload-row" data-status="uploading">' +
+        '<div class="upload-row-head"><i class="fa-solid fa-file-video"></i>' +
+        "<div><b>Mengompres video</b><small>" + esc(t.label) + "</small></div></div>" +
+        '<div class="upload-bar"><div class="upload-bar-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="upload-row-foot"><span>' + esc(ket) + "</span><span>" +
+        (t.batalDiminta ? "" : '<button type="button" class="btn btn-white btn-sm" data-aksi="batal-kompres" data-id="' + esc(t.id) + '">Batal</button>') +
+        "</span></div></div>";
+    }).join("");
+    if (!tasks.length && !htmlKompres) {
       list.innerHTML = '<div class="pesan-empty"><i class="fa-solid fa-check"></i> Tidak ada upload.</div>';
       return;
     }
-    list.innerHTML = tasks.map(function (t) {
+    list.innerHTML = htmlKompres + tasks.map(function (t) {
       var p = (t.status === "uploading") ? fmtPersen(t.loaded, t.total || t.size) : "";
       var pct = p ? parseInt(p, 10) || 0 : (t.status === "done" ? 100 : 0);
       var aksi = "";
@@ -394,10 +634,10 @@
     }).join("");
   }
 
-  // Peringatan kalau user reload/nutup tab saat upload aktif.
+  // Peringatan kalau user reload/nutup tab saat upload/kompres aktif.
   try {
     window.addEventListener("beforeunload", function (e) {
-      if (aktif().length > 0) {
+      if (aktif().length > 0 || kompresAktif().length > 0) {
         e.preventDefault();
         e.returnValue = "";
       }

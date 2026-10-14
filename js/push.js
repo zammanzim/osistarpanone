@@ -12,7 +12,7 @@
 
   var LS_AUD = "push_audience";
   var LS_ON = "push_aktif";
-  var LS_POPUP = "push_popup_v1"; // popup ajakan awal — tampil sekali selamanya
+  var LS_POPUP = "push_popup_v1"; // jatah dot merah titik-tiga — tampil sekali selamanya
 
   function toast(msg, tipe) {
     try {
@@ -251,7 +251,16 @@
       "#pushBellBtn i{color:var(--red,#e11d2e)}" +
       "#pushBellBtn.on{background:#def5e3}" +
       "@media (max-width:700px){#pushBellBtn{display:none!important}}" +
-      "#headerMorePush i{color:var(--red,#e11d2e)}";
+      "#headerMorePush i{color:var(--red,#e11d2e)}" +
+      "#headerMoreBtn{position:relative}" +
+      "#headerMoreBtn.ada-dot::after{content:'';position:absolute;top:6px;right:6px;" +
+      "width:11px;height:11px;border-radius:50%;background:var(--red,#e11d2e);" +
+      "border:2px solid #fff;animation:pushDotPing 1.6s ease-out infinite}" +
+      "@keyframes pushDotPing{0%{box-shadow:0 0 0 0 rgba(225,29,46,.55)}" +
+      "70%{box-shadow:0 0 0 7px rgba(225,29,46,0)}100%{box-shadow:0 0 0 0 rgba(225,29,46,0)}}" +
+      "#headerMorePush{position:relative}" +
+      "#headerMorePush.ada-dot::after{content:'';width:9px;height:9px;flex-shrink:0;" +
+      "border-radius:50%;background:var(--red,#e11d2e);margin-left:auto}";
     try {
       document.head.appendChild(st);
     } catch {}
@@ -324,9 +333,67 @@
     });
   }
 
+  // ---- Dot merah titik-tiga: pengganti popup ajakan (tidak ganggu) ----
+  // Muncul kalau: push didukung + permission masih 'default' (belum mutusin)
+  // + belum subscribe + jatah dot belum habis. Hilang permanen setelah user
+  // buka menu titik-tiga sekali, atau setelah izinkan/blokir.
+  function dotPerlu() {
+    if (!didukung()) return false;
+    if (popupSudah()) return false;
+    if (izin() !== "default") return false;
+    try {
+      if (localStorage.getItem(LS_ON)) return false;
+    } catch {}
+    return true;
+  }
+
+  function tampilDot() {
+    try {
+      var b = document.getElementById("headerMoreBtn");
+      if (b && dotPerlu()) b.classList.add("ada-dot");
+      if (itemMenu && dotPerlu()) itemMenu.classList.add("ada-dot");
+    } catch {}
+  }
+
+  function hapusDot() {
+    try {
+      var b = document.getElementById("headerMoreBtn");
+      if (b) b.classList.remove("ada-dot");
+      if (itemMenu) itemMenu.classList.remove("ada-dot");
+    } catch {}
+    tandaiPopup(); // jatah habis — jangan muncul lagi selamanya
+  }
+
+  // Hapus dot saat user buka titik-tiga (cukup lihat menu = dianggap tahu).
+  function awasiMenuDot() {
+    try {
+      var b = document.getElementById("headerMoreBtn");
+      if (b && !b._dotAwasi) {
+        b._dotAwasi = true;
+        b.addEventListener("click", function () {
+          // Menu mau dibuka (belum ada .open) = user melirik -> habiskan jatah.
+          var menu = document.getElementById("headerMoreMenu");
+          if (menu && !menu.classList.contains("open")) hapusDot();
+        });
+      }
+    } catch {}
+    try {
+      if (window.HeaderMore && !HeaderMore._dotBungkus) {
+        HeaderMore._dotBungkus = true;
+        var origToggle = HeaderMore.toggle.bind(HeaderMore);
+        HeaderMore.toggle = function () {
+          var menu = document.getElementById("headerMoreMenu");
+          if (menu && !menu.classList.contains("open")) hapusDot();
+          return origToggle();
+        };
+      }
+    } catch {}
+  }
+
   function buatTombol() {
     if (tombol || itemMenu || !didukung()) return;
     pasangCss();
+    awasiMenuDot();
     var menu = document.getElementById("headerMoreMenu");
     if (menu && !document.getElementById("headerMorePush")) {
       itemMenu = document.createElement("button");
@@ -335,6 +402,7 @@
       itemMenu.className = "header-more-item";
       itemMenu.innerHTML = '<i class="fa-solid fa-bell"></i> Notifikasi HP';
       itemMenu.addEventListener("click", function () {
+        hapusDot();
         try {
           if (window.HeaderMore && HeaderMore.close) HeaderMore.close();
         } catch {}
@@ -388,9 +456,25 @@
         st === "aktif"
           ? '<i class="fa-solid fa-bell"></i> Notif HP: Aktif'
           : '<i class="fa-solid fa-bell"></i> Aktifkan Notif HP';
+      // status sudah jelas (aktif/diblokir/tak-dukung) = dot tidak perlu.
+      if (st !== "mati") hapusDotTanpaTandai();
+      else tampilDot();
+    } else {
+      // Halaman tanpa menu titik-tiga (cuma pill): tidak ada dot.
+      if (st !== "mati") hapusDotTanpaTandai();
     }
     try {
       if (window.HeaderMore && HeaderMore.refresh) HeaderMore.refresh();
+    } catch {}
+  }
+
+  // Hapus visual dot tanpa menghabiskan jatah (dipakai saat status berubah
+  // karena izin/blokir — penanda jatah diurus terpisah).
+  function hapusDotTanpaTandai() {
+    try {
+      var b = document.getElementById("headerMoreBtn");
+      if (b) b.classList.remove("ada-dot");
+      if (itemMenu) itemMenu.classList.remove("ada-dot");
     } catch {}
   }
 
@@ -662,21 +746,19 @@
 
   function logPopup(kenapa) {
     try {
-      console.log("[push] popup:", kenapa);
+      console.log("[push] dot:", kenapa);
     } catch {}
   }
 
-  function jadwalkanPopup(ulang) {
-    // Tunda ~4 detik biar halaman kebaca dulu + tidak tabrakan dengan
-    // toast/popup lain (mis. hint install iOS).
-    // Sengaja TIDAK menunggu serviceWorker.ready: di file:// atau SW yang
-    // belum siap, ready tidak pernah resolve dan popup jadi tidak tampil.
-    // Cukup permission + flag lokal sebagai penentu (cepat & pasti).
-    ulang = ulang || 0;
+  // Pengganti popup otomatis: pasang bulet merah di titik-tiga.
+  // Tidak ganggu — user yang mutusin kapan buka menu. Jatah sekali selamanya.
+  function jadwalkanDot() {
+    // Tunda ~4 detik biar header + menu kebentuk dulu (push.js dimuat async).
     setTimeout(function () {
       try {
+        awasiMenuDot();
         if (popupSudah()) {
-          logPopup("dilewati — sudah pernah tampil");
+          logPopup("dilewati — jatah habis");
           return;
         }
         if (izin() !== "default") {
@@ -691,20 +773,19 @@
             return;
           }
         } catch {}
-        // Jangan timpa popup/form lain yang sedang terbuka — coba lagi
-        // maksimal 3x (tiap 4 detik), habis itu tampil paksa.
-        if (document.querySelector(".prestasi-form-overlay.active") && ulang < 3) {
-          logPopup("ditunda — ada overlay lain, coba lagi");
-          jadwalkanPopup(ulang + 1);
-          return;
-        }
-        pasangCssPopup();
-        tampilPopupSekali();
-        logPopup("ditampilkan");
+        tampilDot();
+        logPopup("dot dipasang di titik-tiga");
       } catch (e) {
         logPopup("gagal: " + (e && e.message ? e.message : e));
       }
     }, 4000);
+  }
+
+  // LEGACY: popup ajakan otomatis SUDAH DIMATIKAN (ganti dot merah).
+  // Fungsi tampilPopupSekali + pasangCssPopup dipertahankan cuma buat
+  // testing manual via console: PushNotif.tesPopup().
+  function jadwalkanPopup() {
+    jadwalkanDot();
   }
 
   function init() {

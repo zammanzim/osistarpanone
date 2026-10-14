@@ -777,21 +777,22 @@ function catatAksi(aksi, detail) {
   } catch {}
 }
 
-// Ambil request lagu terbaru (terbaru di atas, maks 30)
-async function getRequestLagu() {
+// Ambil request lagu terbaru (paging: awal 30, +30 tiap klik "Muat lebih banyak")
+async function getRequestLagu(batas = 30) {
+  const n = Math.min(200, Math.max(1, parseInt(batas, 10) || 30));
   const kolom = "id, device_id, judul, penyanyi, pesan, nama, selesai, balasan, dibalas_oleh, dibalas_at, created_at";
   let { data, error } = await supa
     .from("lagu_requests")
     .select(kolom)
     .order("created_at", { ascending: false })
-    .limit(30);
+    .range(0, n - 1);
   // Fallback: DB belum dimigrasi (kolom balasan belum ada) -> tanpa kolom balasan.
   if (error && String(error.message || "").match(/balasan|dibalas/i)) {
     const fb = await supa
       .from("lagu_requests")
       .select("id, device_id, judul, penyanyi, pesan, nama, selesai, created_at")
       .order("created_at", { ascending: false })
-      .limit(30);
+      .range(0, n - 1);
     if (fb.error) throw fb.error;
     return (fb.data || []).map(r => ({ ...r, balasan: "", dibalas_oleh: "", dibalas_at: null }));
   }
@@ -801,7 +802,7 @@ async function getRequestLagu() {
       .from("lagu_requests")
       .select("id, device_id, judul, penyanyi, pesan, nama, created_at")
       .order("created_at", { ascending: false })
-      .limit(30);
+      .range(0, n - 1);
     if (fb.error) throw fb.error;
     return (fb.data || []).map(r => ({ ...r, selesai: false }));
   }
@@ -3586,6 +3587,7 @@ async function uploadFotoStorage(file, path, opts) {
         toUpload = await compressVideo(file, { onProgress: opts && opts.onCompress });
       }
     } catch (e) {
+      if (e && e.batalKompres) throw e; // user batalin = file ini tidak jadi upload
       console.warn("compress video gagal, pakai asli:", e);
     }
   }

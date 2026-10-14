@@ -40,7 +40,7 @@ Detail lengkap tiap modul ada di `project-analysis.md`. Kalau butuh peta 53 file
 - **Gak ada `npm run dev` / `npm run build`.** Ini static site. Jalanin lokal pakai server statis, contoh: `python -m http.server 8000` atau Live Server VSCode, dari root repo.
 - **Gak ada unit test otomatis.** Verifikasi = buka di browser, cek console, cek network ke Supabase/R2.
 - **Deploy** = commit + push ke `main`. GitHub Pages yang serve. Jangan bikin folder `dist/` atau proses build.
-- **PWA:** kalau nambah/rename file yang di-precache `sw.js`, wajib naikkan versi cache (`tarpan-vXX`) biar user gak stuck di cache lama.
+- **PWA:** kalau nambah/rename file yang di-precache `sw.js`, langsung aja precache + wajib naikkan versi cache (`tarpan-vXX`) biar user gak stuck di cache lama. Gak perlu tanya dulu.
 - **Versi:** ikuti aturan di `CHANGELOG.md` — patch `vX.X.1` (fix kecil), minor `vX.1.0` (1 fitur/modul), major `vX.0.0` (breaking / restruktur / ganti auth). Tiap rilis update `CHANGELOG.md` + `changelog.json` / tabel changelog di DB.
 
 ## 4. Aturan kerja AI (wajib)
@@ -57,9 +57,10 @@ Detail lengkap tiap modul ada di `project-analysis.md`. Kalau butuh peta 53 file
 - **JANGAN sentuh / baca isi secret:** `.env`, `.env.*`, `worker/.dev.vars`, `opencode.json`. Ini di `.gitignore`. Kalau butuh config, baca `js/config.js` aja (itu key publik, aman).
 - **JANGAN commit secret.** Key private, service_role, VAPID private, S3 secret — hanya di Worker secret / env, gak pernah di frontend.
 - **JANGAN edit vendor:** `js/supabase.min.js`. Itu file vendor.
-- **Hati-hati dengan:** `js/config.js`, `worker/`, `sw.js`, `js/db.js`, `js/osis-auth.js`. Ini tulang punggung. Ubah hanya kalau diminta eksplisit + sudah konfirmasi.
+- **Hati-hati dengan:** `js/config.js`, `worker/`, `sw.js`, `js/db.js`, `js/osis-auth.js`. Ini tulang punggung. Ubah hanya kalau diminta eksplisit + sudah konfirmasi. Pengecualian: precache di `sw.js` langsung aja, gak perlu konfirmasi.
 - **Storage:** upload baru WAJIB via R2 presign (`R2_ENABLED = true`). Bucket Supabase `osis-media` itu LEGACY, cuma fallback baca, jangan dipakai buat upload baru.
 - **CSS:** jaga design system neo-brutalism — border tebal `2.5-3px solid var(--ink)`, hard shadow `5px 5px 0`, radius bento `22px`, font Outfit. Jangan ganti palet seenaknya. Variabel ada di `:root` di `css/style.css`.
+- **UI wajib pakai bawaan:** toast (`js/toast.js`), notice (`js/notice.js`), modal (`js/show-popup.js`), draft form (`js/form-persist.js`). Jangan bikin modal / toast / alert sendiri.
 
 ## 6. Aturan database (Supabase)
 
