@@ -267,7 +267,7 @@ const Arsip = {
             ? `<span class="bento-badge" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="BADGE">${badge}</span>`
             : "";
         const media = (typeof thumbBento === "function")
-          ? thumbBento(getFoto(path), judul)
+          ? ((typeof thumbBentoPath === "function") ? thumbBentoPath(path, judul) : thumbBento(getFoto(path), judul))
           : `<img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
         const lebih = (!penuh && idx === BATAS - 1 && sisa > 0)
           ? `<button class="album-lebih" onclick="event.stopPropagation(); Arsip.toggleAlbum(${item.id})">+${sisa} lainnya</button>`
@@ -402,7 +402,7 @@ const Arsip = {
         .map((f) => {
           const p = typeof f === "string" ? f : f.path;
           const media = (typeof thumbBento === "function")
-            ? thumbBento(getFoto(p), "")
+            ? ((typeof thumbBentoPath === "function") ? thumbBentoPath(p, "") : thumbBento(getFoto(p), ""))
             : `<img src="${getFoto(p)}" alt="">`;
           return `<div class="item media-muat">${media}</div>`;
         })
@@ -1033,7 +1033,7 @@ const ArsipPelantikan = {
         const path = typeof f === "string" ? f : f.path;
         if (!path) return "";
         const media = (typeof thumbBento === "function")
-          ? thumbBento(getFoto(path), judul)
+          ? ((typeof thumbBentoPath === "function") ? thumbBentoPath(path, judul) : thumbBento(getFoto(path), judul))
           : `<img src="${getFoto(path)}" alt="${judul}" loading="lazy">`;
         const lebih = (!penuh && idx === BATAS - 1 && sisa > 0)
           ? `<button class="album-lebih" onclick="event.stopPropagation(); ArsipPelantikan.toggleAlbum(${item.id})">+${sisa} lainnya</button>`

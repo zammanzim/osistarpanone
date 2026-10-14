@@ -64,6 +64,22 @@ function getFoto(pathFoto) {
 }
 
 // ============ MEDIA: foto vs video ============
+// Path thumb pendamping: gallery/abc.jpg -> gallery/abc-thumb.jpg.
+// Lolos validasiPath Worker (cek folder pertama saja).
+function pathThumb(path) {
+  const key = String(path || "").replace(/^\/+/, "");
+  const i = key.lastIndexOf(".");
+  if (i < 0) return key + "-thumb";
+  return key.slice(0, i) + "-thumb" + key.slice(i);
+}
+
+// URL publik thumb. URL http (eksternal) dikembalikan apa adanya
+// (thumb tidak bisa ditebak), path kosong -> "".
+function getThumb(pathFoto) {
+  if (!pathFoto) return "";
+  if (String(pathFoto).startsWith("http")) return getFoto(pathFoto);
+  return getFoto(pathThumb(pathFoto));
+}
 // Dipakai Galeri, Arsip, Kegiatan, Prestasi: grid tampilkan thumbnail
 // video (frame pertama, tanpa autoplay) + tombol play; popup baru play.
 function isVideoPath(path) {
@@ -122,6 +138,17 @@ function thumbBento(src, alt, extra = "") {
       `<span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>`;
   }
   return `<img src="${src}" alt="${esc}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'">` +
+    `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
+}
+// Varian hemat buat grid: load thumb (-thumb.jpg, ratusan px) dulu,
+// gagal (data lama belum ada thumb) -> fallback ke full. Video -> biasa.
+function thumbBentoPath(path, alt, extra = "") {
+  const full = getFoto(path);
+  if (!path || isVideoPath(full)) return thumbBento(full, alt, extra);
+  const thumb = getThumb(path);
+  if (!thumb || thumb === full) return thumbBento(full, alt, extra);
+  const esc = (typeof escapeHtml === "function" ? escapeHtml(String(alt || "")) : String(alt || ""));
+  return `<img src="${thumb}" alt="${esc}" loading="lazy" data-full="${full}" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src=this.dataset.full;}else{this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'}">` +
     `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
 }
 
@@ -3533,6 +3560,51 @@ async function compressImage(file, maxMB = 0.95, maxDim = 1920) {
   });
 }
 
+// Thumb kecil buat grid (default sisi panjang 400px, q 0.68 -> ~30-60KB).
+// Return File thumb atau null (bukan gambar / gagal / aslinya sudah kecil).
+async function buatThumb(file, maxDim = 400, quality = 0.68) {
+  try {
+    if (!file || !file.type || !String(file.type).startsWith("image/")) return null;
+    const url = URL.createObjectURL(file);
+    let img = null;
+    try {
+      img = await new Promise((res, rej) => {
+        const im = new Image();
+        im.onload = () => res(im);
+        im.onerror = rej;
+        im.src = url;
+      });
+    } finally {
+      try { URL.revokeObjectURL(url); } catch {}
+    }
+    if (!img) return null;
+    let w = img.naturalWidth || img.width;
+    let h = img.naturalHeight || img.height;
+    if (!w || !h) return null;
+    const scale = Math.min(1, maxDim / Math.max(w, h));
+    if (scale >= 1) return null; // sudah <= maxDim, thumb terpisah mubazir
+    w = Math.max(1, Math.round(w * scale));
+    h = Math.max(1, Math.round(h * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (file.type === "image/png") {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+    }
+    ctx.drawImage(img, 0, 0, w, h);
+    const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", quality));
+    if (!blob) return null;
+    return new File([blob], String(file.name || "foto").replace(/\.[^.]+$/, "-thumb.jpg"), {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+  } catch {
+    return null;
+  }
+}
+
 // Muat js/compress-video.js on-demand (halaman selain index.html yang tidak
 // include tag-nya). Path dihitung dari lokasi db.js sendiri biar benar untuk
 // "js/..." maupun "../js/...".
@@ -3561,6 +3633,27 @@ function pastikanCompressVideo() {
       rej(e);
     }
   });
+}
+
+// Upload thumb pendamping (-thumb.jpg) via presign. Best-effort: gagal
+// (mis. upload publik tanpa login — polanya tak lolos) -> diam saja,
+// grid otomatis fallback ke full via thumbBentoPath().
+async function unggahThumbR2(fileFull, key) {
+  try {
+    const thumb = await buatThumb(fileFull);
+    if (!thumb || !thumb.size) return;
+    const keyThumb = pathThumb(key);
+    if (!keyThumb || keyThumb === key) return;
+    const pres = await r2MintaPresign("put", keyThumb, "image/jpeg");
+    const up = await fetch(pres.url, {
+      method: "PUT",
+      headers: { "Content-Type": "image/jpeg" },
+      body: thumb,
+    });
+    if (!up.ok) console.warn("upload thumb gagal (" + up.status + "):", keyThumb);
+  } catch (e) {
+    console.warn("thumb gagal, lewati:", e);
+  }
 }
 
 async function uploadFotoStorage(file, path, opts) {
@@ -3602,6 +3695,7 @@ async function uploadFotoStorage(file, path, opts) {
       const label = (opts && opts.label) || (file && file.name) || key;
       const onDone = (opts && typeof opts.onDone === "function") ? opts.onDone : null;
       await UploadManager.putXHR(pres.url, toUpload, tipe, { label, name: file && file.name, path: key, onDone });
+      await unggahThumbR2(toUpload, key);
       return key;
     }
     const up = await fetch(pres.url, {
@@ -3610,6 +3704,7 @@ async function uploadFotoStorage(file, path, opts) {
       body: toUpload,
     });
     if (!up.ok) throw new Error(`Upload R2 gagal (${up.status})`);
+    await unggahThumbR2(toUpload, key);
     return key;
   }
   // Fallback legacy (sebelum Worker live): bucket Supabase lama.
@@ -3618,6 +3713,13 @@ async function uploadFotoStorage(file, path, opts) {
     .from(STORAGE_BUCKET)
     .upload(key, toUpload, { upsert: true, cacheControl: "3600" });
   if (error) throw error;
+  try {
+    const thumb = await buatThumb(toUpload);
+    if (thumb && thumb.size) {
+      await supa.storage.from(STORAGE_BUCKET)
+        .upload(pathThumb(key), thumb, { upsert: true, cacheControl: "3600" });
+    }
+  } catch {}
   return key;
 }
 
@@ -3629,6 +3731,14 @@ async function hapusFotoStorage(path) {
     const del = await fetch(pres.url, { method: "DELETE" });
     // 404 = file memang sudah tidak ada, anggap sukses biar data DB tetap bisa dibersihkan.
     if (!del.ok && del.status !== 404) throw new Error(`Hapus R2 gagal (${del.status})`);
+    // Thumb pendamping ikut dihapus (best-effort).
+    try {
+      const keyThumb = pathThumb(key);
+      if (keyThumb && keyThumb !== key) {
+        const presT = await r2MintaPresign("delete", keyThumb);
+        await fetch(presT.url, { method: "DELETE" });
+      }
+    } catch {}
     return;
   }
   const { error } = await supa.storage.from(STORAGE_BUCKET).remove([key]);

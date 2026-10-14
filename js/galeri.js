@@ -361,7 +361,7 @@ const Galeri = {
         let fotoHtml = "";
         fotos.forEach((path, idx) => {
             const media = (typeof thumbBento === "function")
-                ? thumbBento(getFoto(path), judul)
+                ? ((typeof thumbBentoPath === "function") ? thumbBentoPath(path, judul) : thumbBento(getFoto(path), judul))
                 : `<img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
             fotoHtml += `
                 <div class="item media-muat" data-foto-idx="${idx}" onclick="Galeri.bukaPopup(${item.id}, ${idx})">

@@ -1,5 +1,17 @@
 [
   {
+    "version": "v6.4.0",
+    "date": "2026-10-14",
+    "type": "minor",
+    "commit": "unreleased",
+    "message": "Upload ganda foto + thumbnail",
+    "title": "Thumbnail foto otomatis",
+    "description": "Tiap foto di-upload dobel: full compress 1920px + thumb 400px (~30-60KB). Grid galeri/arsip/feed load thumb dulu dengan fallback full, hapus ikut bersihkan thumb. Termasuk tool backfill-thumb.mjs untuk foto lama.",
+    "filesChanged": 27,
+    "insertions": 290,
+    "deletions": 33
+  },
+  {
     "version": "v6.3.0",
     "date": "2026-09-27",
     "type": "minor",

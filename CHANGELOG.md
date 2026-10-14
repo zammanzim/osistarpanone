@@ -5,9 +5,13 @@ Aturan versi (SemVer sederhana):
 - `vX.1.0` (minor) — fitur sedang, non-breaking: 1 halaman / 1 modul baru, migrasi SQL non-breaking.
 - `vX.0.0` (major) — perubahan besar / breaking: restruktur direktori, ganti sistem auth, hapus kode duplikat, modul inti baru.
 
-Versi berjalan: **v6.3.0** (2026-09-27). Total 42 entri (v1.0.0 → v6.3.0).
+Versi berjalan: **v6.4.0** (2026-10-14). Total 43 entri (v1.0.0 → v6.4.0).
 
 > Catatan: pesan commit asli banyak yang singkat (`mmm`, `serius`, `112`), jadi ringkasan di bawah diambil dari diff stat + daftar file, bukan cuma pesan commit.
+
+## [v6.4.0] — 2026-10-14 — minor
+- Upload ganda foto + thumbnail (`js/db.js`, `js/galeri.js`, `js/arsip.js`, `js/feed.js`)
+- Tiap foto: compress 1920px (`compressImage`) + thumb 400px q0.68 (`buatThumb`, `*-thumb.jpg`, ~30-60KB) di-upload bareng via `uploadFotoStorage` (best-effort). Grid pakai `thumbBentoPath` (thumb dulu, fallback full), popup tetap full. `hapusFotoStorage` ikut hapus thumb. Tool `tools/backfill-thumb.mjs` buat foto lama (butuh `npm i sharp`, awali `DRY_RUN=1`). Bump `db.js?v=27` + SW `tarpan-v86`.
 
 ## [v6.3.0] — 2026-09-27 — minor
 - Commit: `15e8600` — `Changelog DB + kelola inline di halaman publik`
