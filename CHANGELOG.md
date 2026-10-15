@@ -5,9 +5,12 @@ Aturan versi (SemVer sederhana):
 - `vX.1.0` (minor) — fitur sedang, non-breaking: 1 halaman / 1 modul baru, migrasi SQL non-breaking.
 - `vX.0.0` (major) — perubahan besar / breaking: restruktur direktori, ganti sistem auth, hapus kode duplikat, modul inti baru.
 
-Versi berjalan: **v6.4.0** (2026-10-14). Total 43 entri (v1.0.0 → v6.4.0).
+Versi berjalan: **v6.5.0** (2026-10-15). Total 44 entri (v1.0.0 → v6.5.0).
 
 > Catatan: pesan commit asli banyak yang singkat (`mmm`, `serius`, `112`), jadi ringkasan di bawah diambil dari diff stat + daftar file, bukan cuma pesan commit.
+
+## [v6.5.0] — 2026-10-15 — minor
+- Rebuild halaman Anggota (`osis/anggota.html`, `js/anggota.js?v=12`): buang grid kartu + 3 tab + popup 15 field, ganti tabel rapat (No/Nama/Jabatan/Kelas/Username/Aksi) + search + pilih periode + popup form 4 field via `showPopup`. Fokus Anggota simple (roster absensi). Tab Pengurus & Sekbid dicabut dari halaman ini (data DB tidak dihapus, UI kelola pindah ke halaman sendiri nanti). Guard `OsisAuth.butuh("anggota")` buat tombol tulis.
 
 ## [v6.4.0] — 2026-10-14 — minor
 - Upload ganda foto + thumbnail (`js/db.js`, `js/galeri.js`, `js/arsip.js`, `js/feed.js`)

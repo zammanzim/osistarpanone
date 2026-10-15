@@ -1,5 +1,17 @@
 [
   {
+    "version": "v6.5.0",
+    "date": "2026-10-15",
+    "type": "minor",
+    "commit": "unreleased",
+    "message": "Rebuild halaman Anggota",
+    "title": "Halaman Anggota baru (tabel)",
+    "description": "Halaman Anggota ditulis ulang fokus Anggota simple: tabel rapat No/Nama/Jabatan/Kelas/Username/Aksi + search + pilih periode + popup form 4 field. Grid kartu, 3 tab, dan popup 15 field dibuang. Tab Pengurus & Sekbid dicabut dari halaman ini (data DB tetap, UI kelola menyusul). Guard tulis via hak anggota.",
+    "filesChanged": 4,
+    "insertions": 400,
+    "deletions": 1250
+  },
+  {
     "version": "v6.4.0",
     "date": "2026-10-14",
     "type": "minor",

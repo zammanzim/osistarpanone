@@ -3,24 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Anggota & Pengurus - OSIS TARPAN ONE</title>
+    <title>Anggota - OSIS TARPAN ONE</title>
     <link rel="stylesheet" href="../css/style.css?v=22" />
+    <link rel="stylesheet" href="../css/osis2.css?v=12" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="32x32"
-      href="../icons/favicon-32.png"
-    />
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
@@ -31,299 +24,119 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
     <style>
-      .anggota-wrap {
-        max-width: 1280px;
-        margin: 0 auto;
-        padding: 18px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-      .anggota-head {
-        background: var(--white);
-        border: 3px solid var(--ink);
-        border-radius: 18px;
-        padding: 18px;
-        box-shadow: 4px 4px 0 var(--ink);
-        display: flex;
-        gap: 14px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .anggota-head .ico {
-        width: 52px;
-        height: 52px;
-        border-radius: 14px;
-        border: 3px solid var(--ink);
-        background: var(--yellow);
+      .angg-tools {
         display: grid;
-        place-items: center;
-        font-size: 1.4rem;
-        box-shadow: 2px 2px 0 var(--ink);
-        flex-shrink: 0;
+        grid-template-columns: 1fr;
+        gap: 10px;
       }
-      .anggota-head h1 {
-        font-size: 1.25rem;
-        font-weight: 900;
-        line-height: 1.1;
-      }
-      .anggota-head p {
-        font-size: 0.8rem;
-        color: var(--gray);
-        font-weight: 600;
-        margin-top: 4px;
-      }
-      .anggota-head .actions {
-        margin-left: auto;
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .anggota-head .actions select {
-        min-width: 140px;
-      }
-      .anggota-tabs {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .angg-tab {
-        padding: 9px 16px;
-        border: 2.5px solid var(--ink);
-        border-radius: 999px;
-        background: var(--white);
-        font-family: inherit;
-        font-size: 0.78rem;
-        font-weight: 800;
-        cursor: pointer;
-        box-shadow: 2px 2px 0 var(--ink);
-        transition:
-          transform 0.12s,
-          box-shadow 0.12s,
-          background 0.12s;
-      }
-      .angg-tab:active {
-        transform: translate(1px, 1px);
-        box-shadow: none;
-      }
-      .angg-tab.active {
-        background: var(--red);
-        color: #fff;
-      }
-      .anggota-card {
-        background: var(--white);
-        border: 3px solid var(--ink);
-        border-radius: 18px;
-        padding: 16px;
-        box-shadow: 4px 4px 0 var(--ink);
-        overflow-x: auto;
-      }
-      .anggota-card h3 {
-        font-size: 0.95rem;
-        font-weight: 900;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 4px;
-      }
-      .anggota-card h3 i {
-        color: var(--red);
-      }
-      .anggota-card .sub {
-        font-size: 0.74rem;
-        color: var(--gray);
-        font-weight: 600;
-        margin-bottom: 12px;
-      }
-      .angg-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-      }
-      @media (min-width: 640px) {
-        .angg-grid {
-          grid-template-columns: repeat(3, 1fr);
+      @media (min-width: 720px) {
+        .angg-tools {
+          grid-template-columns: 2fr 1.4fr auto;
+          align-items: end;
         }
       }
-      .angg-card {
-        background: var(--white);
-        border: 2.5px solid var(--ink);
-        border-radius: 14px;
-        padding: 12px;
-        box-shadow: 3px 3px 0 var(--ink);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 6px;
+      .angg-tools .field { margin-bottom: 0; }
+      /* Tombol periode (dipencet ~1x setahun): ikon + kecil nempel dropdown */
+      .periode-row { display: flex; gap: 8px; }
+      .periode-row select { flex: 1; min-width: 0; }
+      .periode-row .btn-plus { flex-shrink: 0; }
+      /* Label kosong penyelarai desktop disembunyikan di HP biar tombol rapat */
+      @media (max-width: 719px) {
+        .angg-tools .field-act label { display: none; }
       }
-      .angg-card .angg-foto {
-        width: 72px;
-        height: 72px;
+      .angg-list { display: flex; flex-direction: column; }
+      .angg-head,
+      .angg-row {
+        display: grid;
+        grid-template-columns: 26px 36px 1.5fr 1fr 0.8fr 0.9fr 86px;
+        gap: 8px;
+        align-items: center;
+        padding: 9px 8px;
+      }
+      .angg-head.no-aksi,
+      .angg-row.no-aksi {
+        grid-template-columns: 26px 36px 1.6fr 1.1fr 0.9fr 1fr;
+      }
+      .angg-head {
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray);
+        border-bottom: 2.5px solid var(--ink);
+        padding-bottom: 8px;
+      }
+      .angg-row {
+        font-size: 0.8rem;
+        border-bottom: 1.5px dashed var(--line);
+      }
+      .angg-row:hover { background: var(--paper); }
+      .angg-row .num {
+        color: var(--gray);
+        font-weight: 800;
+      }
+      .angg-row .ava {
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
-        border: 2.5px solid var(--ink);
+        border: 2px solid var(--ink);
         background: var(--paper-2);
-        overflow: hidden;
         display: grid;
         place-items: center;
-        font-size: 1.4rem;
+        font-size: 0.72rem;
         font-weight: 900;
         color: var(--red);
-        flex-shrink: 0;
       }
-      .angg-card .angg-foto img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+      .angg-row .main { min-width: 0; }
+      .angg-row .main b {
         display: block;
-      }
-      .angg-card .angg-foto.media-muat {
-        display: grid;
-        place-items: center;
-      }
-      .angg-card h4 {
-        font-size: 0.88rem;
-        font-weight: 900;
-        line-height: 1.2;
+        font-size: 0.84rem;
+        font-weight: 800;
         overflow-wrap: anywhere;
       }
-      .angg-card .jabatan {
-        font-size: 0.68rem;
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: var(--red);
-        background: var(--paper-2);
-        border: 2px solid var(--ink);
-        padding: 2px 9px;
-        border-radius: 999px;
+      .angg-row .meta {
+        display: none;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray);
+        margin-top: 1px;
+        overflow-wrap: anywhere;
       }
-      .angg-card .angg-actions {
+      .angg-row .aksi {
         display: flex;
         gap: 6px;
-        margin-top: 4px;
+        justify-content: flex-end;
       }
-      .angg-add {
-        border-style: dashed;
-        background: var(--paper-2);
-        cursor: pointer;
-        justify-content: center;
-        min-height: 170px;
-        color: var(--gray);
-        font-weight: 800;
-        font-size: 0.82rem;
-      }
-      .angg-add i {
-        font-size: 1.5rem;
-        color: var(--red);
-      }
-      .angg-add:active {
-        transform: translate(2px, 2px);
-        box-shadow: none;
-      }
-      .angg-grup {
-        font-size: 0.74rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin: 14px 0 8px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .angg-grup:first-child {
-        margin-top: 0;
-      }
-      .angg-grup::after {
-        content: "";
-        flex: 1;
-        height: 2.5px;
-        background: var(--ink);
-        border-radius: 2px;
-      }
-      /* popup tambah/edit */
-      .angg-popup {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 10, 11, 0.78);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 210;
-        padding: 18px;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition:
-          opacity 0.22s ease,
-          visibility 0.22s ease;
-      }
-      .angg-popup.open {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-      }
-      .angg-popup-inner {
-        width: min(560px, 100%);
-        background: var(--white);
-        border: 3px solid var(--ink);
-        border-radius: 18px;
-        padding: 18px;
-        box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
-        max-height: 90vh;
-        overflow-y: auto;
-        transform: scale(0.96) translateY(10px);
-        transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
-      }
-      .angg-popup.open .angg-popup-inner {
-        transform: scale(1) translateY(0);
-      }
-      .angg-drop {
-        border: 2.5px dashed var(--ink);
-        border-radius: 14px;
-        background: var(--paper-2);
-        height: 110px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        overflow: hidden;
-        position: relative;
-        transition:
-          background 0.15s,
-          border-color 0.15s;
-      }
-      .angg-drop.dragover {
-        background: var(--white);
-        border-color: var(--red);
-      }
-      .angg-drop img {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-      .angg-drop-inner {
-        text-align: center;
-        color: var(--gray);
+      .uname {
+        font-size: 0.72rem;
         font-weight: 700;
-        font-size: 0.8rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        padding: 8px;
+        color: var(--gray);
       }
-      .angg-drop-inner i {
-        font-size: 1.4rem;
-        color: var(--red);
-      }
-      .angg-drop-inner small {
-        font-size: 0.66rem;
-        font-weight: 600;
-        opacity: 0.8;
+      @media (max-width: 719px) {
+        .angg-head { display: none; }
+        .angg-row,
+        .angg-row.no-aksi {
+          grid-template-columns: 38px 1fr auto;
+          padding: 10px 4px;
+          gap: 10px;
+        }
+        .angg-row .num,
+        .angg-row .c-jab,
+        .angg-row .c-kelas,
+        .angg-row .c-user { display: none; }
+        .angg-row .ava {
+          width: 38px;
+          height: 38px;
+          font-size: 0.78rem;
+        }
+        .angg-row .meta { display: block; }
+        .angg-row .aksi .btn {
+          min-width: 38px;
+          min-height: 38px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
       }
     </style>
     <script src="../js/supabase.min.js?v=10"></script>
@@ -331,14 +144,14 @@
     <script src="../js/db.js?v=27" defer></script>
     <script src="../js/aktivitas.js?v=10" defer></script>
     <script src="../js/app.js?v=10" defer></script>
+    <script src="../js/dropdown.js?v=1" defer></script>
     <script src="../js/toast.js?v=10" defer></script>
     <script src="../js/notice.js?v=10" defer></script>
-    <script src="../js/upload.js?v=10" defer></script>
     <script src="../js/show-popup.js?v=13" defer></script>
     <script src="../js/osis-auth.js?v=19" defer></script>
     <script src="../js/osis-sidebar.js?v=16" defer></script>
     <script src="../js/osis-header.js?v=10" defer></script>
-    <script src="../js/anggota.js?v=11" defer></script>
+    <script src="../js/anggota.js?v=12" defer></script>
     <script src="../js/pwa.js?v=11" defer></script>
   </head>
   <body>
@@ -347,388 +160,60 @@
         <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
         <div class="brand-text">
           <h2>ANGGOTA</h2>
-          <p>Data &amp; Pengurus</p>
+          <p>Data Anggota OSIS</p>
         </div>
       </a>
-
       <div class="top-nav-extra">
-        <a href="../index#/" class="btn btn-white btn-sm"
-          ><i class="fa-solid fa-house"></i> Beranda</a
-        >
-
+        <a href="../index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
         <div id="areaAuth"></div>
       </div>
     </header>
 
-    <div class="anggota-wrap">
-      <div class="anggota-head">
-        <div class="ico"><i class="fa-solid fa-users"></i></div>
+    <div class="osis-wrap">
+      <div class="osis-hero">
+        <div class="osis-avatar"><i class="fa-solid fa-users"></i></div>
         <div style="flex: 1; min-width: 180px">
           <h1>DATA ANGGOTA</h1>
-          <p>Kelola anggota, pengurus, dan sekbid per periode.</p>
-        </div>
-        <div class="actions">
-          <select
-            id="pilihTahun"
-            class="admin-input"
-            title="Periode tahun"
-          ></select>
-          <button class="btn btn-white btn-sm" id="btnTambahTahun">
-            <i class="fa-solid fa-plus"></i> Periode
-          </button>
-        </div>
-      </div>
-
-      <div class="anggota-tabs">
-        <button class="angg-tab active" data-tab="anggota">
-          <i class="fa-solid fa-users"></i> Anggota
-        </button>
-        <button class="angg-tab" data-tab="pengurus">
-          <i class="fa-solid fa-id-card"></i> Pengurus
-        </button>
-        <button class="angg-tab" data-tab="sekbid">
-          <i class="fa-solid fa-layer-group"></i> Sekbid
-        </button>
-      </div>
-
-      <!-- ANGGOTA (simple: nama, jabatan, kelas, username) -->
-      <div class="anggota-card" id="panelAnggota">
-        <h3>
-          <i class="fa-solid fa-users"></i> Anggota
-          <span id="anggotaCount"></span>
-        </h3>
-        <p class="sub">Data anggota simple (nama, jabatan, kelas, username) — dipakai absen. Klik kartu + buat tambah, ikon pen buat edit.</p>
-        <div id="anggotaTable">
-          <div class="loading-block">
-            <div class="spinner"></div>
-            Memuat anggota...
+          <p>Daftar anggota per periode (nama, jabatan, kelas, username). Data ini dipakai sebagai roster absensi.</p>
+          <div class="osis-meta">
+            <span class="osis-badge" id="anggotaCount">-</span>
+            <a class="osis-badge" href="absensi" style="text-decoration: none; color: inherit"><i class="fa-solid fa-clipboard-user"></i> Lihat Absensi</a>
           </div>
         </div>
       </div>
 
-      <!-- PENGURUS (biodata lengkap) -->
-      <div class="anggota-card" id="panelPengurus" style="display: none">
-        <h3>
-          <i class="fa-solid fa-id-card"></i> Pengurus
-          <span id="pengurusCount"></span>
-        </h3>
-        <p class="sub">Biodata pengurus lengkap (foto, panggilan, TTL, visi, misi, medsos). Tampil di halaman Pengurus &amp; struktur homepage.</p>
-        <div id="pengurusTable">
-          <div class="loading-block">
-            <div class="spinner"></div>
-            Memuat pengurus...
-          </div>
-        </div>
-      </div>
-
-      <!-- POPUP ANGGOTA -->
-      <div class="angg-popup" id="anggotaPopup">
-        <div class="angg-popup-inner">
-          <div
-            style="
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              margin-bottom: 14px;
-            "
-          >
-            <span
-              style="
-                font-weight: 900;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 1rem;
-              "
-              ><i class="fa-solid fa-user" style="color: var(--red)"></i>
-              <span id="anggotaPopupTitle">Tambah Anggota</span></span
-            >
-            <button
-              class="icon-btn"
-              onclick="Anggota.tutupPopupAnggota()"
-              title="Tutup"
-              style="width: 34px; height: 34px; flex-shrink: 0"
-            >
-              <i class="fa-solid fa-xmark"></i>
-            </button>
+      <div class="osis-panel">
+        <div class="angg-tools">
+          <div class="field">
+            <label>Cari anggota</label>
+            <input type="text" id="anggotaQ" class="admin-input" placeholder="Ketik nama / jabatan / kelas..." autocomplete="off" />
           </div>
           <div class="field">
-            <label>Foto (opsional)</label>
-            <div id="anggotaDrop" class="angg-drop">
-              <div class="angg-drop-inner" id="anggotaDropInner">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-                <span>Klik atau drop foto ke sini</span>
-                <small>JPG/PNG/WEBP - otomatis kompres &lt;1MB</small>
-              </div>
-            </div>
-            <input type="file" id="anggotaPopupFile" accept="image/*" hidden />
-          </div>
-          <div class="field">
-            <label>Nama</label
-            ><input
-              type="text"
-              id="anggotaNama"
-              class="admin-input"
-              placeholder="Nama lengkap"
-              maxlength="80"
-            />
-          </div>
-          <div class="field">
-            <label>Jabatan</label
-            ><input
-              type="text"
-              id="anggotaJabatan"
-              class="admin-input"
-              placeholder="cth: Ketua Sekbid 1"
-              maxlength="80"
-            />
-          </div>
-          <div class="field">
-            <label>Nama Panggilan (opsional)</label
-            ><input
-              type="text"
-              id="anggotaPanggilan"
-              class="admin-input"
-              placeholder="cth: Nizam"
-              maxlength="40"
-            />
-          </div>
-          <div class="field">
-            <label>Tempat, Tanggal Lahir (opsional)</label
-            ><input
-              type="text"
-              id="anggotaTtl"
-              class="admin-input"
-              placeholder="cth: Bandung, 17 Agustus 2008"
-              maxlength="120"
-            />
-          </div>
-          <div class="field">
-            <label>Visi (opsional)</label
-            ><textarea
-              id="anggotaVisi"
-              class="admin-input admin-textarea"
-              rows="2"
-              placeholder="Visi pribadi pengurus"
-              maxlength="500"
-            ></textarea>
-          </div>
-          <div class="field">
-            <label>Misi (opsional)</label
-            ><textarea
-              id="anggotaMisi"
-              class="admin-input admin-textarea"
-              rows="2"
-              placeholder="Misi pribadi pengurus"
-              maxlength="500"
-            ></textarea>
-          </div>
-          <div class="field">
-            <label>Instagram (opsional)</label
-            ><input
-              type="text"
-              id="anggotaIg"
-              class="admin-input"
-              placeholder="username tanpa @"
-              maxlength="120"
-            />
-          </div>
-          <div class="field">
-            <label>WhatsApp (opsional)</label
-            ><input
-              type="text"
-              id="anggotaWa"
-              class="admin-input"
-              placeholder="cth: 081234567890"
-              maxlength="40"
-            />
-          </div>
-          <div class="field">
-            <label>TikTok (opsional)</label
-            ><input
-              type="text"
-              id="anggotaTiktok"
-              class="admin-input"
-              placeholder="username tanpa @"
-              maxlength="120"
-            />
-          </div>
-          <div class="field">
-            <label>Motto (opsional)</label
-            ><textarea
-              id="anggotaMotto"
-              class="admin-input admin-textarea"
-              rows="2"
-              placeholder="Quote penyemangat, tampil di bawah popup biodata"
-              maxlength="300"
-            ></textarea>
-          </div>
-          <div class="field">
-            <label>Kelas (opsional)</label
-            ><input
-              type="text"
-              id="anggotaKelas"
-              class="admin-input"
-              placeholder="cth: XII RPL 1"
-              maxlength="40"
-            />
-          </div>
-          <div class="field">
-            <label>Username Akun (penaut card)</label
-            ><input
-              type="text"
-              id="anggotaUsername"
-              class="admin-input"
-              placeholder="samakan dengan username login ybs"
-              maxlength="60"
-            />
-          </div>
-          <div class="field">
-            <label>Urutan</label
-            ><input
-              type="number"
-              id="anggotaUrutan"
-              class="admin-input"
-              value="99"
-              min="1"
-              max="999"
-            />
-          </div>
-          <div class="form-actions-row" style="margin-top: 12px">
-            <button class="btn btn-white" onclick="Anggota.tutupPopupAnggota()">
-              Batal
-            </button>
-            <button class="btn btn-red" id="btnSimpanAnggotaPopup">
-              <i class="fa-solid fa-floppy-disk"></i> Simpan
-            </button>
-          </div>
-          <input type="hidden" id="anggotaPopupId" />
-        </div>
-      </div>
-
-      <!-- SEKBID -->
-      <div class="anggota-card" id="panelSekbid" style="display: none">
-        <h3>
-          <i class="fa-solid fa-layer-group"></i> Sekbid &amp; BPH
-          <span id="sekbidCount"></span>
-        </h3>
-        <p class="sub">
-          Klik kartu + buat tambah, ikon pen buat edit. Hati-hati hapus sekbid
-          yang sudah punya agenda.
-        </p>
-        <div id="sekbidTable">
-          <div class="loading-block">
-            <div class="spinner"></div>
-            Memuat sekbid...
-          </div>
-        </div>
-      </div>
-
-      <!-- POPUP SEKBID -->
-      <div class="angg-popup" id="sekbidPopup">
-        <div class="angg-popup-inner">
-          <div
-            style="
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              margin-bottom: 14px;
-            "
-          >
-            <span
-              style="
-                font-weight: 900;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 1rem;
-              "
-              ><i class="fa-solid fa-layer-group" style="color: var(--red)"></i>
-              <span id="sekbidPopupTitle">Tambah Sekbid</span></span
-            >
-            <button
-              class="icon-btn"
-              onclick="Anggota.tutupPopupSekbid()"
-              title="Tutup"
-              style="width: 34px; height: 34px; flex-shrink: 0"
-            >
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-          <div class="field">
-            <label>Foto (opsional)</label>
-            <div id="sekbidDrop" class="angg-drop">
-              <div class="angg-drop-inner" id="sekbidDropInner">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-                <span>Klik atau drop foto ke sini</span>
-                <small>JPG/PNG/WEBP - otomatis kompres &lt;1MB</small>
-              </div>
-            </div>
-            <input type="file" id="sekbidPopupFile" accept="image/*" hidden />
-          </div>
-          <div class="field">
-            <label>Nama</label
-            ><input
-              type="text"
-              id="sekbidNama"
-              class="admin-input"
-              placeholder="cth: Sekbid 1"
-              maxlength="80"
-            />
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
-            <div class="field">
-              <label>Kategori</label
-              ><select id="sekbidKategori" class="admin-input">
-                <option value="SEKBID">SEKBID</option>
-                <option value="BPH">BPH</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Urutan</label
-              ><input
-                type="number"
-                id="sekbidUrutan"
-                class="admin-input"
-                value="99"
-                min="1"
-                max="999"
-              />
+            <label>Periode</label>
+            <div class="periode-row">
+              <select id="pilihTahun" class="admin-input"></select>
+              <button class="btn btn-white btn-sm btn-plus" id="btnTambahTahun" style="display: none" title="Tambah periode baru"><i class="fa-solid fa-plus"></i></button>
             </div>
           </div>
-          <div class="field">
-            <label>Icon</label
-            ><input
-              type="text"
-              id="sekbidIcon"
-              class="admin-input"
-              placeholder="fa-solid fa-users"
-              maxlength="60"
-            />
+          <div class="field field-act">
+            <label>&nbsp;</label>
+            <button class="btn btn-red btn-sm" id="btnTambahAnggota" style="display: none"><i class="fa-solid fa-plus"></i> Tambah Anggota</button>
           </div>
-          <div class="field">
-            <label>Deskripsi</label
-            ><textarea
-              id="sekbidDeskripsi"
-              class="admin-input admin-textarea"
-              placeholder="Deskripsi singkat"
-              maxlength="200"
-              rows="3"
-            ></textarea>
-          </div>
-          <div class="form-actions-row" style="margin-top: 12px">
-            <button class="btn btn-white" onclick="Anggota.tutupPopupSekbid()">
-              Batal
-            </button>
-            <button class="btn btn-red" id="btnSimpanSekbidPopup">
-              <i class="fa-solid fa-floppy-disk"></i> Simpan
-            </button>
-          </div>
-          <input type="hidden" id="sekbidPopupId" />
         </div>
       </div>
 
-      <input type="file" id="anggotaFile" accept="image/*" hidden />
+      <div class="osis-panel">
+        <div class="osis-page-head" style="margin-bottom: 10px">
+          <h2><i class="fa-solid fa-table-list" style="color: var(--red)"></i> Daftar Anggota</h2>
+          <span class="spacer"></span>
+          <button class="btn btn-white btn-sm" id="btnResetQ" title="Reset pencarian"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+        <div class="angg-list">
+          <div class="angg-head" id="anggotaHead"></div>
+          <div id="anggotaRows"><div class="loading-block"><div class="spinner"></div>Memuat anggota...</div></div>
+        </div>
+        <div id="anggotaEmpty"></div>
+      </div>
     </div>
   </body>
 </html>

@@ -1,27 +1,17 @@
 // =========================================================================
-// ANGGOTA (simple) & PENGURUS (biodata) & SEKBID — halaman khusus OSIS
-// Dipakai di osis/anggota.html — 3 tab:
-// - Anggota: simple (nama, jabatan, kelas, username) per tahun, sort nama A-Z.
-//   Dipakai absen.
-// - Pengurus: biodata lengkap (foto + panggilan/TTL/visi/misi/medsos/motto)
-//   per tahun, sort urutan. Tampil di halaman Pengurus & struktur homepage.
-// - Sekbid: grid kartu BPH + seksi bidang + popup tambah/edit
+// ANGGOTA SIMPLE — halaman khusus OSIS (osis/anggota.html)
+// CRUD daftar anggota per tahun: nama, jabatan, kelas, username.
+// Roster ini dipakai absensi (js/absensi.js baca via getAnggota).
+// Tulis via RPC tambah_anggota/update_anggota/hapus_anggota (p_user_id).
+// Tab Pengurus & Sekbid dicabut dari halaman ini (v6.5.0) — data lama di DB
+// tidak dihapus, UI kelolanya pindah ke halaman sendiri nanti.
 // =========================================================================
 
 const Anggota = {
-    tahun: null,
+    cache: [],
     tahunList: [],
-    anggotaCache: [],
-    pengurusCache: [],
-    pimpinanCache: [],
-    sekbidCache: [],
-    tab: "anggota",
-    fotoTarget: null, // { kind: "pengurus", field } — buat 1 file input bersama
-    pfFiles: {},      // staged pengurus: { ketua_foto: File, wakil_foto: File, foto_angkatan: File }
-    pfPreview: {},    // preview URL per field (dibuat sekali pas pilih file)
-    aggForm: { id: null },
-    pengForm: { id: null, fotoPath: "", pendingFile: null, pendingUrl: null },
-    sekForm: { id: null, fotoPath: "", pendingFile: null, pendingUrl: null },
+    tahun: null,
+    q: "",
 
     async init() {
         const u = OsisAuth.getUser && OsisAuth.getUser();
@@ -29,202 +19,155 @@ const Anggota = {
             location.replace("../login");
             return;
         }
+        try { await OsisAuth.refreshAkses(); } catch {}
+        Anggota.terapkanAkses();
 
-        // tabs
-        document.querySelectorAll(".angg-tab").forEach(btn => {
-            btn.addEventListener("click", () => Anggota.gantiTab(btn.dataset.tab));
+        document.getElementById("btnTambahAnggota")?.addEventListener("click", () => Anggota.bukaForm(null));
+        document.getElementById("btnTambahTahun")?.addEventListener("click", () => Anggota.tambahPeriode());
+        document.getElementById("btnResetQ")?.addEventListener("click", () => {
+            const q = document.getElementById("anggotaQ");
+            if (q) q.value = "";
+            Anggota.q = "";
+            Anggota.render();
         });
-
-        // tahun + periode
+        document.getElementById("anggotaQ")?.addEventListener("input", (e) => {
+            Anggota.q = e.target.value || "";
+            Anggota.render();
+        });
         document.getElementById("pilihTahun")?.addEventListener("change", (e) => {
             Anggota.tahun = parseInt(e.target.value, 10);
-            Anggota.renderAnggota();
-            Anggota.renderPengurus();
-            Anggota.renderSekbid();
+            Anggota.render();
         });
-        document.getElementById("btnTambahTahun")?.addEventListener("click", () => Anggota.tambahPeriode());
-
-        // pengurus
-        document.getElementById("btnSimpanPimpinan")?.addEventListener("click", () => Anggota.simpanPengurus());
-        ["pfKetua", "pfWakil", "pfAngkatan"].forEach(id => {
-            const box = document.getElementById(id);
-            if (!box) return;
-            const field = id === "pfKetua" ? "ketua_foto" : id === "pfWakil" ? "wakil_foto" : "foto_angkatan";
-            box.addEventListener("click", () => {
-                Anggota.fotoTarget = { kind: "pengurus", field };
-                document.getElementById("anggotaFile").click();
-            });
-            ["dragenter", "dragover"].forEach(ev => {
-                box.addEventListener(ev, (e) => { e.preventDefault(); box.classList.add("dragover"); });
-            });
-            ["dragleave", "drop"].forEach(ev => {
-                box.addEventListener(ev, (e) => { e.preventDefault(); box.classList.remove("dragover"); });
-            });
-            box.addEventListener("drop", (e) => {
-                const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-                if (f) Anggota.handlePengurusFile(f, field);
-            });
+        document.getElementById("anggotaRows")?.addEventListener("click", (e) => {
+            const ed = e.target.closest("[data-edit]");
+            if (ed) { Anggota.bukaForm(ed.dataset.edit); return; }
+            const del = e.target.closest("[data-del]");
+            if (del) Anggota.hapus(del.dataset.del);
         });
 
-        // 1 file input bersama buat kotak foto pengurus
-        document.getElementById("anggotaFile")?.addEventListener("change", (e) => {
-            const f = e.target.files && e.target.files[0];
-            const target = Anggota.fotoTarget;
-            Anggota.fotoTarget = null;
-            e.target.value = "";
-            if (f && target && target.kind === "pengurus") Anggota.handlePengurusFile(f, target.field);
-        });
-
-        // grid anggota (simple): tambah / edit / hapus (delegasi)
-        document.getElementById("anggotaTable")?.addEventListener("click", (e) => {
-            const add = e.target.closest("[data-agg-add]");
-            if (add) { Anggota.bukaPopupAnggota(); return; }
-            const edit = e.target.closest("[data-agg-edit]");
-            if (edit) { Anggota.editAnggota(edit.dataset.aggEdit); return; }
-            const del = e.target.closest("[data-agg-del]");
-            if (del) { Anggota.hapusAnggota(del.dataset.aggDel); return; }
-        });
-
-        // grid pengurus (biodata): tambah / edit / hapus (delegasi)
-        document.getElementById("pengurusTable")?.addEventListener("click", (e) => {
-            const add = e.target.closest("[data-peng-add]");
-            if (add) { Anggota.bukaPopupPengurus(); return; }
-            const edit = e.target.closest("[data-peng-edit]");
-            if (edit) { Anggota.editPengurus(edit.dataset.pengEdit); return; }
-            const del = e.target.closest("[data-peng-del]");
-            if (del) { Anggota.hapusPengurus(del.dataset.pengDel); return; }
-        });
-
-        // grid sekbid: tambah / edit / hapus (delegasi)
-        document.getElementById("sekbidTable")?.addEventListener("click", (e) => {
-            const add = e.target.closest("[data-sek-add]");
-            if (add) { Anggota.bukaPopupSekbid(); return; }
-            const edit = e.target.closest("[data-sek-edit]");
-            if (edit) { Anggota.editSekbid(edit.dataset.sekEdit); return; }
-            const del = e.target.closest("[data-sek-del]");
-            if (del) { Anggota.hapusSekbid(del.dataset.sekDel); return; }
-        });
-
-        // popup anggota/pengurus: drop foto (dipakai mode pengurus) + simpan + backdrop/ESC.
-        // Satu popup dipakai dua mode: simple (anggota) sembunyikan foto/bio/urutan,
-        // full (pengurus) tampilkan semua.
-        Anggota.bindPopupDrop("anggotaDrop", "anggotaPopupFile", (f) => Anggota.handlePopupFile("peng", f));
-        document.getElementById("btnSimpanAnggotaPopup")?.addEventListener("click", () => {
-            const t = document.getElementById("anggotaPopupTitle")?.textContent || "";
-            if (/pengurus/i.test(t)) Anggota.simpanPopupPengurus();
-            else Anggota.simpanPopupAnggota();
-        });
-        document.getElementById("anggotaPopup")?.addEventListener("click", (e) => {
-            if (e.target.id === "anggotaPopup") Anggota.tutupPopupAnggota();
-        });
-
-        // popup sekbid: drop + input + simpan + backdrop/ESC
-        Anggota.bindPopupDrop("sekbidDrop", "sekbidPopupFile", (f) => Anggota.handlePopupFile("sek", f));
-        document.getElementById("btnSimpanSekbidPopup")?.addEventListener("click", () => Anggota.simpanPopupSekbid());
-        document.getElementById("sekbidPopup")?.addEventListener("click", (e) => {
-            if (e.target.id === "sekbidPopup") Anggota.tutupPopupSekbid();
-        });
-        document.addEventListener("keydown", (e) => {
-            if (e.key !== "Escape") return;
-            if (document.getElementById("anggotaPopup")?.classList.contains("open")) Anggota.tutupPopupAnggota();
-            if (document.getElementById("sekbidPopup")?.classList.contains("open")) Anggota.tutupPopupSekbid();
-        });
-
-        await Anggota.muatSemua();
+        Anggota.muat();
     },
 
-    bindPopupDrop(dropId, inputId, onFile) {
-        const drop = document.getElementById(dropId);
-        const input = document.getElementById(inputId);
-        if (!drop || !input) return;
-        drop.addEventListener("click", () => input.click());
-        input.addEventListener("change", (e) => {
-            const f = e.target.files && e.target.files[0];
-            e.target.value = "";
-            if (f) onFile(f);
+    // Sembunyikan tombol tulis kalau tidak punya kendali atas halaman ini
+    terapkanAkses() {
+        const boleh = OsisAuth.bisa("anggota");
+        ["btnTambahAnggota", "btnTambahTahun"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = boleh ? "" : "none";
         });
-        ["dragenter", "dragover"].forEach(ev => {
-            drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("dragover"); });
-        });
-        ["dragleave", "drop"].forEach(ev => {
-            drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("dragover"); });
-        });
-        drop.addEventListener("drop", (e) => {
-            const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-            if (f) onFile(f);
-        });
+        try { Anggota.render(); } catch {}
     },
 
-    // ============ MUAT ============
-    terapkanSemua(pimp, agg, peng, sek) {
-        Anggota.pimpinanCache = pimp || [];
-        Anggota.anggotaCache = agg || [];
-        Anggota.pengurusCache = peng || [];
-        Anggota.sekbidCache = sek || [];
-        // daftar tahun = gabungan pengurus + anggota (+ pimpinan legacy), terbaru dulu
-        const setTahun = new Set();
-        Anggota.pimpinanCache.forEach(p => { if (p.tahun) setTahun.add(parseInt(p.tahun, 10)); });
-        Anggota.anggotaCache.forEach(a => { if (a.tahun) setTahun.add(parseInt(a.tahun, 10)); });
-        Anggota.pengurusCache.forEach(a => { if (a.tahun) setTahun.add(parseInt(a.tahun, 10)); });
-        Anggota.tahunList = [...setTahun].filter(Number.isFinite).sort((a, b) => b - a);
-        if (!Anggota.tahunList.length) {
-            Anggota.tahunList = [new Date().getFullYear()];
+    // ============ DATA (cache-first + revalidasi, pola absensi.js) ============
+    async muat() {
+        try {
+            const cached = Cache.get("anggota");
+            if (cached) {
+                Anggota.pakai(cached);
+                getAnggota().then(fresh => {
+                    if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
+                        Cache.set("anggota", fresh);
+                        Anggota.pakai(fresh || []);
+                    }
+                }).catch(() => {});
+                return;
+            }
+            const fresh = await getAnggota();
+            Cache.set("anggota", fresh);
+            Anggota.pakai(fresh || []);
+        } catch (err) {
+            console.error(err);
+            document.getElementById("anggotaRows").innerHTML =
+                `<div class="pesan-empty">Gagal memuat anggota.</div>`;
         }
+    },
+
+    pakai(list) {
+        Anggota.cache = (list || []).filter(a => a && String(a.nama || "").trim());
+        const setTahun = new Set();
+        Anggota.cache.forEach(a => {
+            const t = parseInt(a.tahun, 10);
+            if (Number.isFinite(t)) setTahun.add(t);
+        });
+        Anggota.tahunList = [...setTahun].sort((a, b) => b - a);
+        if (!Anggota.tahunList.length) Anggota.tahunList = [new Date().getFullYear()];
         if (!Anggota.tahun || !Anggota.tahunList.includes(Anggota.tahun)) {
             Anggota.tahun = Anggota.tahunList[0];
         }
-        Anggota._revokePfUrls();
-        Anggota.pfFiles = {};
-        Anggota.renderTahun();
-        Anggota.renderAnggota();
-        Anggota.renderPengurus();
-        Anggota.renderSekbid();
+        Anggota.render();
     },
 
-    async muatSemua() {
-        // Render cache DULU biar offline langsung tampil.
-        const cp = Cache.get("pimpinan"), ca = Cache.get("anggota"), cg = Cache.get("pengurus"), cs = Cache.get("sekbid");
-        if (cp || ca || cg || cs) {
-            try { Anggota.terapkanSemua(cp || [], ca || [], cg || [], cs || []); } catch {}
-        }
-        try {
-            const [pimp, agg, peng, sek] = await Promise.all([getPimpinan(), getAnggota(), getPengurus(), getSekbid()]);
-            Cache.set("pimpinan", pimp || []);
-            Cache.set("anggota", agg || []);
-            Cache.set("pengurus", peng || []);
-            Cache.set("sekbid", sek || []);
-            Anggota.terapkanSemua(pimp, agg, peng, sek);
-        } catch (err) {
-            console.error(err);
-            if (!(cp || ca || cg || cs)) {
-                document.getElementById("anggotaTable").innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Offline dan belum ada data tersimpan. Buka halaman ini sekali saat online.</div>`;
-                showToast("Gagal memuat: " + err.message, "error");
-            }
-        }
+    rowsTampil() {
+        const q = String(Anggota.q || "").trim().toLowerCase();
+        return Anggota.cache
+            .filter(a => parseInt(a.tahun, 10) === Anggota.tahun)
+            .filter(a => {
+                if (!q) return true;
+                return [a.nama, a.jabatan, a.kelas, a.username]
+                    .some(v => String(v || "").toLowerCase().includes(q));
+            })
+            .sort((a, b) => String(a.nama || "").localeCompare(String(b.nama || "")));
     },
 
-    renderTahun() {
+    initial(nama) {
+        const c = String(nama || "?").trim().charAt(0).toUpperCase();
+        return c || "?";
+    },
+
+    // List compact: desktop = kolom rapi, HP = baris ramping
+    // (avatar + nama + 1 baris meta). Satu markup, CSS yang melipat.
+    render() {
         const sel = document.getElementById("pilihTahun");
-        if (!sel) return;
-        sel.innerHTML = Anggota.tahunList.map(t => `<option value="${t}" ${t === Anggota.tahun ? "selected" : ""}>Periode ${t}</option>`).join("");
-        const pt = document.getElementById("pengurusTahun");
-        if (pt) pt.textContent = Anggota.tahun;
+        if (sel) {
+            sel.innerHTML = Anggota.tahunList
+                .map(t => `<option value="${t}" ${t === Anggota.tahun ? "selected" : ""}>Periode ${t}</option>`)
+                .join("");
+        }
+        const boleh = OsisAuth.bisa("anggota");
+        const head = document.getElementById("anggotaHead");
+        if (head) {
+            head.className = "angg-head" + (boleh ? "" : " no-aksi");
+            head.innerHTML = `<span>No</span><span></span><span>Nama</span><span>Jabatan</span><span>Kelas</span><span>Username</span>${boleh ? `<span style="text-align:right">Aksi</span>` : ""}`;
+        }
+        const total = Anggota.cache.filter(a => parseInt(a.tahun, 10) === Anggota.tahun).length;
+        const cnt = document.getElementById("anggotaCount");
+        if (cnt) cnt.textContent = `${total} anggota · Periode ${Anggota.tahun ?? "-"}`;
+
+        const rows = Anggota.rowsTampil();
+        const body = document.getElementById("anggotaRows");
+        const empty = document.getElementById("anggotaEmpty");
+        if (!body) return;
+        if (!total) {
+            body.innerHTML = "";
+            if (empty) empty.innerHTML = `<div class="pesan-empty" style="text-align:center; padding:22px 12px"><b>Belum ada anggota periode ${Anggota.tahun}.</b>${boleh ? `<div style="margin-top:10px"><button class="btn btn-red btn-sm" onclick="Anggota.bukaForm(null)"><i class="fa-solid fa-plus"></i> Tambah Anggota</button></div>` : ""}</div>`;
+            return;
+        }
+        if (!rows.length) {
+            body.innerHTML = "";
+            if (empty) empty.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan pencarian.</div>`;
+            return;
+        }
+        if (empty) empty.innerHTML = "";
+        body.innerHTML = rows.map((a, i) => {
+            const meta = [a.jabatan, a.kelas, a.username ? "@" + a.username : ""]
+                .filter(s => String(s || "").trim()).map(s => escapeHtml(s)).join(" · ") || "-";
+            return `<div class="angg-row${boleh ? "" : " no-aksi"}">
+            <span class="num">${i + 1}</span>
+            <span class="ava">${escapeHtml(Anggota.initial(a.nama))}</span>
+            <div class="main"><b>${escapeHtml(a.nama || "-")}</b><small class="meta">${meta}</small></div>
+            <span class="c-jab">${escapeHtml(a.jabatan || "-")}</span>
+            <span class="c-kelas">${escapeHtml(a.kelas || "-")}</span>
+            <span class="c-user">${a.username ? `<span class="uname">@${escapeHtml(a.username)}</span>` : "-"}</span>
+            ${boleh ? `<span class="aksi"><button class="btn btn-white btn-sm" data-edit="${a.id}" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="btn btn-red btn-sm" data-del="${a.id}" title="Hapus"><i class="fa-solid fa-trash-can"></i></button></span>` : ""}
+        </div>`;
+        }).join("");
     },
 
-    gantiTab(tab) {
-        Anggota.tab = tab;
-        document.querySelectorAll(".angg-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
-        const panelA = document.getElementById("panelAnggota");
-        const panelP = document.getElementById("panelPengurus");
-        const panelS = document.getElementById("panelSekbid");
-        if (panelA) panelA.style.display = tab === "anggota" ? "" : "none";
-        if (panelP) panelP.style.display = tab === "pengurus" ? "" : "none";
-        if (panelS) panelS.style.display = tab === "sekbid" ? "" : "none";
-        document.getElementById("pilihTahun").style.visibility = tab === "sekbid" ? "hidden" : "";
-        document.getElementById("btnTambahTahun").style.visibility = tab === "sekbid" ? "hidden" : "";
-    },
-
+    // ============ PERIODE ============
+    // Periode baru disiapkan lokal (tahun muncul di dropdown); baris periode
+    // aktif buat roster absen dikelola via tabel periode (hak super admin).
     async tambahPeriode() {
+        if (!OsisAuth.butuh("anggota")) return;
         const res = await showPopup("Tambah periode", "form", {
             title: "Periode Baru",
             fields: [{ name: "tahun", label: "Tahun (cth: 2026)", type: "text", placeholder: "2026", value: "" }]
@@ -240,669 +183,79 @@ const Anggota = {
             Anggota.tahunList.sort((a, b) => b - a);
         }
         Anggota.tahun = thn;
-        Anggota._revokePfUrls();
-        Anggota.pfFiles = {};
-        Anggota.renderTahun();
-        Anggota.renderAnggota();
-        Anggota.renderPengurus();
-        Anggota.gantiTab("anggota");
-        showToast(`Periode ${thn} siap — isi pengurus lalu Simpan`, "info");
+        Anggota.render();
+        showToast(`Periode ${thn} siap — tambah anggota di bawah`, "info");
     },
 
-    // ============ ANGGOTA SIMPLE (kartu + popup) ============
-    rowsTahun() {
-        return (Anggota.anggotaCache || [])
-            .filter(a => parseInt(a.tahun, 10) === Anggota.tahun)
-            .sort((a, b) => String(a.nama || "").localeCompare(String(b.nama || "")));
-    },
-
-    rowsPengurusTahun() {
-        return (Anggota.pengurusCache || [])
-            .filter(a => parseInt(a.tahun, 10) === Anggota.tahun)
-            .sort((a, b) => (a.urutan || 99) - (b.urutan || 99));
-    },
-
-    initial(nama) {
-        const c = String(nama || "?").trim().charAt(0).toUpperCase();
-        return c || "?";
-    },
-
-    renderAnggota() {
-        const wrap = document.getElementById("anggotaTable");
-        if (!wrap) return;
-        const rows = Anggota.rowsTahun();
-        const cnt = document.getElementById("anggotaCount");
-        if (cnt) cnt.textContent = rows.length ? `(${rows.length})` : "";
-        const cards = rows.map(a => {
-            const sub = [a.jabatan, a.kelas].filter(s => String(s || "").trim()).map(s => escapeHtml(s)).join(" · ") || "-";
-            return `
-                <div class="angg-card">
-                    <div class="angg-foto">${Anggota.initial(a.nama)}</div>
-                    <h4>${escapeHtml(a.nama || "-")}</h4>
-                    <span class="jabatan">${sub}</span>
-                    ${a.username ? `<small style="font-size:0.68rem;color:var(--gray);font-weight:700">@${escapeHtml(a.username)}</small>` : ""}
-                    <div class="angg-actions">
-                        <button class="btn btn-white btn-sm" data-agg-edit="${a.id}"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn btn-red btn-sm" data-agg-del="${a.id}"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </div>`;
-        }).join("");
-        wrap.innerHTML = `
-            <div class="angg-grid">
-                <div class="angg-card angg-add" data-agg-add><i class="fa-solid fa-plus"></i><span>Tambah Anggota</span></div>
-                ${cards || ""}
-            </div>
-            ${rows.length ? "" : `<div class="pesan-empty" style="margin-top:10px">Belum ada anggota periode ${Anggota.tahun}.</div>`}`;
-    },
-
-    // Field popup yang cuma milik pengurus (disembunyikan di mode anggota simple)
-    _pengOnlyIds() {
-        return ["anggotaPanggilan", "anggotaTtl", "anggotaVisi", "anggotaMisi",
-            "anggotaIg", "anggotaWa", "anggotaTiktok", "anggotaMotto", "anggotaUrutan"];
-    },
-
-    _popupMode(mode) {
-        const simple = mode === "anggota";
-        Anggota._pengOnlyIds().forEach(id => {
-            const el = document.getElementById(id);
-            const f = el ? el.closest(".field") : null;
-            if (f) f.style.display = simple ? "none" : "";
+    // ============ TAMBAH / EDIT (popup form bawaan, 4 field) ============
+    async bukaForm(id) {
+        if (!OsisAuth.butuh("anggota")) return;
+        const item = id ? Anggota.cache.find(a => String(a.id) === String(id)) : null;
+        if (id && !item) return;
+        const res = await showPopup(item ? "Edit anggota" : "Tambah anggota", "form", {
+            title: item ? "Edit Anggota" : "Tambah Anggota",
+            fields: [
+                { name: "nama", label: "Nama lengkap", type: "text", placeholder: "cth: Asep Muhammad", value: item ? (item.nama || "") : "" },
+                { name: "jabatan", label: "Jabatan", type: "text", placeholder: "cth: Ketua Sekbid 1", value: item ? (item.jabatan || "") : "" },
+                { name: "kelas", label: "Kelas", type: "text", placeholder: "cth: XII RPL 1", value: item ? (item.kelas || "") : "" },
+                { name: "username", label: "Username akun (penaut card)", type: "text", placeholder: "samakan dengan username login ybs", value: item ? (item.username || "") : "" }
+            ]
         });
-        const drop = document.getElementById("anggotaDrop");
-        const dropField = drop ? drop.closest(".field") : null;
-        if (dropField) dropField.style.display = simple ? "none" : "";
-    },
-
-    bukaPopupAnggota() {
-        Anggota._revokePopupUrl("peng");
-        Anggota.aggForm = { id: null };
-        document.getElementById("anggotaPopupId").value = "";
-        document.getElementById("anggotaNama").value = "";
-        document.getElementById("anggotaJabatan").value = "";
-        document.getElementById("anggotaKelas").value = "";
-        document.getElementById("anggotaUsername").value = "";
-        document.getElementById("anggotaPopupTitle").textContent = "Tambah Anggota";
-        Anggota._popupMode("anggota");
-        document.getElementById("anggotaPopup").classList.add("open");
-        document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("anggotaNama")?.focus(), 80);
-    },
-
-    editAnggota(id) {
-        const item = Anggota.anggotaCache.find(a => String(a.id) === String(id));
-        if (!item) return;
-        Anggota._revokePopupUrl("peng");
-        Anggota.aggForm = { id };
-        document.getElementById("anggotaPopupId").value = id;
-        document.getElementById("anggotaNama").value = item.nama || "";
-        document.getElementById("anggotaJabatan").value = item.jabatan || "";
-        document.getElementById("anggotaKelas").value = item.kelas || "";
-        document.getElementById("anggotaUsername").value = item.username || "";
-        document.getElementById("anggotaPopupTitle").textContent = "Edit Anggota";
-        Anggota._popupMode("anggota");
-        document.getElementById("anggotaPopup").classList.add("open");
-        document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("anggotaNama")?.focus(), 80);
-    },
-
-    tutupPopupAnggota() {
-        document.getElementById("anggotaPopup")?.classList.remove("open");
-        document.body.style.overflow = "";
-        Anggota._revokePopupUrl("peng");
-        Anggota.aggForm = { id: null };
-        Anggota.pengForm = { id: null, fotoPath: "", pendingFile: null, pendingUrl: null };
-    },
-
-    handlePopupFile(which, file) {
-        if (!file || !file.type || !file.type.startsWith("image/")) {
-            showToast("File harus gambar", "error");
-            return;
-        }
-        Anggota._revokePopupUrl(which);
-        const form = which === "peng" ? Anggota.pengForm : Anggota.sekForm;
-        form.pendingFile = file;
-        form.pendingUrl = URL.createObjectURL(file);
-        Anggota.renderPopupFoto(which);
-    },
-
-    _revokePopupUrl(which) {
-        const form = which === "peng" ? Anggota.pengForm : Anggota.sekForm;
-        if (form && form.pendingUrl) { try { URL.revokeObjectURL(form.pendingUrl); } catch {} }
-        if (form) { form.pendingFile = null; form.pendingUrl = null; }
-    },
-
-    renderPopupFoto(which) {
-        const isPeng = which === "peng";
-        const drop = document.getElementById(isPeng ? "anggotaDrop" : "sekbidDrop");
-        const inner = document.getElementById(isPeng ? "anggotaDropInner" : "sekbidDropInner");
-        const form = isPeng ? Anggota.pengForm : Anggota.sekForm;
-        if (!drop) return;
-        drop.querySelectorAll("img").forEach(i => i.remove());
-        let src = "";
-        if (form.pendingFile && form.pendingUrl) src = form.pendingUrl;
-        else if (form.fotoPath) src = getFoto(form.fotoPath);
-        if (src) {
-            const img = document.createElement("img");
-            img.src = src;
-            img.alt = "";
-            drop.prepend(img);
-            if (inner) inner.style.display = "none";
-        } else if (inner) {
-            inner.style.display = "";
-        }
-    },
-
-    // Biodata tambahan buat popup publik (panggilan, TTL, visi, misi, medsos)
-    bacaBio() {
-        const g = (id) => ((document.getElementById(id) || {}).value || "").trim();
-        return {
-            panggilan: g("anggotaPanggilan"), ttl: g("anggotaTtl"),
-            visi: g("anggotaVisi"), misi: g("anggotaMisi"),
-            ig: g("anggotaIg"), wa: g("anggotaWa"), tiktok: g("anggotaTiktok"),
-            motto: g("anggotaMotto"), kelas: g("anggotaKelas"),
-            username: g("anggotaUsername")
-        };
-    },
-
-    isiBio(item) {
-        const s = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ""; };
-        item = item || {};
-        s("anggotaPanggilan", item.panggilan); s("anggotaTtl", item.ttl);
-        s("anggotaVisi", item.visi); s("anggotaMisi", item.misi);
-        s("anggotaIg", item.ig); s("anggotaWa", item.wa); s("anggotaTiktok", item.tiktok);
-        s("anggotaMotto", item.motto); s("anggotaKelas", item.kelas);
-        s("anggotaUsername", item.username);
-    },
-
-    async simpanPopupAnggota() {
-        const u = OsisAuth.getUser && OsisAuth.getUser();
-        if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
-        const nama = document.getElementById("anggotaNama").value.trim();
-        const jabatan = document.getElementById("anggotaJabatan").value.trim();
-        const kelas = document.getElementById("anggotaKelas").value.trim();
-        const username = document.getElementById("anggotaUsername").value.trim();
-        const id = document.getElementById("anggotaPopupId").value || null;
+        if (!res) return;
+        const nama = String(res.nama || "").trim().slice(0, 80);
+        const jabatan = String(res.jabatan || "").trim().slice(0, 80);
+        const kelas = String(res.kelas || "").trim().slice(0, 40);
+        const username = String(res.username || "").trim().slice(0, 60);
         if (!nama) { showToast("Nama wajib diisi", "error"); return; }
-        const __specAgg = () => ({ modul: "anggota", op: id ? "update" : "create",
-            label: "Anggota: " + String(nama).slice(0, 42),
-            payload: { id: id || null, tahun: Anggota.tahun, nama, jabatan, kelas, username },
-            files: [], cacheKeys: ["anggota"] });
+
+        const spec = () => ({
+            modul: "anggota", op: item ? "update" : "create",
+            label: "Anggota: " + nama.slice(0, 42),
+            payload: item
+                ? { id: item.id, tahun: Anggota.tahun, nama, jabatan, kelas, username }
+                : { id: null, tahun: Anggota.tahun, nama, jabatan, kelas, username },
+            files: [], cacheKeys: ["anggota"]
+        });
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
-            try { await Outbox.enqueue(__specAgg()); } catch (e) { showToast(e.message, "error"); return; }
-            Outbox.sesudahAntre(() => Anggota.tutupPopupAnggota());
+            try { await Outbox.enqueue(spec()); }
+            catch (e) { showToast(e.message, "error"); return; }
             return;
         }
-
-        const btn = document.getElementById("btnSimpanAnggotaPopup");
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
         try {
-            if (id) {
-                await updateAnggota(id, { nama, jabatan, kelas, username });
+            if (item) {
+                await updateAnggota(item.id, { nama, jabatan, kelas, username });
                 showToast("Anggota diperbarui!", "success");
             } else {
                 await tambahAnggota({ tahun: Anggota.tahun, nama, jabatan, kelas, username });
                 showToast("Anggota ditambah!", "success");
             }
-            Anggota.tutupPopupAnggota();
+            try { catatAksi("simpan_anggota", nama); } catch {}
             const fresh = await getAnggota();
-            Anggota.anggotaCache = fresh || [];
-            Anggota.renderAnggota();
+            Cache.set("anggota", fresh);
+            Anggota.pakai(fresh || []);
         } catch (err) {
             console.error(err);
-            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specAgg())) {
-                Outbox.sesudahAntre(() => Anggota.tutupPopupAnggota());
-                return;
-            }
+            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, spec())) return;
             showToast("Gagal simpan: " + err.message, "error");
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }
         }
     },
 
-    async hapusAnggota(id) {
-        const item = Anggota.anggotaCache.find(a => String(a.id) === String(id));
-        const yakin = await showPopup(`Hapus ${item ? item.nama : "anggota ini"} dari periode ${Anggota.tahun}?`, "confirm");
+    async hapus(id) {
+        if (!OsisAuth.butuh("anggota")) return;
+        const item = Anggota.cache.find(a => String(a.id) === String(id));
+        const yakin = await showPopup(`Hapus ${item ? escapeHtml(item.nama) : "anggota ini"} dari periode ${Anggota.tahun}?`, "confirm");
         if (!yakin) return;
         try {
             await hapusAnggota(id);
-            Anggota.anggotaCache = Anggota.anggotaCache.filter(a => String(a.id) !== String(id));
+            Anggota.cache = Anggota.cache.filter(a => String(a.id) !== String(id));
+            try { Cache.set("anggota", Anggota.cache); } catch {}
+            try { catatAksi("hapus_anggota", item ? item.nama : String(id)); } catch {}
             showToast("Anggota dihapus", "success");
-            Anggota.renderAnggota();
+            Anggota.pakai(Anggota.cache);
         } catch (err) {
             console.error(err);
             showPopup("Gagal hapus: " + err.message, "error");
         }
-    },
-
-    // ============ PENGURUS (biodata lengkap, kartu + popup full) ============
-    pimpTahun() {
-        return (Anggota.pimpinanCache || []).find(p => parseInt(p.tahun, 10) === Anggota.tahun) || null;
-    },
-
-    renderPengurus() {
-        const wrap = document.getElementById("pengurusTable");
-        if (!wrap) return;
-        const rows = Anggota.rowsPengurusTahun();
-        const cnt = document.getElementById("pengurusCount");
-        if (cnt) cnt.textContent = rows.length ? `(${rows.length})` : "";
-        const cards = rows.map(a => {
-            const foto = a.foto
-                ? `<img src="${getFoto(a.foto)}" alt="" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove()"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`
-                : Anggota.initial(a.nama);
-            return `
-                <div class="angg-card">
-                    <div class="angg-foto media-muat mini">${foto}</div>
-                    <h4>${escapeHtml(a.nama || "-")}</h4>
-                    <span class="jabatan">${escapeHtml(a.jabatan || "-")}</span>
-                    <div class="angg-actions">
-                        <button class="btn btn-white btn-sm" data-peng-edit="${a.id}"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn btn-red btn-sm" data-peng-del="${a.id}"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </div>`;
-        }).join("");
-        wrap.innerHTML = `
-            <div class="angg-grid">
-                <div class="angg-card angg-add" data-peng-add><i class="fa-solid fa-plus"></i><span>Tambah Pengurus</span></div>
-                ${cards || ""}
-            </div>
-            ${rows.length ? "" : `<div class="pesan-empty" style="margin-top:10px">Belum ada pengurus periode ${Anggota.tahun}.</div>`}`;
-    },
-
-    bukaPopupPengurus() {
-        Anggota._revokePopupUrl("peng");
-        Anggota.pengForm = { id: null, fotoPath: "", pendingFile: null, pendingUrl: null };
-        document.getElementById("anggotaPopupId").value = "";
-        document.getElementById("anggotaNama").value = "";
-        document.getElementById("anggotaJabatan").value = "";
-        Anggota.isiBio(null);
-        const rows = Anggota.rowsPengurusTahun();
-        const nextNo = rows.length ? Math.max(...rows.map(a => parseInt(a.urutan, 10) || 0)) + 1 : 1;
-        document.getElementById("anggotaUrutan").value = String(Math.min(nextNo, 999));
-        document.getElementById("anggotaPopupTitle").textContent = "Tambah Pengurus";
-        Anggota._popupMode("pengurus");
-        Anggota.renderPopupFoto("peng");
-        document.getElementById("anggotaPopup").classList.add("open");
-        document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("anggotaNama")?.focus(), 80);
-    },
-
-    editPengurus(id) {
-        const item = Anggota.pengurusCache.find(a => String(a.id) === String(id));
-        if (!item) return;
-        Anggota._revokePopupUrl("peng");
-        Anggota.pengForm = { id, fotoPath: item.foto || "", pendingFile: null, pendingUrl: null };
-        document.getElementById("anggotaPopupId").value = id;
-        document.getElementById("anggotaNama").value = item.nama || "";
-        document.getElementById("anggotaJabatan").value = item.jabatan || "";
-        document.getElementById("anggotaUrutan").value = item.urutan ?? 99;
-        Anggota.isiBio(item);
-        document.getElementById("anggotaPopupTitle").textContent = "Edit Pengurus";
-        Anggota._popupMode("pengurus");
-        Anggota.renderPopupFoto("peng");
-        document.getElementById("anggotaPopup").classList.add("open");
-        document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("anggotaNama")?.focus(), 80);
-    },
-
-    async simpanPopupPengurus() {
-        const u = OsisAuth.getUser && OsisAuth.getUser();
-        if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
-        const nama = document.getElementById("anggotaNama").value.trim();
-        const jabatan = document.getElementById("anggotaJabatan").value.trim();
-        const bio = Anggota.bacaBio();
-        let urutan = parseInt(document.getElementById("anggotaUrutan").value, 10);
-        if (!Number.isFinite(urutan) || urutan < 1) urutan = 99;
-        const id = document.getElementById("anggotaPopupId").value || null;
-        if (!nama) { showToast("Nama wajib diisi", "error"); return; }
-        const __specPeng = () => {
-            const pf = Anggota.pengForm.pendingFile;
-            return { modul: "pengurus", op: id ? "update" : "create",
-                label: "Pengurus: " + String(nama).slice(0, 42),
-                payload: Object.assign({ id: id || null, tahun: Anggota.tahun, nama, jabatan, urutan,
-                    fotoExist: Anggota.pengForm.fotoPath || "" }, bio),
-                files: pf ? [{ slot: "foto", file: pf, name: pf.name, type: pf.type }] : [],
-                cacheKeys: ["pengurus"] };
-        };
-        if (typeof Outbox !== "undefined" && Outbox.offline()) {
-            try { await Outbox.enqueue(__specPeng()); } catch (e) { showToast(e.message, "error"); return; }
-            Outbox.sesudahAntre(() => Anggota.tutupPopupAnggota());
-            return;
-        }
-
-        const btn = document.getElementById("btnSimpanAnggotaPopup");
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
-        try {
-            let foto = Anggota.pengForm.fotoPath || "";
-            if (Anggota.pengForm.pendingFile) {
-                const f = Anggota.pengForm.pendingFile;
-                const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-                const path = `pengurus/pengurus-${Anggota.tahun}-${Date.now()}.${ext}`;
-                await uploadFotoStorage(f, path);
-                if (foto && foto !== path) { try { await hapusFotoStorage(foto); } catch {} }
-                foto = path;
-            }
-            if (id) {
-                await updatePengurus(id, Object.assign({ nama, jabatan, urutan, foto }, bio));
-                showToast("Pengurus diperbarui!", "success");
-            } else {
-                await tambahPengurus(Object.assign({ tahun: Anggota.tahun, nama, jabatan, urutan, foto }, bio));
-                showToast("Pengurus ditambah!", "success");
-            }
-            Anggota.tutupPopupAnggota();
-            const fresh = await getPengurus();
-            Anggota.pengurusCache = fresh || [];
-            try { Cache.set("pengurus", fresh || []); } catch {}
-            Anggota.renderPengurus();
-        } catch (err) {
-            console.error(err);
-            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specPeng())) {
-                Outbox.sesudahAntre(() => Anggota.tutupPopupAnggota());
-                return;
-            }
-            showToast("Gagal simpan: " + err.message, "error");
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }
-        }
-    },
-
-    async hapusPengurus(id) {
-        const item = Anggota.pengurusCache.find(a => String(a.id) === String(id));
-        const yakin = await showPopup(`Hapus ${item ? item.nama : "pengurus ini"} dari periode ${Anggota.tahun}?`, "confirm");
-        if (!yakin) return;
-        try {
-            await hapusPengurus(id);
-            if (item && item.foto) { try { await hapusFotoStorage(item.foto); } catch {} }
-            Anggota.pengurusCache = Anggota.pengurusCache.filter(a => String(a.id) !== String(id));
-            try { Cache.set("pengurus", Anggota.pengurusCache); } catch {}
-            showToast("Pengurus dihapus", "success");
-            Anggota.renderPengurus();
-        } catch (err) {
-            console.error(err);
-            showPopup("Gagal hapus: " + err.message, "error");
-        }
-    },
-
-    renderPfBox(boxId, field, savedPath) {
-        const box = document.getElementById(boxId);
-        if (!box) return;
-        box.querySelectorAll("img").forEach(i => i.remove());
-        let src = "";
-        if (Anggota.pfFiles[field]) src = Anggota.pfPreview[field] || "";
-        else if (savedPath) src = getFoto(savedPath);
-        const label = box.querySelector("span");
-        const icon = box.querySelector("i");
-        if (src) {
-            const img = document.createElement("img");
-            img.src = src;
-            img.alt = "";
-            box.prepend(img);
-            if (label) label.style.display = "none";
-            if (icon) icon.style.display = "none";
-        } else {
-            if (label) label.style.display = "";
-            if (icon) icon.style.display = "";
-        }
-    },
-
-    handlePengurusFile(file, field) {
-        if (!file || !file.type || !file.type.startsWith("image/")) {
-            showToast("File harus gambar", "error");
-            return;
-        }
-        if (Anggota.pfPreview[field]) {
-            try { URL.revokeObjectURL(Anggota.pfPreview[field]); } catch {}
-        }
-        Anggota.pfFiles[field] = file;
-        Anggota.pfPreview[field] = URL.createObjectURL(file);
-        const p = Anggota.pimpTahun() || {};
-        Anggota.renderPfBox(
-            field === "ketua_foto" ? "pfKetua" : field === "wakil_foto" ? "pfWakil" : "pfAngkatan",
-            field,
-            p[field]
-        );
-        showToast("Foto staged — klik Simpan Pengurus", "info");
-    },
-
-    async simpanPengurus() {
-        const u = OsisAuth.getUser && OsisAuth.getUser();
-        if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
-        const ketuaNama = document.getElementById("pimpKetuaNama").value.trim();
-        const wakilNama = document.getElementById("pimpWakilNama").value.trim();
-        const lama = Anggota.pimpTahun() || {};
-        const __specPimp = () => {
-            const files = [];
-            ["ketua_foto", "wakil_foto", "foto_angkatan"].forEach(s => {
-                const fl = Anggota.pfFiles[s];
-                if (fl) files.push({ slot: s, file: fl, name: fl.name, type: fl.type });
-            });
-            return { modul: "pimpinan", op: "update",
-                label: "Pengurus " + Anggota.tahun,
-                payload: { tahun: Anggota.tahun, ketua_nama: ketuaNama, wakil_nama: wakilNama,
-                    existing: { ketua_foto: lama.ketua_foto || "", wakil_foto: lama.wakil_foto || "",
-                        foto_angkatan: lama.foto_angkatan || "" } },
-                files, cacheKeys: ["pimpinan"] };
-        };
-        if (typeof Outbox !== "undefined" && Outbox.offline()) {
-            try { await Outbox.enqueue(__specPimp()); } catch (e) { showToast(e.message, "error"); return; }
-            Outbox.sesudahAntre();
-            return;
-        }
-        const btn = document.getElementById("btnSimpanPimpinan");
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
-        try {
-            const next = {
-                tahun: Anggota.tahun,
-                ketua_nama: ketuaNama,
-                wakil_nama: wakilNama,
-                ketua_foto: lama.ketua_foto || "",
-                wakil_foto: lama.wakil_foto || "",
-                foto_angkatan: lama.foto_angkatan || ""
-            };
-            const up = async (field, prefix, folder) => {
-                const f = Anggota.pfFiles[field];
-                if (!f) return;
-                const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-                const path = `${folder}/${prefix}${Anggota.tahun}-${Date.now()}.${ext}`;
-                await uploadFotoStorage(f, path);
-                if (next[field] && next[field] !== path) { try { await hapusFotoStorage(next[field]); } catch {} }
-                next[field] = path;
-            };
-            await up("ketua_foto", "ketos", "pimpinan");
-            await up("wakil_foto", "waketos", "pimpinan");
-            await up("foto_angkatan", "foto-", "angkatan");
-            await simpanPimpinan(next);
-            showToast("Pengurus tersimpan!", "success");
-            Anggota.pfFiles = {};
-            Anggota._revokePfUrls();
-            const fresh = await getPimpinan();
-            Anggota.pimpinanCache = fresh || [];
-            if (!Anggota.tahunList.includes(Anggota.tahun)) {
-                Anggota.tahunList.push(Anggota.tahun);
-                Anggota.tahunList.sort((a, b) => b - a);
-                Anggota.renderTahun();
-            }
-            Anggota.renderPengurus();
-        } catch (err) {
-            console.error(err);
-            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specPimp())) {
-                Outbox.sesudahAntre();
-                return;
-            }
-            showToast("Gagal simpan: " + err.message, "error");
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Pengurus'; }
-        }
-    },
-
-    // ============ SEKBID (kartu + popup) ============
-    renderSekbid() {
-        const wrap = document.getElementById("sekbidTable");
-        if (!wrap) return;
-        const data = [...(Anggota.sekbidCache || [])].sort((a, b) => {
-            const ka = a.kategori === "BPH" ? 0 : 1;
-            const kb = b.kategori === "BPH" ? 0 : 1;
-            if (ka !== kb) return ka - kb;
-            return (a.urutan || 99) - (b.urutan || 99);
-        });
-        const cnt = document.getElementById("sekbidCount");
-        if (cnt) cnt.textContent = data.length ? `(${data.length})` : "";
-        let lastKat = "";
-        let html = `<div class="angg-grid"><div class="angg-card angg-add" data-sek-add><i class="fa-solid fa-plus"></i><span>Tambah Sekbid</span></div>`;
-        data.forEach(s => {
-            if (s.kategori !== lastKat) {
-                lastKat = s.kategori;
-                html += `</div><div class="angg-grup">${escapeHtml(s.kategori === "BPH" ? "Badan Pengurus Harian" : "Seksi Bidang")}</div><div class="angg-grid">`;
-            }
-            const foto = s.foto
-                ? `<span class="media-muat mini" style="width:72px;height:72px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="${getFoto(s.foto)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.remove()"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span>`
-                : `<i class="fa-solid fa-layer-group"></i>`;
-            html += `
-                <div class="angg-card">
-                    <div class="angg-foto-l">${foto}</div>
-                    <h4>${escapeHtml(s.nama || "-")}</h4>
-                    <span class="jabatan">${escapeHtml(s.kategori || "SEKBID")}</span>
-                    ${s.deskripsi ? `<p>${escapeHtml(s.deskripsi)}</p>` : ""}
-                    <div class="angg-actions">
-                        <button class="btn btn-white btn-sm" data-sek-edit="${s.id}"><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn btn-red btn-sm" data-sek-del="${s.id}"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </div>`;
-        });
-        html += `</div>`;
-        wrap.innerHTML = html || `<div class="pesan-empty">Belum ada data sekbid.</div>`;
-    },
-
-    bukaPopupSekbid() {
-        Anggota._revokePopupUrl("sek");
-        Anggota.sekForm = { id: null, fotoPath: "", pendingFile: null, pendingUrl: null };
-        document.getElementById("sekbidPopupId").value = "";
-        document.getElementById("sekbidNama").value = "";
-        document.getElementById("sekbidKategori").value = "SEKBID";
-        document.getElementById("sekbidIcon").value = "";
-        document.getElementById("sekbidDeskripsi").value = "";
-        const list = Anggota.sekbidCache || [];
-        const nextNo = list.length ? Math.max(...list.map(s => parseInt(s.urutan, 10) || 0)) + 1 : 1;
-        document.getElementById("sekbidUrutan").value = String(Math.min(nextNo, 999));
-        document.getElementById("sekbidPopupTitle").textContent = "Tambah Sekbid";
-        Anggota.renderPopupFoto("sek");
-        document.getElementById("sekbidPopup").classList.add("open");
-        document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("sekbidNama")?.focus(), 80);
-    },
-
-    editSekbid(id) {
-        const item = Anggota.sekbidCache.find(s => String(s.id) === String(id));
-        if (!item) return;
-        Anggota._revokePopupUrl("sek");
-        Anggota.sekForm = { id, fotoPath: item.foto || "", pendingFile: null, pendingUrl: null };
-        document.getElementById("sekbidPopupId").value = id;
-        document.getElementById("sekbidNama").value = item.nama || "";
-        document.getElementById("sekbidKategori").value = item.kategori || "SEKBID";
-        document.getElementById("sekbidIcon").value = item.icon || "";
-        document.getElementById("sekbidDeskripsi").value = item.deskripsi || "";
-        document.getElementById("sekbidUrutan").value = item.urutan ?? 99;
-        document.getElementById("sekbidPopupTitle").textContent = "Edit Sekbid";
-        Anggota.renderPopupFoto("sek");
-        document.getElementById("sekbidPopup").classList.add("open");
-        document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("sekbidNama")?.focus(), 80);
-    },
-
-    tutupPopupSekbid() {
-        document.getElementById("sekbidPopup")?.classList.remove("open");
-        document.body.style.overflow = "";
-        Anggota._revokePopupUrl("sek");
-        Anggota.sekForm = { id: null, fotoPath: "", pendingFile: null, pendingUrl: null };
-    },
-
-    async simpanPopupSekbid() {
-        const u = OsisAuth.getUser && OsisAuth.getUser();
-        if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
-        const nama = document.getElementById("sekbidNama").value.trim();
-        const kategori = document.getElementById("sekbidKategori").value;
-        const icon = document.getElementById("sekbidIcon").value.trim() || "fa-solid fa-users";
-        const deskripsi = document.getElementById("sekbidDeskripsi").value.trim();
-        let urutan = parseInt(document.getElementById("sekbidUrutan").value, 10);
-        if (!Number.isFinite(urutan) || urutan < 1) urutan = 99;
-        const id = document.getElementById("sekbidPopupId").value || null;
-        if (!nama) { showToast("Nama wajib diisi", "error"); return; }
-        const __specSek = () => {
-            const pf = Anggota.sekForm.pendingFile;
-            return { modul: "sekbid", op: id ? "update" : "create",
-                label: "Sekbid: " + String(nama).slice(0, 42),
-                payload: { id: id || null, nama, kategori, icon, deskripsi, urutan,
-                    fotoExist: Anggota.sekForm.fotoPath || "" },
-                files: pf ? [{ slot: "foto", file: pf, name: pf.name, type: pf.type }] : [],
-                cacheKeys: ["sekbid"] };
-        };
-        if (typeof Outbox !== "undefined" && Outbox.offline()) {
-            try { await Outbox.enqueue(__specSek()); } catch (e) { showToast(e.message, "error"); return; }
-            Outbox.sesudahAntre(() => Anggota.tutupPopupSekbid());
-            return;
-        }
-
-        const btn = document.getElementById("btnSimpanSekbidPopup");
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
-        try {
-            let foto = Anggota.sekForm.fotoPath || "";
-            if (Anggota.sekForm.pendingFile) {
-                const f = Anggota.sekForm.pendingFile;
-                const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-                const path = `sekbid/sekbid-${Date.now()}.${ext}`;
-                await uploadFotoStorage(f, path);
-                if (foto && foto !== path) { try { await hapusFotoStorage(foto); } catch {} }
-                foto = path;
-            }
-            if (id) {
-                await updateSekbid(id, { nama, kategori, icon, deskripsi, urutan, foto });
-                showToast("Sekbid diperbarui!", "success");
-            } else {
-                await tambahSekbid({ nama, kategori, icon, deskripsi, urutan, foto });
-                showToast("Sekbid ditambah!", "success");
-            }
-            Anggota.tutupPopupSekbid();
-            const fresh = await getSekbid();
-            Anggota.sekbidCache = fresh || [];
-            Anggota.renderSekbid();
-        } catch (err) {
-            console.error(err);
-            if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specSek())) {
-                Outbox.sesudahAntre(() => Anggota.tutupPopupSekbid());
-                return;
-            }
-            showToast("Gagal simpan: " + err.message, "error");
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }
-        }
-    },
-
-    async hapusSekbid(id) {
-        const item = Anggota.sekbidCache.find(s => String(s.id) === String(id));
-        try {
-            const all = await getAllAgenda();
-            const punya = (all || []).filter(a => String(a.sekbid_id) === String(id));
-            if (punya.length) {
-                showPopup(`Sekbid ini punya ${punya.length} agenda. Hapus/pindahkan agendanya dulu di halaman Agenda.`, "error");
-                return;
-            }
-        } catch {}
-        const yakin = await showPopup(`Hapus ${item ? item.nama : "sekbid ini"}?`, "confirm");
-        if (!yakin) return;
-        try {
-            await hapusSekbid(id);
-            if (item && item.foto) { try { await hapusFotoStorage(item.foto); } catch {} }
-            Anggota.sekbidCache = Anggota.sekbidCache.filter(s => String(s.id) !== String(id));
-            showToast("Sekbid dihapus", "success");
-            Anggota.renderSekbid();
-        } catch (err) {
-            console.error(err);
-            showPopup("Gagal hapus: " + err.message, "error");
-        }
-    },
-
-    _revokePfUrls() {
-        Object.values(Anggota.pfPreview || {}).forEach(u => { try { URL.revokeObjectURL(u); } catch {} });
-        Anggota.pfPreview = {};
     }
 };
 
