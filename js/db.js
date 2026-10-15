@@ -648,20 +648,20 @@ async function kirimAspirasi(nama, kelas, isi, isPrivate = false) {
   cekOk(data);
 }
 
-// Ambil aspirasi terbaru buat ditampilkan (terbaru di atas, maks 50)
-async function getAspirasi() {
+// Ambil aspirasi terbaru buat ditampilkan (terbaru di atas, default 50/halaman)
+async function getAspirasi(limit = 50, offset = 0) {
   let { data, error } = await supa
     .from("aspirasi")
     .select("id, device_id, nama, kelas, isi, is_private, balasan, dibalas_oleh, dibalas_at, created_at")
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(offset, offset + limit - 1);
   // Fallback: DB belum dimigrasi (kolom balasan belum ada) -> select lama.
   if (error && String(error.message || "").match(/balasan|dibalas|schema cache|column/i)) {
     const fb = await supa
       .from("aspirasi")
       .select("id, device_id, nama, kelas, isi, is_private, created_at")
       .order("created_at", { ascending: false })
-      .limit(50);
+      .range(offset, offset + limit - 1);
     if (fb.error) throw fb.error;
     return (fb.data || []).map(r => ({ ...r, balasan: "", dibalas_oleh: "", dibalas_at: null }));
   }
@@ -1145,13 +1145,13 @@ async function resetPollingSuara(userId) {
 // =========================================================================
 // PRESTASI - home (DB-driven, multi-foto, display_order)
 // =========================================================================
-async function getPrestasi() {
+async function getPrestasi(limit = 50, offset = 0) {
   const { data, error } = await supa
     .from("prestasi")
     .select("id, tag, caption, fotos, display_order, pengunggah, created_at")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(offset, offset + limit - 1);
   if (error) throw error;
   return data || [];
 }
@@ -1194,12 +1194,12 @@ async function hapusPrestasi(userId, id) {
 // =========================================================================
 // POSTER - feed foto + caption (arsip peringatan), 1 foto per poster
 // =========================================================================
-async function getPoster() {
+async function getPoster(limit = 50, offset = 0) {
   const { data, error } = await supa
     .from("poster")
     .select("id, judul, caption, foto, created_by, pengunggah, created_at")
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(offset, offset + limit - 1);
   if (error) throw error;
   return data || [];
 }
@@ -1242,12 +1242,12 @@ async function hapusPoster(userId, id) {
 // Card shareable via ?id=. Kelola butuh hak "informasi".
 // =========================================================================
 const INFO_KOLOM = "id, judul, subjudul, kepada, pembuka, tanggal, jam, tempat, bawaan, penutup, created_by, pengunggah, created_at";
-async function getInformasiList() {
+async function getInformasiList(limit = 50, offset = 0) {
   const { data, error } = await supa
     .from("informasi")
     .select(INFO_KOLOM)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(offset, offset + limit - 1);
   if (error) throw error;
   return data || [];
 }
@@ -1311,13 +1311,13 @@ async function hapusInformasi(userId, id) {
 // Baca bebas tanpa login. Tulis cuma lewat RPC (cek hak "informasi" / super admin).
 // =========================================================================
 const INFO_PUBLIK_KOLOM = "id, judul, kategori, slug, ringkasan, isi, tanggal_mulai, tanggal_selesai, waktu, lokasi, sasaran, link_lampiran, label_lampiran, is_pinned, pengunggah, created_by, created_at, updated_at";
-async function getInformasiPublikList() {
+async function getInformasiPublikList(limit = 50, offset = 0) {
   const { data, error } = await supa
     .from("informasi_publik")
     .select(INFO_PUBLIK_KOLOM)
     .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(offset, offset + limit - 1);
   if (error) throw error;
   return data || [];
 }
@@ -1389,13 +1389,13 @@ async function hapusInformasiPublik(userId, id) {
 // Baca bebas tanpa login. Tulis cuma lewat RPC (cek hak).
 // =========================================================================
 const CHANGELOG_KOLOM = "id, versi, tanggal, tipe, judul, deskripsi, komit, pesan, files, tambah, kurang, created_at";
-async function getChangelogList() {
+async function getChangelogList(limit = 200, offset = 0) {
   const { data, error } = await supa
     .from("changelog")
     .select(CHANGELOG_KOLOM)
     .order("tanggal", { ascending: false })
     .order("id", { ascending: false })
-    .limit(200);
+    .range(offset, offset + limit - 1);
   if (error) throw error;
   return (data || []).map((r) => ({
     version: r.versi,
@@ -1456,13 +1456,13 @@ async function hapusChangelog(userId, id) {
 // =========================================================================
 // KEGIATAN HOME - DB-driven (judul, deskripsi, badge, fotos jsonb, order)
 // =========================================================================
-async function getKegiatan() {
+async function getKegiatan(limit = 50, offset = 0) {
   const { data, error } = await supa
     .from("kegiatan")
     .select("id, judul, deskripsi, badge, fotos, display_order, pengunggah, created_at")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false })
-    .limit(50);
+    .range(offset, offset + limit - 1);
   if (error) throw error;
   return data || [];
 }
@@ -1684,14 +1684,16 @@ async function hapusArsip(userId, id) {
 // =========================================================================
 // NOTULENSI RAPAT - DB-driven (halaman osis/notulensi)
 // =========================================================================
-async function getNotulensi() {
-  const { data, error } = await supa
+async function getNotulensi(limit, offset) {
+  let q = supa
     .from("rapat_notulensi")
     .select(
       "id, judul, tanggal, waktu_mulai, waktu_selesai, lokasi, divisi, pimpinan, notulis, peserta, agenda_topik, isi_pembahasan, keputusan, tindak_lanjut, lampiran, status, pengunggah, created_at",
     )
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
+  q = terapkanRange(q, limit, offset);
+  const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
@@ -1902,13 +1904,15 @@ async function hapusProgram(userId, id) {
 // =========================================================================
 // DOKUMEN OSIS - DB-driven (halaman osis/dokumen)
 // =========================================================================
-async function getDokumen() {
-  const { data, error } = await supa
+async function getDokumen(limit, offset) {
+  let q = supa
     .from("osis_dokumen")
     .select(
       "id, nama, kategori, tahun, divisi, deskripsi, file_path, file_type, mime, ukuran_bytes, pengunggah, created_by, created_at",
     )
     .order("created_at", { ascending: false });
+  q = terapkanRange(q, limit, offset);
+  const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
@@ -2035,16 +2039,61 @@ async function hapusTask(userId, id) {
 // =========================================================================
 // KEUANGAN - DB-driven (halaman osis/keuangan, kas + saldo awal)
 // =========================================================================
-async function getKas() {
-  const { data, error } = await supa
+async function getKas(limit, offset, scope) {
+  let q = supa
     .from("osis_kas")
     .select(
       "id, jenis, tanggal, keterangan, kategori, nominal, divisi, pic, proker_id, agenda_id, catatan, bukti_path, created_by, pengunggah, created_at, updated_at",
     )
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
+  // Scope = filter aktif halaman (tahun/jenis/kategori/divisi/cari) biar
+  // halaman per halaman isinya pas, bukan global yang kesaring jadi kosong.
+  const s = scope || {};
+  if (s.tahun) { q = q.gte("tanggal", s.tahun + "-01-01").lt("tanggal", (parseInt(s.tahun, 10) + 1) + "-01-01"); }
+  if (s.jenis) q = q.eq("jenis", s.jenis);
+  if (s.kategori) q = q.eq("kategori", s.kategori);
+  if (s.divisi) q = q.eq("divisi", s.divisi);
+  if (s.q) {
+    const k = String(s.q).replace(/[%_,()"']/g, "").slice(0, 60);
+    if (k) q = q.or(`keterangan.ilike.*${k}*,catatan.ilike.*${k}*,pic.ilike.*${k}*`);
+  }
+  q = terapkanRange(q, limit, offset);
+  const { data, error } = await q;
   if (error) throw error;
   return data || [];
+}
+// Angka halaman keuangan dari server (1 panggilan): total + rekap + opsi.
+// RPC belum ada (migrasi belum di-run) -> null, frontend fallback hitung lokal.
+async function osisKasRingkas(userId, scope) {
+  try {
+    const s = scope || {};
+    const nul = (v) => { v = String(v == null ? "" : v).trim(); return v ? v : null; };
+    const { data, error } = await supa.rpc("osis_kas_ringkas", {
+      p_user_id: userId, p_tahun: nul(s.tahun), p_jenis: nul(s.jenis),
+      p_kategori: nul(s.kategori), p_divisi: nul(s.divisi), p_q: nul(s.q),
+    });
+    if (error) throw error;
+    if (!data || data.error) throw new Error((data && data.error) || "ERR_RINGKAS");
+    return data;
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) return null;
+    throw err;
+  }
+}
+// Angka statistik agenda dari server. Sama: null bila RPC belum ada.
+async function sekbidAgendaRingkas(userId, sekbidId) {
+  try {
+    const { data, error } = await supa.rpc("sekbid_agenda_ringkas", {
+      p_user_id: userId, p_sekbid_id: sekbidId || null,
+    });
+    if (error) throw error;
+    if (!data || data.error) throw new Error((data && data.error) || "ERR_RINGKAS");
+    return data;
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) return null;
+    throw err;
+  }
 }
 async function getSaldoAwal() {
   const { data, error } = await supa
@@ -2290,14 +2339,16 @@ async function hapusTabungan(userId, id) {
 // =========================================================================
 // EVALUASI - DB-driven (halaman osis/evaluasi)
 // =========================================================================
-async function getEvaluasi() {
-  const { data, error } = await supa
+async function getEvaluasi(limit, offset) {
+  let q = supa
     .from("osis_evaluasi")
     .select(
       "id, nama_kegiatan, agenda_id, proker_id, tgl_kegiatan, divisi, pj, status, rating_total, r_persiapan, r_pelaksanaan, r_koordinasi, r_waktu, r_anggaran, baik, kendala, penyebab, solusi, perbaiki, rekomendasi, dokumentasi, tugas, created_by, pengunggah, created_at, updated_at",
     )
     .order("tgl_kegiatan", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
+  q = terapkanRange(q, limit, offset);
+  const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
@@ -2415,12 +2466,14 @@ async function getPertanyaan(formId) {
   if (error) throw error;
   return data || [];
 }
-async function getRespons(formId) {
-  const { data, error } = await supa
+async function getRespons(formId, limit, offset) {
+  let q = supa
     .from("osis_respons")
     .select("id, form_id, jawaban, created_by, created_at")
     .eq("form_id", formId)
     .order("created_at", { ascending: false });
+  q = terapkanRange(q, limit, offset);
+  const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
@@ -2471,8 +2524,8 @@ async function kirimRespons(formId, jawaban, userId) {
 // =========================================================================
 // AGENDA PER SEKBID - DB-driven (judul, deskripsi, tanggal, lokasi, status, fotos)
 // =========================================================================
-async function getAgendaBySekbid(sekbidId) {
-  const { data, error } = await supa
+async function getAgendaBySekbid(sekbidId, limit, offset) {
+  let q = supa
     .from("sekbid_agenda")
     .select(
       "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, pengunggah, created_at",
@@ -2480,17 +2533,21 @@ async function getAgendaBySekbid(sekbidId) {
     .eq("sekbid_id", sekbidId)
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
+  q = terapkanRange(q, limit, offset);
+  const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
-async function getAllAgenda() {
-  const { data, error } = await supa
+async function getAllAgenda(limit, offset) {
+  let q = supa
     .from("sekbid_agenda")
     .select(
       "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, pengunggah, created_at",
     )
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
+  q = terapkanRange(q, limit, offset);
+  const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
@@ -2579,12 +2636,12 @@ async function hapusAgenda(userId, id) {
 // =========================================================================
 
 // Ambil semua kegiatan (terbaru di atas)
-async function getGallery() {
+async function getGallery(limit = 100, offset = 0) {
   const { data, error } = await supa
     .from("gallery")
     .select("id, judul, deskripsi, fotos, created_by, pengunggah, created_at")
     .order("created_at", { ascending: false })
-    .limit(100);
+    .range(offset, offset + limit - 1);
   if (error) throw error;
   return data || [];
 }
@@ -3119,6 +3176,35 @@ async function aksesMatriks(adminId) {
 }
 
 // =========================================================================
+// PAGING + INFINITE SCROLL generik (hemat egress: fetch per halaman, bukan sekaligus)
+// - terapkanRange(q, limit, offset): tempel .range() bila limit diisi; tanpa
+//   limit = tanpa batas (perilaku lama, buat pemanggil yang butuh data full).
+// - pasangSentinel(id, cb): awasi div sentinel; sekali terlihat -> putus +
+//   panggil cb. Render berikutnya memasang ulang. Tanpa IO = null (pemanggil
+//   wajib sediakan fallback, mis. tombol "Muat lagi").
+// =========================================================================
+function terapkanRange(q, limit, offset) {
+  if (limit == null) return q;
+  const a = Math.max(0, (offset | 0));
+  const b = a + Math.max(1, (limit | 0)) - 1;
+  return q.range(a, b);
+}
+function pasangSentinel(id, cb) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  if (!("IntersectionObserver" in window)) return null;
+  const io = new IntersectionObserver((es) => {
+    es.forEach((en) => {
+      if (!en.isIntersecting) return;
+      try { io.disconnect(); } catch {}
+      try { cb(); } catch (err) { console.error(err); }
+    });
+  }, { rootMargin: "500px 0px" });
+  io.observe(el);
+  return io;
+}
+
+// =========================================================================
 // WAWANCARA CALON OSIS - daftar calon + sesi + jawaban (halaman osis/wawancara)
 // Baca langsung (RLS: khusus login OSIS). Tulis jawaban/status/catatan HANYA
 // oleh petugas sesi yang ditugaskan (+ super_admin); kelola calon/pertanyaan/
@@ -3198,6 +3284,24 @@ async function getWawancaraSesi() {
     const c = wawancaraCacheAmbil(kunci);
     if (c) return c;
     throw err;
+  }
+}
+// Penugasan pewawancara TAK TERBATAS (tabel wawancara_sesi_petugas).
+// Migrasi flex belum di-run -> [] (frontend fallback ke kolom lama 1/2).
+async function getWawancaraPetugas() {
+  const kunci = "wawancara_petugas";
+  try {
+    const { data, error } = await supa
+      .from("wawancara_sesi_petugas")
+      .select("sesi_id, user_id");
+    if (error) throw error;
+    const rows = data || [];
+    wawancaraCacheSimpan(kunci, rows);
+    return rows;
+  } catch (err) {
+    const c = wawancaraCacheAmbil(kunci);
+    if (c) return c;
+    return [];
   }
 }
 async function getWawancaraJawaban(sesiId) {
@@ -3292,13 +3396,30 @@ async function wawancaraSesiPastikan(userId, calonId) {
   cekId(data);
   return data;
 }
-async function wawancaraSesiPetugas(userId, sesiId, pewawancara1Id, pewawancara2Id) {
-  const { data, error } = await supa.rpc("wawancara_sesi_petugas", {
-    p_user_id: userId, p_sesi_id: sesiId,
-    p_pewawancara1_id: pewawancara1Id || null, p_pewawancara2_id: pewawancara2Id || null,
-  });
-  if (error) throw error;
-  cekOk(data);
+// Atur ulang daftar pewawancara sesi (jumlah bebas, minimal 1).
+// Variadic: dukung pemanggil lama (uid, sid, pew1, pew2) maupun baru (uid, sid, [ids]).
+// RPC baru belum ada (migrasi flex belum di-run) -> fallback RPC lama (2 pertama).
+async function wawancaraSesiPetugas(userId, sesiId, a, b) {
+  const mentah = Array.isArray(a) ? a : [a, b];
+  const arr = (mentah || []).map(v => (v == null || v === "" ? null : parseInt(v, 10)))
+    .filter(v => Number.isFinite(v));
+  try {
+    const { data, error } = await supa.rpc("wawancara_sesi_petugas_set", {
+      p_user_id: userId, p_sesi_id: sesiId, p_ids: arr,
+    });
+    if (error) throw error;
+    cekOk(data);
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) {
+      const { data, error } = await supa.rpc("wawancara_sesi_petugas", {
+        p_user_id: userId, p_sesi_id: sesiId,
+        p_pewawancara1_id: arr[0] || null, p_pewawancara2_id: arr[1] || null,
+      });
+      if (error) throw error;
+      cekOk(data);
+    } else throw err;
+  }
+  try { Cache.del("wawancara_petugas"); } catch {}
 }
 async function wawancaraSesiStatus(userId, sesiId, status) {
   const { data, error } = await supa.rpc("wawancara_sesi_status", {

@@ -5,14 +5,18 @@
 const Aspirasi = {
     status: "BUKA",
     terinisialisasi: false,
-    cache: [],
+    cache: [], // akumulasi halaman infinite-scroll
+    perPage: 15, // hemat egress: 15 pesan per halaman
+    offset: 0,
+    habis: false,
+    loading: false,
     editingId: null,
 
     async init() {
         if (Aspirasi.terinisialisasi) return;
         Aspirasi.terinisialisasi = true;
         // Render cache dulu (wajib saat offline), sisanya jalan background.
-        try { Aspirasi.muatPesan(); } catch {}
+        try { Aspirasi.muatPesan(true); } catch {}
         if (typeof OsisAuth.refreshAkses === "function") {
             try { await OsisAuth.refreshAkses(); } catch {}
         }
@@ -20,7 +24,7 @@ const Aspirasi = {
             Aspirasi.status = await cekStatusAspirasi();
         } catch { Aspirasi.status = "BUKA"; }
         if (Aspirasi.status === "TUTUP") Aspirasi.kunciFormulir();
-        try { Aspirasi.muatPesan(); } catch {}
+        try { Aspirasi.muatPesan(true); } catch {}
         // Autosave balasan inline (blur) + ESC buat batal
         const listBalas = document.getElementById("daftarPesan");
         if (listBalas && !listBalas._balasBound) {
@@ -44,23 +48,96 @@ const Aspirasi = {
         }
     },
 
-    // ============ DAFTAR PESAN — SWR ============
-    async muatPesan() {
+    // ============ DAFTAR PESAN — paginasi hemat egress (15/halaman + sentinel) ============
+    // awal default true biar pemanggil lama tanpa argumen (outbox/site-edit) tetap refresh penuh.
+    // Filter private tetap di atas cache terakumulasi (makin lengkap seiring scroll).
+    async muatPesan(awal = true) {
         const list = document.getElementById("daftarPesan");
         if (!list) return;
-
-        const render = (data) => {
-            const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
-            const visible = isOsis ? data : (data || []).filter(p => !p.is_private);
-            Aspirasi.cache = visible || [];
-            const jum = document.getElementById("jumPesan");
-            if (jum) jum.textContent = visible.length;
-            if (!visible || visible.length === 0) {
-                list.innerHTML = isOsis
-                    ? `<div class="pesan-empty"><i class="fa-solid fa-comments"></i> Belum ada suara masuk.</div>`
-                    : `<div class="pesan-empty"><i class="fa-solid fa-comments"></i> Belum ada suara public. Private hanya OSIS yang bisa lihat.</div>`;
-                return;
+        if (Aspirasi.loading) return;
+        if (!awal && Aspirasi.habis) return;
+        Aspirasi.loading = true;
+        if (awal) {
+            Aspirasi.offset = 0;
+            Aspirasi.cache = [];
+            Aspirasi.habis = false;
+            // render instan dari cache persisten (tanpa fetch)
+            let instan = false;
+            try {
+                const c = Cache.get("aspirasi");
+                if (c && c.length) {
+                    Aspirasi.cache = [...c];
+                    Aspirasi.render();
+                    instan = true;
+                    Aspirasi.cache = [];
+                    Aspirasi.offset = 0;
+                    Aspirasi.habis = false;
+                }
+            } catch {}
+            if (!instan) list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat suara...</div>`;
+        }
+        try {
+            const rows = await getAspirasi(Aspirasi.perPage, Aspirasi.offset);
+            const ada = new Set(Aspirasi.cache.map(p => String(p.id)));
+            (rows || []).forEach(p => { if (!ada.has(String(p.id))) { Aspirasi.cache.push(p); ada.add(String(p.id)); } });
+            Aspirasi.offset = Aspirasi.cache.length;
+            if (!rows || rows.length < Aspirasi.perPage) {
+                Aspirasi.habis = true;
+                try { Cache.set("aspirasi", Aspirasi.cache); } catch {} // full dataset → aman di-cache offline
             }
+            Aspirasi.render();
+        } catch (err) {
+            console.error(err);
+            // offline: pulihkan cache persisten (dataset lengkap) biar tetap bisa dibaca
+            let pulih = false;
+            try {
+                const c = Cache.get("aspirasi");
+                if (c && c.length) {
+                    Aspirasi.cache = [...c];
+                    Aspirasi.offset = Aspirasi.cache.length;
+                    Aspirasi.habis = true;
+                    Aspirasi.render();
+                    pulih = true;
+                }
+            } catch {}
+            if (!pulih) {
+                if (awal && !Aspirasi.cache.length) list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat suara. Cek koneksi.</div>`;
+                else if (typeof showToast === "function") showToast("Gagal muat lanjutan suara.", "error");
+            }
+        } finally {
+            Aspirasi.loading = false;
+        }
+    },
+
+    render() {
+        const list = document.getElementById("daftarPesan");
+        if (!list) return;
+        const data = Aspirasi.cache || [];
+        const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
+        const visible = isOsis ? data : (data || []).filter(p => !p.is_private);
+        const jum = document.getElementById("jumPesan");
+        if (jum) jum.textContent = visible.length;
+        // sentinel infinite-scroll + tombol manual (fallback tanpa IO)
+        const kaki = data.length
+            ? `<div style="text-align:center; padding:12px 4px">`
+                + (Aspirasi.habis
+                    ? `<small style="color:var(--gray); font-weight:700">— Semua suara sudah dimuat —</small>`
+                    : `<button class="btn btn-white btn-sm" onclick="Aspirasi.muatPesan(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+                + `</div><div id="aspSentinel" style="height:8px"></div>`
+            : "";
+        const arm = () => {
+            let io = null;
+            try { if (typeof pasangSentinel === "function") io = pasangSentinel("aspSentinel", () => Aspirasi.muatPesan(false)); } catch {}
+            if (!io) { const s = document.getElementById("aspSentinel"); if (s) s.style.display = "none"; }
+        };
+        if (!visible || visible.length === 0) {
+            list.innerHTML = (isOsis
+                ? `<div class="pesan-empty"><i class="fa-solid fa-comments"></i> Belum ada suara masuk.</div>`
+                : `<div class="pesan-empty"><i class="fa-solid fa-comments"></i> Belum ada suara public. Private hanya OSIS yang bisa lihat.</div>`) + kaki;
+            arm();
+            return;
+        }
+        {
             const deviceId = getDeviceId();
             const batasHapus = Date.now() - 3600000;
             const groups = [];
@@ -112,28 +189,8 @@ const Aspirasi = {
                 </div>`;
                 }).join("");
                 return sep + items;
-            }).join("");
-        };
-
-        const cached = Cache.get("aspirasi");
-        if (cached) {
-            render(cached);
-            getAspirasi().then(fresh => {
-                if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-                    Cache.set("aspirasi", fresh);
-                    render(fresh);
-                }
-            }).catch(() => {});
-            return;
-        }
-
-        try {
-            const data = await getAspirasi();
-            Cache.set("aspirasi", data);
-            render(data);
-        } catch (err) {
-            console.error(err);
-            list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat suara. Cek koneksi.</div>`;
+            }).join("") + kaki;
+            arm();
         }
     },
 
@@ -210,7 +267,7 @@ const Aspirasi = {
             document.getElementById("isiAspirasi").value = "";
             const cb = document.getElementById("isPrivateAspirasi"); if (cb) cb.checked = false;
             Cache.del("aspirasi");
-            Aspirasi.muatPesan();
+            Aspirasi.muatPesan(true);
         } catch (err) {
             console.error(err);
             if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
@@ -243,7 +300,7 @@ const Aspirasi = {
             }
             showToast("Pesan berhasil dihapus", "success");
             Cache.del("aspirasi");
-            Aspirasi.muatPesan();
+            Aspirasi.muatPesan(true);
         } catch (err) {
             console.error(err);
             if (err.message === "ERR_EXPIRED") {
@@ -384,7 +441,7 @@ const Aspirasi = {
             await balasAspirasiOsis(u.id, id, val);
             showToast(val ? "Balasan terkirim!" : "Balasan dihapus.", "success");
             Cache.del("aspirasi");
-            Aspirasi.muatPesan();
+            Aspirasi.muatPesan(true);
         } catch (err) {
             console.error(err);
             el.textContent = lama;
@@ -393,7 +450,7 @@ const Aspirasi = {
             } else if (err.message === "ERR_NOT_FOUND") {
                 showPopup("Pesan ini sudah tidak ada.", "error");
                 Cache.del("aspirasi");
-                Aspirasi.muatPesan();
+                Aspirasi.muatPesan(true);
             } else if (String(err.message || "").match(/balas_aspirasi_osis|schema cache|does not exist|not found/i)) {
                 showPopup("Database belum dimigrasi. Jalankan dulu migrasi-balas-pesan.sql di Supabase.", "error");
             } else {
@@ -481,7 +538,7 @@ const Aspirasi = {
             showToast("Aspirasi berhasil diubah", "success");
             Aspirasi.batalEdit();
             Cache.del("aspirasi");
-            Aspirasi.muatPesan();
+            Aspirasi.muatPesan(true);
             const list = document.getElementById("daftarPesan");
             if (list && list.scrollIntoView) list.scrollIntoView({ behavior: "smooth", block: "start" });
         } catch (err) {
@@ -494,17 +551,17 @@ const Aspirasi = {
                 showPopup("Pesan udah lebih dari 1 jam, udah ga bisa diubah.", "error");
                 Aspirasi.batalEdit();
                 Cache.del("aspirasi");
-                Aspirasi.muatPesan();
+                Aspirasi.muatPesan(true);
             } else if (err.message === "ERR_FORBIDDEN") {
                 showPopup("Ini bukan pesan kamu!", "error");
                 Aspirasi.batalEdit();
                 Cache.del("aspirasi");
-                Aspirasi.muatPesan();
+                Aspirasi.muatPesan(true);
             } else if (err.message === "ERR_NOT_FOUND") {
                 showPopup("Pesan ini sudah tidak ada.", "error");
                 Aspirasi.batalEdit();
                 Cache.del("aspirasi");
-                Aspirasi.muatPesan();
+                Aspirasi.muatPesan(true);
             } else if (err.message === "ERR_NO_AUTH") {
                 showPopup("Cuma OSIS yang bisa ubah pesan ini.", "error");
             } else if (err.message === "ERR_EMPTY") {

@@ -7,6 +7,10 @@
 
 const Notulensi = {
     cache: [],
+    offset: 0,
+    habis: false,
+    loading: false,
+    perPage: 20,
     filter: { q: "", divisi: "", status: "", tanggal: "" },
     editingId: null,
     detailId: null,
@@ -82,34 +86,52 @@ const Notulensi = {
             if (document.getElementById("notulensiDetail")?.classList.contains("open")) Notulensi.tutupDetail();
         });
 
-        await Notulensi.muat();
+        await Notulensi.muat(true);
     },
 
-    // ============ DATA ============
-    async muat() {
+    // ============ DATA (paginasi hemat egress: 20/halaman + sentinel) ============
+    async muat(awal = true) {
+        if (Notulensi.loading) return;
+        if (!awal && Notulensi.habis) return;
+        Notulensi.loading = true;
         const listEl = document.getElementById("notulensiList");
-        if (listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat notulensi...</div>`;
+        if (awal) {
+            Notulensi.offset = 0;
+            Notulensi.cache = [];
+            Notulensi.habis = false;
+            // render instan dari cache persisten (tanpa fetch)
+            let instan = false;
+            try {
+                const c = Cache.get("notulensi");
+                if (c && c.length) {
+                    Notulensi.cache = [...c];
+                    Notulensi.render();
+                    instan = true;
+                    Notulensi.cache = [];
+                    Notulensi.offset = 0;
+                    Notulensi.habis = false;
+                }
+            } catch {}
+            if (!instan && listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat notulensi...</div>`;
+        }
         try {
-            const cached = Cache.get("notulensi");
-            if (cached) {
-                Notulensi.cache = cached;
-                Notulensi.render();
-                getNotulensi().then(fresh => {
-                    if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-                        Cache.set("notulensi", fresh);
-                        Notulensi.cache = fresh || [];
-                        Notulensi.render();
-                    }
-                }).catch(() => {});
-                return;
+            const rows = await getNotulensi(Notulensi.perPage, Notulensi.offset);
+            const ada = new Set(Notulensi.cache.map(a => String(a.id)));
+            (rows || []).forEach(r => {
+                if (!ada.has(String(r.id))) { Notulensi.cache.push(r); ada.add(String(r.id)); }
+            });
+            Notulensi.offset = Notulensi.cache.length;
+            if (!rows || rows.length < Notulensi.perPage) {
+                Notulensi.habis = true;
+                try { Cache.set("notulensi", Notulensi.cache); } catch {}
             }
-            const data = await getNotulensi();
-            Cache.set("notulensi", data);
-            Notulensi.cache = data || [];
             Notulensi.render();
         } catch (err) {
             console.error(err);
-            if (listEl) listEl.innerHTML = `<div class="pesan-empty">Gagal memuat notulensi.</div>`;
+            if (awal && listEl && !Notulensi.cache.length) listEl.innerHTML = `<div class="pesan-empty">Gagal memuat notulensi.</div>`;
+            else if (typeof showToast === "function") showToast("Gagal muat lanjutan.", "error");
+        } finally {
+            Notulensi.loading = false;
         }
     },
 
@@ -165,7 +187,9 @@ const Notulensi = {
             return;
         }
         if (!data.length) {
-            listEl.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Notulensi.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
+            listEl.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Notulensi.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`
+                + (Notulensi.habis ? "" : `<div style="text-align:center; padding:12px 4px"><button class="btn btn-white btn-sm" onclick="Notulensi.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button></div><div id="notulensiSentinel" style="height:8px"></div>`);
+            try { pasangSentinel("notulensiSentinel", () => Notulensi.muat(false)); } catch {}
             return;
         }
         listEl.innerHTML = data.map(a => {
@@ -192,6 +216,13 @@ const Notulensi = {
                     </div>
                 </div>`;
         }).join("");
+        // sentinel infinite-scroll + tombol manual (fallback tanpa IO)
+        listEl.innerHTML += `<div style="text-align:center; padding:12px 4px">`
+            + (Notulensi.habis
+                ? `<small style="color:var(--gray); font-weight:700">— Udah paling bawah —</small>`
+                : `<button class="btn btn-white btn-sm" onclick="Notulensi.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+            + `</div><div id="notulensiSentinel" style="height:8px"></div>`;
+        try { pasangSentinel("notulensiSentinel", () => Notulensi.muat(false)); } catch {}
     },
 
     bacaFilter() {
@@ -463,7 +494,7 @@ const Notulensi = {
                 showToast("Notulensi tersimpan!", "success");
             }
             Notulensi.tutupForm();
-            await Notulensi.muat();
+            await Notulensi.muat(true);
         } catch (err) {
             console.error(err);
             if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
@@ -491,7 +522,7 @@ const Notulensi = {
                 }
             }
             showToast("Notulensi dihapus", "success");
-            await Notulensi.muat();
+            await Notulensi.muat(true);
         } catch (err) {
             console.error(err);
             showPopup("Gagal hapus: " + err.message, "error");

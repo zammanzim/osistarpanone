@@ -7,7 +7,11 @@
 (function () {
   "use strict";
 
-  var semua = [];
+  var semua = []; // akumulasi halaman infinite-scroll
+  var PER_PAGE = 30; // hemat egress: 30 versi per halaman
+  var offset = 0;
+  var habis = false;
+  var loading = false;
   var saring = "semua";
   var cari = "";
   var bisaKelola = false;
@@ -76,10 +80,12 @@
     }
     if (!box) return;
     if (!daftar.length) {
-      box.innerHTML = '<div class="cl-card"><div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada versi yang cocok.</div></div>';
+      box.innerHTML = '<div class="cl-card"><div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada versi yang cocok.</div></div>' + kaki();
+      armSentinel();
       return;
     }
-    box.innerHTML = daftar.map(kartu).join("");
+    box.innerHTML = daftar.map(kartu).join("") + kaki();
+    armSentinel();
     var hit = document.getElementById("clHitung");
     if (hit) hit.textContent = daftar.length + " ditampilkan";
   }
@@ -242,14 +248,6 @@
     }
   }
 
-  function terapkan(fresh) {
-    semua = fresh;
-    try { localStorage.setItem("changelog_cache", JSON.stringify(fresh)); } catch (e) {}
-    var hero = document.getElementById("clVersi");
-    if (hero && fresh.length) hero.textContent = fresh[0].version;
-    render();
-  }
-
   async function dariJson() {
     var res = await fetch("./changelog.json", { cache: "no-cache" });
     if (!res.ok) throw new Error("HTTP " + res.status);
@@ -258,28 +256,115 @@
     return j;
   }
 
-  async function muat(force) {
+  // kunci dedupe: id DB kalau ada, kalau dari JSON pakai versi
+  function kunciCl(r) {
+    return (r && r._id != null) ? ("id:" + r._id) : ("v:" + String((r && r.version) || ""));
+  }
+
+  function gabung(rows) {
+    var ada = {};
+    semua.forEach(function (r) { ada[kunciCl(r)] = 1; });
+    (rows || []).forEach(function (r) {
+      var k = kunciCl(r);
+      if (!ada[k]) { ada[k] = 1; semua.push(r); }
+    });
+  }
+
+  // sentinel infinite-scroll + tombol manual (fallback tanpa IO)
+  function kaki() {
+    if (!semua.length) return "";
+    return '<div style="text-align:center; padding:12px 4px">'
+      + (habis
+        ? '<small style="color:var(--gray); font-weight:700">— Udah paling bawah —</small>'
+        : '<button class="btn btn-white btn-sm" onclick="Changelog.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>')
+      + '</div><div id="clSentinel" style="height:8px"></div>';
+  }
+
+  function armSentinel() {
+    var io = null;
+    try { if (typeof pasangSentinel === "function") io = pasangSentinel("clSentinel", function () { muat(false); }); } catch (e) {}
+    if (!io) { var s = document.getElementById("clSentinel"); if (s) s.style.display = "none"; }
+  }
+
+  async function muat(awal) {
+    if (awal === undefined) awal = true; // pemanggil tanpa argumen = refresh penuh
     var box = document.getElementById("clList");
-    try {
-      var cached = null;
-      try { cached = JSON.parse(localStorage.getItem("changelog_cache") || "null"); } catch (e) {}
-      if (Array.isArray(cached) && cached.length && !force) {
-        semua = cached;
-        render();
-      } else if (!semua.length && box) {
+    if (loading) return;
+    if (!awal && habis) return;
+    loading = true;
+    if (awal) {
+      offset = 0;
+      semua = [];
+      habis = false;
+      // render instan dari cache persisten (tanpa fetch)
+      var instan = false;
+      try {
+        var c = JSON.parse(localStorage.getItem("changelog_cache") || "null");
+        if (Array.isArray(c) && c.length) {
+          semua = c.slice();
+          var hero0 = document.getElementById("clVersi");
+          if (hero0 && semua.length) hero0.textContent = semua[0].version;
+          render();
+          instan = true;
+          semua = [];
+          offset = 0;
+          habis = false;
+        }
+      } catch (e) {}
+      if (!instan && !semua.length && box) {
         box.innerHTML = '<div class="cl-card"><div class="loading-block"><div class="spinner"></div>Memuat changelog...</div></div>';
       }
-      // 1) DB dulu (publik, tanpa login). 2) fallback file JSON (precache offline).
-      var fresh = null;
-      try {
-        if (typeof getChangelogList === "function") fresh = await getChangelogList();
-      } catch (e1) { fresh = null; }
-      if (!fresh || !fresh.length) fresh = await dariJson();
-      if (fresh.length) terapkan(fresh);
-    } catch (err) {
-      if (!semua.length && box) {
-        box.innerHTML = '<div class="cl-card"><div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat changelog. Cek koneksi lalu refresh.</div><div style="text-align:center;margin-top:8px"><button class="btn btn-red btn-sm" onclick="Changelog.muat(true)"><i class="fa-solid fa-rotate"></i> Coba lagi</button></div></div>';
+    }
+    try {
+      if (awal) {
+        // 1) DB dulu (publik, tanpa login). 2) fallback file JSON (precache offline).
+        var rows = null, dariDb = false;
+        try {
+          if (typeof getChangelogList === "function") { rows = await getChangelogList(PER_PAGE, 0); dariDb = true; }
+        } catch (e1) { rows = null; dariDb = false; }
+        if (!rows || !rows.length) { rows = await dariJson(); dariDb = false; }
+        gabung(rows);
+        offset = semua.length;
+        if (!dariDb || rows.length < PER_PAGE) {
+          habis = true;
+          try { localStorage.setItem("changelog_cache", JSON.stringify(semua)); } catch (e) {}
+        }
+        var hero = document.getElementById("clVersi");
+        if (hero && semua.length) hero.textContent = semua[0].version;
+        render();
+      } else {
+        var lanjut = await getChangelogList(PER_PAGE, offset);
+        gabung(lanjut || []);
+        offset = semua.length;
+        if (!lanjut || lanjut.length < PER_PAGE) {
+          habis = true;
+          try { localStorage.setItem("changelog_cache", JSON.stringify(semua)); } catch (e) {}
+        }
+        render();
       }
+    } catch (err) {
+      // offline: pulihkan cache persisten (dataset lengkap) biar tetap bisa dibaca
+      var pulih = false;
+      try {
+        var c2 = JSON.parse(localStorage.getItem("changelog_cache") || "null");
+        if (Array.isArray(c2) && c2.length) {
+          semua = c2.slice();
+          habis = true;
+          var hero2 = document.getElementById("clVersi");
+          if (hero2) hero2.textContent = semua[0].version;
+          render();
+          pulih = true;
+        }
+      } catch (e) {}
+      if (!pulih) {
+        if (awal && !semua.length && box) {
+          box.innerHTML = '<div class="cl-card"><div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat changelog. Cek koneksi lalu refresh.</div><div style="text-align:center;margin-top:8px"><button class="btn btn-red btn-sm" onclick="Changelog.muat(true)"><i class="fa-solid fa-rotate"></i> Coba lagi</button></div></div>';
+        } else {
+          toast("Gagal muat lanjutan changelog.", "error");
+        }
+      }
+    } finally {
+      loading = false;
     }
   }
 
@@ -295,7 +380,7 @@
       segarkanSeg();
       var q = document.getElementById("clCari");
       if (q) q.addEventListener("input", function () { cari = q.value.trim().toLowerCase(); render(); });
-      muat(false);
+      muat(true);
       cekKelola();
       try {
         if (typeof OsisAuth !== "undefined" && OsisAuth.refreshAkses) {

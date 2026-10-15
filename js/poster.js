@@ -6,6 +6,10 @@
 
 const Poster = {
     cache: [],
+    offset: 0, // jumlah baris terakumulasi = offset fetch berikutnya
+    habis: false, // true kalau server sudah tidak punya baris lagi
+    loading: false,
+    perPage: 12, // hemat egress: 12 baris per fetch
     terinisialisasi: false,
     pendingFile: null,
 
@@ -29,43 +33,86 @@ const Poster = {
         if (grid) grid.classList.toggle("mode-osis", !!boleh);
     },
 
-    async muat() {
+    // Muat paginasi hemat egress (12/fetch) + infinite scroll.
+    // Cache.get cuma buat render instan, Cache.set cuma pas habis.
+    async muat(awal = true) {
         const grid = document.getElementById("posterGrid");
         if (!grid) return;
-        const cached = Cache.get("poster");
-        if (cached) {
-            Poster.cache = cached || [];
-            try { Poster.render(); } catch {}
-            getPoster().then(fresh => {
-                Cache.set("poster", fresh);
-                if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-                    Poster.cache = fresh || [];
-                    Poster.render();
-                }
-            }).catch(() => {});
-            return;
+        if (Poster.loading) return;
+        if (!awal && Poster.habis) return;
+        Poster.loading = true;
+        if (awal) {
+            Poster.offset = 0;
+            Poster.habis = false;
+            const cached = Cache.get("poster");
+            if (cached && cached.length) {
+                Poster.cache = cached.slice();
+                try { Poster.render(); } catch {}
+            } else {
+                Poster.cache = [];
+                grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat poster...</div>`;
+            }
+        } else {
+            const btn = document.getElementById("posterLagi");
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...'; }
         }
-        grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat poster...</div>`;
         try {
-            const data = await getPoster();
-            Cache.set("poster", data);
-            Poster.cache = data || [];
+            const rows = await getPoster(Poster.perPage, Poster.offset);
+            if (awal) Poster.cache = []; // ganti render instan dengan fresh
+            const ada = new Set(Poster.cache.map(p => String(p.id)));
+            (rows || []).forEach(p => {
+                if (!ada.has(String(p.id))) { ada.add(String(p.id)); Poster.cache.push(p); }
+            });
+            Poster.offset = Poster.cache.length;
+            if (!rows || rows.length < Poster.perPage) {
+                Poster.habis = true;
+                Cache.set("poster", Poster.cache);
+            }
             Poster.render();
         } catch (err) {
             console.error(err);
-            grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat poster. Cek koneksi.</div>`;
+            if (awal && !Poster.cache.length) {
+                grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat poster. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Poster.muat(true)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+            } else if (awal) {
+                showToast("Gagal refresh, tampil data lama.", "error");
+            } else {
+                showToast("Gagal muat lanjutan poster.", "error");
+                try { Poster.render(); } catch {} // balikin tombol manual
+            }
+        } finally {
+            Poster.loading = false;
         }
+    },
+
+    // Pasang observer sentinel; gagal (no IO) -> tombol manual yang tampil.
+    jejaki() {
+        try { if (Poster._io) Poster._io.disconnect(); } catch {}
+        Poster._io = null;
+        let io = null;
+        try {
+            if (!Poster.habis && typeof pasangSentinel === "function") {
+                io = pasangSentinel("posterSentinel", () => Poster.muat(false));
+            }
+        } catch { io = null; }
+        Poster._io = io;
+        const btn = document.getElementById("posterLagi");
+        if (btn) btn.style.display = (!io && !Poster.habis && (Poster.cache || []).length) ? "" : "none";
     },
 
     render() {
         const grid = document.getElementById("posterGrid");
         if (!grid) return;
         const data = Poster.cache || [];
+        // Sentinel infinite scroll + tombol manual (fallback kalau no IO).
+        const ekor = `<div id="posterSentinel" aria-hidden="true" style="height:2px"></div>
+            <div style="text-align:center;margin:6px 0 2px"><button id="posterLagi" class="btn btn-white btn-sm" style="display:none" onclick="Poster.muat(false)"><i class="fa-solid fa-rotate-right"></i> Muat lagi</button></div>`;
         if (data.length === 0) {
-            grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-newspaper"></i> Belum ada poster. Segera hadir!</div>`;
+            grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-newspaper"></i> Belum ada poster. Segera hadir!</div>` + ekor;
+            Poster.jejaki();
             return;
         }
-        grid.innerHTML = data.map(item => Poster.kartu(item)).join("");
+        grid.innerHTML = data.map(item => Poster.kartu(item)).join("") + ekor;
+        Poster.jejaki();
     },
 
     fmtTanggal(iso) {

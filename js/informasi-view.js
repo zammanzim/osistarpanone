@@ -10,7 +10,11 @@ const InfoView = (function () {
 
   const CACHE_KUNCI = "cache_papan_info";
 
-  let semua = [];
+  let semua = []; // akumulasi halaman infinite-scroll
+  const PER_PAGE = 12; // hemat egress: 12 info per halaman
+  let offset = 0;
+  let habis = false;
+  let loading = false;
   let kategori = "semua";
   let cari = "";
   let urut = "baru"; // baru | lama
@@ -257,6 +261,22 @@ const InfoView = (function () {
     );
   }
 
+  // sentinel infinite-scroll + tombol manual (fallback tanpa IO)
+  function kaki() {
+    if (!semua.length) return "";
+    return `<div style="text-align:center; padding:12px 4px">`
+      + (habis
+        ? `<small style="color:var(--gray); font-weight:700">— Udah paling bawah —</small>`
+        : `<button class="btn btn-white btn-sm" onclick="InfoView.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+      + `</div><div id="infvSentinel" style="height:8px"></div>`;
+  }
+
+  function armSentinel() {
+    let io = null;
+    try { if (typeof pasangSentinel === "function") io = pasangSentinel("infvSentinel", function () { muat(false); }); } catch {}
+    if (!io) { const s = document.getElementById("infvSentinel"); if (s) s.style.display = "none"; }
+  }
+
   function cocok(x) {
     if (kategori !== "semua" && String(x.kategori) !== kategori) return false;
     if (!cari) return true;
@@ -340,7 +360,8 @@ const InfoView = (function () {
         '<i class="fa-solid fa-magnifying-glass" style="font-size:1.8rem;color:var(--gray);display:block;margin-bottom:8px"></i>' +
         "<b>Belum ada info yang cocok.</b>" +
         '<p style="font-size:.82rem;color:var(--gray);margin:4px 0 0">Ganti kata kunci atau kategori di atas.</p>' +
-        "</div></div>";
+        "</div></div>" + kaki();
+      armSentinel();
       return;
     }
     let htmlBaru = "";
@@ -373,55 +394,102 @@ const InfoView = (function () {
       }
       htmlHari += editingId === Number(x.id) ? kartuEditHtml(x, false) : kartuHtml(x, false);
     });
-    box.innerHTML = htmlBaru + htmlHari;
+    box.innerHTML = htmlBaru + htmlHari + (editingId ? "" : kaki());
+    armSentinel();
   }
 
-  async function muat(paksa) {
+  // Paginasi hemat egress (12/halaman + sentinel). Filter/search (kategori,
+  // cari, urut) tetap di atas cache terakumulasi — render() saja, tanpa fetch.
+  // awal default true biar pemanggil tanpa argumen (init/refresh) tetap refresh penuh.
+  async function muat(awal = true) {
     const box = document.getElementById("infvList");
     cekKelola();
-
-    if (!semua.length && !paksa) {
+    if (loading) return;
+    if (!awal && habis) return;
+    loading = true;
+    if (awal) {
+      offset = 0;
+      semua = [];
+      habis = false;
+      // render instan dari cache persisten (tanpa fetch)
+      let instan = false;
       try {
-        let cached = null;
-        if (typeof Cache !== "undefined" && Cache.get) cached = Cache.get(CACHE_KUNCI);
-        if (!cached) {
+        let c = null;
+        if (typeof Cache !== "undefined" && Cache.get) c = Cache.get(CACHE_KUNCI);
+        if (!c) {
           const raw = localStorage.getItem(CACHE_KUNCI);
-          if (raw) cached = JSON.parse(raw);
+          if (raw) c = JSON.parse(raw);
         }
-        if (Array.isArray(cached) && cached.length) {
-          semua = cached;
+        if (Array.isArray(c) && c.length) {
+          semua = c.slice();
           render();
+          instan = true;
+          semua = [];
+          offset = 0;
+          habis = false;
         }
       } catch {}
+      if (!instan && box && !semua.length) {
+        box.innerHTML = '<div class="infv-card"><div class="loading-block"><div class="spinner"></div>Memuat papan informasi...</div></div>';
+      }
     }
 
     try {
       if (typeof getInformasiPublikList === "function") {
-        const fresh = await getInformasiPublikList();
+        const rows = await getInformasiPublikList(PER_PAGE, offset);
         // Array kosong = data valid (mis. semua info dihapus), JANGAN ditolak
         // cuma karena length-nya 0 — kalau tidak, `semua` basi tetap dipakai
         // dan card yang udah dihapus server bakal gentayangan (hapus ulang
         // malah ERR_NOT_FOUND).
-        if (Array.isArray(fresh)) {
-          semua = fresh;
-          try {
-            if (typeof Cache !== "undefined" && Cache.set) Cache.set(CACHE_KUNCI, fresh);
-            localStorage.setItem(CACHE_KUNCI, JSON.stringify(fresh));
-          } catch {}
+        if (Array.isArray(rows)) {
+          const ada = new Set(semua.map(function (x) { return String(x.id); }));
+          rows.forEach(function (x) {
+            if (!ada.has(String(x.id))) { semua.push(x); ada.add(String(x.id)); }
+          });
+          offset = semua.length;
+          if (!rows.length || rows.length < PER_PAGE) {
+            habis = true;
+            try {
+              if (typeof Cache !== "undefined" && Cache.set) Cache.set(CACHE_KUNCI, semua);
+              localStorage.setItem(CACHE_KUNCI, JSON.stringify(semua));
+            } catch {}
+          }
           render();
           return;
         }
       }
       if (!semua.length) {
         semua = CONTOH.slice();
+        habis = true;
         render();
       } else {
         render();
       }
     } catch (e) {
       console.warn("InfoView: pakai cache/contoh:", e);
-      if (!semua.length) semua = CONTOH.slice();
-      render();
+      // offline: pulihkan cache persisten (dataset lengkap) biar tetap bisa dibaca
+      let pulih = false;
+      try {
+        let c = null;
+        if (typeof Cache !== "undefined" && Cache.get) c = Cache.get(CACHE_KUNCI);
+        if (!c) {
+          const raw = localStorage.getItem(CACHE_KUNCI);
+          if (raw) c = JSON.parse(raw);
+        }
+        if (Array.isArray(c) && c.length) {
+          semua = c.slice();
+          habis = true;
+          render();
+          pulih = true;
+        }
+      } catch {}
+      if (!pulih) {
+        if (!semua.length) { semua = CONTOH.slice(); habis = true; }
+        else if (!awal && typeof window.showToast === "function") window.showToast("Gagal muat lanjutan info.", "error");
+        render();
+      }
+    } finally {
+      loading = false;
     }
   }
 
@@ -800,7 +868,7 @@ const InfoView = (function () {
         }
       } catch {}
     }
-    muat();
+    muat(true);
   }
 
   return {

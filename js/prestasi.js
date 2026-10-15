@@ -6,6 +6,10 @@
 
 const Prestasi = {
     cache: [],
+    offset: 0, // jumlah baris terakumulasi = offset fetch berikutnya
+    habis: false, // true kalau server sudah tidak punya baris lagi
+    loading: false,
+    perPage: 12, // hemat egress: 12 baris per fetch
     terinisialisasi: false,
     pendingFile: null,
 
@@ -54,32 +58,70 @@ const Prestasi = {
         if (btn) btn.style.display = (osis && OsisAuth.bisa && OsisAuth.bisa("prestasi")) ? "" : "none";
     },
 
-    async muat() {
+    // Muat paginasi hemat egress (12/fetch) + infinite scroll.
+    // Cache.get cuma buat render instan, Cache.set cuma pas habis.
+    async muat(awal = true) {
         const grid = document.getElementById("prestasiGrid");
         if (!grid) return;
-        const cached = Cache.get("prestasi");
-        if (cached) {
-            Prestasi.cache = cached;
-            Prestasi.render();
-            getPrestasi().then(fresh => {
-                if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-                    Cache.set("prestasi", fresh);
-                    Prestasi.cache = fresh;
-                    Prestasi.render();
-                }
-            }).catch(()=>{});
-            return;
+        if (Prestasi.loading) return;
+        if (!awal && Prestasi.habis) return;
+        Prestasi.loading = true;
+        if (awal) {
+            Prestasi.offset = 0;
+            Prestasi.habis = false;
+            const cached = Cache.get("prestasi");
+            if (cached && cached.length) {
+                Prestasi.cache = cached.slice();
+                Prestasi.render();
+            } else {
+                Prestasi.cache = [];
+                grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat prestasi...</div>`;
+            }
+        } else {
+            const btn = document.getElementById("prestasiLagi");
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...'; }
         }
-        grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat prestasi...</div>`;
         try {
-            const data = await getPrestasi();
-            Cache.set("prestasi", data);
-            Prestasi.cache = data;
+            const rows = await getPrestasi(Prestasi.perPage, Prestasi.offset);
+            if (awal) Prestasi.cache = []; // ganti render instan dengan fresh
+            const ada = new Set(Prestasi.cache.map(p => String(p.id)));
+            (rows || []).forEach(p => {
+                if (!ada.has(String(p.id))) { ada.add(String(p.id)); Prestasi.cache.push(p); }
+            });
+            Prestasi.offset = Prestasi.cache.length;
+            if (!rows || rows.length < Prestasi.perPage) {
+                Prestasi.habis = true;
+                Cache.set("prestasi", Prestasi.cache);
+            }
             Prestasi.render();
         } catch (err) {
             console.error(err);
-            grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat prestasi.</div>`;
+            if (awal && !Prestasi.cache.length) {
+                grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat prestasi.<br><br><button class="btn btn-red btn-sm" onclick="Prestasi.muat(true)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+            } else if (awal) {
+                showToast("Gagal refresh, tampil data lama.", "error");
+            } else {
+                showToast("Gagal muat lanjutan prestasi.", "error");
+                Prestasi.render(); // balikin tombol manual
+            }
+        } finally {
+            Prestasi.loading = false;
         }
+    },
+
+    // Pasang observer sentinel; gagal (no IO) -> tombol manual yang tampil.
+    jejaki() {
+        try { if (Prestasi._io) Prestasi._io.disconnect(); } catch {}
+        Prestasi._io = null;
+        let io = null;
+        try {
+            if (!Prestasi.habis && typeof pasangSentinel === "function") {
+                io = pasangSentinel("prestasiSentinel", () => Prestasi.muat(false));
+            }
+        } catch { io = null; }
+        Prestasi._io = io;
+        const btn = document.getElementById("prestasiLagi");
+        if (btn) btn.style.display = (!io && !Prestasi.habis && (Prestasi.cache || []).length) ? "" : "none";
     },
 
     render() {
@@ -87,10 +129,17 @@ const Prestasi = {
         if (!grid) return;
         const data = Prestasi.cache || [];
         if (data.length === 0) {
-            grid.innerHTML = `<div class="pesan-empty" style="grid-column:1/-1;color:#fff"><i class="fa-solid fa-trophy"></i> Belum ada prestasi.</div>`;
+            grid.innerHTML = `<div class="pesan-empty" style="grid-column:1/-1;color:#fff"><i class="fa-solid fa-trophy"></i> Belum ada prestasi.</div>`
+                + `<div id="prestasiSentinel" aria-hidden="true" style="grid-column:1/-1;height:2px"></div>`
+                + `<div style="grid-column:1/-1;text-align:center"><button id="prestasiLagi" class="btn btn-white btn-sm" style="display:none" onclick="Prestasi.muat(false)"><i class="fa-solid fa-rotate-right"></i> Muat lagi</button></div>`;
+            Prestasi.jejaki();
             return;
         }
-        grid.innerHTML = data.map(item => Prestasi.kartu(item)).join("");
+        // Sentinel infinite scroll + tombol manual (fallback kalau no IO).
+        grid.innerHTML = data.map(item => Prestasi.kartu(item)).join("")
+            + `<div id="prestasiSentinel" aria-hidden="true" style="grid-column:1/-1;height:2px"></div>`
+            + `<div style="grid-column:1/-1;text-align:center"><button id="prestasiLagi" class="btn btn-white btn-sm" style="display:none" onclick="Prestasi.muat(false)"><i class="fa-solid fa-rotate-right"></i> Muat lagi</button></div>`;
+        Prestasi.jejaki();
     },
 
     kartu(item) {
@@ -153,7 +202,9 @@ const Prestasi = {
             const idx = Prestasi.cache.findIndex(p => String(p.id) === String(id));
             if (idx >= 0) {
                 Prestasi.cache[idx] = { ...Prestasi.cache[idx], ...next };
-                Cache.set("prestasi", Prestasi.cache);
+                // Cache persisten cuma ditulis pas dataset lengkap (habis==true).
+                if (Prestasi.habis) Cache.set("prestasi", Prestasi.cache);
+                else Cache.del("prestasi");
             }
             showToast(successMsg, "success");
         } catch (err) {

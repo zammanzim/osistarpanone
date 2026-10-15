@@ -66,7 +66,8 @@ const Logs = {
         try {
             const { data, error } = await supa
                 .from("visitor")
-                .select("device_id, name, user_key, halaman, last_seen");
+                .select("device_id, name, user_key, halaman, last_seen")
+                .limit(200);
             if (error) throw error;
             Logs.online = (data || [])
                 .filter(r => Logs.isOnline(r))

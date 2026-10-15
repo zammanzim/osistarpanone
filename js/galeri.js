@@ -8,7 +8,11 @@
 const Galeri = {
     terinisialisasi: false,
     draft: null, // { id: number|null, judul: "", deskripsi: "", fotos: [] }
-    cache: [],   // hasil fetch terakhir, dipake pas re-render draft
+    cache: [],   // akumulasi halaman infinite-scroll, dipake pas re-render draft
+    perPage: 12, // hemat egress: 12 kegiatan per halaman
+    offset: 0,
+    habis: false,
+    loading: false,
 
     init() {
         if (Galeri.terinisialisasi) return;
@@ -18,7 +22,7 @@ const Galeri = {
             OsisAuth.refreshAkses().then(() => { Galeri.cekLogin(); Galeri.render(); }).catch(() => {});
         }
         Galeri.cekLogin();
-        Galeri.muat();
+        Galeri.muat(true);
 
         // Slot + & tombol hapus draft
         const grid = document.getElementById("galGrid");
@@ -203,7 +207,7 @@ const Galeri = {
             Galeri.draft = null;
             Cache.del("gallery");
             Galeri.cache = [];
-            await Galeri.muat();
+            await Galeri.muat(true);
         } catch (err) {
             console.error(err);
             if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
@@ -226,75 +230,85 @@ const Galeri = {
         Galeri.render();
     },
 
-    // ============ MUAT & RENDER — SWR ============
-    async muat() {
+    // ============ MUAT & RENDER — paginasi hemat egress (12/halaman + sentinel) ============
+    // awal default true biar pemanggil lama tanpa argumen (outbox/site-edit) tetap refresh penuh.
+    async muat(awal = true) {
         const grid = document.getElementById("galGrid");
         if (!grid) return;
-
-        const cached = Cache.get("gallery");
-        if (cached) {
-            // auto-hapus galeri tanpa foto di cache
-            const emptyCached = (cached||[]).filter(g => !Array.isArray(g.fotos) || g.fotos.length === 0);
-            if (emptyCached.length) {
-                const u = OsisAuth.getUser && OsisAuth.getUser();
-                if (u && u.mode === "osis") {
-                    emptyCached.forEach(async it => { try { await hapusGallery(u.id, it.id); } catch {} });
-                    const filtered = cached.filter(g => Array.isArray(g.fotos) && g.fotos.length > 0);
-                    Cache.set("gallery", filtered);
-                    Galeri.cache = filtered;
+        if (Galeri.loading) return;
+        if (!awal && Galeri.habis) return;
+        Galeri.loading = true;
+        if (awal) {
+            Galeri.offset = 0;
+            Galeri.cache = [];
+            Galeri.habis = false;
+            // render instan dari cache persisten (tanpa fetch)
+            let instan = false;
+            try {
+                const c = Cache.get("gallery");
+                if (c && c.length) {
+                    Galeri.cache = [...c];
                     Galeri.render();
-                } else {
-                    Galeri.cache = cached;
-                    Galeri.render();
+                    instan = true;
+                    Galeri.cache = [];
+                    Galeri.offset = 0;
+                    Galeri.habis = false;
                 }
-            } else {
-                Galeri.cache = cached;
-                Galeri.render();
+            } catch {}
+            if (!instan) {
+                grid.innerHTML = Galeri.draft ? Galeri.kartuDraft()
+                    : `<div class="loading-block"><div class="spinner"></div>Memuat galeri...</div>`;
             }
-            getGallery().then(fresh => {
-                const emptyFresh = (fresh||[]).filter(g => !Array.isArray(g.fotos) || g.fotos.length === 0);
-                if (emptyFresh.length) {
-                    const u2 = OsisAuth.getUser && OsisAuth.getUser();
-                    if (u2 && u2.mode === "osis") {
-                        emptyFresh.forEach(async it => { try { await hapusGallery(u2.id, it.id); } catch {} });
-                        fresh = fresh.filter(g => Array.isArray(g.fotos) && g.fotos.length > 0);
-                        Cache.set("gallery", fresh);
-                    }
-                } else {
-                    Cache.set("gallery", fresh);
-                }
-                if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-                    Galeri.cache = fresh;
-                    Galeri.render();
-                }
-            }).catch(() => {});
-            return;
         }
 
         try {
-            let data = await getGallery();
-            const empty = (data||[]).filter(g => !Array.isArray(g.fotos) || g.fotos.length === 0);
-            if (empty.length) {
-                const u = OsisAuth.getUser && OsisAuth.getUser();
-                if (u && u.mode === "osis") {
-                    empty.forEach(async it => { try { await hapusGallery(u.id, it.id); } catch {} });
-                    data = data.filter(g => Array.isArray(g.fotos) && g.fotos.length > 0);
-                    Cache.set("gallery", data);
-                }
-            } else {
-                Cache.set("gallery", data);
+            const rows = await getGallery(Galeri.perPage, Galeri.offset);
+            // item tanpa foto = sisa upload gagal: sembunyikan + auto-hapus (khusus osis)
+            let pakai = rows || [];
+            const kosong = pakai.filter(g => !Array.isArray(g.fotos) || g.fotos.length === 0);
+            if (kosong.length) {
+                pakai = pakai.filter(g => Array.isArray(g.fotos) && g.fotos.length > 0);
+                try {
+                    const u = OsisAuth.getUser && OsisAuth.getUser();
+                    if (u && u.mode === "osis") kosong.forEach(it => { hapusGallery(u.id, it.id).catch(() => {}); });
+                } catch {}
             }
-            Galeri.cache = data || [];
+            const ada = new Set(Galeri.cache.map(g => String(g.id)));
+            pakai.forEach(g => { if (!ada.has(String(g.id))) { Galeri.cache.push(g); ada.add(String(g.id)); } });
+            Galeri.offset = Galeri.cache.length;
+            if (!rows || rows.length < Galeri.perPage) {
+                Galeri.habis = true;
+                try { Cache.set("gallery", Galeri.cache); } catch {} // full dataset → aman di-cache offline
+            }
             Galeri.render();
         } catch (err) {
             console.error(err);
-            grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat galeri. Cek koneksi.</div>`;
+            // offline: pulihkan cache persisten (dataset lengkap) biar tetap bisa dibaca
+            let pulih = false;
+            try {
+                const c = Cache.get("gallery");
+                if (c && c.length) {
+                    Galeri.cache = [...c];
+                    Galeri.offset = Galeri.cache.length;
+                    Galeri.habis = true;
+                    Galeri.render();
+                    pulih = true;
+                }
+            } catch {}
+            if (!pulih) {
+                if (awal && !Galeri.cache.length && !Galeri.draft) grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat galeri. Cek koneksi.</div>`;
+                else if (typeof showToast === "function") showToast("Gagal muat lanjutan galeri.", "error");
+            }
+        } finally {
+            Galeri.loading = false;
         }
     },
 
     render() {
         const grid = document.getElementById("galGrid");
         if (!grid) return;
+        // selamatkan ketikan draft sebelum DOM diganti (scroll-append bisa trigger render)
+        if (Galeri.draft) { try { Galeri.bacaTeksDraft(); } catch {} }
 
         const data = Galeri.cache;
         let html = "";
@@ -308,7 +322,20 @@ const Galeri = {
             html += data.map(item => Galeri.kartu(item)).join("");
         }
 
+        // sentinel infinite-scroll + tombol manual (fallback tanpa IO), di bawah #galGrid
+        if (data.length) {
+            html += `<div style="text-align:center; padding:12px 4px">`
+                + (Galeri.habis
+                    ? `<small style="color:var(--gray); font-weight:700">— Semua dokumentasi sudah dimuat —</small>`
+                    : `<button class="btn btn-white btn-sm" onclick="Galeri.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+                + `</div><div id="galSentinel" style="height:8px"></div>`;
+        }
+
         grid.innerHTML = html;
+        // tanpa IO → sembunyikan sentinel, tombol manual yang dipakai
+        let io = null;
+        try { if (typeof pasangSentinel === "function") io = pasangSentinel("galSentinel", () => Galeri.muat(false)); } catch {}
+        if (!io) { const s = document.getElementById("galSentinel"); if (s) s.style.display = "none"; }
     },
 
     // Struktur draft = persis kartu kegiatan: judul -> subjudul -> foto [+]
@@ -461,13 +488,14 @@ const Galeri = {
             await galeriUpdateMeta(u.id, id, next.judul, next.deskripsi);
             const idx = Galeri.cache.findIndex(g => String(g.id) === String(id));
             if (idx >= 0) Galeri.cache[idx] = next;
-            Cache.set("gallery", Galeri.cache);
+            // cache persisten cuma ditulis pas dataset lengkap (habis), biar offline gak keracunan parsial
+            if (Galeri.habis) { try { Cache.set("gallery", Galeri.cache); } catch {} } else { Cache.del("gallery"); }
             showToast("Galeri tersimpan", "success");
         } catch (err) {
             console.error(err);
             showPopup("Gagal simpan galeri: " + err.message, "error");
             Cache.del("gallery");
-            await Galeri.muat();
+            await Galeri.muat(true);
         }
     },
 
@@ -479,14 +507,14 @@ const Galeri = {
         try {
             await galeriUpdateMeta(u.id, id, item.judul, deskripsi);
             item.deskripsi = deskripsi;
-            Cache.set("gallery", Galeri.cache);
+            if (Galeri.habis) { try { Cache.set("gallery", Galeri.cache); } catch {} } else { Cache.del("gallery"); }
             Galeri.render();
             showToast("Deskripsi galeri tersimpan", "success");
         } catch (err) {
             console.error(err);
             showPopup("Gagal simpan deskripsi: " + err.message, "error");
             Cache.del("gallery");
-            await Galeri.muat();
+            await Galeri.muat(true);
         }
     },
 
@@ -520,7 +548,7 @@ const Galeri = {
                 showToast("Foto dihapus", "success");
             }
             Cache.del("gallery");
-            await Galeri.muat();
+            await Galeri.muat(true);
         } catch (err) {
             console.error(err);
             if (err.message === "ERR_NO_AUTH") showPopup("Cuma akun OSIS yang bisa hapus.", "error");
@@ -550,7 +578,7 @@ const Galeri = {
 
             showToast("Kegiatan dihapus", "success");
             Cache.del("gallery");
-            Galeri.muat();
+            Galeri.muat(true);
         } catch (err) {
             console.error(err);
             if (err.message === "ERR_NO_AUTH") {

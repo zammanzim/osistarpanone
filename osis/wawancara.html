@@ -888,7 +888,7 @@
     </style>
     <script src="../js/supabase.min.js?v=11"></script>
     <script src="../js/config.js?v=16"></script>
-    <script src="../js/db.js?v=27" defer></script>
+    <script src="../js/db.js?v=28" defer></script>
     <script src="../js/aktivitas.js?v=12" defer></script>
     <script src="../js/app.js?v=12" defer></script>
     <script src="../js/toast.js?v=12" defer></script>
@@ -899,7 +899,7 @@
     <script src="../js/osis-sidebar.js?v=18" defer></script>
     <script src="../js/osis-header.js?v=12" defer></script>
     <script src="../js/form-persist.js?v=12" defer></script>
-    <script src="../js/wawancara.js?v=18" defer></script>
+    <script src="../js/wawancara.js?v=20" defer></script>
     <script src="../js/pwa.js?v=13" defer></script>
   </head>
   <body>
@@ -1054,20 +1054,14 @@
             >Tanggal wawancara (opsional — untuk pengelompokan per hari)</label
           ><input type="date" id="wwCalonTanggal" class="admin-input" />
         </div>
-        <div class="ww-grid2">
-          <div class="field">
-            <label>Pewawancara 1</label
-            ><select id="wwCalonPew1" class="admin-input">
-              <option value="">— Pilih —</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Pewawancara 2 (opsional)</label
-            ><select id="wwCalonPew2" class="admin-input">
-              <option value="">— Pilih —</option>
-            </select>
-          </div>
-        </div>
+        <div id="wwCalonPewList"></div>
+        <button
+          class="btn btn-white btn-sm"
+          type="button"
+          onclick="Wawancara.tambahPewRow('wwCalonPewList')"
+        >
+          <i class="fa-solid fa-plus"></i> Tambah pewawancara
+        </button>
         <p class="ww-sub">
           Hanya yang ditugaskan yang bisa mencatat; yang lain tetap bisa membuka
           untuk membaca.

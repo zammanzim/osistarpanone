@@ -11,6 +11,13 @@ const Formulir = {
     builder: null,    // { id, judul, deskripsi, status, settings, questions: [{key,id,tipe,teks,opsi,wajib,config}] }
     isi: null,        // { form, questions, answers, files, preview, fromBuilder }
     responsCache: [],
+    responsFormId: null,
+    responsQs: [],
+    responsForm: null,
+    responsOffset: 0,
+    responsHabis: false,
+    responsLoading: false,
+    responsPerPage: 20,
     keySeq: 0,
 
     TIPE: [
@@ -982,25 +989,60 @@ const Formulir = {
         }
     },
 
-    // ============ RESPONS ============
+    // ============ RESPONS (paginasi hemat egress: 20/halaman + sentinel) ============
     async bukaRespons(id) {
         try {
             const forms = Formulir.cache.length ? Formulir.cache : await getFormulir();
             const f = forms.find(x => String(x.id) === String(id));
             if (!f) return;
-            const [qs, rs] = await Promise.all([getPertanyaan(id), getRespons(id)]);
-            Formulir.responsCache = rs || [];
-            Formulir.responsView = { qs, rs: rs || [] };
+            const qs = await getPertanyaan(id);
+            Formulir.responsFormId = id;
+            Formulir.responsQs = qs || [];
+            Formulir.responsForm = f;
             document.getElementById("responsJudul").textContent = f.judul || "Tanpa judul";
-            const last = rs && rs[0] ? Formulir.fmtWaktu(rs[0].created_at) : "-";
-            document.getElementById("responsMeta").textContent = `Total ${rs.length} respons · Terakhir: ${last} · Status: ${f.status}`;
             document.getElementById("responsJudulBadge").textContent = "Respons";
-            Formulir.renderResponsRingkasan(qs, rs || []);
-            Formulir.renderResponsTabel(qs, rs || []);
             Formulir.show("respons");
+            await Formulir.muatRespons(true);
         } catch (err) {
             console.error(err);
             showToast("Gagal muat respons: " + err.message, "error");
+        }
+    },
+
+    async muatRespons(awal = true) {
+        if (Formulir.responsLoading) return;
+        if (!awal && Formulir.responsHabis) return;
+        Formulir.responsLoading = true;
+        const id = Formulir.responsFormId;
+        if (awal) {
+            Formulir.responsOffset = 0;
+            Formulir.responsCache = [];
+            Formulir.responsHabis = false;
+            const wrap0 = document.getElementById("responsTabel");
+            if (wrap0) wrap0.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat respons...</div>`;
+        }
+        try {
+            const rows = await getRespons(id, Formulir.responsPerPage, Formulir.responsOffset);
+            const ada = new Set(Formulir.responsCache.map(r => String(r.id)));
+            (rows || []).forEach(r => {
+                if (!ada.has(String(r.id))) { Formulir.responsCache.push(r); ada.add(String(r.id)); }
+            });
+            Formulir.responsOffset = Formulir.responsCache.length;
+            if (!rows || rows.length < Formulir.responsPerPage) Formulir.responsHabis = true;
+            Formulir.responsView = { qs: Formulir.responsQs, rs: Formulir.responsCache };
+            const f = Formulir.responsForm || {};
+            const rs = Formulir.responsCache;
+            const last = rs[0] ? Formulir.fmtWaktu(rs[0].created_at) : "-";
+            const meta = document.getElementById("responsMeta");
+            if (meta) meta.textContent = `Total ${rs.length}${Formulir.responsHabis ? "" : "+"} respons · Terakhir: ${last} · Status: ${f.status}`;
+            Formulir.renderResponsRingkasan(Formulir.responsQs, rs);
+            Formulir.renderResponsTabel(Formulir.responsQs, rs);
+        } catch (err) {
+            console.error(err);
+            if (awal) showToast("Gagal muat respons: " + err.message, "error");
+            else showToast("Gagal muat lanjutan respons.", "error");
+        } finally {
+            Formulir.responsLoading = false;
         }
     },
 
@@ -1073,7 +1115,13 @@ const Formulir = {
                 <td style="white-space:nowrap">${Formulir.fmtWaktu(r.created_at)}</td>
                 ${qs.map(q => `<td>${short((r.jawaban || {})[String(q.id)])}</td>`).join("")}
                 <td><button class="q-icon-btn" onclick="Formulir.detailRespons(${i})" title="Detail"><i class="fa-solid fa-eye"></i></button></td>
-            </tr>`).join("")}</tbody></table>`;
+            </tr>`).join("")}</tbody></table>`
+            + `<div style="text-align:center; padding:12px 4px">`
+            + (Formulir.responsHabis
+                ? `<small style="color:var(--gray); font-weight:700">— Semua respons termuat —</small>`
+                : `<button class="btn btn-white btn-sm" onclick="Formulir.muatRespons(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+            + `</div><div id="responsSentinel" style="height:8px"></div>`;
+        try { pasangSentinel("responsSentinel", () => Formulir.muatRespons(false)); } catch {}
     },
 
     detailRespons(i) {

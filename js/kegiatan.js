@@ -6,6 +6,10 @@
 
 const Kegiatan = {
   cache: [],
+  offset: 0, // jumlah baris valid terakumulasi = offset fetch berikutnya
+  habis: false, // true kalau server sudah tidak punya baris lagi
+  loading: false,
+  perPage: 12, // hemat egress: 12 baris per fetch
   draft: null, // { judul, deskripsi, badge, fotos:[{path,caption}], files:[File] }
   terinisialisasi: false,
 
@@ -126,73 +130,90 @@ const Kegiatan = {
         osis && OsisAuth.bisa && OsisAuth.bisa("kegiatan") ? "" : "none";
   },
 
-  async muat() {
+  // Muat paginasi hemat egress (12/fetch) + infinite scroll.
+  // awal=true: reset akumulasi; Cache.get cuma buat render instan,
+  // Cache.set cuma pas habis (dataset lengkap, anti keracunan parsial).
+  async muat(awal = true) {
     const grid = document.getElementById("kegiatanGrid");
     if (!grid) return;
-    const cached = Cache.get("kegiatan");
-    if (cached) {
-      Kegiatan.cache = cached;
-      Kegiatan.render();
-      getKegiatan()
-        .then((fresh) => {
-          // auto-hapus yang kosong di fresh juga
-          const emptyFresh = (fresh || []).filter(
-            (k) => !Array.isArray(k.fotos) || k.fotos.length === 0,
-          );
-          if (emptyFresh.length) {
-            const u = OsisAuth.getUser && OsisAuth.getUser();
-            if (u && u.mode === "osis") {
-              emptyFresh.forEach(async (it) => {
-                try {
-                  await hapusKegiatan(u.id, it.id);
-                } catch {}
-              });
-              fresh = fresh.filter(
-                (k) => Array.isArray(k.fotos) && k.fotos.length > 0,
-              );
-              Cache.set("kegiatan", fresh);
-            }
-          } else {
-            Cache.set("kegiatan", fresh);
-          }
-          if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-            Kegiatan.cache = fresh;
-            Kegiatan.render();
-          }
-        })
-        .catch(() => {});
-      return;
+    if (Kegiatan.loading) return;
+    if (!awal && Kegiatan.habis) return;
+    Kegiatan.loading = true;
+    if (awal) {
+      Kegiatan.offset = 0;
+      Kegiatan.habis = false;
+      const cached = Cache.get("kegiatan");
+      if (cached && cached.length) {
+        Kegiatan.cache = cached.slice();
+        Kegiatan.render();
+      } else {
+        Kegiatan.cache = [];
+        grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat kegiatan...</div>`;
+      }
+    } else {
+      const btn = document.getElementById("kegiatanLagi");
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...'; }
     }
-    grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat kegiatan...</div>`;
     try {
-      let data = await getKegiatan();
-      // otomatis hapus kegiatan tanpa foto
-      const empty = (data || []).filter(
+      const rows = await getKegiatan(Kegiatan.perPage, Kegiatan.offset);
+      if (awal) Kegiatan.cache = []; // ganti render instan dengan data fresh
+      // otomatis hapus kegiatan tanpa foto (perilaku lama, jalan per halaman)
+      const kosong = (rows || []).filter(
         (k) => !Array.isArray(k.fotos) || k.fotos.length === 0,
       );
-      if (empty.length) {
+      let tampil = rows || [];
+      if (kosong.length) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (u && u.mode === "osis") {
           // hapus di background, jangan block render
-          empty.forEach(async (it) => {
+          kosong.forEach(async (it) => {
             try {
               await hapusKegiatan(u.id, it.id);
             } catch {}
           });
-          data = data.filter(
+          tampil = tampil.filter(
             (k) => Array.isArray(k.fotos) && k.fotos.length > 0,
           );
-          Cache.set("kegiatan", data);
         }
-      } else {
-        Cache.set("kegiatan", data);
       }
-      Kegiatan.cache = data || [];
+      const ada = new Set(Kegiatan.cache.map((k) => String(k.id)));
+      tampil.forEach((k) => {
+        if (!ada.has(String(k.id))) { ada.add(String(k.id)); Kegiatan.cache.push(k); }
+      });
+      Kegiatan.offset = Kegiatan.cache.length;
+      if (!rows || rows.length < Kegiatan.perPage) {
+        Kegiatan.habis = true;
+        Cache.set("kegiatan", Kegiatan.cache);
+      }
       Kegiatan.render();
     } catch (err) {
       console.error(err);
-      grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat kegiatan.</div>`;
+      if (awal && !Kegiatan.cache.length) {
+        grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat kegiatan.<br><br><button class="btn btn-red btn-sm" onclick="Kegiatan.muat(true)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+      } else if (awal) {
+        showToast("Gagal refresh, tampil data lama.", "error");
+      } else {
+        showToast("Gagal muat lanjutan kegiatan.", "error");
+        Kegiatan.render(); // balikin tombol manual
+      }
+    } finally {
+      Kegiatan.loading = false;
     }
+  },
+
+  // Pasang observer sentinel; gagal (no IO) -> tombol manual yang tampil.
+  jejaki() {
+    try { if (Kegiatan._io) Kegiatan._io.disconnect(); } catch {}
+    Kegiatan._io = null;
+    let io = null;
+    try {
+      if (!Kegiatan.habis && typeof pasangSentinel === "function") {
+        io = pasangSentinel("kegiatanSentinel", () => Kegiatan.muat(false));
+      }
+    } catch { io = null; }
+    Kegiatan._io = io;
+    const btn = document.getElementById("kegiatanLagi");
+    if (btn) btn.style.display = (!io && !Kegiatan.habis && (Kegiatan.cache || []).length) ? "" : "none";
   },
 
   render() {
@@ -215,7 +236,11 @@ const Kegiatan = {
     } else {
       html += data.map((item) => Kegiatan.kartu(item)).join("");
     }
+    // Sentinel infinite scroll + tombol manual (fallback kalau no IO).
+    html += `<div id="kegiatanSentinel" aria-hidden="true" style="height:2px"></div>
+      <div style="text-align:center;margin:6px 0 2px"><button id="kegiatanLagi" class="btn btn-white btn-sm" style="display:none" onclick="Kegiatan.muat(false)"><i class="fa-solid fa-rotate-right"></i> Muat lagi</button></div>`;
     grid.innerHTML = html;
+    Kegiatan.jejaki();
   },
 
   kartu(item) {
@@ -586,7 +611,9 @@ const Kegiatan = {
       );
       if (idx >= 0) {
         Kegiatan.cache[idx] = { ...Kegiatan.cache[idx], fotos: newFotos };
-        Cache.set("kegiatan", Kegiatan.cache);
+        // Cache persisten cuma ditulis pas dataset lengkap (habis==true).
+        if (Kegiatan.habis) Cache.set("kegiatan", Kegiatan.cache);
+        else Cache.del("kegiatan");
       }
       showToast("Caption kegiatan tersimpan", "success");
     } catch (err) {
@@ -622,7 +649,9 @@ const Kegiatan = {
       );
       if (idx >= 0) {
         Kegiatan.cache[idx] = next;
-        Cache.set("kegiatan", Kegiatan.cache);
+        // Cache persisten cuma ditulis pas dataset lengkap (habis==true).
+        if (Kegiatan.habis) Cache.set("kegiatan", Kegiatan.cache);
+        else Cache.del("kegiatan");
       }
       showToast("Kegiatan tersimpan", "success");
     } catch (err) {

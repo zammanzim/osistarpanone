@@ -10,6 +10,9 @@
 const Tabungan = {
     cache: [],
     filter: { q: "" },
+    // Tanpa hak kelola: default cuma lihat milik sendiri, bisa intip semua
+    // lewat tombol di bawah. Pemegang hak langsung lihat semua.
+    hanyaSaya: false,
     editingId: null,
     detailId: null,
     jenisForm: "masuk",
@@ -28,6 +31,7 @@ const Tabungan = {
         }
         // Segarkan hak kendali (biar perubahan akses langsung berlaku)
         try { await OsisAuth.refreshAkses(); } catch {}
+        try { Tabungan.hanyaSaya = !OsisAuth.bisa("tabungan"); } catch {}
         Tabungan.terapkanAkses();
 
         document.getElementById("btnTambahTabungan")?.addEventListener("click", () => Tabungan.bukaForm());
@@ -221,12 +225,26 @@ const Tabungan = {
         }
     },
 
+    // Lingkup tampil: milik sendiri saja atau semua (tombol intip).
+    // Statistik ikut lingkup ini (bukan filter cari) biar total orang lain
+    // tidak bocor ke yang tidak punya hak.
+    dataLingkup() {
+        const all = Tabungan.cache || [];
+        if (!Tabungan.hanyaSaya) return all;
+        return all.filter(r => Tabungan.milikSaya(r));
+    },
+
     dataTampil() {
         const q = Tabungan.filter.q.trim().toLowerCase();
-        return (Tabungan.cache || []).filter(r => {
+        return Tabungan.dataLingkup().filter(r => {
             if (q && !String(r.nama || "").toLowerCase().includes(q)) return false;
             return true;
         });
+    },
+
+    toggleLingkup() {
+        Tabungan.hanyaSaya = !Tabungan.hanyaSaya;
+        Tabungan.render();
     },
 
     // Kelompokkan per orang (key = lower(nama)), urut nama A-Z.
@@ -258,14 +276,15 @@ const Tabungan = {
     // ============ RENDER ============
     render() {
         const data = Tabungan.dataTampil();
+        const lingkup = Tabungan.dataLingkup();
         const setStat = (id, count, suffix) => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = String(count) + `<span class="stat-suffix"> ${suffix}</span>`;
         };
-        const orang = new Set((Tabungan.cache || []).map(r => String(r.nama || "").trim().toLowerCase()).filter(Boolean)).size;
-        const totalSemua = (Tabungan.cache || []).reduce((a, r) => a + Tabungan.nilai(r), 0);
-        const sudah = (Tabungan.cache || []).filter(r => !!r.cek).length;
-        const belum = (Tabungan.cache || []).length - sudah;
+        const orang = new Set(lingkup.map(r => String(r.nama || "").trim().toLowerCase()).filter(Boolean)).size;
+        const totalSemua = lingkup.reduce((a, r) => a + Tabungan.nilai(r), 0);
+        const sudah = lingkup.filter(r => !!r.cek).length;
+        const belum = lingkup.length - sudah;
         // Total minggu berjalan (Senin-Minggu) + bulan berjalan dari tanggal setoran.
         const now = new Date();
         const mundur = (now.getDay() + 6) % 7; // Senin=0 ... Minggu=6
@@ -276,7 +295,7 @@ const Tabungan = {
         const strSenin = keStr(senin);
         const strMinggu = keStr(minggu);
         const blnIni = keStr(now).slice(0, 7);
-        const rows = Tabungan.cache || [];
+        const rows = lingkup;
         const strHariIni = keStr(now);
         const totalHarian = rows.reduce((a, r) => {
             return a + (String(r.tanggal || "") === strHariIni ? Tabungan.nilai(r) : 0);
@@ -310,8 +329,14 @@ const Tabungan = {
         const grups = Tabungan.grupPerOrang(data);
         // Milik sendiri selalu paling atas, sisanya tetap A-Z
         grups.sort((a, b) => (Tabungan.milikSaya({ nama: b.nama }) ? 1 : 0) - (Tabungan.milikSaya({ nama: a.nama }) ? 1 : 0));
+        // Tombol intip di bawah: khusus yang tanpa hak kelola.
+        const tombolLingkup = (!boleh && (Tabungan.cache || []).length)
+            ? `<div style="text-align:center;margin-top:4px"><button class="btn btn-white btn-sm" onclick="Tabungan.toggleLingkup()"><i class="fa-solid ${Tabungan.hanyaSaya ? "fa-users" : "fa-user-check"}"></i> ${Tabungan.hanyaSaya ? "Lihat tabungan orang lain" : "Kembali ke tabunganku"}</button></div>` : "";
         if (!grups.length) {
-            wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Tabungan.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
+            const q = Tabungan.filter.q.trim();
+            wrap.innerHTML = (Tabungan.hanyaSaya && !q)
+                ? `<div class="pesan-empty"><i class="fa-solid fa-piggy-bank"></i> Belum ada tabungan atas namamu.</div>` + tombolLingkup
+                : `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Tabungan.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
             return;
         }
         wrap.innerHTML = grups.map(g => {
@@ -352,7 +377,7 @@ const Tabungan = {
                     ${milik ? `<span class="jenis milik"><i class="fa-solid fa-user-check"></i> Milik sendiri</span>` : ""}
                 </div>` : ""}
             </div>`;
-        }).join("");
+        }).join("") + tombolLingkup;
     },
 
     toggleMenu(btn) {

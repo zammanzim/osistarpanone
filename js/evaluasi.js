@@ -7,6 +7,10 @@
 
 const Evaluasi = {
     cache: [],
+    offset: 0,
+    habis: false,
+    loading: false,
+    perPage: 20,
     agendaCache: [],
     prokerCache: [],
     kasCache: [],
@@ -110,7 +114,7 @@ const Evaluasi = {
             if (document.getElementById("evaluasiDetail")?.classList.contains("open")) Evaluasi.tutupDetail();
         });
 
-        await Evaluasi.muat();
+        await Evaluasi.muat(true);
     },
 
     // ============ HELPERS ============
@@ -146,40 +150,62 @@ const Evaluasi = {
         return a ? (a.judul || "Tanpa judul") : `#${id} (dihapus)`;
     },
 
-    // ============ DATA ============
-    async muat() {
+    // ============ DATA (paginasi hemat egress: 20/halaman + sentinel) ============
+    async muat(awal = true) {
+        if (Evaluasi.loading) return;
+        if (!awal && Evaluasi.habis) return;
+        Evaluasi.loading = true;
         const listEl = document.getElementById("evaluasiList");
-        if (listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat evaluasi...</div>`;
+        if (awal) {
+            Evaluasi.offset = 0;
+            Evaluasi.cache = [];
+            Evaluasi.habis = false;
+            // render instan dari cache persisten (tanpa fetch)
+            let instan = false;
+            try {
+                const c = Cache.get("evaluasi");
+                if (c && c.length) {
+                    Evaluasi.cache = [...c];
+                    Evaluasi.render();
+                    instan = true;
+                    Evaluasi.cache = [];
+                    Evaluasi.offset = 0;
+                    Evaluasi.habis = false;
+                }
+            } catch {}
+            if (!instan && listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat evaluasi...</div>`;
+        }
         try {
-            const [pk, ag, kas] = await Promise.all([
-                getProker().catch(() => []),
-                getAllAgenda().catch(() => []),
-                getKas().catch(() => [])
-            ]);
-            Evaluasi.prokerCache = pk || [];
-            Evaluasi.agendaCache = ag || [];
-            Evaluasi.kasCache = kas || [];
-            Evaluasi.buildOptions();
-            const cached = Cache.get("evaluasi");
-            if (cached) {
-                Evaluasi.cache = cached;
-                Evaluasi.render();
-                getEvaluasi().then(fresh => {
-                    if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-                        Cache.set("evaluasi", fresh);
-                        Evaluasi.cache = fresh || [];
-                        Evaluasi.render();
-                    }
-                }).catch(() => {});
-                return;
+            // relasi kecil (proker/agenda/kas) tetap full; yang dipaginasi cuma evaluasi
+            if (awal || !Evaluasi.agendaCache.length) {
+                const [pk, ag, kas] = await Promise.all([
+                    getProker().catch(() => []),
+                    getAllAgenda().catch(() => []),
+                    getKas().catch(() => [])
+                ]);
+                Evaluasi.prokerCache = pk || [];
+                Evaluasi.agendaCache = ag || [];
+                Evaluasi.kasCache = kas || [];
+                Evaluasi.buildOptions();
             }
-            const data = await getEvaluasi();
-            Cache.set("evaluasi", data);
-            Evaluasi.cache = data || [];
+            const rows = await getEvaluasi(Evaluasi.perPage, Evaluasi.offset);
+            const ada = new Set(Evaluasi.cache.map(e => String(e.id)));
+            (rows || []).forEach(r => {
+                if (!ada.has(String(r.id))) { Evaluasi.cache.push(r); ada.add(String(r.id)); }
+            });
+            Evaluasi.offset = Evaluasi.cache.length;
+            if (!rows || rows.length < Evaluasi.perPage) {
+                Evaluasi.habis = true;
+                try { Cache.set("evaluasi", Evaluasi.cache); } catch {}
+            }
+            Evaluasi.buildOptions();
             Evaluasi.render();
         } catch (err) {
             console.error(err);
-            if (listEl) listEl.innerHTML = `<div class="pesan-empty">Gagal memuat evaluasi.</div>`;
+            if (awal && listEl && !Evaluasi.cache.length) listEl.innerHTML = `<div class="pesan-empty">Gagal memuat evaluasi.</div>`;
+            else if (typeof showToast === "function") showToast("Gagal muat lanjutan.", "error");
+        } finally {
+            Evaluasi.loading = false;
         }
     },
 
@@ -252,7 +278,9 @@ const Evaluasi = {
             return;
         }
         if (!data.length) {
-            listEl.innerHTML = `<div class="pesan-empty" style="grid-column:1/-1"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Evaluasi.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
+            listEl.innerHTML = `<div class="pesan-empty" style="grid-column:1/-1"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Evaluasi.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`
+                + (Evaluasi.habis ? "" : `<div style="grid-column:1/-1; text-align:center; padding:12px 4px"><button class="btn btn-white btn-sm" onclick="Evaluasi.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button></div><div id="evaluasiSentinel" style="grid-column:1/-1; height:8px"></div>`);
+            try { pasangSentinel("evaluasiSentinel", () => Evaluasi.muat(false)); } catch {}
             return;
         }
         listEl.innerHTML = data.map(e => {
@@ -281,6 +309,13 @@ const Evaluasi = {
                     </div>
                 </div>`;
         }).join("");
+        // sentinel infinite-scroll + tombol manual (fallback tanpa IO)
+        listEl.innerHTML += `<div style="grid-column:1/-1; text-align:center; padding:12px 4px">`
+            + (Evaluasi.habis
+                ? `<small style="color:var(--gray); font-weight:700">— Udah paling bawah —</small>`
+                : `<button class="btn btn-white btn-sm" onclick="Evaluasi.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+            + `</div><div id="evaluasiSentinel" style="grid-column:1/-1; height:8px"></div>`;
+        try { pasangSentinel("evaluasiSentinel", () => Evaluasi.muat(false)); } catch {}
     },
 
     bacaFilter() {
@@ -596,7 +631,7 @@ const Evaluasi = {
                 showToast("Evaluasi tersimpan!", "success");
             }
             Evaluasi.tutupForm();
-            await Evaluasi.muat();
+            await Evaluasi.muat(true);
         } catch (err) {
             console.error(err);
             if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
@@ -625,7 +660,7 @@ const Evaluasi = {
             }
             if (dariDetail) Evaluasi.tutupDetail();
             showToast("Evaluasi dihapus", "success");
-            await Evaluasi.muat();
+            await Evaluasi.muat(true);
         } catch (err) {
             console.error(err);
             showPopup("Gagal hapus: " + err.message, "error");

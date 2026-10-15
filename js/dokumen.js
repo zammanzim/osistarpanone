@@ -7,6 +7,10 @@
 
 const Dokumen = {
     cache: [],
+    offset: 0,
+    habis: false,
+    loading: false,
+    perPage: 20,
     filter: { q: "", kategori: "", tahun: "", divisi: "", sort: "baru" },
     editingId: null,
     detailId: null,
@@ -110,7 +114,7 @@ const Dokumen = {
             if (document.getElementById("dokumenDetail")?.classList.contains("open")) Dokumen.tutupDetail();
         });
 
-        await Dokumen.muat();
+        await Dokumen.muat(true);
     },
 
     // Sembunyikan tombol aksi kalau tidak punya kendali atas halaman ini
@@ -171,31 +175,49 @@ const Dokumen = {
         return "";
     },
 
-    // ============ DATA ============
-    async muat() {
+    // ============ DATA (paginasi hemat egress: 20/halaman + sentinel) ============
+    async muat(awal = true) {
+        if (Dokumen.loading) return;
+        if (!awal && Dokumen.habis) return;
+        Dokumen.loading = true;
         const listEl = document.getElementById("dokumenList");
-        if (listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat dokumen...</div>`;
+        if (awal) {
+            Dokumen.offset = 0;
+            Dokumen.cache = [];
+            Dokumen.habis = false;
+            // render instan dari cache persisten (tanpa fetch)
+            let instan = false;
+            try {
+                const c = Cache.get("dokumen");
+                if (c && c.length) {
+                    Dokumen.cache = [...c];
+                    Dokumen.render();
+                    instan = true;
+                    Dokumen.cache = [];
+                    Dokumen.offset = 0;
+                    Dokumen.habis = false;
+                }
+            } catch {}
+            if (!instan && listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat dokumen...</div>`;
+        }
         try {
-            const cached = Cache.get("dokumen");
-            if (cached) {
-                Dokumen.cache = cached;
-                Dokumen.render();
-                getDokumen().then(fresh => {
-                    if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-                        Cache.set("dokumen", fresh);
-                        Dokumen.cache = fresh || [];
-                        Dokumen.render();
-                    }
-                }).catch(() => {});
-                return;
+            const rows = await getDokumen(Dokumen.perPage, Dokumen.offset);
+            const ada = new Set(Dokumen.cache.map(d => String(d.id)));
+            (rows || []).forEach(r => {
+                if (!ada.has(String(r.id))) { Dokumen.cache.push(r); ada.add(String(r.id)); }
+            });
+            Dokumen.offset = Dokumen.cache.length;
+            if (!rows || rows.length < Dokumen.perPage) {
+                Dokumen.habis = true;
+                try { Cache.set("dokumen", Dokumen.cache); } catch {}
             }
-            const data = await getDokumen();
-            Cache.set("dokumen", data);
-            Dokumen.cache = data || [];
             Dokumen.render();
         } catch (err) {
             console.error(err);
-            if (listEl) listEl.innerHTML = `<div class="pesan-empty">Gagal memuat dokumen.</div>`;
+            if (awal && listEl && !Dokumen.cache.length) listEl.innerHTML = `<div class="pesan-empty">Gagal memuat dokumen.</div>`;
+            else if (typeof showToast === "function") showToast("Gagal muat lanjutan.", "error");
+        } finally {
+            Dokumen.loading = false;
         }
     },
 
@@ -270,7 +292,9 @@ const Dokumen = {
         }
         if (!data.length) {
             const kat = Dokumen.filter.kategori && Dokumen.filter.kategori !== "semua" ? ` pada kategori <b>${escapeHtml(Dokumen.katLabel(Dokumen.filter.kategori))}</b>` : "";
-            listEl.innerHTML = `<div class="pesan-empty" style="background:var(--white); border:2.5px dashed var(--ink); border-radius:14px; padding:28px 16px; text-align:center"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-folder-open" style="color:var(--red)"></i></div><b>Belum ada dokumen</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Dokumen${kat} akan muncul di sini. <a href="#" onclick="event.preventDefault(); Dokumen.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Dokumen.bukaForm()"><i class="fa-solid fa-plus"></i> Upload Dokumen</button>` : ""}</div>`;
+            listEl.innerHTML = `<div class="pesan-empty" style="background:var(--white); border:2.5px dashed var(--ink); border-radius:14px; padding:28px 16px; text-align:center"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-folder-open" style="color:var(--red)"></i></div><b>Belum ada dokumen</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Dokumen${kat} akan muncul di sini. <a href="#" onclick="event.preventDefault(); Dokumen.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Dokumen.bukaForm()"><i class="fa-solid fa-plus"></i> Upload Dokumen</button>` : ""}</div>`
+                + (Dokumen.habis ? "" : `<div style="text-align:center; padding:12px 4px"><button class="btn btn-white btn-sm" onclick="Dokumen.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button></div><div id="dokumenSentinel" style="height:8px"></div>`);
+            try { pasangSentinel("dokumenSentinel", () => Dokumen.muat(false)); } catch {}
             return;
         }
         listEl.innerHTML = data.map(d => {
@@ -293,6 +317,13 @@ const Dokumen = {
                     </div>
                 </div>`;
         }).join("");
+        // sentinel infinite-scroll + tombol manual (fallback tanpa IO)
+        listEl.innerHTML += `<div style="text-align:center; padding:12px 4px">`
+            + (Dokumen.habis
+                ? `<small style="color:var(--gray); font-weight:700">— Udah paling bawah —</small>`
+                : `<button class="btn btn-white btn-sm" onclick="Dokumen.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+            + `</div><div id="dokumenSentinel" style="height:8px"></div>`;
+        try { pasangSentinel("dokumenSentinel", () => Dokumen.muat(false)); } catch {}
     },
 
     pilihKategori(k) {
@@ -500,7 +531,7 @@ const Dokumen = {
                 catatAksi("simpan_dokumen", String(nama || "").slice(0, 60));
             }
             Dokumen.tutupForm();
-            await Dokumen.muat();
+            await Dokumen.muat(true);
         } catch (err) {
             console.error(err);
             if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __spec())) {
@@ -525,7 +556,7 @@ const Dokumen = {
             if (item && item.file_path) { try { await hapusFotoStorage(item.file_path); } catch {} }
             if (dariDetail) Dokumen.tutupDetail();
             showToast("Dokumen dihapus", "success");
-            await Dokumen.muat();
+            await Dokumen.muat(true);
         } catch (err) {
             console.error(err);
             showPopup("Gagal hapus: " + err.message, "error");

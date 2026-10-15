@@ -11,6 +11,15 @@ const AgendaAdmin = {
     detailId: null,
     detailIdx: 0,
     cache: [],
+    // Paging hemat egress: 15/halaman + sentinel (akumulasi di cache,
+    // grup hari/sekbid dihitung ulang tiap render). Cache persisten
+    // "agenda_all" HANYA ditulis pas habis (lengkap) — dipakai juga
+    // keuangan.js buat lookup, jangan keracunan data parsial.
+    offset: 0,
+    habis: false,
+    loading: false,
+    perPage: 15,
+    ringkas: null, // angka statistik dari server (benar walau belum scroll habis)
     sekbidList: [],
     pendingFiles: [],   // File[] baru yang belum di-upload (buat preview lokal)
     existingFotos: [],  // {path,caption}[] foto yang udah kesimpen (pas edit)
@@ -46,7 +55,8 @@ const AgendaAdmin = {
                 sel.addEventListener("change", () => {
                     const v = sel.value;
                     AgendaAdmin.filterSekbid = v ? parseInt(v, 10) : null;
-                    AgendaAdmin.render();
+                    // Paging di-scope per filter → ganti filter = mulai dari halaman 1
+                    AgendaAdmin.muat(true);
                 });
             }
             AgendaAdmin.isiOpsiSekbidForm(null);
@@ -160,26 +170,58 @@ const AgendaAdmin = {
         AgendaAdmin.render();
     },
 
-    async muat() {
+    // muat() tanpa argumen = refresh penuh (dipakai outbox + pasca simpan/hapus)
+    async muat(awal = true) {
         const listEl = document.getElementById("agendaList");
-        // Render cache DULU biar offline langsung tampil.
-        const cached = Cache.get("agenda_all");
-        if (cached) {
-            AgendaAdmin.cache = cached || [];
-            try { AgendaAdmin.render(); } catch {}
-        } else if (listEl) {
-            listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat agenda...</div>`;
-        }
+        if (AgendaAdmin.loading) return;
+        if (!awal && AgendaAdmin.habis) return;
+        AgendaAdmin.loading = true;
         try {
-            const data = await getAllAgenda();
-            if (JSON.stringify(data) !== JSON.stringify(cached)) {
-                Cache.set("agenda_all", data);
-                AgendaAdmin.cache = data || [];
-                AgendaAdmin.render();
+            if (awal) {
+                AgendaAdmin.offset = 0;
+                AgendaAdmin.cache = [];
+                AgendaAdmin.habis = false;
+                AgendaAdmin.ringkas = null;
+                // Render cache persisten DULU biar offline langsung tampil.
+                const cached = Cache.get("agenda_all");
+                if (cached) {
+                    AgendaAdmin.cache = cached || [];
+                    try { AgendaAdmin.render(); } catch {}
+                } else if (listEl) {
+                    listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat agenda...</div>`;
+                }
             }
+            const sid = AgendaAdmin.filterSekbid || null;
+            const uidS = (() => { try { const u = OsisAuth.getUser && OsisAuth.getUser(); if (u && u.mode === "osis" && u.id) return u.id; } catch {} return null; })();
+            // Filter sekbid aktif = fetch di-scope sekbid itu (biar halaman 1
+            // langsung isinya, bukan 15 global yang kesaring jadi 0).
+            const [ringkas, rows] = await Promise.all([
+                (awal && typeof sekbidAgendaRingkas === "function" ? sekbidAgendaRingkas(uidS, sid) : Promise.resolve(null)).catch(() => null),
+                sid
+                    ? getAgendaBySekbid(sid, AgendaAdmin.perPage, AgendaAdmin.offset)
+                    : getAllAgenda(AgendaAdmin.perPage, AgendaAdmin.offset),
+            ]);
+            if (ringkas) AgendaAdmin.ringkas = ringkas;
+            if (awal) {
+                AgendaAdmin.cache = rows || [];
+            } else {
+                const ada = new Set((AgendaAdmin.cache || []).map(a => String(a.id)));
+                (rows || []).forEach(a => { if (!ada.has(String(a.id))) { ada.add(String(a.id)); AgendaAdmin.cache.push(a); } });
+            }
+            AgendaAdmin.offset = (AgendaAdmin.cache || []).length;
+            AgendaAdmin.habis = (rows || []).length < AgendaAdmin.perPage;
+            // Tulis cache persisten hanya kalau lengkap DAN tanpa filter
+            // (lihat catatan di state).
+            if (AgendaAdmin.habis && !sid) {
+                try { Cache.set("agenda_all", AgendaAdmin.cache); } catch {}
+            }
+            AgendaAdmin.render();
         } catch (err) {
             console.error(err);
-            if (!cached && listEl) listEl.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Offline dan belum ada data tersimpan. Buka halaman ini sekali saat online.</div>`;
+            if (awal && !(AgendaAdmin.cache || []).length && listEl) listEl.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Offline dan belum ada data tersimpan. Buka halaman ini sekali saat online.</div>`;
+            else if (typeof showToast === "function") showToast("Gagal muat lanjutan agenda.", "error");
+        } finally {
+            AgendaAdmin.loading = false;
         }
     },
 
@@ -292,16 +334,19 @@ const AgendaAdmin = {
         const basis = AgendaAdmin.filterSekbid
             ? semua.filter(a => String(a.sekbid_id) === String(AgendaAdmin.filterSekbid))
             : semua;
-        // Statistik: total, bulan ini, sekbid aktif, orang terlibat
+        // Statistik: dari RPC ringkas (benar walau belum scroll habis).
+        // RPC belum ada (migrasi belum di-run) -> fallback hitung dari basis.
+        const R = AgendaAdmin.ringkas;
         const now = new Date();
         const blnIni = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-        const nBulan = basis.filter(a => (a.tanggal || "").slice(0, 7) === blnIni).length;
-        const nSekbid = new Set(basis.map(a => String(a.sekbid_id))).size;
-        const nOrang = new Set(basis.map(a => AgendaAdmin.kunciOrang(a)).filter(k => k !== "")).size;
+        const nBulan = R ? (parseInt(R.bulan_ini, 10) || 0) : basis.filter(a => (a.tanggal || "").slice(0, 7) === blnIni).length;
+        const nSekbid = R ? (parseInt(R.n_sekbid, 10) || 0) : new Set(basis.map(a => String(a.sekbid_id))).size;
+        const nOrang = R ? (parseInt(R.n_orang, 10) || 0) : new Set(basis.map(a => AgendaAdmin.kunciOrang(a)).filter(k => k !== "")).size;
+        const nTotal = R ? (parseInt(R.total, 10) || 0) : basis.length;
         const statsEl = document.getElementById("agendaStats");
         if (statsEl) {
             statsEl.innerHTML = `
-                <div class="astat total"><b>${basis.length}</b><span>Total</span></div>
+                <div class="astat total"><b>${nTotal}</b><span>Total</span></div>
                 <div class="astat bulan"><b>${nBulan}</b><span>Bulan ini</span></div>
                 <div class="astat sekbid"><b>${nSekbid}</b><span>Sekbid</span></div>
                 <div class="astat orang"><b>${nOrang}</b><span>Orang</span></div>`;
@@ -310,7 +355,18 @@ const AgendaAdmin = {
         const isEditing = !!(AgendaAdmin.editingId && document.getElementById("agendaForm")?.classList.contains("open"));
         const tampil = isEditing ? basis.filter(a => String(a.id) !== String(AgendaAdmin.editingId)) : basis;
 
-        listEl.innerHTML = AgendaAdmin.renderSekbid(tampil, isEditing);
+        listEl.innerHTML = AgendaAdmin.renderSekbid(tampil, isEditing)
+            + (tampil.length
+                ? `<div style="text-align:center; padding:12px 4px">`
+                    + (AgendaAdmin.habis
+                        ? `<small style="color:var(--gray); font-weight:700">— Semua agenda sudah dimuat —</small>`
+                        : `<button class="btn btn-white btn-sm" onclick="AgendaAdmin.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+                    + `</div><div id="agendaSentinel" style="height:8px"></div>`
+                : "");
+        // Tanpa IO → sembunyikan sentinel, tombol manual yang dipakai
+        let io = null;
+        try { if (typeof pasangSentinel === "function") io = pasangSentinel("agendaSentinel", () => AgendaAdmin.muat(false)); } catch {}
+        if (!io) { const s = document.getElementById("agendaSentinel"); if (s) s.style.display = "none"; }
     },
 
     // ===== TAMPILAN: per hari (newest -> oldest), di dalamnya dipisah per sekbid =====

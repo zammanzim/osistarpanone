@@ -2,9 +2,10 @@
 // WAWANCARA CALON OSIS — halaman khusus OSIS (folder /osis)
 // Dipakai di osis/wawancara.html.
 // - Daftar calon + status (belum / berlangsung / selesai) + progres jawaban.
-// - Satu sesi per calon; 1–2 pewawancara dengan HAK SAMA. Jawaban dipakai
+// - Satu sesi per calon; pewawancara TAK TERBATAS (tabel wawancara_sesi_petugas,
+//   kolom lama 1/2 disinkron = fallback). Jawaban dipakai
 //   bersama dalam sesi yang sama -> cukup SATU yang mencatat, tidak perlu
-//   keduanya mengisi terpisah.
+//   semuanya mengisi terpisah.
 // - Pertanyaan utama sama untuk semua calon (susunan bisa beda per sesi);
 //   tiap utama bisa punya TURUNAN KHUSUS SESI itu (dibuat pewawancara).
 // - Pertanyaan spontan (di luar daftar) + jawabannya, per sesi.
@@ -22,6 +23,7 @@ const Wawancara = {
     senior: [],
     sesi: null,       // baris wawancara_sesi yang sedang dibuka
     calonAktif: null, // baris wawancara_calon yang sedang dibuka
+    petugas: [],      // baris wawancara_sesi_petugas (semua sesi); kosong = fallback kolom lama
     jawaban: [],      // baris wawancara_jawaban sesi aktif
     turunan: [],      // baris wawancara_turunan sesi aktif (per calon)
     urutanSesi: {},   // susunan utama per sesi {pertanyaan_id: urutan}
@@ -62,16 +64,27 @@ const Wawancara = {
         return Wawancara.ditugaskan(Wawancara.sesi, id);
     },
 
-    // Ditugaskan sebagai pewawancara 1 atau 2 di sesi ini?
+    // Ditugaskan sebagai pewawancara di sesi ini (jumlah bebas)?
+    // Sumber: tabel baru dulu; bila sesi belum punya baris di sana
+    // (migrasi flex belum di-run) fallback ke kolom lama 1/2.
+    petugasUntuk(sesiId) {
+        const rows = (Wawancara.petugas || []).filter(r => String(r.sesi_id) === String(sesiId));
+        if (rows.length) return rows.map(r => r.user_id).filter(Boolean);
+        const s = (Wawancara.sesiSemua || []).find(x => String(x.id) === String(sesiId))
+            || (Wawancara.sesi && String(Wawancara.sesi.id) === String(sesiId) ? Wawancara.sesi : null);
+        if (!s) return [];
+        return [s.pewawancara1_id, s.pewawancara2_id].filter(Boolean);
+    },
+
     ditugaskan(s, id) {
         if (!s || !id) return false;
+        if (Wawancara.petugasUntuk(s.id).some(uid => String(uid) === String(id))) return true;
         return String(s.pewawancara1_id) === String(id) || String(s.pewawancara2_id) === String(id);
     },
 
     // Nama para pewawancara sesi, dipisah " · " (atau "Belum ditugaskan").
     namaPetugas(s) {
-        const nama = [s.pewawancara1_id, s.pewawancara2_id]
-            .filter(Boolean)
+        const nama = Wawancara.petugasUntuk(s.id)
             .map(id => Wawancara.namaSenior(id));
         return nama.length ? nama.join(" · ") : "Belum ditugaskan";
     },
@@ -257,6 +270,8 @@ const Wawancara = {
             Wawancara.calon = calon || [];
             Wawancara.sesiSemua = sesi || [];
             try { Wawancara.senior = await getOsisUsersRingkas(); } catch { Wawancara.senior = []; }
+            try { Wawancara.petugas = (typeof getWawancaraPetugas === "function") ? await getWawancaraPetugas() : []; }
+            catch { Wawancara.petugas = []; }
             Wawancara.butuhMigrasi = false;
         } catch (err) {
             console.error(err);
@@ -453,6 +468,8 @@ const Wawancara = {
             Wawancara.sesiSemua = sesiSemua || [];
             Wawancara.pertanyaan = (tanya || []).filter(p => p.aktif !== false);
             try { Wawancara.senior = await getOsisUsersRingkas(); } catch { Wawancara.senior = []; }
+            try { Wawancara.petugas = (typeof getWawancaraPetugas === "function") ? await getWawancaraPetugas() : []; }
+            catch { Wawancara.petugas = []; }
             const c = Wawancara.calon.find(x => String(x.id) === String(calonId));
             if (!c) throw new Error("Calon tidak ditemukan (mungkin sudah dihapus).");
             Wawancara.calonAktif = c;
@@ -484,7 +501,8 @@ const Wawancara = {
             await Wawancara.muatTurunan();
             try { await Wawancara.muatDokumentasi(); }
             catch (eDok) { if (!Wawancara.jaringanPutus(eDok)) throw eDok; Wawancara.dokumentasi = []; }
-            Wawancara.mode = "atur"; // buka = mode atur (tanpa form jawaban)
+            // Selesai dibuka = langsung mode hasil (read-only); selain itu mode atur.
+            Wawancara.mode = Wawancara.sesi.status === "selesai" ? "hasil" : "atur";
             Wawancara.idx = 0;
             // Pulihkan mode wawancara dari URL (?calon=X&test=true&soal=N).
             try {
@@ -1141,14 +1159,12 @@ const Wawancara = {
         wrap.innerHTML = `
             <div class="osis-panel">
                 <h3 class="ww-judul"><i class="fa-solid fa-user-pen"></i> Pewawancara</h3>
-                <p class="ww-sub">1–2 pewawancara dengan hak yang sama. Cukup satu yang mencatat.</p>
-                <div class="ww-grid2">
-                    <div class="field"><label>Pewawancara 1</label>
-                        <select id="wwPewawancara1" class="admin-input" ${kelola && !selesai ? "" : "disabled"}>${opsiSenior(s.pewawancara1_id)}</select></div>
-                    <div class="field"><label>Pewawancara 2 (opsional)</label>
-                        <select id="wwPewawancara2" class="admin-input" ${kelola && !selesai ? "" : "disabled"}>${opsiSenior(s.pewawancara2_id)}</select></div>
-                </div>
-                ${kelola && !selesai ? `<button class="btn btn-red btn-sm" onclick="Wawancara.simpanPetugas()"><i class="fa-solid fa-floppy-disk"></i> Simpan pewawancara</button>` : ""}
+                <p class="ww-sub">Jumlah bebas, hak semua sama. Cukup satu yang mencatat.</p>
+                <div id="wwPewList">${Wawancara.petugasUntuk(s.id).map(id => Wawancara.pewRowHtml(id, kelola && !selesai)).join("") || Wawancara.pewRowHtml(null, kelola && !selesai)}</div>
+                ${kelola && !selesai ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+                    <button class="btn btn-white btn-sm" onclick="Wawancara.tambahPewRow()"><i class="fa-solid fa-plus"></i> Tambah pewawancara</button>
+                    <button class="btn btn-red btn-sm" onclick="Wawancara.simpanPetugas()"><i class="fa-solid fa-floppy-disk"></i> Simpan pewawancara</button>
+                </div>` : ""}
             </div>
             <div class="osis-panel">
                 <h3 class="ww-judul"><i class="fa-solid fa-list-ol"></i> Pertanyaan utama</h3>
@@ -1340,8 +1356,71 @@ const Wawancara = {
         wrap.innerHTML = `<div class="osis-panel">
             <h3 class="ww-judul"><i class="fa-solid fa-eye"></i> Hasil wawancara</h3>
             <p class="ww-sub">Read-only. Untuk mengoreksi, buka kembali sesinya.</p>
+            <div style="margin-bottom:12px"><button class="btn btn-red btn-sm" onclick="Wawancara.exportPdf()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button></div>
             ${html || `<div class="osis-empty">Belum ada pertanyaan.</div>`}
         </div>`;
+    },
+
+    // Export hasil sesi aktif ke PDF via dialog print browser (pilih "Save as
+    // PDF"). Tanpa library, jalan offline. Foto dokumentasi tidak ikut (cetak
+    // teks saja) biar ringan.
+    exportPdf() {
+        const s = Wawancara.sesi, c = Wawancara.calonAktif;
+        if (!s || !c) return;
+        const esc = (typeof escapeHtml === "function") ? escapeHtml : (x => String(x ?? ""));
+        const blok = (tanya, jawab) => `
+            <div class="q"><div class="t">${esc(tanya) || "-"}</div>
+            <div class="j">${jawab && String(jawab).trim() ? esc(jawab) : "<i>Belum dijawab</i>"}</div></div>`;
+        let n = 0, isi = "";
+        Wawancara.pertanyaanUtama().forEach(p => {
+            n++;
+            const j = Wawancara.jawabanUntuk(p.id);
+            isi += `<div class="nomor">${n}.</div>` + blok((p.penting ? "★ " : "") + (p.teks || ""), j && j.jawaban_teks);
+            Wawancara.turunanUntuk(p.id).forEach(a => {
+                isi += `<div class="anak">` + blok("⤷ " + (a.teks || ""), a.jawaban_teks) + `</div>`;
+            });
+        });
+        if (Wawancara.spontanList().length) {
+            isi += `<h2>Pertanyaan spontan</h2>`;
+            Wawancara.spontanList().forEach(j => { isi += blok(j.pertanyaan_teks, j.jawaban_teks); });
+        }
+        isi += `<h2>Catatan akhir</h2>` + blok("Kesimpulan / rekomendasi pewawancara", s.catatan_akhir);
+        let tgl = "";
+        try { tgl = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }); } catch {}
+        const doc = `<!doctype html><html lang="id"><head><meta charset="utf-8">
+            <title>Hasil Wawancara - ${esc(c.nama || "calon")}</title>
+            <style>body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:24px;line-height:1.6;font-size:13px}
+            h1{font-size:19px;margin:0 0 2px}h2{font-size:15px;margin:18px 0 8px;border-bottom:2px solid #000;padding-bottom:3px}
+            .meta{font-size:12px;margin-bottom:14px}.meta b{display:inline-block;min-width:130px}
+            .nomor{font-weight:bold;margin-top:12px}.q{margin:2px 0 8px}.t{font-weight:bold}
+            .j{white-space:pre-line;margin-top:2px}.j i{color:#555}.anak{margin-left:18px;border-left:3px solid #999;padding-left:10px}
+            .kop{text-align:center;border-bottom:3px double #000;padding-bottom:8px;margin-bottom:12px}
+            .kop p{margin:2px 0;font-size:12px}</style></head><body>
+            <div class="kop"><h1>HASIL WAWANCARA CALON OSIS</h1><p>OSIS SMK Taruna Harapan 1 Cipatat · osistarpanone.my.id</p></div>
+            <div class="meta"><b>Nama</b>: ${esc(c.nama || "-")}<br><b>Kelas</b>: ${esc(c.kelas || "-")}
+            ${c.keterangan ? `<br><b>Keterangan</b>: ${esc(c.keterangan)}` : ""}
+            <br><b>Tanggal</b>: ${esc(c.tanggal ? Wawancara.fmtHariTanggal(c.tanggal) : "-")}
+            <br><b>Pewawancara</b>: ${esc(Wawancara.namaPetugas(s))}
+            <br><b>Status</b>: ${esc(Wawancara.STATUS_LABEL[s.status] || s.status || "-")}
+            <br><b>Dicetak</b>: ${esc(tgl)}</div>
+            ${isi || "<p>Belum ada pertanyaan.</p>"}
+            </body></html>`;
+        try {
+            let fr = document.getElementById("wwPrintFrame");
+            if (!fr) {
+                fr = document.createElement("iframe");
+                fr.id = "wwPrintFrame";
+                fr.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
+                document.body.appendChild(fr);
+            }
+            const w = fr.contentWindow;
+            w.document.open();
+            w.document.write(doc);
+            w.document.close();
+            setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 250);
+        } catch (err) {
+            try { if (typeof showToast === "function") showToast("Gagal menyiapkan cetakan: " + (err.message || err), "error"); } catch {}
+        }
     },
 
     // ================= AUTOSAVE =================
@@ -1993,22 +2072,59 @@ const Wawancara = {
         }
     },
 
+    // Satu baris dropdown pewawancara (dipakai mode atur + popup calon).
+    pewRowHtml(terpilih, bisaUbah) {
+        return `<div class="field ww-pew-row" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">
+            <div style="flex:1;min-width:0;margin-bottom:0" class="field"><label>Pewawancara</label>
+                <select class="admin-input ww-pew-sel" ${bisaUbah ? "" : "disabled"}>${Wawancara.opsiSenior(terpilih)}</select></div>
+            ${bisaUbah ? `<button class="icon-btn" title="Hapus baris ini" onclick="Wawancara.hapusPewRow(this)"><i class="fa-solid fa-xmark"></i></button>` : ""}
+        </div>`;
+    },
+
+    // Ambil semua id unik dari barisan dropdown dalam container.
+    kumpulPewIds(akar) {
+        const ids = [];
+        (akar || document).querySelectorAll(".ww-pew-sel").forEach(el => {
+            const v = el && el.value ? parseInt(el.value, 10) : null;
+            if (Number.isFinite(v) && !ids.includes(v)) ids.push(v);
+        });
+        return ids;
+    },
+
+    tambahPewRow(keId) {
+        const list = document.getElementById(keId || "wwPewList");
+        if (!list) return;
+        list.insertAdjacentHTML("beforeend", Wawancara.pewRowHtml(null, true));
+        list.lastElementChild?.querySelector("select")?.focus();
+    },
+
+    hapusPewRow(btn) {
+        const row = btn && btn.closest ? btn.closest(".ww-pew-row") : null;
+        if (!row || !row.parentElement) return;
+        const list = row.parentElement;
+        if (list.querySelectorAll(".ww-pew-row").length <= 1) {
+            const sel = row.querySelector("select");
+            if (sel) sel.value = "";
+            return;
+        }
+        row.remove();
+    },
+
     async simpanPetugas() {
         const s = Wawancara.sesi;
         if (!s) return;
-        const el1 = document.getElementById("wwPewawancara1");
-        const el2 = document.getElementById("wwPewawancara2");
-        const pew1Id = el1 && el1.value ? parseInt(el1.value, 10) : null;
-        const pew2Id = el2 && el2.value ? parseInt(el2.value, 10) : null;
-        if (!pew1Id && !pew2Id) {
+        const ids = Wawancara.kumpulPewIds(document.getElementById("wwPewList") || document);
+        if (!ids.length) {
             try { if (typeof showToast === "function") showToast("Pilih minimal satu pewawancara.", "error"); } catch {}
             return;
         }
         try {
-            await wawancaraSesiPetugas(Wawancara.uid(), s.id, pew1Id, pew2Id);
-            Wawancara.sesi.pewawancara1_id = pew1Id;
-            Wawancara.sesi.pewawancara2_id = pew2Id;
-            try { if (typeof showToast === "function") showToast("Pewawancara disimpan.", "success"); } catch {}
+            await wawancaraSesiPetugas(Wawancara.uid(), s.id, ids);
+            Wawancara.petugas = (Wawancara.petugas || []).filter(r => String(r.sesi_id) !== String(s.id))
+                .concat(ids.map(uid => ({ sesi_id: s.id, user_id: uid })));
+            Wawancara.sesi.pewawancara1_id = ids[0] || null;
+            Wawancara.sesi.pewawancara2_id = ids[1] || null;
+            try { if (typeof showToast === "function") showToast(`Pewawancara disimpan (${ids.length} orang).`, "success"); } catch {}
             Wawancara.renderSesi();
         } catch (err) {
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
@@ -2491,8 +2607,9 @@ const Wawancara = {
         document.getElementById("wwCalonKelas").value = c ? (c.kelas || "") : "";
         document.getElementById("wwCalonKet").value = c ? (c.keterangan || "") : "";
         document.getElementById("wwCalonTanggal").value = c && c.tanggal ? String(c.tanggal).slice(0, 10) : "";
-        document.getElementById("wwCalonPew1").innerHTML = Wawancara.opsiSenior(s ? s.pewawancara1_id : null);
-        document.getElementById("wwCalonPew2").innerHTML = Wawancara.opsiSenior(s ? s.pewawancara2_id : null);
+        const daftarPew = s ? Wawancara.petugasUntuk(s.id) : [];
+        document.getElementById("wwCalonPewList").innerHTML =
+            (daftarPew.length ? daftarPew : [null]).map(id => Wawancara.pewRowHtml(id, true)).join("");
         document.getElementById("wwCalonForm").classList.add("open");
         document.body.style.overflow = "hidden";
         setTimeout(() => document.getElementById("wwCalonNama")?.focus(), 60);
@@ -2521,14 +2638,11 @@ const Wawancara = {
             if (calonId) await wawancaraCalonUbah(uid, calonId, f);
             else calonId = await wawancaraCalonTambah(uid, f);
             // Pewawancara langsung di form ini (sesi dipastikan dulu, satu per calon).
-            const el1 = document.getElementById("wwCalonPew1");
-            const el2 = document.getElementById("wwCalonPew2");
-            const pew1Id = el1 && el1.value ? parseInt(el1.value, 10) : null;
-            const pew2Id = el2 && el2.value ? parseInt(el2.value, 10) : null;
-            if (pew1Id || pew2Id) {
+            const ids = Wawancara.kumpulPewIds(document.getElementById("wwCalonForm"));
+            if (ids.length) {
                 try {
                     const sid = await wawancaraSesiPastikan(uid, calonId);
-                    await wawancaraSesiPetugas(uid, sid, pew1Id, pew2Id);
+                    await wawancaraSesiPetugas(uid, sid, ids);
                 } catch (ePetugas) {
                     try { if (typeof showToast === "function") showToast("Calon tersimpan, tapi pewawancara gagal: " + (ePetugas.message || ePetugas), "error"); } catch {}
                 }
@@ -2537,6 +2651,7 @@ const Wawancara = {
             Wawancara.tutupFormCalon();
             Wawancara.calon = await getWawancaraCalon();
             Wawancara.sesiSemua = await getWawancaraSesi();
+            try { Wawancara.petugas = (typeof getWawancaraPetugas === "function") ? await getWawancaraPetugas() : (Wawancara.petugas || []); } catch {}
             if (Wawancara.sesi) {
                 // Sedang di detail -> segarkan nama + petugas bila calon aktif.
                 const c = Wawancara.calon.find(x => String(x.id) === String(Wawancara.calonAktif.id));

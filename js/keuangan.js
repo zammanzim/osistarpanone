@@ -8,6 +8,13 @@ const Keuangan = {
   cache: [],
   prokerCache: [],
   agendaCache: [],
+  // Paging hemat egress: 20/halaman + sentinel. Statistik/rekap TIDAK dari
+  // cache parsial melainkan RPC ringkas (benar walau belum discroll habis).
+  offset: 0,
+  habis: false,
+  loading: false,
+  perPage: 20,
+  ringkas: null,
   filter: {
     q: "",
     jenis: "",
@@ -245,70 +252,106 @@ const Keuangan = {
     return a ? a.judul : `#${id} (dihapus)`;
   },
 
-  // ============ DATA ============
-  async muat() {
+  // Scope server = filter aktif (tahun/jenis/kategori/divisi/cari). Halaman
+  // yang di-fetch selalu pas dengan filter, statistik ikut scope via RPC.
+  scopeDariFilter() {
+    const f = Keuangan.filter;
+    return { tahun: f.periode, jenis: f.jenis, kategori: f.kategori, divisi: f.divisi, q: f.q };
+  },
+
+  scopeKosong() {
+    const s = Keuangan.scopeDariFilter();
+    return !s.tahun && !s.jenis && !s.kategori && !s.divisi && !String(s.q || "").trim();
+  },
+
+  uidSaya() {
     try {
-      const cached = Cache.get("kas");
-      // Render cache DULU biar offline langsung tampil (jangan tunggu network).
-      if (cached) {
-        Keuangan.prokerCache = Cache.get("proker") || [];
-        Keuangan.agendaCache = Cache.get("agenda_all") || [];
-        try {
-          Keuangan.buildOptions();
-        } catch {}
-        Keuangan.cache = cached;
-        Keuangan.render();
+      const u = OsisAuth.getUser && OsisAuth.getUser();
+      if (u && u.mode === "osis" && u.id) return u.id;
+    } catch {}
+    return null;
+  },
+
+  // ============ DATA ============
+  // muat() tanpa argumen = refresh penuh (dipakai outbox + pasca simpan/hapus)
+  async muat(awal = true) {
+    if (Keuangan.loading) return;
+    if (!awal && Keuangan.habis) return;
+    Keuangan.loading = true;
+    try {
+      const scope = Keuangan.scopeDariFilter();
+      const uid = Keuangan.uidSaya();
+      if (awal) {
+        Keuangan.offset = 0;
+        Keuangan.cache = [];
+        Keuangan.habis = false;
+        Keuangan.ringkas = null;
+        // Render cache persisten DULU (hanya bila tanpa filter) biar offline langsung tampil.
+        if (Keuangan.scopeKosong()) {
+          const cached = Cache.get("kas");
+          if (cached) {
+            Keuangan.prokerCache = Cache.get("proker") || [];
+            Keuangan.agendaCache = Cache.get("agenda_all") || [];
+            try { Keuangan.buildOptions(); } catch {}
+            Keuangan.cache = cached;
+            Keuangan.render();
+          }
+        }
       }
-      const [pk, ag] = await Promise.all([
-        getProker().catch(() => null),
-        getAllAgenda().catch(() => null),
+      const [ringkas, rows] = await Promise.all([
+        (typeof osisKasRingkas === "function" ? osisKasRingkas(uid, scope) : Promise.resolve(null)).catch(() => null),
+        getKas(Keuangan.perPage, Keuangan.offset, scope),
       ]);
-      if (pk) {
-        Keuangan.prokerCache = pk;
-        Cache.set("proker", pk);
-      }
-      if (ag) {
-        Keuangan.agendaCache = ag;
-        Cache.set("agenda_all", ag);
-      }
+      // Lookup proker/agenda tetap full (kecil) buat opsi form + tampilan nama.
       try {
-        Keuangan.buildOptions();
+        const [pk, ag] = await Promise.all([
+          getProker().catch(() => null),
+          getAllAgenda().catch(() => null),
+        ]);
+        if (pk) { Keuangan.prokerCache = pk; try { Cache.set("proker", pk); } catch {} }
+        if (ag) { Keuangan.agendaCache = ag; try { Cache.set("agenda_all", ag); } catch {} }
       } catch {}
-      if (cached) {
-        // nama proker/agenda lookup bisa berubah walau kas sama
-        Keuangan.render();
-        getKas()
-          .then((fresh) => {
-            if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-              Cache.set("kas", fresh);
-              Keuangan.cache = fresh || [];
-              Keuangan.render();
-            }
-          })
-          .catch(() => {});
-        return;
+      if (ringkas) Keuangan.ringkas = ringkas;
+      if (awal) {
+        Keuangan.cache = rows || [];
+      } else {
+        const ada = new Set((Keuangan.cache || []).map((t) => String(t.id)));
+        (rows || []).forEach((t) => { if (!ada.has(String(t.id))) { ada.add(String(t.id)); Keuangan.cache.push(t); } });
       }
-      const data = await getKas();
-      Cache.set("kas", data);
-      Keuangan.cache = data || [];
+      Keuangan.offset = (Keuangan.cache || []).length;
+      Keuangan.habis = (rows || []).length < Keuangan.perPage;
+      // Cache persisten hanya bila lengkap + tanpa filter.
+      if (Keuangan.habis && Keuangan.scopeKosong()) {
+        try { Cache.set("kas", Keuangan.cache); } catch {}
+      }
+      try { Keuangan.buildOptions(); } catch {}
       Keuangan.render();
     } catch (err) {
       console.error(err);
-      document.getElementById("kasWrap").innerHTML =
-        `<div class="pesan-empty">Gagal memuat transaksi.</div>`;
+      if (awal && !(Keuangan.cache || []).length) {
+        document.getElementById("kasWrap").innerHTML =
+          `<div class="pesan-empty">Gagal memuat transaksi.</div>`;
+      } else if (typeof showToast === "function") {
+        showToast("Gagal muat lanjutan transaksi.", "error");
+      }
+    } finally {
+      Keuangan.loading = false;
     }
   },
 
   buildOptions() {
-    const pers = [
-      ...new Set(
-        (Keuangan.cache || [])
-          .map((t) => Keuangan.periodeOf(t))
-          .filter(Boolean),
-      ),
-    ]
-      .sort()
-      .reverse();
+    // Opsi tahun & kategori: dari RPC ringkas (lengkap) bila ada, fallback cache.
+    const R = Keuangan.ringkas;
+    const pers = (R && Array.isArray(R.tahuns) && R.tahuns.length
+      ? R.tahuns.map(String)
+      : [
+        ...new Set(
+          (Keuangan.cache || [])
+            .map((t) => Keuangan.periodeOf(t))
+            .filter(Boolean),
+        ),
+      ].sort().reverse()
+    );
     const fp = document.getElementById("filterPeriode");
     if (fp) {
       const cur = fp.value || Keuangan.filter.periode || "";
@@ -318,9 +361,12 @@ const Keuangan = {
       fp.value = cur;
       Keuangan.filter.periode = cur;
     }
-    const kats = [
-      ...new Set((Keuangan.cache || []).map((t) => t.kategori).filter(Boolean)),
-    ].sort();
+    const kats = (R && Array.isArray(R.kategoris) && R.kategoris.length
+      ? R.kategoris.map(String)
+      : [
+        ...new Set((Keuangan.cache || []).map((t) => t.kategori).filter(Boolean)),
+      ].sort()
+    );
     const fk = document.getElementById("filterKategori");
     if (fk) {
       const cur = fk.value || Keuangan.filter.kategori || "";
@@ -406,16 +452,53 @@ const Keuangan = {
     return data;
   },
 
+  // Baris laporan = scope filter PENUH (fetch khusus sekali saat export,
+  // bukan cache parsial). Gagal -> fallback data tampil + toast.
+  async barisLaporan() {
+    try {
+      const full = await getKas(null, 0, Keuangan.scopeDariFilter());
+      if (full && full.length) {
+        const f = Keuangan.filter;
+        const data = [...full];
+        if (f.sort === "lama")
+          data.sort((a, b) =>
+            String(a.tanggal || "") > String(b.tanggal || "") ? 1 : -1,
+          );
+        else if (f.sort === "besar")
+          data.sort(
+            (a, b) =>
+              (parseInt(b.nominal, 10) || 0) - (parseInt(a.nominal, 10) || 0),
+          );
+        else if (f.sort === "kecil")
+          data.sort(
+            (a, b) =>
+              (parseInt(a.nominal, 10) || 0) - (parseInt(b.nominal, 10) || 0),
+          );
+        else
+          data.sort((a, b) =>
+            String(a.tanggal || "") < String(b.tanggal || "") ? 1 : -1,
+          );
+        return data;
+      }
+    } catch (err) { console.error(err); }
+    try { if (typeof showToast === "function") showToast("Pakai data yang sudah dimuat (belum lengkap).", "info"); } catch {}
+    return Keuangan.dataTampil();
+  },
+
   // ============ RENDER ============
   render() {
     const data = Keuangan.dataTampil();
     const f = Keuangan.filter;
+    // Angka dari RPC ringkas (benar walau tabel belum discroll habis).
+    // RPC belum ada (migrasi belum di-run) -> fallback hitung dari data tampil.
+    const R = Keuangan.ringkas;
     const sum = (jenis) =>
       data
         .filter((t) => (t.jenis || "") === jenis)
         .reduce((a, t) => a + (parseInt(t.nominal, 10) || 0), 0);
-    const masuk = sum("masuk");
-    const keluar = sum("keluar");
+    const masuk = R ? parseInt(R.masuk, 10) || 0 : sum("masuk");
+    const keluar = R ? parseInt(R.keluar, 10) || 0 : sum("keluar");
+    const nTrans = R && R.n != null ? R.n : data.length;
     const saldo = masuk - keluar;
     const set = (id, v) => {
       const el = document.getElementById(id);
@@ -430,22 +513,31 @@ const Keuangan = {
     );
     set("statMasuk", Keuangan.rp(masuk));
     set("statKeluar", Keuangan.rp(keluar));
-    set("statCount", data.length + " transaksi");
+    set("statCount", nTrans + " transaksi");
     set(
       "statSelisih",
       (masuk - keluar < 0 ? "- " : "") + Keuangan.rp(Math.abs(masuk - keluar)),
     );
 
-    // rekap per bulan (dari data tampil)
+    // rekap per bulan (dari RPC bila ada, fallback data tampil)
     const byBulan = {};
-    data.forEach((t) => {
-      const ym = (t.tanggal || "").slice(0, 7);
-      if (!ym) return;
-      if (!byBulan[ym]) byBulan[ym] = { masuk: 0, keluar: 0 };
-      byBulan[ym][t.jenis === "masuk" ? "masuk" : "keluar"] +=
-        parseInt(t.nominal, 10) || 0;
-    });
-    const keys = Object.keys(byBulan).sort().reverse().slice(0, 6);
+    let keys;
+    if (R && Array.isArray(R.per_bulan)) {
+      R.per_bulan.forEach((b) => {
+        if (!b || !b.ym) return;
+        byBulan[b.ym] = { masuk: parseInt(b.masuk, 10) || 0, keluar: parseInt(b.keluar, 10) || 0 };
+      });
+      keys = R.per_bulan.map((b) => b.ym).filter(Boolean);
+    } else {
+      data.forEach((t) => {
+        const ym = (t.tanggal || "").slice(0, 7);
+        if (!ym) return;
+        if (!byBulan[ym]) byBulan[ym] = { masuk: 0, keluar: 0 };
+        byBulan[ym][t.jenis === "masuk" ? "masuk" : "keluar"] +=
+          parseInt(t.nominal, 10) || 0;
+      });
+      keys = Object.keys(byBulan).sort().reverse().slice(0, 6);
+    }
     const rb = document.getElementById("rekapBody");
     if (rb) {
       if (!keys.length) {
@@ -485,17 +577,24 @@ const Keuangan = {
           : "Rekap Per Bulan";
     }
 
-    // rekap proker - tampil kalau filter proker? (filter tidak ada proker; tampil ringkas top proker)
+    // rekap proker (dari RPC bila ada, fallback cache full)
     const pc = document.getElementById("prokerCard");
     if (pc) {
       const byProker = {};
-      (Keuangan.cache || []).forEach((t) => {
-        if (!t.proker_id) return;
-        const k = String(t.proker_id);
-        if (!byProker[k]) byProker[k] = { masuk: 0, keluar: 0 };
-        byProker[k][t.jenis === "masuk" ? "masuk" : "keluar"] +=
-          parseInt(t.nominal, 10) || 0;
-      });
+      if (R && Array.isArray(R.per_proker)) {
+        R.per_proker.forEach((b) => {
+          if (!b || b.proker_id == null) return;
+          byProker[String(b.proker_id)] = { masuk: parseInt(b.masuk, 10) || 0, keluar: parseInt(b.keluar, 10) || 0 };
+        });
+      } else {
+        (Keuangan.cache || []).forEach((t) => {
+          if (!t.proker_id) return;
+          const k = String(t.proker_id);
+          if (!byProker[k]) byProker[k] = { masuk: 0, keluar: 0 };
+          byProker[k][t.jenis === "masuk" ? "masuk" : "keluar"] +=
+            parseInt(t.nominal, 10) || 0;
+        });
+      }
       const pkeys = Object.keys(byProker);
       if (!pkeys.length) {
         pc.style.display = "none";
@@ -540,11 +639,19 @@ const Keuangan = {
                 <td class="nominal ${t.jenis}">${t.jenis === "masuk" ? "+" : "-"} ${Keuangan.rp(t.nominal)}</td>
             </tr>`,
       )
-      .join("")}</tbody></table>`;
+      .join("")}</tbody></table>`
+      + `<div style="text-align:center; padding:12px 4px">`
+      + (Keuangan.habis
+        ? `<small style="color:var(--gray); font-weight:700">— Semua transaksi sudah dimuat —</small>`
+        : `<button class="btn btn-white btn-sm" onclick="Keuangan.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+      + `</div><div id="kasSentinel" style="height:8px"></div>`;
+    let io = null;
+    try { if (typeof pasangSentinel === "function") io = pasangSentinel("kasSentinel", () => Keuangan.muat(false)); } catch {}
+    if (!io) { const s = document.getElementById("kasSentinel"); if (s) s.style.display = "none"; }
   },
 
   bacaFilter() {
-    Keuangan.filter = {
+    const baru = {
       q: document.getElementById("filterQ").value || "",
       jenis: document.getElementById("filterJenis").value || "",
       kategori: document.getElementById("filterKategori").value || "",
@@ -552,7 +659,16 @@ const Keuangan = {
       periode: document.getElementById("filterPeriode").value || "",
       sort: document.getElementById("filterSort").value || "baru",
     };
-    Keuangan.render();
+    const lama = Keuangan.filter;
+    // Scope server berubah -> fetch ulang dari halaman 1 (ketikan di-debounce).
+    // Cuma sort yang berubah -> render ulang saja (tanpa fetch).
+    const scopeBerubah = ["q", "jenis", "kategori", "divisi", "periode"]
+      .some((k) => (baru[k] || "") !== (lama[k] || ""));
+    Keuangan.filter = baru;
+    if (!scopeBerubah) { Keuangan.render(); return; }
+    try { clearTimeout(Keuangan._filterT); } catch {}
+    if (baru.q) Keuangan._filterT = setTimeout(() => { Keuangan.muat(true); }, 400);
+    else Keuangan.muat(true);
   },
 
   resetFilter() {
@@ -945,8 +1061,8 @@ const Keuangan = {
   },
 
   // ============ EXPORT / CETAK ============
-  isiLaporan() {
-    const data = Keuangan.dataTampil();
+  isiLaporan(baris) {
+    const data = baris || Keuangan.dataTampil();
     const f = Keuangan.filter;
     const masuk = data
       .filter((t) => t.jenis === "masuk")
@@ -975,13 +1091,13 @@ const Keuangan = {
             </div>`;
   },
 
-  cetak() {
-    document.getElementById("printArea").innerHTML = Keuangan.isiLaporan();
+  async cetak() {
+    document.getElementById("printArea").innerHTML = Keuangan.isiLaporan(await Keuangan.barisLaporan());
     window.print();
   },
 
-  exportPdf() {
-    document.getElementById("printArea").innerHTML = Keuangan.isiLaporan();
+  async exportPdf() {
+    document.getElementById("printArea").innerHTML = Keuangan.isiLaporan(await Keuangan.barisLaporan());
     const oldTitle = document.title;
     const f = Keuangan.filter;
     document.title = `Laporan-Keuangan-${f.periode || "semua"}`;

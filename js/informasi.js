@@ -6,6 +6,10 @@
 
 const Informasi = {
     cache: [],
+    offset: 0, // jumlah baris terakumulasi = offset fetch berikutnya
+    habis: false, // true kalau server sudah tidak punya baris lagi
+    loading: false,
+    perPage: 12, // hemat egress: 12 baris per fetch
     terinisialisasi: false,
     editingId: null,
 
@@ -130,32 +134,70 @@ const Informasi = {
             <div style="text-align:center;margin-top:12px"><a class="btn btn-white btn-sm" href="informasi"><i class="fa-solid fa-list"></i> Daftar informasi</a></div>`;
     },
 
-    async muatDaftar() {
+    // Daftar paginasi hemat egress (12/fetch) + infinite scroll.
+    // Cache.get cuma buat render instan, Cache.set cuma pas habis.
+    async muatDaftar(awal = true) {
         const wrap = document.getElementById("infoWrap");
         if (!wrap) return;
-        const cached = Cache.get("informasi");
-        if (cached) {
-            Informasi.cache = cached || [];
-            try { Informasi.tampilDaftar(); } catch {}
-            getInformasiList().then(fresh => {
-                Cache.set("informasi", fresh);
-                if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-                    Informasi.cache = fresh || [];
-                    Informasi.tampilDaftar();
-                }
-            }).catch(() => {});
-            return;
+        if (Informasi.loading) return;
+        if (!awal && Informasi.habis) return;
+        Informasi.loading = true;
+        if (awal) {
+            Informasi.offset = 0;
+            Informasi.habis = false;
+            const cached = Cache.get("informasi");
+            if (cached && cached.length) {
+                Informasi.cache = cached.slice();
+                try { Informasi.tampilDaftar(); } catch {}
+            } else {
+                Informasi.cache = [];
+                wrap.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat informasi...</div>`;
+            }
+        } else {
+            const btn = document.getElementById("infoLagi");
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...'; }
         }
-        wrap.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat informasi...</div>`;
         try {
-            const data = await getInformasiList();
-            Cache.set("informasi", data);
-            Informasi.cache = data || [];
+            const rows = await getInformasiList(Informasi.perPage, Informasi.offset);
+            if (awal) Informasi.cache = []; // ganti render instan dengan fresh
+            const ada = new Set(Informasi.cache.map(x => String(x.id)));
+            (rows || []).forEach(x => {
+                if (!ada.has(String(x.id))) { ada.add(String(x.id)); Informasi.cache.push(x); }
+            });
+            Informasi.offset = Informasi.cache.length;
+            if (!rows || rows.length < Informasi.perPage) {
+                Informasi.habis = true;
+                Cache.set("informasi", Informasi.cache);
+            }
             Informasi.tampilDaftar();
         } catch (err) {
             console.error(err);
-            wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat. Cek koneksi.</div>`;
+            if (awal && !Informasi.cache.length) {
+                wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Informasi.muat()"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+            } else if (awal) {
+                showToast("Gagal refresh, tampil data lama.", "error");
+            } else {
+                showToast("Gagal muat lanjutan informasi.", "error");
+                try { Informasi.tampilDaftar(); } catch {} // balikin tombol manual
+            }
+        } finally {
+            Informasi.loading = false;
         }
+    },
+
+    // Pasang observer sentinel; gagal (no IO) -> tombol manual yang tampil.
+    jejaki() {
+        try { if (Informasi._io) Informasi._io.disconnect(); } catch {}
+        Informasi._io = null;
+        let io = null;
+        try {
+            if (!Informasi.habis && typeof pasangSentinel === "function") {
+                io = pasangSentinel("infoSentinel", () => Informasi.muatDaftar(false));
+            }
+        } catch { io = null; }
+        Informasi._io = io;
+        const btn = document.getElementById("infoLagi");
+        if (btn) btn.style.display = (!io && !Informasi.habis && (Informasi.cache || []).length) ? "" : "none";
     },
 
     tampilDaftar() {
@@ -163,8 +205,12 @@ const Informasi = {
         if (!wrap) return;
         const data = Informasi.cache || [];
         const kelola = Informasi.bolehKelola();
+        // Sentinel infinite scroll + tombol manual (fallback kalau no IO).
+        const ekor = `<div id="infoSentinel" aria-hidden="true" style="height:2px"></div>
+            <div style="text-align:center;margin:6px 0 2px"><button id="infoLagi" class="btn btn-white btn-sm" style="display:none" onclick="Informasi.muatDaftar(false)"><i class="fa-solid fa-rotate-right"></i> Muat lagi</button></div>`;
         if (!data.length) {
-            wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-bullhorn"></i> Belum ada informasi harian.</div>`;
+            wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-bullhorn"></i> Belum ada informasi harian.</div>` + ekor;
+            Informasi.jejaki();
             return;
         }
         wrap.innerHTML = data.map(it => `
@@ -182,7 +228,8 @@ const Informasi = {
                     ${kelola ? `<button class="btn btn-white btn-sm" onclick="Informasi.bukaForm(${it.id})" title="Ubah"><i class="fa-solid fa-pen"></i></button>` : ""}
                     ${kelola ? `<button class="btn btn-white btn-sm" onclick="Informasi.hapus(${it.id})" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>` : ""}
                 </div>
-            </div>`).join("");
+            </div>`).join("") + ekor;
+        Informasi.jejaki();
     },
 
     // ============ SALIN LINK / BAGI WA ============
@@ -210,11 +257,15 @@ const Informasi = {
     },
 
     // ============ FORM (buat/ubah) ============
-    bukaForm(id) {
+    async bukaForm(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
         if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
         if (!OsisAuth.butuh("informasi")) return;
-        const item = id ? (Informasi.cache || []).find(x => String(x.id) === String(id)) : null;
+        let item = id ? (Informasi.cache || []).find(x => String(x.id) === String(id)) : null;
+        // Fallback: form Ubah dari single view (?id=) — cache daftar kosong.
+        if (id && !item) {
+            try { item = await getInformasi(id); } catch {}
+        }
         Informasi.editingId = item ? item.id : null;
         const v = (k) => escapeHtml(item ? (item[k] || "") : "");
         document.getElementById("infoFormOverlay")?.remove();
