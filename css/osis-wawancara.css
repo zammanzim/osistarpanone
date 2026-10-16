@@ -852,3 +852,26 @@
         min-width: 0;
         overflow-wrap: anywhere;
       }
+      /* Split 2 kolom desktop 50-50: kiri sticky, kanan scroll */
+      @media (min-width: 900px) {
+        .ww-cols {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          align-items: start;
+        }
+        .ww-side {
+          position: sticky;
+          top: 86px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-width: 0;
+        }
+        .ww-main {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-width: 0;
+        }
+      }

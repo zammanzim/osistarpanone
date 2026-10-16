@@ -39,3 +39,26 @@
       .info-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
       @media (max-width:640px){.info-judul{font-size:1.55rem}.info-grid{grid-template-columns:1fr 1fr}.ig-cell:nth-child(3){border-left:none}.ig-cell:nth-child(n+3){border-top:2px dashed var(--line)}}
       @media (max-width:560px){.info-form-grid{grid-template-columns:1fr}.info-card{padding:20px 18px 18px}}
+      /* Split 2 kolom desktop 50-50: kiri sticky, kanan scroll */
+      @media (min-width: 900px) {
+        .info-cols {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          align-items: start;
+        }
+        .info-side {
+          position: sticky;
+          top: 86px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-width: 0;
+        }
+        .info-main {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-width: 0;
+        }
+      }

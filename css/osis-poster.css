@@ -1,0 +1,24 @@
+/* osis-poster.css -- layout halaman poster (split 2 kolom desktop).
+   Kiri sticky (hero), kanan scroll (feed). Mobile: 1 kolom normal. */
+@media (min-width: 900px) {
+  .poster-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+  .poster-side {
+    position: sticky;
+    top: 86px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+  .poster-main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+}
