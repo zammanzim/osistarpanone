@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notulensi — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css?v=22" />
+    <link rel="stylesheet" href="../css/osis2.css?v=12" />
+    <meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/osis-notulensi.css?v=2" />
+    <script src="../js/supabase.min.js?v=11"></script>
+    <script src="../js/config.js?v=16"></script>
+    <script src="../js/db.js?v=29" defer></script>
+    <script src="../js/aktivitas.js?v=12" defer></script>
+    <script src="../js/app.js?v=12" defer></script>
+    <script src="../js/dropdown.js?v=1" defer></script>
+    <script src="../js/toast.js?v=12" defer></script>
+    <script src="../js/notice.js?v=12" defer></script>
+    <script src="../js/upload.js?v=12" defer></script>
+    <script src="../js/show-popup.js?v=13" defer></script>
+    <script src="../js/osis-auth.js?v=21" defer></script>
+    <script src="../js/osis-visitor.js?v=4" defer></script>
+    <script src="../js/osis-sidebar.js?v=18" defer></script>
+    <script src="../js/osis-header.js?v=16" defer></script>
+    <script src="../js/form-persist.js?v=12" defer></script>
+    <script src="../js/notulensi.js?v=11" defer></script>
+    <script src="../js/pwa.js?v=13" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>NOTULENSI</h2>
+          <p>Rangkuman Rapat</p>
+        </div>
+      </a>
+
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="osis-wrap">
+      <div class="osis-hero">
+        <div class="osis-avatar"><i class="fa-solid fa-clipboard-list"></i></div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>NOTULENSI RAPAT</h1>
+          <p>Rangkuman hasil rapat OSIS — buka, baca, bagikan link-nya ke grup.</p>
+          <div class="osis-meta"></div>
+        </div>
+        <button
+          class="btn btn-red"
+          id="btnBuatNotulensi"
+          onclick="Notulensi.bukaForm()"
+          style="display: none"
+        >
+          <i class="fa-solid fa-plus"></i> Buat Notulensi
+        </button>
+      </div>
+
+      <div class="filter-card" id="notulensiFilter" style="display: none">
+        <div class="field">
+          <label>Cari judul / topik</label
+          ><input
+            type="text"
+            id="filterQ"
+            class="admin-input"
+            placeholder="Cari notulensi..."
+            autocomplete="off"
+          />
+        </div>
+        <div class="field">
+          <label>Divisi</label
+          ><select id="filterDivisi" class="admin-input">
+            <option value="">Semua divisi</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label
+          ><select id="filterStatus" class="admin-input">
+            <option value="">Semua</option>
+            <option value="rencana">Rencana</option>
+            <option value="selesai">Selesai</option>
+            <option value="belum_tindaklanjut">Belum TL</option>
+            <option value="batal">Batal</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tanggal</label
+          ><input type="date" id="filterTanggal" class="admin-input" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label
+          ><button
+            class="btn btn-white btn-sm"
+            id="btnResetFilter"
+            title="Reset filter"
+          >
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="notulensiWrap">
+        <div class="loading-block">
+          <div class="spinner"></div>
+          Memuat notulensi...
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP FORM TAMBAH / EDIT -->
+    <div class="notulensi-form" id="notulensiForm">
+      <div class="notulensi-form-inner">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+          "
+        >
+          <span
+            style="
+              font-weight: 900;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 1rem;
+            "
+            ><i class="fa-solid fa-clipboard-list" style="color: var(--red)"></i>
+            <span id="notulensiFormTitle">Buat Notulensi</span></span
+          >
+          <button
+            class="icon-btn"
+            onclick="Notulensi.tutupForm()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <input type="hidden" id="notId" />
+        <div class="field">
+          <label>Judul rapat</label
+          ><input
+            type="text"
+            id="notJudul"
+            class="admin-input"
+            placeholder="cth: Pembagian Kepanitiaan Among"
+            maxlength="160"
+          />
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field">
+            <label>Tanggal</label
+            ><input type="date" id="notTanggal" class="admin-input" />
+          </div>
+          <div class="field">
+            <label>Divisi</label
+            ><select id="notDivisi" class="admin-input"></select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field">
+            <label>Waktu mulai</label
+            ><input
+              type="text"
+              id="notWaktuMulai"
+              class="admin-input"
+              placeholder="19:20"
+              maxlength="20"
+            />
+          </div>
+          <div class="field">
+            <label>Waktu selesai</label
+            ><input
+              type="text"
+              id="notWaktuSelesai"
+              class="admin-input"
+              placeholder="21:00"
+              maxlength="20"
+            />
+          </div>
+        </div>
+        <div class="field">
+          <label>Tempat</label
+          ><input
+            type="text"
+            id="notLokasi"
+            class="admin-input"
+            placeholder="Aula / Google Meet"
+            maxlength="120"
+          />
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field">
+            <label>Pimpinan rapat</label
+            ><input
+              type="text"
+              id="notPimpinan"
+              class="admin-input"
+              maxlength="120"
+            />
+          </div>
+          <div class="field">
+            <label>Notulis</label
+            ><input
+              type="text"
+              id="notNotulis"
+              class="admin-input"
+              maxlength="120"
+            />
+          </div>
+        </div>
+        <div class="field">
+          <label>Peserta (satu nama per baris)</label
+          ><textarea
+            id="notPeserta"
+            class="admin-input admin-textarea"
+            rows="4"
+            maxlength="4000"
+            placeholder="Sella Erika&#10;Bintang Sandi&#10;..."
+          ></textarea>
+        </div>
+        <div class="field">
+          <label>Agenda pembahasan</label
+          ><textarea
+            id="notAgendaTopik"
+            class="admin-input admin-textarea"
+            rows="4"
+            maxlength="4000"
+            placeholder="1. Pembukaan&#10;2. Sambutan&#10;..."
+          ></textarea>
+        </div>
+        <div class="field">
+          <label>Hasil pembahasan</label
+          ><textarea
+            id="notIsi"
+            class="admin-input admin-textarea"
+            rows="5"
+            maxlength="8000"
+            placeholder="Rangkuman isi rapat..."
+          ></textarea>
+        </div>
+        <div class="field">
+          <label>Keputusan rapat</label
+          ><textarea
+            id="notKeputusan"
+            class="admin-input admin-textarea"
+            rows="3"
+            maxlength="8000"
+            placeholder="Keputusan yang disepakati..."
+          ></textarea>
+        </div>
+        <div class="field">
+          <label>Tindak lanjut</label>
+          <div id="notTlList"></div>
+          <button
+            class="btn btn-white btn-sm"
+            type="button"
+            id="btnTambahTl"
+            style="margin-top: 8px"
+          >
+            <i class="fa-solid fa-plus"></i> Tambah tugas
+          </button>
+        </div>
+        <div class="field">
+          <label>Lampiran foto (opsional)</label>
+          <div id="notDrop" class="notulensi-drop">
+            <div class="notulensi-drop-inner">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Klik atau drag & drop foto ke sini</span>
+              <small>JPG/PNG/WEBP — otomatis kompres &lt;1MB</small>
+            </div>
+          </div>
+          <input
+            type="file"
+            id="notLampiran"
+            accept="image/*"
+            multiple
+            hidden
+          />
+        </div>
+        <div
+          id="notPreview"
+          class="notulensi-fotos"
+          style="display: none"
+        ></div>
+        <div class="field">
+          <label>Status</label
+          ><select id="notStatus" class="admin-input">
+            <option value="rencana">Rencana</option>
+            <option value="selesai" selected>Selesai</option>
+            <option value="belum_tindaklanjut">Belum TL</option>
+            <option value="batal">Batal</option>
+          </select>
+        </div>
+        <div class="form-actions-row" style="margin-top: 12px">
+          <button class="btn btn-white" id="btnBatalNotulensi">Batal</button>
+          <button class="btn btn-red" id="btnSimpanNotulensi">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="printArea" style="display: none"></div>
+  </body>
+</html>

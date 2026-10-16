@@ -251,9 +251,14 @@
       "#pushBellBtn i{color:var(--red,#e11d2e)}" +
       "#pushBellBtn.on{background:#def5e3}" +
       "@media (max-width:700px){#pushBellBtn{display:none!important}}" +
+      ".top-nav:has(#osisMoreMenu) #pushBellBtn{display:none!important}" +
       "#headerMorePush i{color:var(--red,#e11d2e)}" +
       "#headerMoreBtn{position:relative}" +
+      "#osisMoreBtn{position:relative}" +
       "#headerMoreBtn.ada-dot::after{content:'';position:absolute;top:6px;right:6px;" +
+      "width:11px;height:11px;border-radius:50%;background:var(--red,#e11d2e);" +
+      "border:2px solid #fff;animation:pushDotPing 1.6s ease-out infinite}" +
+      "#osisMoreBtn.ada-dot::after{content:'';position:absolute;top:6px;right:6px;" +
       "width:11px;height:11px;border-radius:50%;background:var(--red,#e11d2e);" +
       "border:2px solid #fff;animation:pushDotPing 1.6s ease-out infinite}" +
       "@keyframes pushDotPing{0%{box-shadow:0 0 0 0 rgba(225,29,46,.55)}" +
@@ -351,6 +356,8 @@
     try {
       var b = document.getElementById("headerMoreBtn");
       if (b && dotPerlu()) b.classList.add("ada-dot");
+      var bo = document.getElementById("osisMoreBtn");
+      if (bo && dotPerlu()) bo.classList.add("ada-dot");
       if (itemMenu && dotPerlu()) itemMenu.classList.add("ada-dot");
     } catch {}
   }
@@ -359,6 +366,8 @@
     try {
       var b = document.getElementById("headerMoreBtn");
       if (b) b.classList.remove("ada-dot");
+      var bo = document.getElementById("osisMoreBtn");
+      if (bo) bo.classList.remove("ada-dot");
       if (itemMenu) itemMenu.classList.remove("ada-dot");
     } catch {}
     tandaiPopup(); // jatah habis — jangan muncul lagi selamanya
@@ -388,13 +397,34 @@
         };
       }
     } catch {}
+    try {
+      if (window.OsisMore && !OsisMore._dotBungkus) {
+        OsisMore._dotBungkus = true;
+        var origOsisToggle = OsisMore.toggle.bind(OsisMore);
+        OsisMore.toggle = function () {
+          var menu = document.getElementById("osisMoreMenu");
+          if (menu && !menu.classList.contains("open")) hapusDot();
+          return origOsisToggle();
+        };
+      }
+    } catch {}
+    try {
+      var bo = document.getElementById("osisMoreBtn");
+      if (bo && !bo._dotAwasi) {
+        bo._dotAwasi = true;
+        bo.addEventListener("click", function () {
+          var menu = document.getElementById("osisMoreMenu");
+          if (menu && !menu.classList.contains("open")) hapusDot();
+        });
+      }
+    } catch {}
   }
 
   function buatTombol() {
     if (tombol || itemMenu || !didukung()) return;
     pasangCss();
     awasiMenuDot();
-    var menu = document.getElementById("headerMoreMenu");
+    var menu = document.getElementById("headerMoreMenu") || document.getElementById("osisMoreMenu");
     if (menu && !document.getElementById("headerMorePush")) {
       itemMenu = document.createElement("button");
       itemMenu.type = "button";
@@ -408,7 +438,10 @@
         } catch {}
         klikToggle();
       });
-      menu.appendChild(itemMenu);
+      // Taruh di antara Pengaturan dan Keluar (jangan appendChild mentok bawah).
+      var keluar = document.getElementById("headerMoreLogout") || document.getElementById("osisMoreLogout");
+      if (keluar && keluar.parentNode === menu) menu.insertBefore(itemMenu, keluar);
+      else menu.appendChild(itemMenu);
     }
     var extra = document.querySelector(".top-nav-extra");
     if (extra && !document.getElementById("pushBellBtn")) {

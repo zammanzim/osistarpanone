@@ -1,0 +1,129 @@
+/* osis-profil.css -- pindahan <style> inline profil.html (v6.5.1, visual sama). */
+.profil-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      @media (min-width: 860px) {
+        .profil-grid {
+          grid-template-columns: 1fr 1fr;
+          align-items: start;
+        }
+      }
+      .profil-hero {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .profil-avatar {
+        width: 92px;
+        height: 92px;
+        border-radius: 20px;
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 2.2rem;
+        font-weight: 900;
+        overflow: hidden;
+        flex-shrink: 0;
+        box-shadow: 2px 2px 0 var(--ink);
+      }
+      .profil-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+      }
+      .profil-hero h1 {
+        font-size: 1.2rem;
+        font-weight: 900;
+        line-height: 1.15;
+      }
+      .profil-hero .uname {
+        font-size: 0.8rem;
+        color: var(--gray);
+        font-weight: 700;
+      }
+      .profil-hero .jabatan {
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        background: var(--ink);
+        color: var(--white);
+        border-radius: 999px;
+        padding: 3px 12px;
+      }
+      .profil-hero .bio {
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-top: 8px;
+        color: var(--ink);
+      }
+      .profil-drop {
+        border: 3px dashed var(--ink);
+        border-radius: 16px;
+        background: var(--white);
+        padding: 20px 14px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.84rem;
+      }
+      .profil-drop.dragover {
+        background: var(--yellow);
+      }
+      .profil-drop img {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 16px;
+        border: 3px solid var(--ink);
+        display: none;
+        margin: 0 auto 10px;
+      }
+      .profil-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .hak-list {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      input[readonly].admin-input {
+        opacity: 0.75;
+      }
+      /* Split 2 kolom desktop 50-50: kiri sticky, kanan scroll */
+      @media (min-width: 900px) {
+        .profil-cols {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          align-items: start;
+        }
+        .profil-side {
+          position: sticky;
+          top: 86px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-width: 0;
+        }
+        .profil-main {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-width: 0;
+        }
+      }

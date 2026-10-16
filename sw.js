@@ -3,7 +3,7 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v87";
+const VERSI = "tarpan-v107";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 
@@ -21,6 +21,23 @@ const APP_SHELL = [
   "./manifest.webmanifest",
   "./css/style.css",
   "./css/feed.css",
+  "./css/osis2.css",
+  "./css/osis-absensi.css",
+  "./css/osis-agenda.css",
+  "./css/osis-akses.css",
+  "./css/osis-anggota.css",
+  "./css/osis-dokumen.css",
+  "./css/osis-index.css",
+  "./css/osis-informasi.css",
+  "./css/osis-keuangan.css",
+  "./css/osis-logs.css",
+  "./css/osis-notifikasi.css",
+  "./css/osis-notulensi.css",
+  "./css/osis-profil.css",
+  "./css/osis-program-bulanan.css",
+  "./css/osis-program-tahunan.css",
+  "./css/osis-tabungan.css",
+  "./css/osis-wawancara.css",
   "./osis/absensi.html",
   "./osis/agenda.html",
   "./osis/akses.html",
@@ -30,6 +47,7 @@ const APP_SHELL = [
   "./osis/keuangan.html",
   "./osis/logs.html",
   "./osis/notifikasi.html",
+  "./osis/notulensi.html",
   "./osis/poster.html",
   "./osis/profil.html",
   "./osis/tabungan.html",
@@ -71,6 +89,7 @@ const APP_SHELL = [
   "./js/notulensi.js",
   "./js/osis-auth.js",
   "./js/osis-header.js",
+  "./js/osis-visitor.js",
   "./js/osis-menu.js",
   "./js/osis-sidebar.js",
   "./js/polling.js",

@@ -7,7 +7,7 @@ const Akses = {
     // Cuma halaman/bagian yang BENAR-BENAR ada:
     // - HALAMAN_OSIS = file di folder /osis (+ kunci yang dicek modulnya)
     // - HALAMAN_WEB = bagian beranda yang bisa diedit (mode edit homepage)
-    // Evaluasi/Formulir/Notulensi/Proker/Task DIBUANG: halamannya tidak ada
+    // Evaluasi/Formulir/Proker/Task DIBUANG: halamannya tidak ada
     // di /osis (cuma sisa di folder *bin*) dan tidak dipakai kode manapun.
     HALAMAN_OSIS: [
         ["anggota", "Anggota"],
@@ -18,6 +18,7 @@ const Akses = {
         ["dokumen", "Dokumen"],
         ["poster", "Poster"],
         ["informasi", "Informasi Harian"],
+        ["notulensi", "Notulensi"],
         ["program", "Program (Tahunan+Bulanan)"],
         ["wawancara", "Wawancara Calon"],
         ["changelog", "Changelog"],

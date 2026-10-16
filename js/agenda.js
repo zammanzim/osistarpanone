@@ -334,15 +334,15 @@ const AgendaAdmin = {
         const basis = AgendaAdmin.filterSekbid
             ? semua.filter(a => String(a.sekbid_id) === String(AgendaAdmin.filterSekbid))
             : semua;
-        // Statistik: dari RPC ringkas (benar walau belum scroll habis).
-        // RPC belum ada (migrasi belum di-run) -> fallback hitung dari basis.
+        // Statistik: HANYA dari RPC ringkas. Belum ada (loading / migrasi
+        // belum di-run / offline) -> tampil "…", jangan hitung dari cache
+        // parsial biar angkanya nggak ngaco/kedip.
         const R = AgendaAdmin.ringkas;
-        const now = new Date();
-        const blnIni = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-        const nBulan = R ? (parseInt(R.bulan_ini, 10) || 0) : basis.filter(a => (a.tanggal || "").slice(0, 7) === blnIni).length;
-        const nSekbid = R ? (parseInt(R.n_sekbid, 10) || 0) : new Set(basis.map(a => String(a.sekbid_id))).size;
-        const nOrang = R ? (parseInt(R.n_orang, 10) || 0) : new Set(basis.map(a => AgendaAdmin.kunciOrang(a)).filter(k => k !== "")).size;
-        const nTotal = R ? (parseInt(R.total, 10) || 0) : basis.length;
+        const ang = (v) => (R ? (parseInt(v, 10) || 0) : "…");
+        const nBulan = ang(R && R.bulan_ini);
+        const nSekbid = ang(R && R.n_sekbid);
+        const nOrang = ang(R && R.n_orang);
+        const nTotal = ang(R && R.total);
         const statsEl = document.getElementById("agendaStats");
         if (statsEl) {
             statsEl.innerHTML = `

@@ -1,5 +1,17 @@
 [
   {
+    "version": "v6.5.1",
+    "date": "2026-10-16",
+    "type": "patch",
+    "commit": "unreleased",
+    "message": "Pisah style inline dashboard ke file sendiri",
+    "title": "CSS per halaman dashboard",
+    "description": "Semua <style> inline osis/*.html pindah ke css/osis-*.css (15 file, isi 1:1 visual sama). Tiap halaman tinggal <link>, SW precache naik ke tarpan-v88 sekalian masukin osis2.css.",
+    "filesChanged": 33,
+    "insertions": 65,
+    "deletions": 4892
+  },
+  {
     "version": "v6.5.0",
     "date": "2026-10-15",
     "type": "minor",

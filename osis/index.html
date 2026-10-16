@@ -30,417 +30,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <style>
-      .osis-wrap {
-        max-width: 1280px;
-        margin: 0 auto;
-        padding: 18px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-      .osis-hero {
-        background: var(--white);
-        border: 3px solid var(--ink);
-        border-radius: 18px;
-        padding: 18px;
-        box-shadow: 4px 4px 0 var(--ink);
-        display: flex;
-        gap: 16px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .osis-avatar {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
-        border: 3px solid var(--ink);
-        background: var(--yellow);
-        display: grid;
-        place-items: center;
-        font-size: 1.4rem;
-        font-weight: 900;
-        box-shadow: 2px 2px 0 var(--ink);
-        flex-shrink: 0;
-        overflow: hidden;
-      }
-      .osis-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-      .osis-clock {
-        text-align: right;
-        flex-shrink: 0;
-      }
-      .osis-clock b {
-        display: block;
-        font-size: 0.86rem;
-        font-weight: 900;
-      }
-      .osis-clock .jam {
-        font-size: 1.3rem;
-        font-weight: 900;
-        color: var(--red);
-        font-variant-numeric: tabular-nums;
-        display: flex;
-        align-items: baseline;
-        justify-content: flex-end;
-        gap: 5px;
-      }
-      .osis-clock .jam small {
-        font-size: 0.64rem;
-        font-weight: 800;
-        color: var(--gray);
-      }
-      .osis-hero h1 {
-        font-size: 1.25rem;
-        font-weight: 900;
-        line-height: 1.1;
-      }
-      .osis-hero p {
-        font-size: 0.82rem;
-        color: var(--gray);
-        font-weight: 600;
-        margin-top: 4px;
-      }
-      .osis-hero .osis-meta {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-top: 8px;
-      }
-      .osis-badge {
-        font-size: 0.68rem;
-        font-weight: 800;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        background: var(--paper-2);
-        border: 2px solid var(--ink);
-        padding: 4px 10px;
-        border-radius: 999px;
-      }
-      .osis-badge.red {
-        background: var(--red);
-        color: #fff;
-      }
-      .dash-stats {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-      }
-      @media (min-width: 720px) {
-        .dash-stats {
-          grid-template-columns: repeat(4, 1fr);
-        }
-      }
-      .dash-stat {
-        background: var(--white);
-        border: 2.5px solid var(--ink);
-        border-radius: 14px;
-        padding: 12px;
-        box-shadow: 3px 3px 0 var(--ink);
-        text-decoration: none;
-        color: inherit;
-        display: block;
-      }
-      .dash-stat .lbl {
-        font-size: 0.64rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--gray);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .dash-stat .lbl i {
-        color: var(--red);
-      }
-      .dash-stat b {
-        display: block;
-        font-size: 1.6rem;
-        font-weight: 900;
-        margin-top: 4px;
-      }
-      .dash-stat small {
-        font-size: 0.68rem;
-        font-weight: 600;
-        color: var(--gray);
-        display: block;
-        margin-top: 2px;
-        overflow-wrap: anywhere;
-      }
-      .dash-stat.danger {
-        background: #ffe9e9;
-      }
-      .dash-cols {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 14px;
-      }
-      @media (min-width: 860px) {
-        .dash-cols {
-          grid-template-columns: 1fr 1fr;
-        }
-      }
-      .dash-panel {
-        background: var(--white);
-        border: 3px solid var(--ink);
-        border-radius: 18px;
-        padding: 16px;
-        box-shadow: 4px 4px 0 var(--ink);
-        min-width: 0;
-      }
-      .dash-panel.full {
-        grid-column: 1 / -1;
-      }
-      .dash-panel > h3 {
-        font-size: 0.86rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 10px;
-      }
-      .dash-panel > h3 i {
-        color: var(--red);
-      }
-      .dash-panel > h3 .go {
-        margin-left: auto;
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: var(--red);
-        text-decoration: none;
-        text-transform: none;
-        letter-spacing: 0;
-        white-space: nowrap;
-      }
-      .dash-item {
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
-        padding: 9px 0;
-        border-bottom: 1.5px dashed var(--line);
-        font-size: 0.8rem;
-      }
-      .dash-item:last-child {
-        border-bottom: none;
-      }
-      .dash-item .di {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        border: 2px solid var(--ink);
-        background: var(--paper-2);
-        display: grid;
-        place-items: center;
-        font-size: 0.9rem;
-        color: var(--red);
-        flex-shrink: 0;
-      }
-      .dash-item .db {
-        flex: 1;
-        min-width: 0;
-      }
-      .dash-item .db b {
-        display: block;
-        font-weight: 900;
-        overflow-wrap: anywhere;
-        line-height: 1.3;
-      }
-      .dash-item .db small {
-        color: var(--gray);
-        font-weight: 600;
-        display: block;
-        margin-top: 1px;
-        overflow-wrap: anywhere;
-      }
-      .dash-item .tag {
-        flex-shrink: 0;
-        font-size: 0.62rem;
-        font-weight: 900;
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1.5px solid var(--ink);
-        white-space: nowrap;
-      }
-      .tag.red {
-        background: var(--red);
-        color: #fff;
-      }
-      .tag.yellow {
-        background: var(--yellow);
-      }
-      .tag.green {
-        background: #d6f5d6;
-        color: #146314;
-      }
-      .tag.gray {
-        background: var(--paper-2);
-        color: var(--gray);
-      }
-      .prio {
-        font-size: 0.6rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        padding: 2px 7px;
-        border-radius: 999px;
-        border: 1.5px solid var(--ink);
-        white-space: nowrap;
-      }
-      .prio.urgent {
-        background: var(--red);
-        color: #fff;
-      }
-      .prio.high {
-        background: #ff9f43;
-      }
-      .prio.medium {
-        background: var(--yellow);
-      }
-      .prio.low {
-        background: var(--white);
-        color: var(--gray);
-      }
-      .dash-bar {
-        height: 10px;
-        border: 2px solid var(--ink);
-        border-radius: 999px;
-        background: var(--paper-2);
-        overflow: hidden;
-        margin-top: 6px;
-      }
-      .dash-bar > span {
-        display: block;
-        height: 100%;
-        background: var(--red);
-        border-radius: 999px;
-      }
-      .tl-item {
-        display: flex;
-        gap: 10px;
-        padding: 8px 0;
-        border-bottom: 1.5px dashed var(--line);
-        font-size: 0.78rem;
-      }
-      .tl-item:last-child {
-        border-bottom: none;
-      }
-      .tl-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        border: 2px solid var(--ink);
-        background: var(--yellow);
-        flex-shrink: 0;
-        margin-top: 3px;
-      }
-      .tl-item .tb {
-        flex: 1;
-        min-width: 0;
-        font-weight: 600;
-        overflow-wrap: anywhere;
-      }
-      .tl-item .tb b {
-        font-weight: 900;
-      }
-      .tl-item time {
-        flex-shrink: 0;
-        font-size: 0.66rem;
-        font-weight: 700;
-        color: var(--gray);
-        white-space: nowrap;
-      }
-      .dash-empty {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--gray);
-        padding: 10px 2px;
-      }
-      /* Menu cepat + hak kendali */
-      .menu-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-      }
-      @media (min-width: 720px) {
-        .menu-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-      .menu-card {
-        background: var(--white);
-        border: 2.5px solid var(--ink);
-        border-radius: 14px;
-        padding: 14px 12px;
-        box-shadow: 3px 3px 0 var(--ink);
-        text-decoration: none;
-        color: inherit;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        transition:
-          transform 0.12s,
-          box-shadow 0.12s;
-      }
-      .menu-card:hover {
-        transform: translate(-1px, -1px);
-        box-shadow: 4px 4px 0 var(--ink);
-      }
-      .menu-card:active {
-        transform: translate(1px, 1px);
-        box-shadow: none;
-      }
-      .menu-card .mi {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        border: 2.5px solid var(--ink);
-        background: var(--yellow);
-        display: grid;
-        place-items: center;
-        font-size: 1.05rem;
-        flex-shrink: 0;
-      }
-      .menu-card b {
-        display: block;
-        font-size: 0.86rem;
-        font-weight: 900;
-      }
-      .menu-card small {
-        font-size: 0.66rem;
-        font-weight: 700;
-        color: var(--gray);
-      }
-      .hak-chips {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-      }
-      .hak-chip {
-        font-size: 0.68rem;
-        font-weight: 800;
-        border: 2px solid var(--ink);
-        border-radius: 999px;
-        padding: 3px 10px;
-        background: #d6f5d6;
-      }
-      .hak-chip.super {
-        background: var(--ink);
-        color: #fff;
-      }
-      .hak-note {
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: var(--gray);
-        margin-top: 8px;
-      }
-    </style>
+    <link rel="stylesheet" href="../css/osis-index.css?v=7" />
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=14"></script>
     <script src="../js/db.js?v=27" defer></script>
@@ -453,9 +43,10 @@
     <script src="../js/show-popup.js?v=13" defer></script>
     <script src="../js/osis-auth.js?v=19" defer></script>
     <script src="../js/osis-sidebar.js?v=16" defer></script>
-    <script src="../js/osis-header.js?v=10" defer></script>
+    <script src="../js/osis-header.js?v=14" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/dashboard.js?v=12" defer></script>
+    <script src="../js/dashboard.js?v=14" defer></script>
+    <script src="../js/osis-visitor.js?v=4" defer></script>
     <script src="../js/pwa.js?v=11" defer></script>
   </head>
   <body>
@@ -469,6 +60,16 @@
       </a>
 
       <div class="top-nav-extra">
+        <button
+          class="visitor-trigger"
+          id="osisVisitorTrigger"
+          onclick="OsisVisitor.bukaPopup()"
+          title="Pengunjung hari ini"
+          style="display: none"
+        >
+          <i class="fa-solid fa-eye"></i>
+          <span id="osisVisitorCount">-</span>
+        </button>
         <a
           href="../index#/"
           class="btn btn-white btn-sm"
@@ -493,6 +94,9 @@
           <div class="jam"><span id="dashJam">-</span><small>WIB</small></div>
         </div>
       </div>
+
+      <div class="dash-split">
+      <div class="dash-side">
 
       <div class="dash-panel">
         <h3><i class="fa-solid fa-key"></i> Hak Kendali Saya</h3>
@@ -555,8 +159,20 @@
           </a>
         </div>
       </div>
+      </div>
+      <div class="dash-main">
 
       <div class="dash-stats">
+        <button
+          type="button"
+          class="dash-stat visitor-card"
+          onclick="OsisVisitor.bukaPopup()"
+          title="Lihat detail pengunjung"
+        >
+          <span class="lbl"><i class="fa-solid fa-eye"></i> Pengunjung</span
+          ><b id="dashVisitor">-</b
+          ><small>hari ini · klik buat detail</small>
+        </button>
         <a href="agenda" class="dash-stat"
           ><span class="lbl"
             ><i class="fa-solid fa-calendar-days"></i> Total Agenda</span
@@ -630,6 +246,63 @@
           </div>
         </div>
       </div>
+      </div>
+      </div>
     </div>
+  <!-- ===== POPUP VISITOR (markup sama kayak index.html) ===== -->
+  <div class="visitor-overlay" id="visitorOverlay">
+    <div class="visitor-popup">
+      <div class="visitor-pop-head">
+        <h3><i class="fa-solid fa-eye"></i> Pengunjung</h3>
+        <button
+          id="tutupVisitor"
+          onclick="OsisVisitor.tutupPopup()"
+          aria-label="Tutup"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="visitor-stats duo">
+        <div class="vstat-card now">
+          <b id="vstatHari">-</b>
+          <span><i class="fa-solid fa-eye"></i> Hari Ini</span>
+        </div>
+        <div class="vstat-card all">
+          <b id="vstatTotal">-</b>
+          <span><i class="fa-solid fa-chart-simple"></i> Total</span>
+        </div>
+      </div>
+      <div class="visitor-list-head">
+        <h4><i class="fa-solid fa-mobile-screen"></i> Daftar Perangkat</h4>
+        <div class="vtab-wrap">
+          <button
+            type="button"
+            class="vtab active"
+            data-vtab="hari"
+            onclick="OsisVisitor.gantiTab('hari')"
+          >
+            Hari Ini
+          </button>
+          <button
+            type="button"
+            class="vtab"
+            data-vtab="total"
+            onclick="OsisVisitor.gantiTab('total')"
+          >
+            Total
+          </button>
+        </div>
+      </div>
+      <div class="visitor-list" id="visitorList">
+        <div class="pesan-empty">
+          <i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar...
+        </div>
+      </div>
+      <p class="visitor-note">
+        <i class="fa-solid fa-circle-info"></i> Satu perangkat dihitung 1x per
+        hari.
+      </p>
+    </div>
+  </div>
   </body>
 </html>

@@ -14,6 +14,7 @@ const Dashboard = {
             location.replace("../login");
             return;
         }
+        // Tombol visitor header diatur OsisVisitor.refresh (khusus osis).
         // Segarkan hak kendali (biar panel hak + menu selalu akurat)
         try {
             if (typeof OsisAuth.refreshAkses === "function") await OsisAuth.refreshAkses();

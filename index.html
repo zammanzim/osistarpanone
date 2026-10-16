@@ -135,7 +135,7 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="css/style.css?v=32" />
+    <link rel="stylesheet" href="css/style.css?v=38" />
     <link rel="stylesheet" href="css/feed.css?v=3" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
@@ -174,11 +174,11 @@
         white-space: nowrap;
       }
       .osis-nav-link:hover {
-        transform: translate(-1px, -1px);
-        box-shadow: 3px 3px 0 var(--ink);
+        transform: translate(-1.5px, -1.5px);
+        box-shadow: 4px 4px 0 var(--ink);
       }
       .osis-nav-link:active {
-        transform: translate(1px, 1px);
+        transform: translate(1.5px, 1.5px);
         box-shadow: none;
       }
       .osis-nav-link.active {
@@ -1039,7 +1039,7 @@
     <script src="js/notice.js?v=10" defer></script>
     <script src="js/upload.js?v=10" defer></script>
     <script src="js/show-popup.js?v=13" defer></script>
-    <script src="js/visitor.js?v=16" defer></script>
+    <script src="js/visitor.js?v=19" defer></script>
     <script src="js/aktivitas.js?v=11" defer></script>
     <script src="js/home.js?v=21" defer></script>
     <script src="js/prestasi.js?v=15" defer></script>
@@ -1053,7 +1053,7 @@
     <script src="js/arsip.js?v=20" defer></script>
     <script src="js/informasi-view.js?v=3" defer></script>
     <script src="js/osis-auth.js?v=19" defer></script>
-    <script src="js/site-edit.js?v=17" defer></script>
+    <script src="js/site-edit.js?v=20" defer></script>
     <script src="js/bottomnav.js?v=10" defer></script>
     <script src="js/nav-atur.js?v=12" defer></script>
     <script src="js/pwa.js?v=11" defer></script>
@@ -1130,6 +1130,15 @@
               style="display: none"
               ><i class="fa-solid fa-grip"></i> Dashboard OSIS</a
             >
+            <button
+              class="header-more-item"
+              id="headerMoreVisitor"
+              onclick="Visitor.bukaPopup();HeaderMore.close()"
+              style="display: none"
+            >
+              <span><i class="fa-solid fa-eye"></i> Visitor</span
+              ><b id="headerMoreVisitorCount">-</b>
+            </button>
             <label
               class="header-more-item"
               id="headerMoreEditRow"

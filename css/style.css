@@ -4694,15 +4694,8 @@ body.edit-mode {
   opacity: 1;
   transform: none;
 }
-.header-more-menu.open .header-more-item:nth-child(1) {
-  transition-delay: 0.03s;
-}
-.header-more-menu.open .header-more-item:nth-child(2) {
-  transition-delay: 0.07s;
-}
-.header-more-menu.open .header-more-item:nth-child(3) {
-  transition-delay: 0.11s;
-}
+/* Delay cascade diatur JS (HeaderMore._stagger / OsisMore stagger) per item
+   yang terlihat — item suntikan (Notif/Install/Visitor) otomatis ikut. */
 @media (prefers-reduced-motion: reduce) {
   #headerMoreBtn,
   .header-more-menu,
@@ -4747,6 +4740,47 @@ body.edit-mode {
 .top-nav:has(#headerMoreWrap.show) #areaAuth .icon-btn {
   display: none !important;
 }
+/* Tombol logout + titik-tiga: bayangan bawaan kayak tombol header lain */
+.top-nav-extra .icon-btn {
+  box-shadow: 2.5px 2.5px 0 var(--ink);
+}
+/* Header (index + /osis): semua tombol luar gerak hover/active SERAGAM.
+   Cakupan: Masuk/Beranda (.btn), visitor, user-chip (link/span),
+   Dashboard OSIS, toggle Edit, icon-btn (titik-tiga/logout), bell/install. */
+.top-nav-extra .btn,
+.top-nav-extra .visitor-trigger,
+.top-nav-extra .user-chip,
+.top-nav-extra .osis-nav-link,
+.top-nav-extra .edit-toggle-wrap,
+.top-nav-extra .icon-btn,
+.top-nav-extra #pushBellBtn,
+.top-nav-extra #pwaInstallBtn {
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.top-nav-extra .btn:hover,
+.top-nav-extra .visitor-trigger:hover,
+.top-nav-extra .user-chip:hover,
+.top-nav-extra .osis-nav-link:hover,
+.top-nav-extra .edit-toggle-wrap:hover,
+.top-nav-extra .icon-btn:hover,
+.top-nav-extra #pushBellBtn:hover,
+.top-nav-extra #pwaInstallBtn:hover {
+  transform: translate(-1.5px, -1.5px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.top-nav-extra .btn:active,
+.top-nav-extra .visitor-trigger:active,
+.top-nav-extra .user-chip:active,
+.top-nav-extra .osis-nav-link:active,
+.top-nav-extra .edit-toggle-wrap:active,
+.top-nav-extra .icon-btn:active,
+.top-nav-extra #pushBellBtn:active,
+.top-nav-extra #pwaInstallBtn:active {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 0 0 0 var(--ink) !important;
+}
 #headerMoreWrap.show {
   display: inline-flex !important;
 }
@@ -4754,9 +4788,39 @@ body.edit-mode {
 .top-nav:has(#headerMoreMenu) #pwaInstallBtn {
   display: none !important;
 }
+#headerMoreVisitor span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 @media (max-width: 700px) {
   #editToggleWrap {
     display: none !important;
+  }
+  /* Visitor pindah ke titik-tiga (urutan: dash, visitor, edit, pengaturan, keluar) */
+  #visitorTrigger {
+    display: none !important;
+  }
+  #headerMoreOsisDash {
+    order: 1;
+  }
+  #headerMoreVisitor {
+    order: 2;
+  }
+  #headerMoreEditRow {
+    order: 3;
+  }
+  #headerMorePengaturan {
+    order: 4;
+  }
+  #headerMorePush {
+    order: 5;
+  }
+  #headerMoreLogout {
+    order: 6;
+  }
+  #headerMoreInstall {
+    order: 7;
   }
 }
 /* kegiatan home: tombol hapus di kanan atas meta (jangan nutupin judul) */

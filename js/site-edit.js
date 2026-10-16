@@ -1005,7 +1005,27 @@ const HeaderMore = {
         const btn = document.getElementById("headerMoreBtn");
         if (!menu) return;
         menu.classList.toggle("open");
+        if (menu.classList.contains("open")) HeaderMore._stagger(menu);
         if (btn) btn.classList.toggle("active", menu.classList.contains("open"));
+    },
+    // Delay cascade per item terlihat (gantiin nth-child CSS biar item
+    // suntikan otomatis ikut + item hidden gak makan jatah).
+    // Urut visual (computed order), bukan DOM — di mobile urutan DOM
+    // beda sama tampilan gara-gara CSS order.
+    _stagger(menu) {
+        try {
+            const vis = [];
+            menu.querySelectorAll(".header-more-item").forEach((el) => {
+                if (!el.offsetParent) return; // display:none = skip
+                let ord = 0;
+                try { ord = parseInt(getComputedStyle(el).order, 10) || 0; } catch (e) {}
+                vis.push({ el, ord, idx: vis.length });
+            });
+            vis.sort((a, b) => (a.ord - b.ord) || (a.idx - b.idx));
+            vis.forEach((v, i) => {
+                v.el.style.transitionDelay = (0.03 + i * 0.04).toFixed(2) + "s";
+            });
+        } catch (e) {}
     },
     close() {
         const menu = document.getElementById("headerMoreMenu");
@@ -1040,6 +1060,7 @@ const HeaderMore = {
         const moreEdit = document.getElementById("headerMoreEditToggle");
         const rootOsisNav = document.getElementById("rootOsisNav");
         const moreOsisDash = document.getElementById("headerMoreOsisDash");
+        const moreVisitor = document.getElementById("headerMoreVisitor");
         const u = OsisAuth.getUser && OsisAuth.getUser();
         const isOsis = !!(u && u.mode === "osis");
         const isLogged = !!(u && (u.mode === "osis" || u.mode === "biasa" || u.mode === "guest" || u.mode === "tamu"));
@@ -1073,6 +1094,8 @@ const HeaderMore = {
             rootOsisNav.style.display = (isOsis && !narrow) ? "flex" : "none";
         }
         if (moreOsisDash) moreOsisDash.style.display = (isOsis && narrow) ? "" : "none";
+        // Visitor di mobile masuk titik-tiga (tombol luar disembunyikan via CSS).
+        if (moreVisitor) moreVisitor.style.display = narrow ? "" : "none";
         const superUser = (typeof OsisAuth.isSuper === "function") && OsisAuth.isSuper();
         // Edit mode di desktop pakai toggle pill di luar (editToggleWrap),
         // di titik-tiga cuma tampil saat mobile.

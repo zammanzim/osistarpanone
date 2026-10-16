@@ -1697,6 +1697,17 @@ async function getNotulensi(limit, offset) {
   if (error) throw error;
   return data || [];
 }
+async function getNotulensiSatu(id) {
+  const { data, error } = await supa
+    .from("rapat_notulensi")
+    .select(
+      "id, judul, tanggal, waktu_mulai, waktu_selesai, lokasi, divisi, pimpinan, notulis, peserta, agenda_topik, isi_pembahasan, keputusan, tindak_lanjut, lampiran, status, pengunggah, created_at",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
 async function buatNotulensi(userId, f) {
   const { data, error } = await supa.rpc("buat_notulensi", {
     p_user_id: userId,
