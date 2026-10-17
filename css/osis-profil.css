@@ -104,6 +104,14 @@
       input[readonly].admin-input {
         opacity: 0.75;
       }
+      /* Mobile: wrapper split tetap kasih jarak antar elemen */
+      .profil-cols,
+      .profil-side,
+      .profil-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
       /* Split 2 kolom desktop 50-50: kiri sticky, kanan scroll */
       @media (min-width: 900px) {
         .profil-cols {

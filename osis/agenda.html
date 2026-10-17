@@ -30,7 +30,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-agenda.css?v=2" />
+    <link rel="stylesheet" href="../css/osis-agenda.css?v=3" />
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=14"></script>
     <script src="../js/db.js?v=27" defer></script>
@@ -69,6 +69,9 @@
     </header>
 
     <div class="agenda-wrap">
+      <div class="agenda-cols">
+      <div class="agenda-side">
+
       <div class="agenda-head">
         <div class="ico"><i class="fa-solid fa-calendar-days"></i></div>
         <div style="flex: 1; min-width: 180px">
@@ -82,9 +85,6 @@
           <i class="fa-solid fa-plus"></i> Tambah Agenda
         </button>
       </div>
-
-      <div class="agenda-cols">
-      <div class="agenda-side">
 
       <!-- Statistik ringkas -->
       <div class="agenda-stats" id="agendaStats"></div>

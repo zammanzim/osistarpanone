@@ -270,17 +270,6 @@ const Dokumen = {
             }).join("");
         }
 
-        // terbaru (5, yang ada file beneran dulu)
-        const tb = document.getElementById("dokTerbaru");
-        if (tb) {
-            const latest = [...all].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 5);
-            tb.innerHTML = latest.length ? latest.map(d => {
-                const [, icon] = Dokumen.fileIcon(Dokumen.extOf(d));
-                const tgl = d.created_at ? new Date(d.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-";
-                return `<div class="terbaru-item" onclick="Dokumen.detail(${d.id})"><i class="${icon}"></i><span>${escapeHtml(d.nama || "Tanpa nama")}</span><small>${tgl}</small></div>`;
-            }).join("") : `<div class="pesan-empty" style="color:#fff">Belum ada dokumen.</div>`;
-        }
-
         // list
         const listEl = document.getElementById("dokumenList");
         if (!listEl) return;

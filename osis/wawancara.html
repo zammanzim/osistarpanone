@@ -31,7 +31,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-wawancara.css?v=2" />
+    <link rel="stylesheet" href="../css/osis-wawancara.css?v=3" />
     <script src="../js/supabase.min.js?v=11"></script>
     <script src="../js/config.js?v=16"></script>
     <script src="../js/db.js?v=28" defer></script>
@@ -47,7 +47,7 @@
     <script src="../js/osis-sidebar.js?v=18" defer></script>
     <script src="../js/osis-header.js?v=16" defer></script>
     <script src="../js/form-persist.js?v=12" defer></script>
-    <script src="../js/wawancara.js?v=20" defer></script>
+    <script src="../js/wawancara.js?v=21" defer></script>
     <script src="../js/pwa.js?v=13" defer></script>
   </head>
   <body>
@@ -70,6 +70,9 @@
     </header>
 
     <div class="osis-wrap">
+      <div class="ww-cols">
+      <div class="ww-side">
+
       <div class="osis-hero" id="wwHero">
         <div class="osis-avatar"><i class="fa-solid fa-comments"></i></div>
         <div style="flex: 1; min-width: 180px">
@@ -100,9 +103,6 @@
         </div>
       </div>
 
-      <div class="ww-cols">
-      <div class="ww-side">
-
       <div id="wwDaftarSection">
         <div class="osis-panel" style="margin-bottom: 12px">
           <div class="ww-filter">
@@ -129,6 +129,7 @@
           </div>
         </div>
       </div>
+      </div>
       <div class="ww-main">
         <div id="wwDaftar">
           <div class="loading-block">
@@ -136,7 +137,6 @@
             Memuat daftar calon...
           </div>
         </div>
-      </div>
       </div>
       </div>
 

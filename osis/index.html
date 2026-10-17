@@ -30,7 +30,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-index.css?v=8" />
+    <link rel="stylesheet" href="../css/osis-index.css?v=11" />
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=14"></script>
     <script src="../js/db.js?v=27" defer></script>
@@ -159,6 +159,26 @@
           </a>
         </div>
       </div>
+
+      <div class="dash-panel">
+        <h3>
+          <i class="fa-solid fa-calendar-days"></i> Agenda Terdekat
+          <a class="go" href="agenda">Lihat semua →</a>
+        </h3>
+        <div id="agendaDekat">
+          <div class="dash-empty">Memuat agenda...</div>
+        </div>
+      </div>
+
+      <div class="dash-panel">
+        <h3>
+          <i class="fa-solid fa-folder-open"></i> Dokumen Terbaru
+          <a class="go" href="dokumen">Lihat semua →</a>
+        </h3>
+        <div id="dokBaru">
+          <div class="dash-empty">Memuat dokumen...</div>
+        </div>
+      </div>
       </div>
       <div class="dash-main">
 
@@ -199,51 +219,30 @@
         >
       </div>
 
-      <div class="dash-cols">
-        <div class="dash-panel">
-          <h3>
-            <i class="fa-solid fa-calendar-days"></i> Agenda Terdekat
-            <a class="go" href="agenda">Lihat semua →</a>
-          </h3>
-          <div id="agendaDekat">
-            <div class="dash-empty">Memuat agenda...</div>
-          </div>
-        </div>
-        <div class="dash-panel">
-          <h3>
-            <i class="fa-solid fa-wallet"></i> Keuangan Terakhir
-            <a class="go" href="keuangan">Lihat semua →</a>
-          </h3>
-          <div id="kasTerakhir">
-            <div class="dash-empty">Memuat keuangan...</div>
-          </div>
+      <div class="dash-panel">
+        <h3>
+          <i class="fa-solid fa-wallet"></i> Keuangan Terakhir
+          <a class="go" href="keuangan">Lihat semua →</a>
+        </h3>
+        <div id="kasTerakhir">
+          <div class="dash-empty">Memuat keuangan...</div>
         </div>
       </div>
 
-      <div class="dash-cols">
-        <div class="dash-panel">
-          <h3>
-            <i class="fa-solid fa-clipboard-user"></i> Absensi Terakhir
-            <a class="go" href="absensi">Lihat semua →</a>
-          </h3>
-          <div id="absensiTerakhir">
-            <div class="dash-empty">Memuat absensi...</div>
-          </div>
+      <div class="dash-panel">
+        <h3>
+          <i class="fa-solid fa-clipboard-user"></i> Absensi Terakhir
+          <a class="go" href="absensi">Lihat semua →</a>
+        </h3>
+        <div id="absensiTerakhir">
+          <div class="dash-empty">Memuat absensi...</div>
         </div>
-        <div class="dash-panel">
-          <h3>
-            <i class="fa-solid fa-folder-open"></i> Dokumen Terbaru
-            <a class="go" href="dokumen">Lihat semua →</a>
-          </h3>
-          <div id="dokBaru">
-            <div class="dash-empty">Memuat dokumen...</div>
-          </div>
-        </div>
-        <div class="dash-panel full">
-          <h3><i class="fa-solid fa-clock-rotate-left"></i> Aktivitas Terbaru</h3>
-          <div id="aktivitasList">
-            <div class="dash-empty">Memuat aktivitas...</div>
-          </div>
+      </div>
+
+      <div class="dash-panel">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Aktivitas Terbaru</h3>
+        <div id="aktivitasList">
+          <div class="dash-empty">Memuat aktivitas...</div>
         </div>
       </div>
       </div>

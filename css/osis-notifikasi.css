@@ -25,6 +25,14 @@
       .notif-preview b{display:block;font-size:.84rem;font-weight:800}
       .notif-preview span{display:block;font-size:.76rem;font-weight:500;opacity:.85;margin-top:2px;word-break:break-word}
       .notif-preview small{display:block;font-size:.62rem;opacity:.6;margin-top:4px}
+      /* Mobile: wrapper split tetap kasih jarak antar elemen */
+      .notif-cols,
+      .notif-side,
+      .notif-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
       /* Split 2 kolom desktop 50-50: kiri sticky, kanan scroll */
       @media (min-width: 900px) {
         .notif-cols {

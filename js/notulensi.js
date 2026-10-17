@@ -156,6 +156,7 @@ const Notulensi = {
     tampilSatu(a) {
         const wrap = document.getElementById("notulensiWrap");
         if (!wrap) return;
+        document.querySelector(".notulensi-cols")?.classList.add("notulensi-view");
         if (!a) {
             wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-circle-info"></i> Notulensi tidak ditemukan (mungkin sudah dihapus).</div>
                 <div style="text-align:center;margin-top:12px"><a class="btn btn-white btn-sm" href="notulensi"><i class="fa-solid fa-list"></i> Daftar notulensi</a></div>`;
@@ -286,6 +287,7 @@ const Notulensi = {
     tampilDaftar() {
         const wrap = document.getElementById("notulensiWrap");
         if (!wrap) return;
+        document.querySelector(".notulensi-cols")?.classList.remove("notulensi-view");
         const kelola = Notulensi.bolehKelola();
         const f = Notulensi.filter;
         const q = (f.q || "").trim().toLowerCase();

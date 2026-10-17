@@ -125,6 +125,39 @@
         transform: translate(1.5px, 1.5px);
         box-shadow: 0 0 0 var(--ink);
       }
+      /* Mobile: wrapper split tetap kasih jarak antar elemen */
+      .dash-split,
+      .dash-side,
+      .dash-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      /* Mobile: urutan tetap menu → stats → agenda → keuangan → absensi */
+      @media (max-width: 899px) {
+        .dash-side,
+        .dash-main {
+          display: contents;
+        }
+        .dash-main > .dash-stats {
+          order: 1;
+        }
+        .dash-side > .dash-panel:nth-child(3) {
+          order: 2;
+        }
+        .dash-main > .dash-panel:nth-child(2) {
+          order: 3;
+        }
+        .dash-main > .dash-panel:nth-child(3) {
+          order: 4;
+        }
+        .dash-side > .dash-panel:nth-child(4) {
+          order: 5;
+        }
+        .dash-main > .dash-panel:nth-child(4) {
+          order: 6;
+        }
+      }
       /* Split 2 kolom desktop (scroll bareng, tanpa sticky) */
       @media (min-width: 900px) {
         .dash-split {
@@ -139,6 +172,16 @@
           flex-direction: column;
           gap: 14px;
           min-width: 0;
+        }
+        /* Stat: 3 kartu atas, 2 lebih lebar di bawah biar gak sempit */
+        .dash-stats {
+          grid-template-columns: repeat(6, 1fr);
+        }
+        .dash-stat {
+          grid-column: span 2;
+        }
+        .dash-stat:nth-child(n+4) {
+          grid-column: span 3;
         }
       }
       /* Baris halaman di item visitor dashboard */

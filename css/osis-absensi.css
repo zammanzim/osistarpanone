@@ -449,6 +449,14 @@
         cursor: pointer;
         flex-shrink: 0;
       }
+      /* Mobile: wrapper split tetap kasih jarak antar elemen */
+      .absensi-cols,
+      .absensi-side,
+      .absensi-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
       /* Split 2 kolom desktop: kiri sticky, kanan scroll */
       @media (min-width: 900px) {
         .absensi-cols {

@@ -505,6 +505,14 @@
       .agenda-fotos img.bisa-klik {
         cursor: zoom-in;
       }
+      /* Mobile: wrapper split tetap kasih jarak antar elemen */
+      .agenda-cols,
+      .agenda-side,
+      .agenda-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
       /* Split 2 kolom desktop 50-50: kiri sticky, kanan scroll */
       @media (min-width: 900px) {
         .agenda-cols {

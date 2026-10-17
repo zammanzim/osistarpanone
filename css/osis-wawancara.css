@@ -852,6 +852,14 @@
         min-width: 0;
         overflow-wrap: anywhere;
       }
+      /* Mobile: wrapper split tetap kasih jarak antar elemen */
+      .ww-cols,
+      .ww-side,
+      .ww-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
       /* Split 2 kolom desktop 50-50: kiri sticky, kanan scroll */
       @media (min-width: 900px) {
         .ww-cols {

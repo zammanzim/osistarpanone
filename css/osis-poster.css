@@ -1,5 +1,13 @@
 /* osis-poster.css -- layout halaman poster (split 2 kolom desktop).
    Kiri sticky (hero), kanan scroll (feed). Mobile: 1 kolom normal. */
+/* Mobile: wrapper split tetap kasih jarak antar elemen */
+.poster-cols,
+.poster-side,
+.poster-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 @media (min-width: 900px) {
   .poster-cols {
     display: grid;

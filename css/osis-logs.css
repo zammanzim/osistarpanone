@@ -221,6 +221,14 @@
         font-weight: 700;
         color: var(--gray);
       }
+      /* Mobile: wrapper split tetap kasih jarak antar elemen */
+      .logs-cols,
+      .logs-side,
+      .logs-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
       /* Split 2 kolom desktop 50-50: kiri sticky, kanan scroll */
       @media (min-width: 900px) {
         .logs-cols {

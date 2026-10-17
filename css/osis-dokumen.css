@@ -129,52 +129,6 @@
       .folder-card.active small {
         color: var(--ink);
       }
-      .terbaru-card {
-        background: var(--ink);
-        color: #fff;
-        border: 3px solid var(--ink);
-        border-radius: 18px;
-        padding: 14px 16px;
-        box-shadow: 4px 4px 0 var(--red);
-      }
-      .terbaru-card h3 {
-        font-size: 0.8rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .terbaru-card h3 i {
-        color: var(--yellow);
-      }
-      .terbaru-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 7px 0;
-        border-bottom: 1px dashed rgba(255, 255, 255, 0.25);
-        font-size: 0.8rem;
-        font-weight: 700;
-        cursor: pointer;
-      }
-      .terbaru-item:last-child {
-        border-bottom: none;
-      }
-      .terbaru-item i {
-        color: var(--yellow);
-        width: 18px;
-        text-align: center;
-        flex-shrink: 0;
-      }
-      .terbaru-item small {
-        margin-left: auto;
-        font-weight: 600;
-        opacity: 0.7;
-        white-space: nowrap;
-      }
       .filter-card {
         background: var(--white);
         border: 3px solid var(--ink);
@@ -422,6 +376,14 @@
         border-radius: 10px;
         padding: 10px 12px;
         margin-top: 8px;
+      }
+      /* Mobile: wrapper split tetap kasih jarak antar elemen */
+      .dokumen-cols,
+      .dokumen-side,
+      .dokumen-main {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
       }
       /* Split 2 kolom desktop 50-50: kiri sticky, kanan scroll */
       @media (min-width: 900px) {

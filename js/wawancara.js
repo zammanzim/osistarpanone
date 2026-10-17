@@ -262,6 +262,7 @@ const Wawancara = {
         const hero = document.getElementById("wwHero");
         if (hero) hero.style.display = "";
         if (wrap) {
+            wrap.style.display = "";
             wrap.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat daftar calon...</div>`;
         }
         Wawancara.pasangFilter();
@@ -454,11 +455,13 @@ const Wawancara = {
             detail.style.display = "";
             detail.innerHTML = `<div class="loading-block"><div class="spinner"></div> Membuka wawancara...</div>`;
         }
-        // Masuk detail: hero + filter daftar disembunyikan (fokus ke calon).
+        // Masuk detail: hero + filter + daftar disembunyikan (fokus ke calon).
         const sec = document.getElementById("wwDaftarSection");
         if (sec) sec.style.display = "none";
         const hero = document.getElementById("wwHero");
         if (hero) hero.style.display = "none";
+        const list = document.getElementById("wwDaftar");
+        if (list) list.style.display = "none";
         try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
         try {
             const [calon, sesiSemua, tanya] = await Promise.all([
