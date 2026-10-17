@@ -306,7 +306,6 @@ const NavAtur = {
     });
     NavAtur.editKey = "tabs:" + (NavAtur.draft.tabs.length - 1);
     NavAtur.render();
-    setTimeout(() => document.getElementById("navF_label")?.focus(), 60);
   },
 
   tambahSheetHalaman() {
@@ -327,7 +326,6 @@ const NavAtur = {
     NavAtur.draft.sheet.push({ route, label, sub: "", icon: "fa-solid fa-link", short: label.slice(0, 12) });
     NavAtur.editKey = "sheet:" + (NavAtur.draft.sheet.length - 1);
     NavAtur.render();
-    setTimeout(() => document.getElementById("navF_label")?.focus(), 60);
   },
 
   tambahSheetLink() {
@@ -338,20 +336,12 @@ const NavAtur = {
     NavAtur.draft.sheet.push({ href: "https://", label: "Link Baru", sub: "", icon: "fa-solid fa-link", short: "Link" });
     NavAtur.editKey = "sheet:" + (NavAtur.draft.sheet.length - 1);
     NavAtur.render();
-    setTimeout(() => {
-      const el = document.getElementById("navF_href");
-      if (el) {
-        el.focus();
-        el.select();
-      }
-    }, 60);
   },
 
   // ---- form baris ----
   mulaiEdit(sek, i) {
     NavAtur.editKey = sek + ":" + i;
     NavAtur.render();
-    setTimeout(() => document.getElementById("navF_label")?.focus(), 60);
   },
 
   batalEdit() {

@@ -1272,10 +1272,6 @@ const Wawancara = {
                 </div>
             </div>`;
         Wawancara.updateNavProgress();
-        if (!bacaSaja) {
-            const ta = wrap.querySelector("textarea.ww-jawab");
-            if (ta) { try { ta.focus({ preventScroll: true }); } catch { try { ta.focus(); } catch {} } }
-        }
     },
 
     // ---- Navigasi nomor soal (di bawah kartu pertanyaan) ----
@@ -2615,7 +2611,6 @@ const Wawancara = {
             (daftarPew.length ? daftarPew : [null]).map(id => Wawancara.pewRowHtml(id, true)).join("");
         document.getElementById("wwCalonForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("wwCalonNama")?.focus(), 60);
     },
 
     tutupFormCalon() {
@@ -2750,7 +2745,6 @@ const Wawancara = {
         document.getElementById("wwTanyaTeks").value = p ? (p.teks || "") : "";
         document.getElementById("wwTanyaMode").value = dariKelola ? "kelola" : "sesi";
         document.getElementById("wwTanyaEdit").classList.add("open");
-        setTimeout(() => document.getElementById("wwTanyaTeks")?.focus(), 60);
     },
 
     tutupFormTanya() {

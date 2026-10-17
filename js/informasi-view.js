@@ -697,8 +697,6 @@ const InfoView = (function () {
       const el = document.getElementById(editingId === "baru" ? "infvCard_edit" : "infvCard_" + editingId);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
-        const f = el.querySelector('[data-field="judul"]');
-        if (f) f.focus({ preventScroll: true });
       }
     }, 60);
   }

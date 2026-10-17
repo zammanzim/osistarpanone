@@ -384,7 +384,6 @@ const Evaluasi = {
         Evaluasi.renderPreview();
         document.getElementById("evaluasiForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("evNama")?.focus(), 80);
     },
 
     edit(id) {
@@ -436,7 +435,6 @@ const Evaluasi = {
         Evaluasi.renderPreview();
         document.getElementById("evaluasiForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("evNama")?.focus(), 80);
     },
 
     tutupForm() {

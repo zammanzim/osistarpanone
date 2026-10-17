@@ -421,8 +421,6 @@ const Kegiatan = {
   buatDraft() {
     if (!OsisAuth.butuh("kegiatan")) return;
     if (Kegiatan.draft) {
-      const j = document.querySelector("#kegiatanGrid .draft-judul");
-      if (j) j.focus();
       return;
     }
     Kegiatan.draft = {
@@ -433,8 +431,6 @@ const Kegiatan = {
       files: [],
     };
     Kegiatan.render();
-    const j = document.querySelector("#kegiatanGrid .draft-judul");
-    if (j) j.focus();
     const card = document.querySelector("#kegiatanGrid .bento-block.draft");
     if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
   },

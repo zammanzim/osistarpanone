@@ -68,11 +68,6 @@ const Login = {
         const slider = document.getElementById("mainSlider");
         slider.classList.toggle("step-1", mode === "daftar");
         Login.aturTinggi();
-
-        setTimeout(() => {
-            if (mode === "daftar") document.getElementById("daftarUsername").focus();
-            else document.getElementById("loginUsername").focus();
-        }, 260);
     },
 
     setSibuk(sibuk) {

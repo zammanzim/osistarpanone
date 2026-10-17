@@ -390,7 +390,6 @@ const Dokumen = {
         Dokumen.renderFileInfo(item);
         document.getElementById("dokumenForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("dokNama")?.focus(), 80);
     },
 
     tutupForm() {

@@ -101,14 +101,10 @@ const Galeri = {
     buatDraft() {
         if (!OsisAuth.butuh("galeri")) return;
         if (Galeri.draft) {
-            const j = document.querySelector(".draft-judul");
-            if (j) j.focus();
             return;
         }
         Galeri.draft = { judul: "", deskripsi: "", files: [] };
         Galeri.render();
-        const j = document.querySelector(".draft-judul");
-        if (j) j.focus();
         const card = document.querySelector(".bento-block.draft");
         if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
     },

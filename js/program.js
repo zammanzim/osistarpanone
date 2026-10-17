@@ -325,7 +325,6 @@ const Program = {
         document.getElementById("progCatatan").value = "";
         document.getElementById("programForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("progNama")?.focus(), 80);
     },
 
     edit(id) {

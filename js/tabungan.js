@@ -601,7 +601,6 @@ const Tabungan = {
         Tabungan.renderNamaList();
         // Roster anggota buat daftar ketuk (cache dulu, segarkan background)
         Tabungan.muatAnggota().then(() => Tabungan.renderNamaList()).catch(() => {});
-        setTimeout(() => document.getElementById(prefillNama ? "tabNominal" : "tabNamaSearch")?.focus(), 80);
     },
 
     editRow(id) {

@@ -182,16 +182,9 @@ window.showPopup = function (msg, type = 'info', options = {}) {
         }
         overlay._uniPush = didPush;
 
-        // Animasi masuk + auto focus buat form
+        // Animasi masuk (tanpa auto focus — HP jangan langsung buka keyboard)
         setTimeout(() => {
             overlay.classList.add('active');
-            if (type === 'form') {
-                const firstInput = overlay.querySelector('input');
-                if (firstInput) {
-                    firstInput.focus();
-                    firstInput.select();
-                }
-            }
         }, 10);
 
         // Nilai "batal" untuk tiap tipe (dipakai ESC / klik-kosong / back / closePopup)

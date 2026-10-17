@@ -923,7 +923,6 @@ const Absensi = {
         Absensi.renderLangsung();
         await Absensi.muatAnggotaLangsung();
         Absensi.renderLangsung();
-        setTimeout(() => document.getElementById("langsungSearch")?.focus(), 80);
     },
 
     tutupLangsung() {

@@ -426,7 +426,6 @@ const Notulensi = {
         Notulensi.renderPreview();
         document.getElementById("notulensiForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("notJudul")?.focus(), 80);
     },
 
     edit(id) {
@@ -473,7 +472,6 @@ const Notulensi = {
         Notulensi.renderPreview();
         document.getElementById("notulensiForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("notJudul")?.focus(), 80);
     },
 
     tutupForm() {

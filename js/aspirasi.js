@@ -485,8 +485,6 @@ const Aspirasi = {
         const head = document.getElementById("headFormAspirasi");
         if (head) head.textContent = "Edit Aspirasi";
         if (head && head.scrollIntoView) head.scrollIntoView({ behavior: "smooth", block: "center" });
-        const isi = document.getElementById("isiAspirasi");
-        if (isi) isi.focus();
     },
 
     batalEdit() {

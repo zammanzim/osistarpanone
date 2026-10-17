@@ -441,8 +441,6 @@ const Arsip = {
   buatDraft() {
     if (!OsisAuth.butuh("kegiatan")) return;
     if (Arsip.draft) {
-      const j = document.querySelector("#arsipGrid .draft-judul");
-      if (j) j.focus();
       return;
     }
     Arsip.draft = {
@@ -453,8 +451,6 @@ const Arsip = {
       files: [],
     };
     Arsip.render();
-    const j = document.querySelector("#arsipGrid .draft-judul");
-    if (j) j.focus();
     const card = document.querySelector("#arsipGrid .bento-block.draft");
     if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
   },
@@ -1112,14 +1108,10 @@ const ArsipPelantikan = {
   buatDraft() {
     if (!OsisAuth.butuh("kegiatan")) return;
     if (ArsipPelantikan.draft) {
-      const j = document.querySelector("#pelantikanGrid .draft-judul");
-      if (j) j.focus();
       return;
     }
     ArsipPelantikan.draft = { judul: "", deskripsi: "", badge: "", files: [] };
     ArsipPelantikan.renderIsi();
-    const j = document.querySelector("#pelantikanGrid .draft-judul");
-    if (j) j.focus();
     const card = document.querySelector("#pelantikanGrid .bento-block.draft");
     if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
   },

@@ -315,7 +315,6 @@ const Formulir = {
         Formulir.renderBuilderMeta();
         Formulir.renderBuilder();
         Formulir.show("builder");
-        setTimeout(() => document.getElementById("bJudul")?.focus(), 60);
     },
 
     async bukaBuilder(id, langsungPreview) {

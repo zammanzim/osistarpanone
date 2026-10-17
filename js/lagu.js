@@ -472,8 +472,6 @@ const Lagu = {
         const head = document.getElementById("headFormLagu");
         if (head) head.textContent = "Edit Request Lagu";
         if (head && head.scrollIntoView) head.scrollIntoView({ behavior: "smooth", block: "center" });
-        const judul = document.getElementById("judulLagu");
-        if (judul) judul.focus();
     },
 
     batalEdit() {

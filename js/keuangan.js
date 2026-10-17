@@ -753,7 +753,6 @@ const Keuangan = {
     } catch {}
     document.getElementById("kasForm").classList.add("open");
     document.body.style.overflow = "hidden";
-    setTimeout(() => document.getElementById("kasNominal")?.focus(), 80);
   },
 
   edit(id) {

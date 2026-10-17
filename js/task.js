@@ -350,7 +350,6 @@ const Task = {
         document.getElementById("taskFormTitle").textContent = "Tambah Task";
         document.getElementById("taskForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("taskJudul")?.focus(), 80);
     },
 
     edit(id) {
@@ -381,7 +380,6 @@ const Task = {
         document.getElementById("taskFormTitle").textContent = "Edit Task";
         document.getElementById("taskForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("taskJudul")?.focus(), 80);
     },
 
     tutupForm() {

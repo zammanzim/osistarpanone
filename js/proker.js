@@ -301,7 +301,6 @@ const Proker = {
         Proker.renderPreview();
         document.getElementById("prokerForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("pkNama")?.focus(), 80);
     },
 
     edit(id) {
@@ -349,7 +348,6 @@ const Proker = {
         Proker.renderPreview();
         document.getElementById("prokerForm").classList.add("open");
         document.body.style.overflow = "hidden";
-        setTimeout(() => document.getElementById("pkNama")?.focus(), 80);
     },
 
     tutupForm() {

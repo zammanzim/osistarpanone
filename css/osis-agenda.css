@@ -505,6 +505,54 @@
       .agenda-fotos img.bisa-klik {
         cursor: zoom-in;
       }
+      /* Grid info detail: Tanggal / Tempat / Diunggah oleh (ringkas) */
+      .agenda-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        background: var(--paper);
+        border: 2.5px solid var(--ink);
+        border-radius: 14px;
+        box-shadow: 3px 3px 0 var(--ink);
+        overflow: hidden;
+        margin: 12px 0 4px;
+      }
+      .agenda-info-item {
+        padding: 9px 11px;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+      }
+      .agenda-info-ico {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        border: 2px solid var(--ink);
+        display: grid;
+        place-items: center;
+        font-size: 0.78rem;
+        flex-shrink: 0;
+      }
+      .ai-tgl { background: #e3edff; color: #2f6fed; }
+      .ai-tempat { background: #def5e3; color: #1a7f37; }
+      .ai-oleh { background: #ffedd6; color: #e07b00; }
+      .agenda-info-txt { min-width: 0; }
+      .agenda-info-lbl {
+        display: block;
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: var(--gray);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .agenda-info-item b {
+        display: block;
+        font-size: 0.84rem;
+        font-weight: 800;
+        line-height: 1.3;
+        color: var(--ink);
+        overflow-wrap: anywhere;
+      }
       /* Mobile: wrapper split tetap kasih jarak antar elemen */
       .agenda-cols,
       .agenda-side,

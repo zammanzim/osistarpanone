@@ -441,18 +441,26 @@ const AgendaAdmin = {
         const fotos = Array.isArray(a.fotos) ? a.fotos : [];
         AgendaAdmin.detailIdx = Math.max(0, Math.min(parseInt(idx, 10) || 0, fotos.length - 1));
         const tgl = a.tanggal ? new Date(a.tanggal).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "-";
-        const pel = String(a.pelaksana || "").trim();
+        const oleh = String(a.pengunggah || "").trim() || String(a.pelaksana || "").trim() || "Tidak diketahui";
         document.getElementById("agendaDetailBody").innerHTML = `
             <span class="agenda-sekbid-tag"><i class="fa-solid fa-folder-open"></i> ${escapeHtml(AgendaAdmin.namaSekbid(a.sekbid_id))}</span>
             <h3 style="font-size:1.05rem; font-weight:900; margin:6px 0 2px; overflow-wrap:anywhere">${escapeHtml(a.judul || "Tanpa judul")}</h3>
-            <div class="agenda-pelaksana"><i class="fa-solid fa-user"></i> ${escapeHtml(pel || "Tanpa pelaksana")}</div>
-            <div class="agenda-meta">
-                <span><i class="fa-solid fa-calendar"></i> ${escapeHtml(tgl)}</span>
-                <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(a.lokasi || "-")}</span>
-                ${olehLabel(a)}
+            <div class="agenda-info">
+                <div class="agenda-info-item">
+                    <span class="agenda-info-ico ai-tgl"><i class="fa-solid fa-calendar-days"></i></span>
+                    <div class="agenda-info-txt"><span class="agenda-info-lbl">Tanggal</span><b>${escapeHtml(tgl)}</b></div>
+                </div>
+                <div class="agenda-info-item">
+                    <span class="agenda-info-ico ai-tempat"><i class="fa-solid fa-location-dot"></i></span>
+                    <div class="agenda-info-txt"><span class="agenda-info-lbl">Tempat</span><b>${escapeHtml(a.lokasi || "-")}</b></div>
+                </div>
+                <div class="agenda-info-item">
+                    <span class="agenda-info-ico ai-oleh"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+                    <div class="agenda-info-txt"><span class="agenda-info-lbl">Diunggah oleh</span><b>${escapeHtml(oleh)}</b></div>
+                </div>
             </div>
-            ${a.deskripsi ? `<p style="font-size:0.88rem; line-height:1.6; margin:6px 0 2px; overflow-wrap:anywhere">${escapeHtml(a.deskripsi)}</p>` : ""}
-            <div class="agenda-detail-stage media-muat media-muat-tinggi">
+            ${a.deskripsi ? `<p style="font-size:0.9rem; font-weight:500; color:#2b2425; line-height:1.65; margin:10px 0 2px; overflow-wrap:anywhere">${escapeHtml(a.deskripsi)}</p>` : ""}
+            ${fotos.length ? `<div class="agenda-detail-stage media-muat media-muat-tinggi">
                 <img id="agendaDetailFoto" src="" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" alt="${escapeHtml(a.judul || "Foto agenda")}">
                 <span class="media-muat-loading" aria-hidden="true" style="z-index:auto"><span class="spinner"></span></span>${fotos.length > 1 ? `<button type="button" class="agenda-detail-nav prev" onclick="AgendaAdmin.fotoGeser(-1)" title="Sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
                 <button type="button" class="agenda-detail-nav next" onclick="AgendaAdmin.fotoGeser(1)" title="Berikutnya"><i class="fa-solid fa-chevron-right"></i></button>` : ""}
@@ -461,7 +469,7 @@ const AgendaAdmin = {
             ${fotos.length > 1 ? `<div class="agenda-detail-thumbs" id="agendaDetailThumbs">${fotos.map((f, fi) => {
                 const p = typeof f === "string" ? f : f.path;
                 return `<span class="media-muat mini" style="width:64px;height:64px;flex-shrink:0"><img src="${getFoto(p)}" alt="" loading="lazy" data-thumb="${fi}" style="width:64px;height:64px" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" onclick="AgendaAdmin.fotoPilih(${fi})"><span class="media-muat-loading" aria-hidden="true" style="border-radius:10px"><span class="spinner"></span></span></span>`;
-            }).join("")}</div>` : ""}`;
+            }).join("")}</div>` : ""}` : ""}`;
         AgendaAdmin.renderDetailFoto();
         document.getElementById("agendaDetail").classList.add("open");
         document.body.style.overflow = "hidden";
@@ -538,7 +546,6 @@ const AgendaAdmin = {
         document.getElementById("agendaForm").classList.add("open");
         document.body.style.overflow = "hidden";
         AgendaAdmin.render();
-        setTimeout(() => document.getElementById("agendaJudul")?.focus(), 80);
     },
 
     edit(id) {
@@ -569,7 +576,6 @@ const AgendaAdmin = {
         document.body.style.overflow = "hidden";
         AgendaAdmin.renderPreview();
         AgendaAdmin.render();
-        setTimeout(() => document.getElementById("agendaJudul")?.focus(), 80);
     },
 
     tutupForm() {
