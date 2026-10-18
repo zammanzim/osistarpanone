@@ -1,5 +1,29 @@
 [
   {
+    "version": "v6.6.1",
+    "date": "2026-10-18",
+    "type": "patch",
+    "commit": "unreleased",
+    "message": "Buang kolom mati sekbid_agenda.display_order",
+    "title": "Bersihkan display_order agenda",
+    "description": "Kolom sekbid_agenda.display_order isinya cuma default (756/757 baris = 99) dan gak dipakai UI (sortir pakai tanggal + created_at). Migrasi drop kolom + index idx_agenda_sekbid dibuat ulang tanpa kolom itu. RPC buat_agenda/update_agenda signature tetap, param p_display_order diabaikan biar cache PWA lama gak pecah. db.js berhenti select/kirim kolom, agenda.js + outbox.js ikut bersih. db.js?v=31, agenda.js?v=23, SW tarpan-v148.",
+    "filesChanged": 30,
+    "insertions": 210,
+    "deletions": 45
+  },
+  {
+    "version": "v6.6.0",
+    "date": "2026-10-18",
+    "type": "minor",
+    "commit": "unreleased",
+    "message": "Halaman Akun OSIS (CRUD osis_users)",
+    "title": "Halaman Akun OSIS",
+    "description": "Halaman khusus super_admin untuk kelola akun pengurus: daftar per angkatan, search, tambah/ubah/hapus via popup (username, nama, jabatan, angkatan, password awal); baris akun super diwarnai kuning + badge crown. 4 RPC baru dengan guard osis_is_super; reset password akun yang sudah tertaut Auth ditolak (ERR_LINKED, pakai tools/reset-password.mjs). Menu Akun OSIS masuk sidebar.",
+    "filesChanged": 30,
+    "insertions": 822,
+    "deletions": 42
+  },
+  {
     "version": "v6.5.1",
     "date": "2026-10-16",
     "type": "patch",

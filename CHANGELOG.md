@@ -5,9 +5,15 @@ Aturan versi (SemVer sederhana):
 - `vX.1.0` (minor) — fitur sedang, non-breaking: 1 halaman / 1 modul baru, migrasi SQL non-breaking.
 - `vX.0.0` (major) — perubahan besar / breaking: restruktur direktori, ganti sistem auth, hapus kode duplikat, modul inti baru.
 
-Versi berjalan: **v6.5.1** (2026-10-16). Total 45 entri (v1.0.0 → v6.5.1).
+Versi berjalan: **v6.6.1** (2026-10-18). Total 47 entri (v1.0.0 → v6.6.1).
 
 > Catatan: pesan commit asli banyak yang singkat (`mmm`, `serius`, `112`), jadi ringkasan di bawah diambil dari diff stat + daftar file, bukan cuma pesan commit.
+
+## [v6.6.1] — 2026-10-18 — patch
+- Buang kolom mati `sekbid_agenda.display_order`: isinya cuma default (756 dari 757 baris = 99), sortir agenda memang pakai `tanggal` desc + `created_at` desc. Migrasi `db/migrasi-hapus-display-order-agenda.sql` (drop kolom + index `idx_agenda_sekbid` dibuat ulang tanpa kolom itu, RPC `buat_agenda`/`update_agenda` signature tetap tapi `p_display_order` diabaikan biar cache PWA lama gak pecah). `js/db.js` berhenti select/kirim kolom, `js/agenda.js` + `js/outbox.js` ikut bersih. `db.js?v=31`, `agenda.js?v=23`, SW `tarpan-v148`. **Urutan deploy: apply migrasi dulu, baru push.**
+
+## [v6.6.0] — 2026-10-18 — minor
+- Halaman **Akun OSIS** (`osis/users.html`, `js/osis-users.js`) khusus super_admin: daftar akun dikelompokkan per angkatan + search + tambah/ubah/hapus via popup. Form: username, nama, jabatan (sekbid otomatis), angkatan, password awal (hanya akun baru). Baris akun super diwarnai kuning + badge crown (`aks-super`, `css/osis-akses.css?v=4`). 4 RPC baru (`osis_user_list`, `tambah_osis_user`, `update_osis_user`, `hapus_osis_user`) dengan guard `osis_is_super`; reset password akun yang sudah tertaut Auth ditolak (`ERR_LINKED`, pakai `tools/reset-password.mjs`). Menu "Akun OSIS" masuk sidebar (`site_content.sidebar_menu`), `db.js?v=30`, `osis-sidebar.js?v=45`, SW `tarpan-v147`.
 
 ## [v6.5.1] — 2026-10-16 — patch
 - Pindah semua `<style>` inline `osis/*.html` ke file sendiri (`css/osis-*.css`, 15 file, isi 1:1 visual sama). Tiap halaman tinggal `<link>` + SW precache `tarpan-v88` (sekalian masukin `osis2.css` yang kelewat).

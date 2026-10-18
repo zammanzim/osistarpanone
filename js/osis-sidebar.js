@@ -18,6 +18,7 @@ const OsisSidebar = {
   // muncul otomatis tiap nilai "grup" berubah (mis. Umum / Sekretaris).
   DEFAULT_MENU: [
     { href: "akses", label: "Akses", icon: "fa-solid fa-key", super: true, grup: "Super Admin" },
+    { href: "users", label: "Akun OSIS", icon: "fa-solid fa-user-gear", super: true, grup: "Super Admin" },
     { href: "logs", label: "Logs", icon: "fa-solid fa-clock-rotate-left", super: true, grup: "Super Admin" },
     { href: "notifikasi", label: "Kirim Notifikasi", icon: "fa-solid fa-paper-plane", super: true, grup: "Super Admin" },
     { href: "index", label: "Dashboard", icon: "fa-solid fa-grip", grup: "Umum" },
@@ -53,6 +54,7 @@ const OsisSidebar = {
     ["program-bulanan", "Program Bulanan", "fa-solid fa-calendar-days"],
     ["profil", "Profil Saya", "fa-solid fa-circle-user"],
     ["akses", "Akses", "fa-solid fa-key", "super"],
+    ["users", "Akun OSIS", "fa-solid fa-user-gear", "super"],
     ["logs", "Logs", "fa-solid fa-clock-rotate-left", "super"],
     ["notifikasi", "Notifikasi", "fa-solid fa-paper-plane", "super"],
   ],

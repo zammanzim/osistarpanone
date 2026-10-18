@@ -100,6 +100,9 @@
         transform: translate(2px, 2px);
         box-shadow: 1px 1px 0 var(--ink);
       }
+      /* Penanda akun super admin (dipakai halaman Akun OSIS) */
+      .aks-row.aks-super { background: var(--yellow); }
+      .aks-row.aks-super .ava { background: var(--white); }
       .aks-row .ava {
         width: 38px;
         height: 38px;

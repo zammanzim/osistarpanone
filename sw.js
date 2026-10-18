@@ -3,7 +3,7 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v146";
+const VERSI = "tarpan-v148";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 
@@ -52,6 +52,7 @@ const APP_SHELL = [
   "./osis/poster.html",
   "./osis/profil.html",
   "./osis/tabungan.html",
+  "./osis/users.html",
   "./osis/wawancara.html",
   "./js/supabase.min.js",
   "./js/config.js",
@@ -93,6 +94,7 @@ const APP_SHELL = [
   "./js/osis-visitor.js",
   "./js/osis-menu.js",
   "./js/osis-sidebar.js",
+  "./js/osis-users.js",
   "./js/polling.js",
   "./js/poster.js",
   "./js/prestasi.js",

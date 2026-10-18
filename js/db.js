@@ -2539,7 +2539,7 @@ async function getAgendaBySekbid(sekbidId, limit, offset) {
   let q = supa
     .from("sekbid_agenda")
     .select(
-      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, pengunggah, created_at",
+      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pelaksana, pengunggah, created_at",
     )
     .eq("sekbid_id", sekbidId)
     .order("tanggal", { ascending: false })
@@ -2553,7 +2553,7 @@ async function getAllAgenda(limit, offset) {
   let q = supa
     .from("sekbid_agenda")
     .select(
-      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, display_order, pelaksana, pengunggah, created_at",
+      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pelaksana, pengunggah, created_at",
     )
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
@@ -2571,7 +2571,6 @@ async function buatAgenda(
   lokasi,
   status,
   fotos,
-  order = 99,
   pelaksana = "",
 ) {
   const { data, error } = await supa.rpc("buat_agenda", {
@@ -2583,7 +2582,6 @@ async function buatAgenda(
     p_lokasi: lokasi,
     p_status: status,
     p_fotos: fotos,
-    p_display_order: order,
     p_pelaksana: pelaksana || "",
   });
   if (error) throw error;
@@ -2601,7 +2599,6 @@ async function updateAgenda(
   lokasi,
   status,
   fotos,
-  order,
   pelaksana = "",
 ) {
   const { data, error } = await supa.rpc("update_agenda", {
@@ -2613,7 +2610,6 @@ async function updateAgenda(
     p_lokasi: lokasi,
     p_status: status,
     p_fotos: fotos,
-    p_display_order: order,
     p_pelaksana: pelaksana || "",
   });
   if (error) throw error;
@@ -3184,6 +3180,63 @@ async function aksesMatriks(adminId) {
   if (error) throw error;
   if (data && data.error) throw new Error(data.error);
   return data || [];
+}
+
+// =========================================================================
+// AKUN OSIS (osis_users) — halaman osis/users.html, KHUSUS super_admin.
+// RPC: osis_user_list / tambah_osis_user / update_osis_user / hapus_osis_user.
+// Semua tulis balikin 'OK' / id baru (text) / kode 'ERR_*'; modul halaman yang
+// nerjemahin jadi pesan. Tabel osis_users gak punya policy tulis (RLS), jadi
+// jangan pernah INSERT/UPDATE/DELETE langsung dari client.
+// =========================================================================
+
+// Daftar akun + status taut Auth + super + sekbid otomatis dari jabatan.
+async function osisUserList(adminId) {
+  const { data, error } = await supa.rpc("osis_user_list", { p_user_id: adminId });
+  if (error) throw error;
+  if (data && data.error) throw new Error(data.error);
+  return data || [];
+}
+
+// Tambah akun. Password awal = plaintext LEGACY buat klaim login pertama
+// (boleh '' = akun dibuat tapi belum bisa login sampai diisi).
+async function tambahOsisUser(adminId, f) {
+  const { data, error } = await supa.rpc("tambah_osis_user", {
+    p_user_id: adminId,
+    p_username: f.username,
+    p_nama: f.nama,
+    p_jabatan: f.jabatan || "",
+    p_angkatan: f.angkatan || "",
+    p_password: f.password || "",
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Ubah akun. password = null -> tidak diubah; hanya berlaku untuk baris yang
+// belum tertaut Auth (kalau sudah tertaut server balas ERR_LINKED).
+async function updateOsisUser(adminId, id, f, password = null) {
+  const { data, error } = await supa.rpc("update_osis_user", {
+    p_user_id: adminId,
+    p_id: id,
+    p_username: f.username,
+    p_nama: f.nama,
+    p_jabatan: f.jabatan || "",
+    p_angkatan: f.angkatan || "",
+    p_password: password,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Hapus akun (baris + akses + status super by username). Akun Auth dibiarkan.
+async function hapusOsisUser(adminId, id) {
+  const { data, error } = await supa.rpc("hapus_osis_user", {
+    p_user_id: adminId,
+    p_id: id,
+  });
+  if (error) throw error;
+  return data;
 }
 
 // =========================================================================

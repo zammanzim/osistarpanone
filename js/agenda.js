@@ -698,10 +698,6 @@ const AgendaAdmin = {
             ? (String((itemEdit && itemEdit.pelaksana) || "").trim() || AgendaAdmin.namaSaya())
             : AgendaAdmin.namaSaya();
         // Tanpa urutan manual: tampilan selalu tanggal terbaru -> terlama.
-        // Kolom display_order tetap diisi default agar RPC lama tetap valid.
-        // (0 itu order valid, jangan pakai || 99)
-        const _ord = parseInt(itemEdit && itemEdit.display_order, 10);
-        const order = Number.isFinite(_ord) ? _ord : 99;
 
         if (!judul) { showToast("Judul wajib diisi", "error"); return; }
         if (!sekbidId) { showToast("Jabatanmu tidak cocok sekbid manapun — hubungi admin.", "error"); return; }
@@ -713,7 +709,7 @@ const AgendaAdmin = {
         const __spec = () => ({ modul: "agenda", op: id ? "update" : "create",
             label: "Agenda: " + String(judul).slice(0, 42),
             payload: { id: id || null, sekbid_id: sekbidId, judul, deskripsi, tanggal, lokasi,
-                status, pelaksana, order, fotosExisting: [...(AgendaAdmin.existingFotos || [])] },
+                status, pelaksana, fotosExisting: [...(AgendaAdmin.existingFotos || [])] },
             files: (AgendaAdmin.pendingFiles || []).filter(fl => fl.type && fl.type.startsWith("image/"))
                 .map((fl, i) => ({ slot: "foto" + i, file: fl, name: fl.name, type: fl.type })),
             cacheKeys: ["agenda_all", "agenda_*"] });
@@ -750,10 +746,10 @@ const AgendaAdmin = {
             }
 
             if (id) {
-                await updateAgenda(u.id, id, judul, deskripsi, tanggal, lokasi, status, fotos, order, pelaksana);
+                await updateAgenda(u.id, id, judul, deskripsi, tanggal, lokasi, status, fotos, pelaksana);
                 showToast("Agenda diperbarui!", "success");
             } else {
-                const newId = await buatAgenda(u.id, sekbidId, judul, deskripsi, tanggal, lokasi, status, fotos, order, pelaksana);
+                const newId = await buatAgenda(u.id, sekbidId, judul, deskripsi, tanggal, lokasi, status, fotos, pelaksana);
                 if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
                 showToast("Agenda ditambah!", "success");
             }
