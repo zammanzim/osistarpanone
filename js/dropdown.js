@@ -22,6 +22,16 @@
     return Array.prototype.slice.call((r || document).querySelectorAll(s));
   }
 
+  // Peranti sentuh (HP/tablet): keyboard layar nyembul kalau input
+  // search langsung difokus -> jangan autofocus di sana.
+  function perantiSentuh() {
+    try {
+      return window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    } catch (e) {
+      return "ontouchstart" in window;
+    }
+  }
+
   // Select layak di-enhance?
   function layak(sel) {
     if (!sel || sel.tagName !== "SELECT") return false;
@@ -252,11 +262,13 @@
         btn.setAttribute("aria-expanded", "true");
         TERBUKA = w;
         segarkan(w);
-        // search dikosongin tiap buka; JANGAN autofocus (keyboard
-        // mobile nyembul = ganggu). user tap sendiri kalau butuh.
+        // search dikosongin tiap buka.
         if (boxCari.style.display !== "none") {
           inp.value = "";
           renderOpsi(w, sel, bacaOpsi(sel), "");
+          // Desktop: langsung siap ketik. Mobile: JANGAN focus,
+          // keyboard layar nyembul = ganggu.
+          if (!perantiSentuh()) inp.focus({ preventScroll: true });
         }
       }
     });
