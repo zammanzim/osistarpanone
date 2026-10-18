@@ -707,10 +707,10 @@
       await uploadBanyak(op, uid, "agenda", "agenda-"),
     );
     if (op.op === "update" && p.id) {
-      await updateAgenda(uid, p.id, p.judul, p.deskripsi, p.tanggal, p.lokasi, p.status, fotos, p.pelaksana);
+      await updateAgenda(uid, p.id, p.judul, p.deskripsi, p.tanggal, p.lokasi, p.status, fotos);
     } else {
       if (!p.sekbid_id) throw new Error("Sekbid tidak kesimpan di antrean.");
-      await buatAgenda(uid, p.sekbid_id, p.judul, p.deskripsi, p.tanggal, p.lokasi, p.status, fotos, p.pelaksana);
+      await buatAgenda(uid, p.sekbid_id, p.judul, p.deskripsi, p.tanggal, p.lokasi, p.status, fotos);
     }
   };
 

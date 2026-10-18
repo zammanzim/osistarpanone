@@ -2539,7 +2539,7 @@ async function getAgendaBySekbid(sekbidId, limit, offset) {
   let q = supa
     .from("sekbid_agenda")
     .select(
-      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pelaksana, pengunggah, created_at",
+      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pengunggah, created_at",
     )
     .eq("sekbid_id", sekbidId)
     .order("tanggal", { ascending: false })
@@ -2553,7 +2553,7 @@ async function getAllAgenda(limit, offset) {
   let q = supa
     .from("sekbid_agenda")
     .select(
-      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pelaksana, pengunggah, created_at",
+      "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pengunggah, created_at",
     )
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
@@ -2571,7 +2571,6 @@ async function buatAgenda(
   lokasi,
   status,
   fotos,
-  pelaksana = "",
 ) {
   const { data, error } = await supa.rpc("buat_agenda", {
     p_user_id: userId,
@@ -2582,7 +2581,6 @@ async function buatAgenda(
     p_lokasi: lokasi,
     p_status: status,
     p_fotos: fotos,
-    p_pelaksana: pelaksana || "",
   });
   if (error) throw error;
   cekId(data);
@@ -2599,7 +2597,6 @@ async function updateAgenda(
   lokasi,
   status,
   fotos,
-  pelaksana = "",
 ) {
   const { data, error } = await supa.rpc("update_agenda", {
     p_user_id: userId,
@@ -2610,7 +2607,6 @@ async function updateAgenda(
     p_lokasi: lokasi,
     p_status: status,
     p_fotos: fotos,
-    p_pelaksana: pelaksana || "",
   });
   if (error) throw error;
   cekOk(data);

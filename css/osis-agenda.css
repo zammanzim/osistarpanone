@@ -158,21 +158,6 @@
         padding: 2px 10px;
         box-shadow: 2px 2px 0 var(--ink);
       }
-      .pelaksana-chips {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin-bottom: 10px;
-      }
-      .pchip {
-        background: var(--paper-2);
-        border: 2px solid var(--ink);
-        border-radius: 999px;
-        font-size: 0.68rem;
-        font-weight: 800;
-        padding: 3px 10px;
-      }
-      .pchip b { color: var(--red); }
       /* Podium per orang */
       .podium {
         display: grid;
@@ -244,7 +229,7 @@
         font-size: 0.95rem;
         font-weight: 900;
       }
-      .agenda-pelaksana {
+      .agenda-oleh {
         font-size: 0.74rem;
         font-weight: 800;
         color: var(--ink);
@@ -253,7 +238,7 @@
         gap: 6px;
         margin: 2px 0 6px;
       }
-      .agenda-pelaksana i { color: var(--red); }
+      .agenda-oleh i { color: var(--red); }
       .agenda-sekbid-tag {
         display: inline-block;
         background: var(--paper-2);
