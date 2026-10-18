@@ -41,7 +41,7 @@ Detail lengkap tiap modul ada di `project-analysis.md`. Kalau butuh peta 53 file
 - **Gak ada unit test otomatis.** Verifikasi = buka di browser, cek console, cek network ke Supabase/R2.
 - **Deploy** = commit + push ke `main`. GitHub Pages yang serve. Jangan bikin folder `dist/` atau proses build.
 - **PWA:** kalau nambah/rename file yang di-precache `sw.js`, langsung aja precache + wajib naikkan versi cache (`tarpan-vXX`) biar user gak stuck di cache lama. Gak perlu tanya dulu.
-- **Versi:** ikuti aturan di `CHANGELOG.md` — patch `vX.X.1` (fix kecil), minor `vX.1.0` (1 fitur/modul), major `vX.0.0` (breaking / restruktur / ganti auth). Tiap rilis update `CHANGELOG.md` + `changelog.json` / tabel changelog di DB.
+- **Versi:** patch `vX.X.1` (fix kecil), minor `vX.1.0` (1 fitur/modul), major `vX.0.0` (breaking / restruktur / ganti auth). Tiap rilis catat ke tabel `changelog` di DB (halaman `/changelog`, hak `changelog`). Gak ada file changelog lokal — DB satu-satunya sumber.
 
 ## 4. Aturan kerja AI (wajib)
 

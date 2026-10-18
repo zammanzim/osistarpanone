@@ -1,6 +1,6 @@
 // =========================================================================
 // CHANGELOG — daftar versi DB-driven, bisa diedit langsung di halaman.
-// Publik: baca bebas (DB → fallback changelog.json offline).
+// Publik: baca bebas dari tabel changelog DB (cache lokal buat offline).
 // Kelola inline (tambah/ubah/hapus): tombol muncul kalau login OSIS
 // dengan hak "changelog" (super_admin selalu bisa).
 // =========================================================================
@@ -248,15 +248,7 @@
     }
   }
 
-  async function dariJson() {
-    var res = await fetch("./changelog.json", { cache: "no-cache" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    var j = await res.json();
-    if (!Array.isArray(j) || !j.length) throw new Error("json kosong");
-    return j;
-  }
-
-  // kunci dedupe: id DB kalau ada, kalau dari JSON pakai versi
+  // kunci dedupe: id DB kalau ada, fallback versi (cache lama)
   function kunciCl(r) {
     return (r && r._id != null) ? ("id:" + r._id) : ("v:" + String((r && r.version) || ""));
   }
@@ -317,12 +309,12 @@
     }
     try {
       if (awal) {
-        // 1) DB dulu (publik, tanpa login). 2) fallback file JSON (precache offline).
+        // DB dulu (publik, tanpa login). Gagal = lempar ke catch (pulihkan cache).
         var rows = null, dariDb = false;
         try {
           if (typeof getChangelogList === "function") { rows = await getChangelogList(PER_PAGE, 0); dariDb = true; }
         } catch (e1) { rows = null; dariDb = false; }
-        if (!rows || !rows.length) { rows = await dariJson(); dariDb = false; }
+        if (!dariDb) throw new Error("DB changelog tidak tersedia");
         gabung(rows);
         offset = semua.length;
         if (!dariDb || rows.length < PER_PAGE) {
