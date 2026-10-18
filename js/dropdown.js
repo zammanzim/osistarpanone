@@ -32,13 +32,16 @@
     return true;
   }
 
-  // Ambil opsi sebagai array {value, label, disabled}
+  // Ambil opsi sebagai array {value, label, disabled, grup}
+  // grup = label <optgroup> induknya (kosong kalau opsi bebas).
   function bacaOpsi(sel) {
     return $all("option", sel).map(function (op) {
+      var induk = op.parentElement;
       return {
         value: op.value,
         label: (op.textContent || "").trim() || op.value || "—",
         disabled: op.disabled,
+        grup: induk && induk.tagName === "OPTGROUP" ? (induk.label || "").trim() : "",
       };
     });
   }
@@ -95,8 +98,16 @@
     var kw = (keyword || "").trim().toLowerCase();
     box.innerHTML = "";
     var n = 0;
+    var grupTerakhir = null;
     daftar.forEach(function (op) {
       if (kw && op.label.toLowerCase().indexOf(kw) < 0) return;
+      if (op.grup && op.grup !== grupTerakhir) {
+        var h = document.createElement("div");
+        h.className = "dd-grup";
+        h.textContent = op.grup;
+        box.appendChild(h);
+      }
+      grupTerakhir = op.grup;
       n++;
       var b = document.createElement("button");
       b.type = "button";

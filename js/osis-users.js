@@ -13,6 +13,7 @@
 const OsisUsers = {
     CACHE: "osis_users",
     rows: [],
+    sekbidList: [],
     q: "",
     saya: null,
 
@@ -206,6 +207,41 @@ const OsisUsers = {
             grup[k].map(kartu).join("")).join("");
     },
 
+    // ============ JABATAN (dropdown dari tabel sekbid) ============
+    // Lazy + cache: online ambil getSekbid(), offline pakai Cache.get("sekbid").
+    async muatSekbid() {
+        if (OsisUsers.sekbidList.length) return;
+        try {
+            const list = await getSekbid();
+            if (Array.isArray(list) && list.length) {
+                OsisUsers.sekbidList = list;
+                Cache.set("sekbid", list);
+            }
+        } catch {}
+        if (!OsisUsers.sekbidList.length) {
+            const cached = Cache.get("sekbid");
+            if (Array.isArray(cached)) OsisUsers.sekbidList = cached;
+        }
+    },
+
+    // Opsi dropdown dari sekbid.nama. Nilai lama yang tidak ada di daftar
+    // (mis. "Pembina") tetap dimunculkan biar tidak hilang saat edit.
+    opsiJabatan(item) {
+        if (!OsisUsers.sekbidList.length) return null;
+        const opts = OsisUsers.sekbidList
+            .filter((s) => s && String(s.nama || "").trim())
+            .map((s) => ({
+                value: String(s.nama),
+                label: (s.kategori ? s.kategori + " · " : "") + s.nama,
+            }));
+        opts.unshift({ value: "", label: "— Pilih jabatan —" });
+        const cur = item ? String(item.jabatan || "").trim() : "";
+        if (cur && !opts.some((o) => o.value === cur)) {
+            opts.push({ value: cur, label: cur + " (di luar daftar sekbid)" });
+        }
+        return opts;
+    },
+
     // ============ TAMBAH / EDIT (popup form bawaan) ============
     async bukaForm(id) {
         const u = OsisAuth.getUser && OsisAuth.getUser();
@@ -217,6 +253,8 @@ const OsisUsers = {
         const item = id ? OsisUsers.rows.find((r) => String(r.id) === String(id)) : null;
         if (id && !item) return;
 
+        await OsisUsers.muatSekbid();
+        const jabatanOpts = OsisUsers.opsiJabatan(item);
         const bisaPassword = !item || !item.tertaut;
         const fields = [
             {
@@ -229,11 +267,17 @@ const OsisUsers = {
                 placeholder: "cth: Asep Muhammad",
                 value: item ? (item.nama || "") : "",
             },
-            {
-                name: "jabatan", label: "Jabatan (sekbid otomatis dari jabatan)", type: "text",
-                placeholder: "cth: Ketua Sekbid 1 / Bendahara / Pembina",
-                value: item ? (item.jabatan || "") : "",
-            },
+            jabatanOpts
+                ? {
+                    name: "jabatan", label: "Jabatan / seksi bidang (sekbid otomatis)", type: "select",
+                    options: jabatanOpts,
+                    value: item ? String(item.jabatan || "").trim() : "",
+                }
+                : {
+                    name: "jabatan", label: "Jabatan (sekbid otomatis dari jabatan)", type: "text",
+                    placeholder: "cth: Ketua Sekbid 1 / Bendahara / Pembina",
+                    value: item ? (item.jabatan || "") : "",
+                },
             {
                 name: "angkatan", label: "Angkatan / periode", type: "text",
                 placeholder: "cth: ADIABI JILID 4",
@@ -266,6 +310,7 @@ const OsisUsers = {
             return;
         }
         if (!nama) { showToast("Nama wajib diisi.", "error"); return; }
+        if (jabatanOpts && !jabatan) { showToast("Pilih jabatan dulu.", "error"); return; }
         if (bisaPassword && pwRaw && pwRaw.length < 6) {
             showToast("Password minimal 6 karakter (atau kosongkan).", "error");
             return;

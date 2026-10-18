@@ -224,10 +224,12 @@
         border-radius: 14px;
         padding: 12px 14px;
         box-shadow: 3px 3px 0 var(--ink);
+        position: relative;
       }
       .agenda-card h4 {
         font-size: 0.95rem;
         font-weight: 900;
+        padding-right: 30px;
       }
       .agenda-oleh {
         font-size: 0.74rem;
@@ -248,14 +250,43 @@
         font-weight: 800;
         padding: 2px 10px;
         margin-bottom: 6px;
+        max-width: calc(100% - 44px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .agenda-meta {
-        font-size: 0.72rem;
-        color: var(--gray);
         display: flex;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
         margin: 4px 0 8px;
+      }
+      .agenda-meta .a-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--paper-2);
+        border: 2px solid var(--ink);
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--ink);
+      }
+      .agenda-meta .a-chip i {
+        color: var(--red);
+        font-size: 0.66rem;
+        flex-shrink: 0;
+      }
+      .agenda-meta .a-chip.lok i { color: var(--green); }
+      .agenda-desk {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.5;
+        margin: 4px 0 8px;
+        padding: 2px 0 2px 10px;
+        border-left: 4px solid var(--yellow);
       }
       .agenda-fotos {
         display: flex;
@@ -272,10 +303,100 @@
         border-radius: 10px;
         display: block;
       }
-      .agenda-actions {
+      .agenda-kebab {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+      .kb-btn {
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        background: var(--white);
+        border: 2px solid var(--ink);
+        border-radius: 9px;
+        box-shadow: 2px 2px 0 var(--ink);
+        color: var(--ink);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition:
+          transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1),
+          background 0.15s;
+      }
+      .kb-btn:hover { background: var(--paper-2); }
+      .agenda-kebab.buka .kb-btn { transform: rotate(90deg); }
+      .kb-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        min-width: 136px;
+        background: var(--white);
+        border: 2px solid var(--ink);
+        border-radius: 12px;
+        box-shadow: 3px 3px 0 var(--ink);
+        padding: 4px;
         display: flex;
-        gap: 6px;
-        margin-top: 8px;
+        flex-direction: column;
+        gap: 2px;
+        z-index: 30;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px) scale(0.96);
+        transform-origin: top right;
+        pointer-events: none;
+        transition:
+          opacity 0.18s ease,
+          transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1),
+          visibility 0.18s;
+      }
+      .agenda-kebab.buka .kb-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        pointer-events: auto;
+      }
+      .kb-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        border: none;
+        background: transparent;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-family: inherit;
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: var(--ink);
+        cursor: pointer;
+        text-align: left;
+        opacity: 0;
+        transform: translateX(10px);
+        transition:
+          opacity 0.16s ease,
+          transform 0.2s ease,
+          background 0.12s;
+      }
+      .agenda-kebab.buka .kb-item {
+        opacity: 1;
+        transform: none;
+      }
+      /* Cascade delay per item (samain kayak header more menu). */
+      .agenda-kebab.buka .kb-item:nth-child(1) { transition-delay: 40ms; }
+      .agenda-kebab.buka .kb-item:nth-child(2) { transition-delay: 100ms; }
+      .kb-item:hover { background: var(--paper-2); }
+      .kb-item.hapus { color: var(--red); }
+      .kb-item.hapus:hover { background: #fdeceb; }
+      @media (prefers-reduced-motion: reduce) {
+        .kb-btn,
+        .kb-menu,
+        .kb-item { transition: none; }
+        .agenda-kebab.buka .kb-btn { transform: none; }
+        .kb-menu,
+        .agenda-kebab.buka .kb-menu { transform: none; }
+        .kb-item,
+        .agenda-kebab.buka .kb-item { transform: none; }
       }
       /* Popup form tambah/edit */
       .agenda-form {

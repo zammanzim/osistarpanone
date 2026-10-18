@@ -7570,6 +7570,17 @@ body.edit-mode .prestasi-card .foto-del-btn {
   opacity: 0.45;
   cursor: not-allowed;
 }
+.dd-grup {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--yellow);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
 .dd-kosong {
   padding: 12px;
   font-size: 0.78rem;

@@ -1,5 +1,17 @@
 [
   {
+    "version": "v6.6.2",
+    "date": "2026-10-18",
+    "type": "patch",
+    "commit": "unreleased",
+    "message": "Dropdown jabatan dari tabel sekbid (halaman Akun OSIS)",
+    "title": "Dropdown jabatan Akun OSIS",
+    "description": "Field jabatan di form akun OSIS jadi dropdown dari tabel sekbid (label kategori · nama), nilai lama di luar daftar tetap dimunculkan biar tidak hilang saat edit. sekbid_id tetap dihitung otomatis di server. osis-users.js?v=2, SW tarpan-v150.",
+    "filesChanged": 5,
+    "insertions": 68,
+    "deletions": 8
+  },
+  {
     "version": "v6.6.1",
     "date": "2026-10-18",
     "type": "patch",

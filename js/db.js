@@ -2093,10 +2093,10 @@ async function osisKasRingkas(userId, scope) {
   }
 }
 // Angka statistik agenda dari server. Sama: null bila RPC belum ada.
-async function sekbidAgendaRingkas(userId, sekbidId) {
+async function sekbidAgendaRingkas(userId, sekbidId, nama) {
   try {
     const { data, error } = await supa.rpc("sekbid_agenda_ringkas", {
-      p_user_id: userId, p_sekbid_id: sekbidId || null,
+      p_user_id: userId, p_sekbid_id: sekbidId || null, p_nama: nama || null,
     });
     if (error) throw error;
     if (!data || data.error) throw new Error((data && data.error) || "ERR_RINGKAS");
@@ -2535,7 +2535,7 @@ async function kirimRespons(formId, jawaban, userId) {
 // =========================================================================
 // AGENDA PER SEKBID - DB-driven (judul, deskripsi, tanggal, lokasi, status, fotos)
 // =========================================================================
-async function getAgendaBySekbid(sekbidId, limit, offset) {
+async function getAgendaBySekbid(sekbidId, limit, offset, nama) {
   let q = supa
     .from("sekbid_agenda")
     .select(
@@ -2544,12 +2544,13 @@ async function getAgendaBySekbid(sekbidId, limit, offset) {
     .eq("sekbid_id", sekbidId)
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
+  if (nama) q = q.eq("pengunggah", nama);
   q = terapkanRange(q, limit, offset);
   const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
-async function getAllAgenda(limit, offset) {
+async function getAllAgenda(limit, offset, nama) {
   let q = supa
     .from("sekbid_agenda")
     .select(
@@ -2557,10 +2558,36 @@ async function getAllAgenda(limit, offset) {
     )
     .order("tanggal", { ascending: false })
     .order("created_at", { ascending: false });
+  if (nama) q = q.eq("pengunggah", nama);
   q = terapkanRange(q, limit, offset);
   const { data, error } = await q;
   if (error) throw error;
   return data || [];
+}
+// Daftar pengurus buat filter "nama" di halaman agenda: [{nama, sekbid_id, angkatan}].
+// sekbid dari osis_users.sekbid_id; kalau kosong dicocokin dari jabatan ke
+// nama sekbid (mis. jabatan "Kewirausahaan" -> sekbid 14).
+async function getNamaPengurus() {
+  const [usersRes, sekbidRes] = await Promise.all([
+    supa.from("osis_users").select("nama, jabatan, sekbid_id, angkatan").order("nama", { ascending: true }),
+    supa.from("sekbid").select("id, nama"),
+  ]);
+  if (usersRes.error) throw usersRes.error;
+  if (sekbidRes.error) throw sekbidRes.error;
+  const byJabatan = {};
+  (sekbidRes.data || []).forEach(s => {
+    const key = String(s.nama || "").trim().toLowerCase();
+    if (key && !(key in byJabatan)) byJabatan[key] = s.id;
+  });
+  const uniq = {};
+  (usersRes.data || []).forEach(r => {
+    const nama = String(r.nama || "").trim();
+    if (!nama || uniq[nama]) return;
+    const jab = String(r.jabatan || "").trim().toLowerCase();
+    const sb = r.sekbid_id != null ? parseInt(r.sekbid_id, 10) : byJabatan[jab];
+    uniq[nama] = { nama, sekbid_id: Number.isFinite(sb) ? sb : null, angkatan: String(r.angkatan || "").trim() };
+  });
+  return Object.values(uniq);
 }
 async function buatAgenda(
   userId,

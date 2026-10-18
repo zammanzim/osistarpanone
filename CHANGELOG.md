@@ -5,9 +5,12 @@ Aturan versi (SemVer sederhana):
 - `vX.1.0` (minor) — fitur sedang, non-breaking: 1 halaman / 1 modul baru, migrasi SQL non-breaking.
 - `vX.0.0` (major) — perubahan besar / breaking: restruktur direktori, ganti sistem auth, hapus kode duplikat, modul inti baru.
 
-Versi berjalan: **v6.6.1** (2026-10-18). Total 47 entri (v1.0.0 → v6.6.1).
+Versi berjalan: **v6.6.2** (2026-10-18). Total 48 entri (v1.0.0 → v6.6.2).
 
 > Catatan: pesan commit asli banyak yang singkat (`mmm`, `serius`, `112`), jadi ringkasan di bawah diambil dari diff stat + daftar file, bukan cuma pesan commit.
+
+## [v6.6.2] — 2026-10-18 — patch
+- Halaman Akun OSIS: field jabatan jadi dropdown dari tabel `sekbid` (label `kategori · nama`), `sekbid_id` tetap dihitung otomatis di server. Jabatan lama yang tidak ada di daftar (mis. "Pembina") tetap dimunculkan biar tidak hilang saat edit. `js/osis-users.js?v=2`, SW `tarpan-v150`.
 
 ## [v6.6.1] — 2026-10-18 — patch
 - Buang kolom mati `sekbid_agenda.display_order`: isinya cuma default (756 dari 757 baris = 99), sortir agenda memang pakai `tanggal` desc + `created_at` desc. Migrasi `db/migrasi-hapus-display-order-agenda.sql` (drop kolom + index `idx_agenda_sekbid` dibuat ulang tanpa kolom itu, RPC `buat_agenda`/`update_agenda` signature tetap tapi `p_display_order` diabaikan biar cache PWA lama gak pecah). `js/db.js` berhenti select/kirim kolom, `js/agenda.js` + `js/outbox.js` ikut bersih. `db.js?v=31`, `agenda.js?v=23`, SW `tarpan-v148`. **Urutan deploy: apply migrasi dulu, baru push.**
