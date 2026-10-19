@@ -1,0 +1,628 @@
+/* =========================================================================
+   HASIL WAWANCARA — dipakai halaman internal (osis/hasil-wawancara.html)
+   dan publik (hasil-wawancara.html). Gaya neo-brutalism, ikut variabel global.
+   ========================================================================= */
+
+.hw-wrap {
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#hwContent {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ---------- HERO (pakai .osis-hero dari osis2.css) ---------- */
+.hw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+.hw-chip b {
+  font-size: 0.92rem;
+  color: var(--red);
+}
+.hw-chip.hijau {
+  background: #d6f5d6;
+  border-color: #146314;
+  color: #146314;
+}
+.hw-chip.merah {
+  background: #ffe1e4;
+  border-color: var(--red);
+  color: #a31220;
+}
+.hw-chip.kuning {
+  background: #fff3bf;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.hw-hero-act {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ---------- TOOLBAR ---------- */
+.hw-toolbar {
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hw-search {
+  flex: 1;
+  min-width: 190px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 0 10px;
+}
+.hw-search i {
+  color: var(--gray);
+  font-size: 0.85rem;
+}
+.hw-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 10px 0;
+}
+.hw-toolbar select {
+  width: auto;
+  min-width: 150px;
+}
+
+/* ---------- GRID KARTU ---------- */
+.hw-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.hw-card {
+  position: relative;
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.hw-card.hw-lolos {
+  border-top: 9px solid #146314;
+}
+.hw-card.hw-tidak_lolos {
+  border-top: 9px solid var(--red);
+}
+.hw-card.hw-belum {
+  border-top: 9px solid var(--line);
+}
+.hw-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.hw-ava {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 2.5px solid var(--ink);
+  border-radius: 13px;
+  background: var(--yellow);
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+.hw-ava-lg {
+  width: 64px;
+  height: 64px;
+  font-size: 1.7rem;
+  border-radius: 17px;
+}
+.hw-card-info {
+  flex: 1;
+  min-width: 0;
+}
+.hw-card-info b {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 900;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.hw-card-info span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- BADGE HASIL ---------- */
+.hw-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+  background: var(--paper-2);
+  color: var(--gray);
+}
+.hw-badge.lolos {
+  background: #d6f5d6;
+  border-color: #146314;
+  color: #146314;
+}
+.hw-badge.tidak_lolos {
+  background: #ffe1e4;
+  border-color: var(--red);
+  color: #a31220;
+}
+.hw-badge.belum {
+  background: #fff3bf;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* ---------- PILIH KAKAK ASUH (di dalam popup) ---------- */
+.hw-ka-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.hw-ka-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 5px 6px 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  max-width: 100%;
+}
+.hw-ka-x {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--red);
+  font-size: 0.6rem;
+  cursor: pointer;
+}
+.hw-ka-x:hover {
+  background: #ffe1e4;
+}
+.hw-ka-empty {
+  margin: 0 0 8px;
+  font-size: 0.76rem;
+  font-style: italic;
+  color: var(--gray);
+}
+
+/* ---------- PESAN HASIL (template + WA) ---------- */
+.hw-tpl {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.7;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.hw-tpl.kosong {
+  color: var(--gray);
+  font-style: italic;
+}
+.hw-wa-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 900;
+  color: #0b7a0b;
+  text-decoration: underline 2px;
+  text-underline-offset: 3px;
+}
+.hw-wa-inline:hover {
+  color: #0b5f0b;
+}
+.hw-wa-pending {
+  font-weight: 900;
+  color: var(--gray);
+  border-bottom: 2px dashed var(--line);
+}
+.hw-wa-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  background: #25d366;
+  color: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  padding: 11px 18px;
+  font-weight: 900;
+  font-size: 0.9rem;
+  text-decoration: none;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.hw-wa-btn:hover {
+  filter: brightness(0.96);
+}
+
+/* ---------- FOOTER KARTU ---------- */
+.hw-card-foot {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 2px;
+}
+.hw-card-foot .btn {
+  justify-content: center;
+}
+.hw-card-foot .btn:first-child {
+  flex: 1;
+}
+
+/* ---------- DETAIL ---------- */
+.hw-detail-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hw-detail {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: 5px 5px 0 var(--ink);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hw-detail.hw-lolos {
+  border-top: 10px solid #146314;
+}
+.hw-detail.hw-tidak_lolos {
+  border-top: 10px solid var(--red);
+}
+.hw-detail.hw-belum {
+  border-top: 10px solid var(--line);
+}
+.hw-detail-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.hw-detail-name {
+  flex: 1;
+  min-width: 200px;
+}
+.hw-detail-name h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.hw-detail-name p {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+.hw-detail-result {
+  background: var(--paper);
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.hw-detail-result.hw-lolos {
+  background: #eefbee;
+  border-color: #146314;
+}
+.hw-detail-result.hw-tidak_lolos {
+  background: #fff0f1;
+  border-color: var(--red);
+}
+.hw-result-label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray);
+}
+.hw-result-big {
+  margin: 4px 0 8px;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+.hw-detail-result.hw-lolos .hw-result-big {
+  color: #146314;
+}
+.hw-detail-result.hw-tidak_lolos .hw-result-big {
+  color: #a31220;
+}
+.hw-detail-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+.hw-detail-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.hw-detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- EDITOR ---------- */
+/* Editor hasil diganti menu titik-tiga + popup bawaan (show-popup.js). */
+.hw-kebab {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.kb-btn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: var(--white);
+  border: 2px solid var(--ink);
+  border-radius: 9px;
+  box-shadow: 2px 2px 0 var(--ink);
+  color: var(--ink);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1),
+    background 0.15s;
+}
+.kb-btn:hover { background: var(--paper-2); }
+.hw-kebab.buka .kb-btn { transform: rotate(90deg); }
+.kb-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 140px;
+  background: var(--white);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.96);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1),
+    visibility 0.18s;
+}
+.hw-kebab.buka .kb-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+}
+.kb-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  opacity: 0;
+  transform: translateX(10px);
+  transition:
+    opacity 0.16s ease,
+    transform 0.2s ease,
+    background 0.12s;
+}
+.hw-kebab.buka .kb-item {
+  opacity: 1;
+  transform: none;
+}
+.hw-kebab.buka .kb-item:nth-child(1) { transition-delay: 40ms; }
+.kb-item:hover { background: var(--paper-2); }
+@media (prefers-reduced-motion: reduce) {
+  .kb-btn,
+  .kb-menu,
+  .kb-item { transition: none; }
+  .hw-kebab.buka .kb-btn { transform: none; }
+  .kb-menu,
+  .hw-kebab.buka .kb-menu { transform: none; }
+  .kb-item,
+  .hw-kebab.buka .kb-item { transform: none; }
+}
+
+/* ---------- PESAN / PILIHAN ---------- */
+.hw-empty {
+  background: var(--white);
+  border: 2.5px dashed var(--line);
+  border-radius: 16px;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--gray);
+  line-height: 1.55;
+}
+.hw-empty i {
+  display: block;
+  font-size: 1.6rem;
+  color: var(--line);
+  margin-bottom: 6px;
+}
+.hw-pick {
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 16px;
+}
+.hw-pick h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 900;
+}
+.hw-pick p {
+  margin: 4px 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray);
+  line-height: 1.5;
+}
+.hw-pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hw-pick-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--paper);
+  font-weight: 800;
+  font-size: 0.84rem;
+}
+.hw-pick-item:hover {
+  border-color: var(--ink);
+  background: var(--white);
+}
+.hw-pick-item .hw-ava {
+  width: 36px;
+  height: 36px;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  box-shadow: none;
+}
+.hw-pick-item small {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--gray);
+  font-weight: 600;
+}
+.hw-pick-item .hw-badge {
+  margin-left: auto;
+}
+.hw-hint {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--gray);
+  line-height: 1.5;
+}
+
+/* ---------- MOBILE ---------- */
+@media (max-width: 560px) {
+  .hw-wrap {
+    padding: 12px;
+    gap: 12px;
+  }
+  .hw-detail,
+  .hw-editor {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .hw-grid {
+    grid-template-columns: 1fr;
+  }
+  .hw-detail-name h1 {
+    font-size: 1.2rem;
+  }
+  .hw-toolbar {
+    align-items: stretch;
+  }
+  .hw-search,
+  .hw-toolbar select,
+  .hw-toolbar .btn {
+    width: 100%;
+  }
+  .hw-card-foot .btn {
+    flex: 1 1 auto;
+  }
+}

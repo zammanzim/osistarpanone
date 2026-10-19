@@ -28,6 +28,7 @@ const Aktivitas = {
         akses: "Akses", informasi: "Informasi", poster: "Poster",
         profil: "Profil", "program-bulanan": "Program Bulanan",
         "program-tahunan": "Program Tahunan",
+        "wawancara": "Wawancara", "hasil-wawancara": "Hasil Wawancara",
     },
 
     init() {

@@ -3319,12 +3319,26 @@ function wawancaraCacheSimpan(kunci, rows) {
 }
 async function getWawancaraCalon() {
   const kunci = "wawancara_calon";
+  const kolomDasar = "id, nama, kelas, keterangan, tanggal, display_order, created_by, created_at, updated_at";
+  const kolomHasil = kolomDasar + ", hasil, hasil_catatan, hasil_diumumkan, hasil_kakasuh, hasil_updated_at";
   try {
-    const { data, error } = await supa
+    let { data, error } = await supa
       .from("wawancara_calon")
-      .select("id, nama, kelas, keterangan, tanggal, display_order, created_by, created_at, updated_at")
+      .select(kolomHasil)
       .order("display_order", { ascending: true })
       .order("nama", { ascending: true });
+    // Migrasi hasil belum dijalankan -> tetap bisa baca data lama.
+    if (error && /42703|column .*hasil.* does not exist/i.test(String(error.message || error))) {
+      const ulang = await supa
+        .from("wawancara_calon")
+        .select(kolomDasar)
+        .order("display_order", { ascending: true })
+        .order("nama", { ascending: true });
+      data = (ulang.data || []).map(r => ({
+        ...r, hasil: "", hasil_catatan: "", hasil_diumumkan: false, hasil_kakasuh: "", hasil_updated_at: null,
+      }));
+      error = ulang.error;
+    }
     if (error) throw error;
     const rows = data || [];
     wawancaraCacheSimpan(kunci, rows);
@@ -3373,6 +3387,64 @@ async function getWawancaraSesi() {
     throw err;
   }
 }
+// HASIL WAWANCARA (keputusan lolos/tidak) — disimpan di wawancara_calon.
+// Simpan/ubah butuh hak "wawancara" (diverifikasi RPC). Baca publik lewat
+// RPC khusus yang cuma mengembalikan kolom aman + baris yang sudah diumumkan.
+async function wawancaraHasilSimpan(userId, calonId, hasil, catatan, diumumkan, kakasuh) {
+  const { data, error } = await supa.rpc("wawancara_hasil_simpan", {
+    p_user_id: userId, p_calon_id: calonId,
+    p_hasil: hasil || "", p_catatan: catatan || "",
+    p_diumumkan: !!diumumkan, p_kakasuh: kakasuh || "",
+  });
+  if (error) {
+    if (wawancaraButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI_HASIL");
+    throw error;
+  }
+  if (data !== "OK") {
+    const pesan = {
+      ERR_NO_AUTH: "Kamu tidak punya hak mengatur hasil.",
+      ERR_HASIL: "Status hasil tidak valid.",
+      ERR_NOT_FOUND: "Calon tidak ditemukan.",
+    };
+    throw new Error(pesan[data] || ("Gagal menyimpan hasil: " + data));
+  }
+  try { Cache.del("wawancara_calon"); } catch {}
+  try { Cache.del("wawancara_hasil_publik"); } catch {}
+  return true;
+}
+
+// Template pesan hasil LANJUT/GAGAL (site_content), diedit dari halaman hasil.
+async function wawancaraTemplateSimpan(userId, tplLanjut, tplGagal) {
+  const { data, error } = await supa.rpc("wawancara_template_simpan", {
+    p_user_id: userId, p_tpl_lanjut: tplLanjut || "", p_tpl_gagal: tplGagal || "",
+  });
+  if (error) {
+    if (wawancaraButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI_HASIL");
+    throw error;
+  }
+  if (data !== "OK") {
+    throw new Error(data === "ERR_NO_AUTH" ? "Kamu tidak punya hak mengatur template." : ("Gagal menyimpan template: " + data));
+  }
+  try { Cache.del("site_content"); } catch {}
+  return true;
+}
+
+async function getWawancaraHasilPublik() {
+  const kunci = "wawancara_hasil_publik";
+  try {
+    const { data, error } = await supa.rpc("wawancara_hasil_publik");
+    if (error) throw error;
+    const rows = (data || []).map(r => ({ ...r, hasil: r.hasil || "" }));
+    wawancaraCacheSimpan(kunci, rows);
+    return rows;
+  } catch (err) {
+    if (wawancaraButuhMigrasi(err)) throw new Error("BUTUH_MIGRASI_HASIL");
+    const c = wawancaraCacheAmbil(kunci);
+    if (c) return c;
+    throw err;
+  }
+}
+
 // Penugasan pewawancara TAK TERBATAS (tabel wawancara_sesi_petugas).
 // Migrasi flex belum di-run -> [] (frontend fallback ke kolom lama 1/2).
 async function getWawancaraPetugas() {

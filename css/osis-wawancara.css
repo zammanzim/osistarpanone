@@ -347,10 +347,20 @@
       .ww-act {
         display: flex;
         gap: 6px;
-        align-items: center;
+        align-items: flex-end;
         flex-shrink: 0;
         flex-wrap: wrap;
+        flex-direction: column;
+      }
+      .ww-act-icons {
+        display: flex;
+        gap: 6px;
         justify-content: flex-end;
+        width: 100%;
+      }
+      .ww-act .btn {
+        justify-content: center;
+        white-space: nowrap;
       }
       /* Badge status */
       .ww-st {

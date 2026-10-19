@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hasil Wawancara — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css?v=40" />
+    <link rel="stylesheet" href="../css/osis2.css?v=12" />
+    <link rel="stylesheet" href="../css/hasil-wawancara.css?v=6" />
+    <meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script src="../js/supabase.min.js?v=11"></script>
+    <script src="../js/config.js?v=16"></script>
+    <script src="../js/db.js?v=37" defer></script>
+    <script src="../js/aktivitas.js?v=12" defer></script>
+    <script src="../js/app.js?v=12" defer></script>
+    <script src="../js/dropdown.js?v=3" defer></script>
+    <script src="../js/toast.js?v=12" defer></script>
+    <script src="../js/notice.js?v=12" defer></script>
+    <script src="../js/show-popup.js?v=17" defer></script>
+    <script src="../js/osis-auth.js?v=21" defer></script>
+    <script src="../js/osis-visitor.js?v=4" defer></script>
+    <script src="../js/osis-sidebar.js?v=46" defer></script>
+    <script src="../js/osis-header.js?v=16" defer></script>
+    <script src="../js/hasil-wawancara.js?v=8" defer></script>
+    <script src="../js/pwa.js?v=13" defer></script>
+  </head>
+  <body data-mode="osis">
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>HASIL WAWANCARA</h2>
+          <p>Calon OSIS</p>
+        </div>
+      </a>
+
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="osis-wrap">
+      <div class="osis-hero" id="hwHero">
+        <div class="osis-avatar">
+          <i class="fa-solid fa-square-poll-vertical"></i>
+        </div>
+        <div style="flex: 1; min-width: 180px">
+          <h1>HASIL WAWANCARA</h1>
+          <p>Memuat data calon...</p>
+          <div class="osis-meta"></div>
+        </div>
+      </div>
+
+      <div id="hwContent">
+        <div class="hw-empty">
+          <div class="spinner" style="margin: 0 auto 8px"></div>
+          Memuat hasil wawancara...
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

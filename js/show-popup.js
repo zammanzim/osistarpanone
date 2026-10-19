@@ -123,6 +123,29 @@ window.showPopup = function (msg, type = 'info', options = {}) {
                         </div>
                     `;
                 }
+                if (f.type === 'textarea') {
+                    const val = String(f.value || '');
+                    const esc = (typeof escapeHtml === 'function')
+                        ? escapeHtml(val)
+                        : val.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+                    return `
+                        <div class="uni-form-group">
+                            ${f.label ? `<label>${f.label}</label>` : ''}
+                            <textarea id="uniInput_${f.name}" class="uni-input" rows="${f.rows || 4}"
+                                placeholder="${f.placeholder || ''}">${esc}</textarea>
+                        </div>
+                    `;
+                }
+                if (f.type === 'custom') {
+                    // HTML developer (bukan user) — isinya bebas.
+                    // Nilai tetap dibaca dari #uniInput_<nama> saat popup ditutup.
+                    return `
+                        <div class="uni-form-group">
+                            ${f.label ? `<label>${f.label}</label>` : ''}
+                            ${f.html || ''}
+                        </div>
+                    `;
+                }
                 return `
                     <div class="uni-form-group">
                         ${f.label ? `<label>${f.label}</label>` : ''}
@@ -230,6 +253,8 @@ window.showPopup = function (msg, type = 'info', options = {}) {
         // --- EVENT HANDLERS ---
         const handleKey = (e) => {
             if (e.key === 'Enter') {
+                // Di textarea, Enter dipakai ganti baris — jangan submit.
+                if (e.target && e.target.tagName === 'TEXTAREA') return;
                 // Telan Enter biar form admin di belakang tidak ikut ke-submit
                 e.preventDefault();
                 try { e.stopPropagation(); } catch (err) {}

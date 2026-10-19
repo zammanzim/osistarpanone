@@ -44,6 +44,16 @@ const Wawancara = {
         return null;
     },
 
+    // Slug nama buat deep link hasil wawancara (?n=maulidyna-almahira-renaldi).
+    slugNama(nama) {
+        return String(nama || "")
+            .toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9]+/g, " ")
+            .trim()
+            .replace(/\s+/g, "-");
+    },
+
     // Punya hak kelola halaman (atur calon/pertanyaan/petugas).
     bolehKelola() {
         try {
@@ -440,9 +450,12 @@ const Wawancara = {
                 </div>
                 <div class="ww-act">
                     ${Wawancara.bolehKelola() ? `
-                    <button class="icon-btn" title="Edit calon" onclick="Wawancara.formCalon(${c.id})"><i class="fa-solid fa-pen"></i></button>
-                    <button class="icon-btn" title="Hapus calon" onclick="Wawancara.hapusCalon(${c.id})"><i class="fa-solid fa-trash"></i></button>` : ""}
+                    <div class="ww-act-icons">
+                        <button class="icon-btn" title="Edit calon" onclick="Wawancara.formCalon(${c.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="icon-btn" title="Hapus calon" onclick="Wawancara.hapusCalon(${c.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>` : ""}
                     <button class="btn btn-red btn-sm" onclick="Wawancara.bukaCalon(${c.id})"><i class="fa-solid fa-door-open"></i> Buka</button>
+                    <a class="btn btn-red btn-sm" href="hasil-wawancara?n=${encodeURIComponent(Wawancara.slugNama(c.nama))}"><i class="fa-solid fa-eye"></i> Liat Hasil</a>
                 </div>
             </div>`;
     },
