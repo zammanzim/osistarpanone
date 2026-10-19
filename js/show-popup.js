@@ -628,3 +628,145 @@ window.ModalNav = (function () {
         tutupTeratas: tutupTeratas
     };
 })();
+
+// =========================================================================
+// Ctrl/Cmd + Enter = simpan.
+// Satu handler buat semua popup & form inline yang punya tombol simpan.
+// Urutan cari tombol: di dalam popup/panel fokus → popup teratas → kalau
+// cuma ada satu tombol simpan yang kelihatan di halaman, pakai itu.
+// Popup showPopup() (uniOverlay) sudah ditangani handler Enter di atas.
+// =========================================================================
+(function () {
+    // id popup → selector tombol simpan di dalamnya
+    const POPUP = {
+        agendaForm: "#btnSimpanAgenda",
+        absensiForm: "#btnSimpanAbsensi",
+        absenLangsung: "#btnSelesaiLangsung",
+        kasForm: "#btnSimpanKas",
+        tabForm: "#btnSimpanTabungan",
+        dokumenForm: "#btnSimpanDokumen",
+        notulensiForm: "#btnSimpanNotulensi",
+        programForm: "#btnSimpanProgram",
+        aksDetail: "#aksDetailBody .btn-red",
+        wwCalonForm: '[onclick*="Wawancara.simpanCalon"]',
+        wwTanyaEdit: '[onclick*="Wawancara.simpanTanya"]',
+        feedFormOverlay: "#btnSimpanFeed",
+        infoFormOverlay: "#btnSimpanInfo",
+        clFormOverlay: "#btnSimpanCl",
+        prestasiFormOverlay: "#btnSimpanPrestasi",
+        posterFormOverlay: "#btnSimpanPoster",
+        navAturOverlay: "#navAturSimpan",
+        pengurusModal: "#pgEditSimpan",
+        // modul lama (halamannya sudah dihapus, aman kalau dipakai lagi)
+        evaluasiForm: "#btnSimpanEvaluasi",
+        prokerForm: "#btnSimpanProker",
+        taskForm: "#btnSimpanTask"
+    };
+
+    // Popup yang hilang dari DOM saat ditutup (bukan pakai class .open)
+    const APPEND = [
+        "feedFormOverlay", "infoFormOverlay", "clFormOverlay",
+        "prestasiFormOverlay", "posterFormOverlay", "navAturOverlay", "pengurusModal"
+    ];
+
+    // Form inline (bukan popup)
+    const INLINE = [
+        "#btnInfvSimpan", "#polBtnSimpan",
+        "#btnSimpanProfil", "#btnSimpanUsername", "#btnSimpanPassword",
+        "button.gal-save",
+        '[onclick*="Wawancara.simpanPetugas"]',
+        "#wwTurunanSimpan"
+    ];
+
+    // Panel form inline yang boleh dicari tombol simpannya
+    const SCOPE = ".bento-block.draft, #infvCard_edit, .osis-panel, #wwTurunanBaru, #polAdmin";
+
+    // Tombol beneran kelihatan & bisa diklik
+    function tampil(btn) {
+        if (!btn || btn.disabled) return false;
+        if (btn.getAttribute("aria-disabled") === "true") return false;
+        if (!btn.getClientRects().length) return false;
+        const cs = window.getComputedStyle(btn);
+        return cs.display !== "none" && cs.visibility !== "hidden";
+    }
+
+    function cariSimpan(root) {
+        if (!root || !root.querySelector) return null;
+        // Atur Navigasi: kalau baris lagi diedit, simpan baris itu dulu
+        if (root.id === "navAturOverlay") {
+            const form = root.querySelector(".side-form");
+            const terapkan = form && form.querySelector(".side-add");
+            if (tampil(terapkan)) return terapkan;
+        }
+        const daftar = INLINE.concat(Object.keys(POPUP).map(function (k) { return POPUP[k]; }));
+        for (let i = 0; i < daftar.length; i++) {
+            const btn = root.querySelector(daftar[i]);
+            if (tampil(btn)) return btn;
+        }
+        const cadangan = root.querySelector('button[id^="btnSimpan"]');
+        return tampil(cadangan) ? cadangan : null;
+    }
+
+    // Popup paling atas yang lagi terbuka (pakai urutan DOM; popup baru
+    // di-append ke body jadi otomatis paling akhir).
+    function popupTeratas() {
+        let hasil = null;
+        Object.keys(POPUP).forEach(function (id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (APPEND.indexOf(id) < 0 && !el.classList.contains("open")) return;
+            if (!el.getClientRects().length) return;
+            if (!hasil || (hasil.compareDocumentPosition(el) & 4)) hasil = el;
+        });
+        return hasil;
+    }
+
+    // Cari tombol simpan dari elemen yang lagi fokus
+    function dariFokus() {
+        const el = document.activeElement;
+        if (!el || el === document.body || el === document.documentElement) return null;
+
+        // 1. Di dalam popup?
+        let node = el;
+        while (node && node !== document.body) {
+            if (node.id && POPUP[node.id]) {
+                const btn = cariSimpan(node);
+                if (btn) return btn;
+            }
+            node = node.parentElement;
+        }
+
+        // 2. Di dalam panel form inline? (berhenti di panel terdekat)
+        const scope = el.closest && el.closest(SCOPE);
+        if (scope) {
+            for (let i = 0; i < INLINE.length; i++) {
+                const btn = scope.querySelector(INLINE[i]);
+                if (tampil(btn)) return btn;
+            }
+        }
+        return null;
+    }
+
+    // Cadangan: cuma ada satu tombol simpan yang kelihatan di halaman
+    function satuTombol() {
+        const ketemu = [];
+        INLINE.forEach(function (sel) {
+            document.querySelectorAll(sel).forEach(function (btn) {
+                if (tampil(btn) && ketemu.indexOf(btn) < 0) ketemu.push(btn);
+            });
+        });
+        return ketemu.length === 1 ? ketemu[0] : null;
+    }
+
+    document.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" || !(e.ctrlKey || e.metaKey)) return;
+        if (e.altKey || e.shiftKey || e.isComposing || e.repeat) return;
+        if (document.getElementById("uniOverlay")) return; // diurus showPopup
+        const btn = dariFokus() || cariSimpan(popupTeratas()) || satuTombol();
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        btn.click();
+    }, true);
+})();
