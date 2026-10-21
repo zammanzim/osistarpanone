@@ -174,40 +174,6 @@
   overflow-wrap: anywhere;
 }
 
-/* ---------- BADGE HASIL ---------- */
-.hw-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  flex-shrink: 0;
-  font-size: 0.64rem;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  border: 2px solid var(--ink);
-  border-radius: 999px;
-  padding: 4px 10px;
-  white-space: nowrap;
-  background: var(--paper-2);
-  color: var(--gray);
-}
-.hw-badge.lolos {
-  background: #d6f5d6;
-  border-color: #146314;
-  color: #146314;
-}
-.hw-badge.tidak_lolos {
-  background: #ffe1e4;
-  border-color: var(--red);
-  color: #a31220;
-}
-.hw-badge.belum {
-  background: #fff3bf;
-  border-color: var(--ink);
-  color: var(--ink);
-}
-
 /* ---------- PILIH KAKAK ASUH (di dalam popup) ---------- */
 .hw-ka-list {
   display: flex;
@@ -251,53 +217,14 @@
   color: var(--gray);
 }
 
-/* ---------- PESAN HASIL (template + WA) ---------- */
-.hw-tpl {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  line-height: 1.7;
-  color: var(--ink);
-  overflow-wrap: anywhere;
+/* ---------- PESAN HASIL (template) ---------- */
+.hw-kaka-teks {
+  font-weight: 800;
 }
-.hw-tpl.kosong {
-  color: var(--gray);
+.hw-kaka-teks.kosong {
+  font-weight: 700;
   font-style: italic;
-}
-.hw-wa-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 900;
-  color: #0b7a0b;
-  text-decoration: underline 2px;
-  text-underline-offset: 3px;
-}
-.hw-wa-inline:hover {
-  color: #0b5f0b;
-}
-.hw-wa-pending {
-  font-weight: 900;
   color: var(--gray);
-  border-bottom: 2px dashed var(--line);
-}
-.hw-wa-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  background: #25d366;
-  color: #fff;
-  border: 2.5px solid var(--ink);
-  border-radius: 999px;
-  padding: 11px 18px;
-  font-weight: 900;
-  font-size: 0.9rem;
-  text-decoration: none;
-  box-shadow: 3px 3px 0 var(--ink);
-}
-.hw-wa-btn:hover {
-  filter: brightness(0.96);
 }
 
 /* ---------- FOOTER KARTU ---------- */
@@ -315,7 +242,7 @@
   flex: 1;
 }
 
-/* ---------- DETAIL ---------- */
+/* ---------- DETAIL (surat keputusan) ---------- */
 .hw-detail-nav {
   display: flex;
   align-items: center;
@@ -327,98 +254,289 @@
   border: 3px solid var(--ink);
   border-radius: 22px;
   box-shadow: 5px 5px 0 var(--ink);
-  padding: 18px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 14px;
 }
-.hw-detail.hw-lolos {
-  border-top: 10px solid #146314;
-}
-.hw-detail.hw-tidak_lolos {
-  border-top: 10px solid var(--red);
-}
-.hw-detail.hw-belum {
-  border-top: 10px solid var(--line);
-}
+
+/* Kepala: pita warna status + cap stempel */
 .hw-detail-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 14px;
   flex-wrap: wrap;
+  padding: 18px;
+  border-bottom: 3px solid var(--ink);
+  background: var(--paper-2);
+}
+.hw-detail.hw-lolos .hw-detail-head {
+  background: var(--green-bg);
+}
+.hw-detail.hw-tidak_lolos .hw-detail-head {
+  background: #ffe9eb;
+}
+.hw-detail-head .hw-ava-lg {
+  width: 66px;
+  height: 66px;
+  font-size: 1.7rem;
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 .hw-detail-name {
   flex: 1;
-  min-width: 200px;
+  min-width: 190px;
 }
 .hw-detail-name h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: clamp(1.25rem, 4.5vw, 1.7rem);
   font-weight: 900;
   letter-spacing: -0.02em;
-  line-height: 1.15;
+  line-height: 1.1;
   overflow-wrap: anywhere;
 }
 .hw-detail-name p {
-  margin: 4px 0 0;
-  font-size: 0.8rem;
+  margin: 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--gray);
 }
-.hw-detail-result {
-  background: var(--paper);
-  border: 2.5px solid var(--ink);
-  border-radius: 16px;
-  padding: 14px;
-  box-shadow: 3px 3px 0 var(--ink);
+.hw-detail-kelas {
+  background: var(--white);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 3px 11px;
+  color: var(--ink);
+  font-weight: 800;
 }
-.hw-detail-result.hw-lolos {
-  background: #eefbee;
-  border-color: #146314;
-}
-.hw-detail-result.hw-tidak_lolos {
-  background: #fff0f1;
-  border-color: var(--red);
-}
-.hw-result-label {
-  display: block;
-  font-size: 0.66rem;
+
+/* Surat: label kop + isi pesan (langsung di dalam kartu, tanpa kotak tambahan) */
+.hw-surat-kop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 18px;
+  padding: 15px 0 9px;
+  border-bottom: 2.5px solid var(--ink);
+  font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--gray);
 }
-.hw-result-big {
-  margin: 4px 0 8px;
-  font-size: clamp(1.6rem, 5vw, 2.4rem);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  color: var(--ink);
-}
-.hw-detail-result.hw-lolos .hw-result-big {
-  color: #146314;
-}
-.hw-detail-result.hw-tidak_lolos .hw-result-big {
-  color: #a31220;
-}
-.hw-detail-meta {
+.hw-surat-body {
+  padding: 16px 18px 2px;
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  flex-wrap: wrap;
-  font-size: 0.72rem;
+}
+.hw-tpl {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.75;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.hw-tpl.kosong {
+  color: var(--gray);
+  font-style: italic;
+}
+/* Status di dalam teks (dari template) */
+.hw-status-inline {
+  align-self: flex-start;
+  margin: 2px 0;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 8px 18px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  background: var(--white);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.hw-status-inline.hw-lolos {
+  color: var(--green);
+  background: #eefbee;
+}
+.hw-status-inline.hw-tidak_lolos {
+  color: var(--red-dark);
+  background: #fff0f1;
+}
+.hw-kosong {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--paper-2);
+  border: 2.5px dashed var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 0.84rem;
   font-weight: 700;
   color: var(--gray);
+  line-height: 1.5;
+}
+.hw-kosong i {
+  font-size: 1.2rem;
+  color: var(--gray);
+  opacity: 0.55;
+}
+
+/* ---------- STEP 1: BUKA HASIL (halaman publik) ---------- */
+.hw-buka {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 9px;
+  padding: 30px 18px 28px;
+}
+.hw-buka-ikon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: var(--yellow);
+  box-shadow: 4px 4px 0 var(--ink);
+  font-size: 1.5rem;
+}
+.hw-buka h2 {
+  margin: 6px 0 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.hw-buka p {
+  margin: 0;
+  max-width: 44ch;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--gray);
+  line-height: 1.6;
+}
+.hw-buka .btn {
+  margin-top: 8px;
+}
+
+/* Panel kakak asuh */
+.hw-kakak-panel {
+  margin: 16px 18px 0;
+}
+.hw-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray);
+}
+.hw-kakak-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+  gap: 10px;
+}
+.hw-kakak-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 10px 12px;
+  text-decoration: none;
+  color: var(--ink);
+  min-width: 0;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.hw-kakak-card:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.hw-kakak-ava {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  background: var(--green-bg);
+  font-weight: 900;
+}
+.hw-kakak-info {
+  flex: 1;
+  min-width: 0;
+}
+.hw-kakak-info b {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+.hw-kakak-info small {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--gray);
+  overflow-wrap: anywhere;
+}
+.hw-kakak-cta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #25d366;
+  color: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+/* Meta + catatan hak akses */
+.hw-detail-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 16px 18px 18px;
 }
 .hw-detail-meta span {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  background: var(--paper-2);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--gray);
 }
-.hw-detail-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.hw-detail-note {
+  margin: 0 18px 18px;
+  padding: 11px 13px;
+  background: #fff8e1;
+  border: 2.5px dashed var(--ink);
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.5;
 }
 
 /* ---------- EDITOR ---------- */
@@ -587,9 +705,6 @@
   color: var(--gray);
   font-weight: 600;
 }
-.hw-pick-item .hw-badge {
-  margin-left: auto;
-}
 .hw-hint {
   font-size: 0.76rem;
   font-weight: 600;
@@ -605,7 +720,6 @@
   }
   .hw-detail,
   .hw-editor {
-    padding: 14px;
     border-radius: 18px;
   }
   .hw-grid {

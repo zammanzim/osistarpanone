@@ -11,10 +11,12 @@
 const HasilWawancara = {
     mode: "osis",
     calon: [],
+    calonAktif: null,
     sesiMap: {},
     q: "",
     filter: "",
     nParam: "",
+    opened: false,
     bolehEdit: false,
     _memuat: false,
 
@@ -32,9 +34,7 @@ const HasilWawancara = {
     init() {
         this.mode = document.body && document.body.dataset && document.body.dataset.mode === "publik"
             ? "publik" : "osis";
-        try {
-            this.nParam = String(new URLSearchParams(location.search).get("n") || "").trim();
-        } catch { this.nParam = ""; }
+        this.bacaParams();
         if (this.mode === "osis") this.initOsis();
         else this.initPublik();
         // Klik di luar / ESC → tutup menu titik-tiga kartu.
@@ -42,6 +42,23 @@ const HasilWawancara = {
         document.addEventListener("keydown", (e) => {
             if (e.key === "Escape") HasilWawancara.tutupMenu();
         });
+        // Tombol back/forward → ikut pindah step (publik).
+        window.addEventListener("popstate", () => {
+            HasilWawancara.bacaParams();
+            HasilWawancara.render();
+        });
+    },
+
+    // Baca ?n=<slug> + &opened=true dari URL.
+    bacaParams() {
+        try {
+            const p = new URLSearchParams(location.search);
+            this.nParam = String(p.get("n") || "").trim();
+            this.opened = p.get("opened") === "true";
+        } catch {
+            this.nParam = "";
+            this.opened = false;
+        }
     },
 
     async initOsis() {
@@ -131,13 +148,31 @@ const HasilWawancara = {
         }
         const skorTop = cocok[0].skor;
         const teratas = cocok.filter(x => x.skor === skorTop);
-        if (teratas.length > 1) this.renderPilihan(q, teratas.slice(0, 8));
-        else this.renderDetail(teratas[0].calon);
+        if (teratas.length > 1) {
+            this.renderPilihan(q, teratas.slice(0, 8));
+            return;
+        }
+        const calon = teratas[0].calon;
+        this.calonAktif = calon;
+        // Halaman publik: 2 langkah. Tanpa &opened=true baru tampil identitas,
+        // hasil-nya kebuka setelah tombol "Buka Hasil" diklik.
+        if (this.mode === "publik" && !this.opened) {
+            this.renderBuka(calon);
+            return;
+        }
+        this.renderDetail(calon);
     },
 
     renderHero() {
         const hero = document.getElementById("hwHero");
         if (!hero) return;
+        // Mode "?n=..&opened=true" → hero disembunyikan, layar fokus ke hasil.
+        if (this.opened) {
+            hero.style.display = "none";
+            hero.innerHTML = "";
+            return;
+        }
+        hero.style.display = "";
         const total = this.calon.length;
         const lolos = this.calon.filter(c => c.hasil === "lolos").length;
         const tidak = this.calon.filter(c => c.hasil === "tidak_lolos").length;
@@ -145,7 +180,7 @@ const HasilWawancara = {
         const umum = this.calon.filter(c => !!c.hasil_diumumkan).length;
         const pub = this.mode === "publik";
         const aksi = pub
-            ? `<a class="btn btn-white btn-sm" href="index#/"><i class="fa-solid fa-house"></i> Beranda</a>`
+            ? ""
             : `<a class="btn btn-white btn-sm" href="wawancara"><i class="fa-solid fa-comments"></i> Wawancara</a>`;
 
         // Internal + publik sama-sama pakai .osis-hero biar konsisten
@@ -166,13 +201,12 @@ const HasilWawancara = {
                     <span class="hw-chip"><i class="fa-solid fa-bullhorn"></i> <b>${umum}</b> diumumkan</span>`}
                 </div>
             </div>
-            <div class="hw-hero-act">
+            ${aksi || (!pub && this.bolehEdit) ? `<div class="hw-hero-act">
                 ${aksi}
                 ${!pub && this.bolehEdit
                     ? `<button class="icon-btn" title="Edit template pesan hasil" onclick="HasilWawancara.formTemplate()"><i class="fa-solid fa-file-pen"></i></button>`
                     : ""}
-                <button class="btn btn-white btn-sm" onclick="HasilWawancara.muatData()"><i class="fa-solid fa-rotate"></i> Refresh</button>
-            </div>`;
+            </div>` : ""}`;
     },
 
     renderDaftar() {
@@ -271,6 +305,60 @@ const HasilWawancara = {
         </article>`;
     },
 
+    // Step 1 halaman publik: identitas calon + tombol "Buka Hasil".
+    // Pita warna tetap netral biar status hasilnya nggak kebocor.
+    renderBuka(c) {
+        const el = document.getElementById("hwContent");
+        if (!el) return;
+        const tgl = this.fmtTanggal(c.tanggal);
+        el.innerHTML = `
+            <div class="hw-detail-nav">
+                <a class="btn btn-white btn-sm" href="hasil-wawancara">
+                    <i class="fa-solid fa-arrow-left"></i> Semua hasil
+                </a>
+            </div>
+            <section class="hw-detail hw-belum">
+                <header class="hw-detail-head">
+                    <div class="hw-ava hw-ava-lg">${this.esc(this.inisial(c.nama))}</div>
+                    <div class="hw-detail-name">
+                        <h1>${this.esc(c.nama || "-")}</h1>
+                        <p>
+                            <span class="hw-detail-kelas">${this.esc(c.kelas || "-")}</span>
+                            ${tgl ? `<span><i class="fa-regular fa-calendar"></i> ${this.esc(tgl)}</span>` : ""}
+                        </p>
+                    </div>
+                </header>
+                <div class="hw-buka">
+                    <div class="hw-buka-ikon"><i class="fa-solid fa-lock"></i></div>
+                    <h2>Hasil belum dibuka</h2>
+                    <p>Yakin ini data kamu? Klik tombol di bawah buat lihat hasil wawancara OSIS.</p>
+                    <a class="btn btn-red" href="${this.urlBuka(c)}"
+                        onclick="HasilWawancara.bukaHasil(event)">
+                        <i class="fa-solid fa-unlock"></i> Buka Hasil
+                    </a>
+                </div>
+            </section>`;
+    },
+
+    // Buka hasil: tambah &opened=true (tanpa reload).
+    bukaHasil(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        const a = e && e.currentTarget;
+        const href = a ? a.getAttribute("href") : "";
+        try { if (href) history.pushState({ hw: 1 }, "", href); } catch {}
+        this.opened = true;
+        this.render();
+        try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
+    },
+
+    // Tutup hasil: balik ke step 1 (?n=<slug> tanpa &opened).
+    tutupHasil(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        try { history.pushState({ hw: 1 }, "", this.urlCalon(this.calonAktif || {})); } catch {}
+        this.opened = false;
+        this.render();
+    },
+
     renderDetail(c) {
         const el = document.getElementById("hwContent");
         if (!el) return;
@@ -279,30 +367,39 @@ const HasilWawancara = {
         const edit = this.mode === "osis" && this.bolehEdit;
         const tgl = this.fmtTanggal(c.tanggal);
         const update = this.fmtWaktu(c.hasil_updated_at);
+        const cls = this.clsHasil(h);
         el.innerHTML = `
             <div class="hw-detail-nav">
                 <a class="btn btn-white btn-sm" href="hasil-wawancara">
                     <i class="fa-solid fa-arrow-left"></i> Semua hasil
                 </a>
+                ${this.mode === "publik"
+                    ? `<a class="btn btn-white btn-sm" href="${this.urlCalon(c)}"
+                        onclick="HasilWawancara.tutupHasil(event)">
+                        <i class="fa-solid fa-eye-slash"></i> Sembunyikan hasil
+                    </a>`
+                    : ""}
                 ${this.mode === "osis" && sesi
                     ? `<a class="btn btn-white btn-sm" href="wawancara?calon=${c.id}"><i class="fa-solid fa-comments"></i> Buka wawancara</a>`
                     : ""}
             </div>
-            <section class="hw-detail hw-${this.clsHasil(h)}">
-                <div class="hw-detail-head">
+            <section class="hw-detail hw-${cls}">
+                <header class="hw-detail-head">
                     <div class="hw-ava hw-ava-lg">${this.esc(this.inisial(c.nama))}</div>
                     <div class="hw-detail-name">
                         <h1>${this.esc(c.nama || "-")}</h1>
-                        <p>${this.esc(c.kelas || "-")}${tgl ? " · " + this.esc(tgl) : ""}</p>
+                        <p>
+                            <span class="hw-detail-kelas">${this.esc(c.kelas || "-")}</span>
+                            ${tgl ? `<span><i class="fa-regular fa-calendar"></i> ${this.esc(tgl)}</span>` : ""}
+                        </p>
                     </div>
-                    ${this.badge(h)}
+                </header>
+                <div class="hw-surat-kop">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                    <span>Surat Keterangan Hasil Wawancara &middot; OSIS SMK Taruna Harapan 1 Cipatat</span>
                 </div>
-                <div class="hw-detail-result hw-${this.clsHasil(h)}">
-                    ${this.isiPesan(c, h)}
-                    ${h === "lolos" ? this.kaDaftar(c).map(nama =>
-                        `<a class="hw-wa-btn" href="${this.waHref(c, nama)}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Chat ${this.esc(nama)}</a>`
-                    ).join("") : ""}
-                </div>
+                <div class="hw-surat-body">${this.isiPesan(c, h)}</div>
+                ${h === "lolos" ? this.panelKakakAsuh(c) : ""}
                 <div class="hw-detail-meta">
                     ${this.mode === "osis"
                         ? `<span><i class="fa-solid ${c.hasil_diumumkan ? "fa-eye" : "fa-eye-slash"}"></i> ${c.hasil_diumumkan ? "Sudah diumumkan ke publik" : "Belum diumumkan ke publik"}</span>`
@@ -313,9 +410,32 @@ const HasilWawancara = {
                         : ""}
                 </div>
                 ${this.mode === "osis" && !edit
-                    ? `<p class="hw-hint">Hanya pemegang hak <b>wawancara</b> yang bisa mengubah hasil ini.</p>`
+                    ? `<p class="hw-detail-note"><i class="fa-solid fa-lock"></i> Hanya pemegang hak <b>wawancara</b> yang bisa mengubah hasil ini.</p>`
                     : ""}
             </section>`;
+    },
+
+    // Panel kakak asuh (khusus hasil LANJUT) — kartu + tombol chat WA.
+    panelKakakAsuh(c) {
+        const daftar = this.kaDaftar(c);
+        if (!daftar.length) return "";
+        const kartu = daftar.map(nama => {
+            const p = (this.pengurusList || []).find(x =>
+                String(x.nama || "").trim().toLowerCase() === String(nama).trim().toLowerCase());
+            const jabatan = p && p.jabatan ? p.jabatan : "";
+            return `<a class="hw-kakak-card" href="${this.waHref(c, nama)}" target="_blank" rel="noopener">
+                <span class="hw-kakak-ava">${this.esc(this.inisial(nama))}</span>
+                <span class="hw-kakak-info">
+                    <b>${this.esc(nama)}</b>
+                    ${jabatan ? `<small>${this.esc(jabatan)}</small>` : ""}
+                </span>
+                <span class="hw-kakak-cta"><i class="fa-brands fa-whatsapp"></i> Chat</span>
+            </a>`;
+        }).join("");
+        return `<div class="hw-kakak-panel">
+            <div class="hw-panel-title"><i class="fa-solid fa-user-group"></i> Kakak Asuh</div>
+            <div class="hw-kakak-grid">${kartu}</div>
+        </div>`;
     },
 
     renderPilihan(q, cocok) {
@@ -642,6 +762,11 @@ const HasilWawancara = {
         return "?n=" + encodeURIComponent(slug);
     },
 
+    // Link step 2 (hasil kebuka).
+    urlBuka(c) {
+        return this.urlCalon(c) + "&opened=true";
+    },
+
     labelHasil(h) {
         if (h === "lolos") return "LANJUT";
         if (h === "tidak_lolos") return "GAGAL";
@@ -651,12 +776,6 @@ const HasilWawancara = {
     clsHasil(h) {
         if (h === "lolos" || h === "tidak_lolos") return h;
         return "belum";
-    },
-
-    badge(h) {
-        const cls = this.clsHasil(h);
-        const ikon = cls === "lolos" ? "fa-circle-check" : cls === "tidak_lolos" ? "fa-circle-xmark" : "fa-hourglass-half";
-        return `<span class="hw-badge ${cls}"><i class="fa-solid ${ikon}"></i>${this.esc(this.labelHasil(h))}</span>`;
     },
 
     /* ================= PESAN HASIL (template + WA kakak asuh) ================= */
@@ -680,36 +799,41 @@ const HasilWawancara = {
         return no ? "https://wa.me/" + no + "?text=" + t : "https://wa.me/?text=" + t;
     },
 
-    // Baris {kakasuh} di template jadi link WA (bisa lebih dari satu).
-    linkKakasuh(c) {
+    // Baris {kakasuh} di template: nama kakak asuh polos (tanpa link WA).
+    // Link chat-nya ada di panel "Kakak Asuh" di bawah surat.
+    teksKakasuh(c) {
         const daftar = this.kaDaftar(c);
         if (!daftar.length) {
-            return `<span class="hw-wa-pending">belum ditentukan</span>`;
+            return `<span class="hw-kaka-teks kosong">belum ditentukan</span>`;
         }
-        return daftar.map(nama =>
-            `<a class="hw-wa-inline" href="${this.waHref(c, nama)}" target="_blank" rel="noopener">${this.esc(nama)} <i class="fa-brands fa-whatsapp"></i></a>`
-        ).join(", ");
+        return daftar.map(nama => this.esc(nama)).join(", ");
     },
 
-    // Bangun isi pesan dari template: placeholder {tanggal} + {kakasuh}.
-    // Satu baris template = satu paragraf; baris LANJUT/GAGAL jadi tulisan besar.
+    // Bangun isi surat dari template: placeholder {tanggal} + {kakasuh}.
+    // Satu baris template = satu paragraf; baris LANJUT/GAGAL jadi stempel.
     isiPesan(c, h) {
         const tpl = h === "lolos"
             ? ((this.tpl && this.tpl.lanjut) || this.TPL_LANJUT)
             : h === "tidak_lolos"
                 ? ((this.tpl && this.tpl.gagal) || this.TPL_GAGAL)
                 : "";
-        if (!tpl) return `<p class="hw-tpl kosong">Belum ada pesan untuk hasil ini.</p>`;
+        if (!tpl) {
+            return `<div class="hw-kosong">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <span>Hasil belum diputuskan. Pesan otomatis akan muncul begitu statusnya diisi.</span>
+            </div>`;
+        }
         const tanggal = this.fmtTanggal(c.tanggal) || "-";
+        const cls = this.clsHasil(h);
         return String(tpl).split("\n").map(baris => {
             let t = String(baris)
                 .replace(/\{tanggal\}/gi, tanggal)
                 .replace(/\{kakasuh\}/gi, "\u0000");
-            t = this.esc(t).split("\u0000").join(this.linkKakasuh(c));
-            if (!t) return "";
+            t = this.esc(t).split("\u0000").join(this.teksKakasuh(c));
+            if (!t.trim()) return "";
             const polos = t.replace(/<[^>]*>/g, "").trim();
             if (polos === "LANJUT" || polos === "GAGAL") {
-                return `<div class="hw-result-big">${polos}</div>`;
+                return `<p class="hw-status-inline hw-${cls}">${polos}</p>`;
             }
             return `<p class="hw-tpl">${t}</p>`;
         }).filter(Boolean).join("");
