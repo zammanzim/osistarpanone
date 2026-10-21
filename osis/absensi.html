@@ -22,10 +22,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-absensi.css?v=3" />
+    <link rel="stylesheet" href="../css/osis-absensi.css?v=4" />
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=14"></script>
-    <script src="../js/db.js?v=35" defer></script>
+    <script src="../js/db.js?v=36" defer></script>
     <script src="../js/aktivitas.js?v=10" defer></script>
     <script src="../js/app.js?v=10" defer></script>
     <script src="../js/dropdown.js?v=3" defer></script>
@@ -38,7 +38,10 @@
     <script src="../js/osis-sidebar.js?v=45" defer></script>
     <script src="../js/osis-header.js?v=14" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/absensi.js?v=18" defer></script>
+    <script src="../js/absensi.js?v=19" defer></script>
+    <script src="../js/vendor/qrcode.min.js?v=1"></script>
+    <script src="../js/vendor/jsQR.min.js?v=1"></script>
+    <script src="../js/absensi-qr.js?v=1" defer></script>
   <script src="../js/pwa.js?v=11" defer></script>
   </head>
   <body>
@@ -69,6 +72,7 @@
         <div style="display: flex; gap: 8px; flex-wrap: wrap">
           <button class="btn btn-red" id="btnTambahAbsensi" style="display: none"><i class="fa-solid fa-plus"></i> Tambah Data</button>
           <button class="btn btn-white" id="btnAbsenLangsung" style="display: none"><i class="fa-solid fa-bolt"></i> Absen Langsung</button>
+          <button class="btn btn-white" id="btnAbsenQr" style="display: none"><i class="fa-solid fa-qrcode"></i> Absen QR</button>
         </div>
       </div>
 
@@ -149,6 +153,63 @@
         <div class="form-actions-row" style="margin-top: 14px">
           <button class="btn btn-white" id="btnBatalLangsung">Batal</button>
           <button class="btn btn-red" id="btnSelesaiLangsung"><i class="fa-solid fa-check"></i> Selesai</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP ABSEN QR: mode A (tampilkan QR sesi) + mode B (scan kartu siswa) -->
+    <div class="kas-form" id="absenQr">
+      <div class="kas-form-inner qr-inner">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
+          <span style="font-weight: 900; display: flex; align-items: center; gap: 8px; font-size: 1rem"><i class="fa-solid fa-qrcode" style="color: var(--red)"></i> <span>Absen QR</span></span>
+          <button class="icon-btn" onclick="AbsensiQr.tutup()" title="Tutup" style="width: 34px; height: 34px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="qr-tabs">
+          <button type="button" id="qrTabTampil" class="on"><i class="fa-solid fa-display"></i> Tampilkan QR</button>
+          <button type="button" id="qrTabScan"><i class="fa-solid fa-camera"></i> Scan Kartu</button>
+        </div>
+
+        <!-- MODE A: QR sesi (siswa scan) -->
+        <div id="qrPanelTampil">
+          <div id="qrFormSesi">
+            <div class="qr-grid2">
+              <div class="field"><label>Tanggal</label><input type="date" id="qrTanggal" class="admin-input" /></div>
+              <div class="field"><label>Berlaku (menit)</label><input type="number" id="qrMenit" class="admin-input" min="5" max="720" step="5" value="120" /></div>
+            </div>
+            <div class="field" style="margin-top: 8px"><label>Nama kegiatan</label><input type="text" id="qrKegiatan" class="admin-input" placeholder="cth: Kumpulan rutin" maxlength="120" /></div>
+            <button class="btn btn-red" id="qrBtnMulai" style="margin-top: 12px; width: 100%; justify-content: center"><i class="fa-solid fa-play"></i> Mulai Sesi QR</button>
+            <p style="font-size: 0.72rem; color: var(--gray); font-weight: 600; margin: 10px 0 0">Siswa scan QR ini lalu login akun OSIS-nya. Kalau QR-nya susah dibaca, siswa bisa ketik kode manual di halaman absen.</p>
+          </div>
+
+          <div id="qrInfo" hidden>
+            <div class="qr-kotak"><div id="qrCode"></div></div>
+            <div class="qr-kode">Kode manual: <b id="qrKode">-</b></div>
+            <div class="qr-meta" id="qrMeta"></div>
+            <div class="qr-count" id="qrCount"></div>
+            <div class="absen-sec"><i class="fa-solid fa-user-check"></i> Sudah absen</div>
+            <div class="qr-daftar" id="qrDaftar"></div>
+            <div class="form-actions-row" style="margin-top: 12px">
+              <button class="btn btn-white" id="qrBtnSalin"><i class="fa-solid fa-copy"></i> Salin Link</button>
+              <button class="btn btn-white" id="qrBtnBaru"><i class="fa-solid fa-plus"></i> Sesi Baru</button>
+              <button class="btn btn-red" id="qrBtnTutupSesi"><i class="fa-solid fa-lock"></i> Tutup Sesi</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE B: scan kartu QR siswa -->
+        <div id="qrPanelScan" hidden>
+          <div class="qr-video-wrap">
+            <video id="qrVideo" playsinline muted></video>
+            <div id="qrVideoKosong" class="qr-video-kosong"><i class="fa-solid fa-camera"></i> Kamera belum nyala</div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 10px">
+            <button class="btn btn-red" id="qrBtnKamera" style="flex: 1; justify-content: center"><i class="fa-solid fa-camera"></i> Nyalakan Kamera</button>
+            <button class="btn btn-white" id="qrBtnKameraStop" style="display: none"><i class="fa-solid fa-stop"></i> Stop</button>
+          </div>
+          <div class="qr-info" id="qrScanInfo">Siswa buka halaman <b>/absen</b> di HP-nya, tekan "Tampilkan Kartu", lalu QR-nya dipindai dari sini.</div>
+          <div class="absen-sec"><i class="fa-solid fa-qrcode"></i> Hasil scan</div>
+          <div class="qr-daftar" id="qrScanDaftar"></div>
         </div>
       </div>
     </div>

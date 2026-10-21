@@ -3,7 +3,7 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v162";
+const VERSI = "tarpan-v164";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 
@@ -15,12 +15,15 @@ const APP_SHELL = [
   "./index.html",
   "./login.html",
   "./polling.html",
+  "./absen.html",
   "./changelog.html",
   "./hasil-wawancara.html",
+  "./jepun.html",
   "./offline.html",
   "./manifest.webmanifest",
   "./css/style.css",
   "./css/feed.css",
+  "./css/jepun.css",
   "./css/osis2.css",
   "./css/osis-absensi.css",
   "./css/osis-agenda.css",
@@ -64,6 +67,8 @@ const APP_SHELL = [
   "./js/app.js",
   "./js/arsip.js",
   "./js/absensi.js",
+  "./js/absensi-qr.js",
+  "./js/absen-siswa.js",
   "./js/agenda.js",
   "./js/akses.js",
   "./js/anggota.js",
@@ -82,6 +87,7 @@ const APP_SHELL = [
   "./js/home.js",
   "./js/informasi.js",
   "./js/informasi-view.js",
+  "./js/jepun.js",
   "./js/kegiatan.js",
   "./js/keuangan.js",
   "./js/lagu.js",
@@ -116,6 +122,8 @@ const APP_SHELL = [
   "./js/visitor.js",
   "./js/wawancara.js",
   "./js/hasil-wawancara.js",
+  "./js/vendor/jsQR.min.js",
+  "./js/vendor/qrcode.min.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-512-maskable.png",

@@ -1,0 +1,354 @@
+/* ============================================================
+   JEPUN — Halaman Tebak Huruf Jepang (standalone jepun.html)
+   Pakai design system OSIS Tarpan One (css/style.css):
+   merah-putih, neo-brutalism, font Outfit.
+   ============================================================ */
+
+.jep-wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 18px 18px 54px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ============================================================
+   KARTU
+   ============================================================ */
+.jep-card {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.jep-card.accent-top {
+  border-top: 10px solid var(--red);
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.jep-hero h1 {
+  font-size: clamp(1.5rem, 5vw, 2.15rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  margin: 6px 0 6px;
+}
+.jep-hero h1 .red {
+  color: var(--red);
+}
+.jep-desc {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 58ch;
+}
+.jep-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 14px;
+}
+/* Chip bawaan: <b> jadi merah 1rem. Di sini dibikin kalem biar label
+   mode/panduan ga kebesaran. */
+.jep-meta .chip b {
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+.jep-meta .chip b#jepRekor {
+  color: var(--red);
+  font-size: 0.95rem;
+}
+
+/* ============================================================
+   PILIH MODE
+   ============================================================ */
+.jep-modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 10px;
+}
+.jep-mode {
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  padding: 11px 13px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s,
+    background 0.12s,
+    color 0.12s;
+}
+.jep-mode:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.jep-mode:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+.jep-mode b {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+.jep-mode small {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--gray);
+  margin-top: 3px;
+}
+.jep-mode.active {
+  background: var(--red);
+  color: #fff;
+}
+.jep-mode.active small {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ============================================================
+   AREA SOAL
+   ============================================================ */
+.jep-quiz {
+  display: grid;
+  grid-template-columns: 1.35fr 0.85fr;
+  gap: 14px;
+  align-items: start;
+}
+.jep-q {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 24px 16px;
+}
+.jep-kana {
+  font-family: "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+  font-size: clamp(88px, 16vw, 168px);
+  line-height: 1;
+  font-weight: 500;
+  margin: 4px 0 2px;
+  color: var(--ink);
+}
+.jep-prompt {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+
+/* tombol jawaban */
+.jep-answers {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.jep-answer {
+  position: relative;
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  padding: 14px 10px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s,
+    background 0.12s;
+}
+.jep-answer:hover {
+  background: var(--yellow);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.jep-answer:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+.jep-answer .k {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  opacity: 0.45;
+}
+.jep-answer.correct {
+  background: var(--green-bg);
+  border-color: var(--green);
+  color: #0f5c28;
+  box-shadow: 3px 3px 0 var(--green);
+}
+.jep-answer.wrong {
+  background: #ffe1e4;
+  border-color: var(--red);
+  color: var(--red-dark);
+  box-shadow: 3px 3px 0 var(--red);
+}
+
+/* ============================================================
+   PANEL SAMPING (statistik + input + feedback)
+   ============================================================ */
+.jep-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.jep-side .btn-block {
+  margin-top: 0;
+}
+.jep-scorecard {
+  padding: 12px;
+}
+.jep-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.jep-stat {
+  background: var(--paper-2);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  padding: 10px 6px;
+  text-align: center;
+}
+.jep-stat b {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+.jep-stat span {
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray);
+}
+.jep-stat.hot b {
+  color: var(--red);
+}
+
+.jep-label-sm {
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.jep-row {
+  display: flex;
+  gap: 8px;
+}
+.jep-input {
+  flex: 1;
+  min-width: 0;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  padding: 11px 13px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  background: var(--white);
+  outline: none;
+  transition: box-shadow 0.12s;
+}
+.jep-input:focus {
+  box-shadow: 3px 3px 0 var(--red);
+}
+.jep-feedback {
+  min-height: 46px;
+  border: 2px dashed var(--line);
+  border-radius: 14px;
+  padding: 11px 13px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--gray);
+  background: var(--paper);
+}
+.jep-feedback.good {
+  background: var(--green-bg);
+  border-color: var(--green);
+  color: #0f5c28;
+}
+.jep-feedback.bad {
+  background: #ffe1e4;
+  border-color: var(--red);
+  color: var(--red-dark);
+}
+.jep-tips {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--gray);
+  line-height: 1.6;
+}
+.jep-tips b {
+  color: var(--ink);
+  font-weight: 900;
+}
+.jep-kbd {
+  font-family: inherit;
+  border: 2px solid var(--ink);
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  padding: 0 5px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: var(--white);
+  color: var(--ink);
+}
+
+.jep-foot {
+  text-align: center;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--gray);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   RESPONSIF
+   ============================================================ */
+@media (max-width: 860px) {
+  .jep-quiz {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .jep-wrap {
+    padding: 14px 10px 40px;
+  }
+  .jep-card {
+    padding: 13px;
+    border-radius: 18px;
+  }
+  .jep-modes {
+    grid-template-columns: 1fr 1fr;
+  }
+  .jep-kana {
+    font-size: 96px;
+  }
+  .jep-stats {
+    gap: 6px;
+  }
+}

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Absen QR — OSIS TARPAN ONE</title>
+    <meta
+      name="description"
+      content="Absen QR OSIS TARPAN ONE. Scan QR sesi dari HP absensi, atau tampilkan kartu QR pribadi buat dipindai operator."
+    />
+    <meta name="theme-color" content="#e11d2e" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/style.css?v=40" />
+    <style>
+      .abs-wrap {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 18px 16px 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .abs-card {
+        background: var(--white);
+        border: 3px solid var(--ink);
+        border-radius: 20px;
+        padding: 18px;
+        box-shadow: 5px 5px 0 var(--ink);
+      }
+      .abs-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .abs-head .ico {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-size: 1.3rem;
+        box-shadow: 2px 2px 0 var(--ink);
+        flex-shrink: 0;
+      }
+      .abs-head h1 {
+        font-size: 1.15rem;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+      .abs-head p {
+        font-size: 0.78rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin: 3px 0 0;
+      }
+      .abs-info {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: var(--gray);
+        background: var(--paper);
+        border: 2px dashed var(--line);
+        border-radius: 14px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        margin-bottom: 14px;
+      }
+      .abs-info span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .abs-info i {
+        color: var(--red);
+        width: 16px;
+      }
+      .abs-yo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.84rem;
+        font-weight: 800;
+        margin-bottom: 14px;
+      }
+      .abs-yo .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 2.5px solid var(--ink);
+        background: var(--yellow);
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+      }
+      .abs-qr {
+        background: #fff;
+        border: 3px solid var(--ink);
+        border-radius: 18px;
+        box-shadow: 4px 4px 0 var(--ink);
+        padding: 14px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+        margin-bottom: 12px;
+      }
+      .abs-qr img,
+      .abs-qr canvas {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        image-rendering: pixelated;
+      }
+      .abs-timer {
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--gray);
+        margin-bottom: 14px;
+      }
+      .abs-timer b {
+        color: var(--red-dark);
+        font-size: 1.05rem;
+        font-weight: 900;
+      }
+      .abs-ok {
+        text-align: center;
+        padding: 10px 0 4px;
+      }
+      .abs-ok .tanda {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 12px;
+        border-radius: 50%;
+        border: 3px solid var(--ink);
+        background: #d6f5d6;
+        color: #146314;
+        display: grid;
+        place-items: center;
+        font-size: 2rem;
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+      .abs-ok .tanda.gagal {
+        background: #ffe9e9;
+        color: var(--red-dark);
+      }
+      .abs-ok h2 {
+        font-size: 1.1rem;
+        font-weight: 900;
+        margin: 0 0 6px;
+      }
+      .abs-ok p {
+        font-size: 0.82rem;
+        color: var(--gray);
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      .abs-kode-form {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .abs-kode-form input {
+        flex: 1;
+        min-width: 0;
+      }
+      .abs-kode-form .btn {
+        flex-shrink: 0;
+      }
+      .abs-foot {
+        text-align: center;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+      .abs-foot a {
+        color: var(--red);
+        font-weight: 900;
+      }
+      .abs-loading {
+        text-align: center;
+        padding: 26px 10px;
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: var(--gray);
+      }
+    </style>
+    <script src="js/supabase.min.js?v=10"></script>
+    <script src="js/config.js?v=14"></script>
+    <script src="js/db.js?v=36" defer></script>
+    <script src="js/aktivitas.js?v=10" defer></script>
+    <script src="js/app.js?v=10" defer></script>
+    <script src="js/toast.js?v=10" defer></script>
+    <script src="js/show-popup.js?v=15" defer></script>
+    <script src="js/osis-auth.js?v=19" defer></script>
+    <script src="js/vendor/qrcode.min.js?v=1"></script>
+    <script src="js/absen-siswa.js?v=1" defer></script>
+    <script src="js/pwa.js?v=11" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>ABSEN QR</h2>
+          <p>OSIS TARPAN ONE</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <a href="index#/" class="btn btn-white btn-sm"><i class="fa-solid fa-house"></i> Beranda</a>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <main class="abs-wrap">
+      <div class="abs-card" id="absCard">
+        <div class="abs-loading"><div class="spinner"></div>Memuat...</div>
+      </div>
+      <div class="abs-foot">
+        Absen QR khusus anggota OSIS. Kalau ada masalah, laporkan ke operator kegiatan.
+      </div>
+    </main>
+  </body>
+</html>

@@ -2178,29 +2178,35 @@ async function setSaldoAwal(userId, periode, nominal) {
 // (cek osis_users + UNIQUE tanggal+lower(nama) anti dobel/bentrok).
 // =========================================================================
 async function getAbsensi() {
-  try {
+  // Kolom baru (kegiatan / sumber / akun_id / akun_mode / sesi_qr_id) bisa
+  // belum ada kalau migrasi belum di-run — coba select dari paling lengkap
+  // ke paling minimal, sisanya default.
+  const selects = [
+    "id, tanggal, nama, status, alasan, kegiatan, created_by, pengunggah, created_at, updated_at, sumber, akun_id, akun_mode, sesi_qr_id",
+    "id, tanggal, nama, status, alasan, kegiatan, created_by, pengunggah, created_at, updated_at",
+    "id, tanggal, nama, status, alasan, created_by, pengunggah, created_at, updated_at",
+  ];
+  let lastErr = null;
+  for (const sel of selects) {
     const { data, error } = await supa
       .from("osis_absensi")
-      .select(
-        "id, tanggal, nama, status, alasan, kegiatan, created_by, pengunggah, created_at, updated_at",
-      )
+      .select(sel)
       .order("tanggal", { ascending: false })
       .order("created_at", { ascending: false });
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    // kolom kegiatan belum ada (migrasi belum di-run) — pakai kolom lama
-    if (!String(err.message || "").match(/kegiatan|column/i)) throw err;
-    const { data, error } = await supa
-      .from("osis_absensi")
-      .select(
-        "id, tanggal, nama, status, alasan, created_by, pengunggah, created_at, updated_at",
-      )
-      .order("tanggal", { ascending: false })
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return (data || []).map((r) => ({ ...r, kegiatan: "" }));
+    if (!error) {
+      return (data || []).map((r) => ({
+        ...r,
+        kegiatan: r.kegiatan ?? "",
+        sumber: r.sumber || "manual",
+        akun_id: r.akun_id ?? null,
+        akun_mode: r.akun_mode || "",
+        sesi_qr_id: r.sesi_qr_id ?? null,
+      }));
+    }
+    lastErr = error;
+    if (!String(error.message || "").match(/column/i)) break;
   }
+  throw lastErr || new Error("Gagal memuat absensi.");
 }
 async function buatAbsensi(userId, f) {
   const payload = {
@@ -2270,6 +2276,80 @@ async function hapusAbsensi(userId, id) {
   if (error) throw error;
   cekOk(data);
   Cache.del("absensi");
+}
+
+// =========================================================================
+// ABSENSI QR - sesi QR (mode A) + kartu QR personal (mode B)
+// Lihat db/migrasi-absensi-qr.sql. Token QR DITANDATANGANI DI SERVER (HMAC)
+// dan identitas siswa dibaca dari auth.uid() - bukan dari kiriman client.
+// Semua fungsi balikin objek {status: 'OK' | 'ERR_...', ...}.
+// =========================================================================
+async function qrAbsenSesiBuat(userId, tanggal, kegiatan, menit) {
+  const { data, error } = await supa.rpc("qr_absen_sesi_buat", {
+    p_user_id: userId,
+    p_tanggal: tanggal,
+    p_kegiatan: kegiatan || "",
+    p_menit: menit || 120,
+  });
+  if (error) throw error;
+  Cache.del("absensi");
+  return data || { status: "ERR_UNKNOWN" };
+}
+
+async function qrAbsenSesiAmbil(userId) {
+  const { data, error } = await supa.rpc("qr_absen_sesi_ambil", {
+    p_user_id: userId,
+  });
+  if (error) throw error;
+  return data || { status: "ERR_UNKNOWN" };
+}
+
+async function qrAbsenSesiTutup(userId, sesiId) {
+  const { data, error } = await supa.rpc("qr_absen_sesi_tutup", {
+    p_user_id: userId,
+    p_sesi_id: sesiId,
+  });
+  if (error) throw error;
+  return data || { status: "ERR_UNKNOWN" };
+}
+
+// Sisi siswa: intip info sesi dari token (tanpa catat absen).
+async function qrAbsenInfo(token) {
+  const { data, error } = await supa.rpc("qr_absen_info", { p_token: token });
+  if (error) throw error;
+  return data || { status: "ERR_UNKNOWN" };
+}
+
+// Sisi siswa (mode A): catat hadir dari QR sesi.
+async function qrAbsenDaftar(token, kode) {
+  const { data, error } = await supa.rpc("qr_absen_daftar", {
+    p_token: token || "",
+    p_kode: kode || "",
+  });
+  if (error) throw error;
+  Cache.del("absensi");
+  return data || { status: "ERR_UNKNOWN" };
+}
+
+// Sisi siswa (mode B): bikin kartu QR personal (berlaku singkat, 1x pakai).
+async function qrAbsenKartuAmbil(detik) {
+  const { data, error } = await supa.rpc("qr_absen_kartu_ambil", {
+    p_detik: detik || 90,
+  });
+  if (error) throw error;
+  return data || { status: "ERR_UNKNOWN" };
+}
+
+// Sisi operator (mode B): catat hadir dari kartu QR siswa.
+async function qrAbsenCatat(userId, sesiId, token) {
+  const { data, error } = await supa.rpc("qr_absen_catat", {
+    p_user_id: userId,
+    p_sesi_id: sesiId,
+    p_token: token || "",
+  });
+  if (error) throw error;
+  Cache.del("absensi");
+  return data || { status: "ERR_UNKNOWN" };
 }
 
 // =========================================================================

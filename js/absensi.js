@@ -650,7 +650,7 @@ const Absensi = {
     // Sembunyikan tombol aksi kalau tidak punya kendali atas halaman ini
     terapkanAkses() {
         const boleh = OsisAuth.bisa("absensi");
-        ["btnTambahAbsensi", "btnAbsenLangsung"].forEach(id => {
+        ["btnTambahAbsensi", "btnAbsenLangsung", "btnAbsenQr"].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = boleh ? "" : "none";
         });
