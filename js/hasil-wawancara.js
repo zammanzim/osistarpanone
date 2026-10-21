@@ -22,6 +22,9 @@ const HasilWawancara = {
 
     // Dari roster pengurus (tahun aktif): nama -> wa.
     pengurusList: [],
+    // Semua roster (semua tahun) — cadangan kalau kakak asuh bukan pengurus
+    // tahun aktif (mis. roster 2025), biar jabatan + WA tetap kebaca.
+    pengurusSemua: [],
 
     // Template pesan hasil (site_content, bisa diedit dari halaman ini).
     // Placeholder: {tanggal}, {kakasuh}. Baris pertama tanpa indent.
@@ -100,8 +103,9 @@ const HasilWawancara = {
             try {
                 const [periode, pengurus] = await Promise.all([getPeriode(), getPengurus()]);
                 const aktif = (periode || []).filter(p => p.aktif).map(p => String(p.tahun));
+                this.pengurusSemua = pengurus || [];
                 this.pengurusList = (pengurus || []).filter(p => aktif.includes(String(p.tahun)));
-            } catch { this.pengurusList = []; }
+            } catch { this.pengurusList = []; this.pengurusSemua = []; }
             // Template pesan hasil (fallback ke teks pembina kalau DB kosong).
             try {
                 const sc = await getSiteContent();
@@ -330,8 +334,8 @@ const HasilWawancara = {
                 </header>
                 <div class="hw-buka">
                     <div class="hw-buka-ikon"><i class="fa-solid fa-lock"></i></div>
-                    <h2>Hasil belum dibuka</h2>
-                    <p>Yakin ini data kamu? Klik tombol di bawah buat lihat hasil wawancara OSIS.</p>
+                    <h2>Buka Hasil Kamu?</h2>
+                    <p>Klik tombol di bawah buat lihat hasil wawancara kamu. Good luck yaa!</p>
                     <a class="btn btn-red" href="${this.urlBuka(c)}"
                         onclick="HasilWawancara.bukaHasil(event)">
                         <i class="fa-solid fa-unlock"></i> Buka Hasil
@@ -420,8 +424,7 @@ const HasilWawancara = {
         const daftar = this.kaDaftar(c);
         if (!daftar.length) return "";
         const kartu = daftar.map(nama => {
-            const p = (this.pengurusList || []).find(x =>
-                String(x.nama || "").trim().toLowerCase() === String(nama).trim().toLowerCase());
+            const p = this.cariPengurus(nama);
             const jabatan = p && p.jabatan ? p.jabatan : "";
             return `<a class="hw-kakak-card" href="${this.waHref(c, nama)}" target="_blank" rel="noopener">
                 <span class="hw-kakak-ava">${this.esc(this.inisial(nama))}</span>
@@ -779,12 +782,23 @@ const HasilWawancara = {
     },
 
     /* ================= PESAN HASIL (template + WA kakak asuh) ================= */
-    // Nama kakak asuh -> nomor WA: cocokkan nama ke roster pengurus tahun aktif.
-    waNoKakasuh(c, nama) {
+    // Cari baris pengurus by nama: tahun aktif dulu, lalu semua tahun
+    // (kakak asuh bisa dari roster lama). Baris terbaru yang punya WA menang.
+    cariPengurus(nama) {
         const target = String(nama || "").trim().toLowerCase();
-        if (!target) return "";
-        const p = (this.pengurusList || []).find(x =>
-            String(x.nama || "").trim().toLowerCase() === target);
+        if (!target) return null;
+        const cocok = x => String(x.nama || "").trim().toLowerCase() === target;
+        const aktif = (this.pengurusList || []).find(cocok);
+        if (aktif) return aktif;
+        const semua = (this.pengurusSemua || []).filter(cocok);
+        return semua.slice().reverse().find(x => String(x.wa || "").trim())
+            || semua[semua.length - 1]
+            || null;
+    },
+
+    // Nama kakak asuh -> nomor WA.
+    waNoKakasuh(c, nama) {
+        const p = this.cariPengurus(nama);
         return String((p && p.wa) || "").replace(/\D/g, "");
     },
 
