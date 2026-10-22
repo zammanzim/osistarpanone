@@ -691,10 +691,12 @@ const Home = {
         if (!modal) return;
         const tahun = parseInt(modal.dataset.tahun, 10);
         if (!tahun || isNaN(tahun)) return;
-        const tahunList = (Home.tahunList && Home.tahunList.length ? [...Home.tahunList] : [tahun]).sort((a, b) => a - b);
+        // Urutan visual: tahun terbaru (2026) di atas -> terlama (2010) di bawah.
+        // Swipe kanan (arah -1) = mundur/menurunkan tahun; swipe kiri (arah +1) = maju/menaikkan.
+        const tahunList = (Home.tahunList && Home.tahunList.length ? [...Home.tahunList] : [tahun]).sort((a, b) => b - a);
         const idx = tahunList.indexOf(tahun);
         if (idx < 0) return;
-        const next = tahunList[(idx + arah + tahunList.length) % tahunList.length];
+        const next = tahunList[(idx - arah + tahunList.length) % tahunList.length];
         if (document.body.classList.contains("edit-mode") && typeof SiteEdit !== "undefined" && SiteEdit.savePopup) {
             SiteEdit.savePopup(tahun, modal);
         }

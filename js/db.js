@@ -3,9 +3,26 @@
 // Urutan include: 1) CDN supabase-js  2) config.js  3) db.js
 // =========================================================================
 
+// Fetch wrapper: kalau offline (navigator.onLine false) langsung reject,
+// dan timeout 6 detik biar request yang menggantung gak bikin spinner
+// loading selamanya. Modul UI sudah punya catch -> tampil fallback.
+function fetchDenganTimeout(input, init) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return Promise.reject(new Error("Offline — data live tidak tersedia."));
+  }
+  const ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch {} }, 6000) : null;
+  const opts = Object.assign({}, init || {});
+  if (ctrl) opts.signal = ctrl.signal;
+  const p = (typeof fetch === "function") ? fetch(input, opts) : Promise.reject(new Error("fetch tidak tersedia"));
+  return p.finally(() => { if (timer) clearTimeout(timer); });
+}
+
 const supa = (() => {
   try {
-    return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { fetch: fetchDenganTimeout },
+    });
   } catch (e) {
     // CDN gagal dimuat (offline sebelum sempat cache) — JANGAN matikan file ini.
     // Cache/DeviceId/getter lokal tetap jalan; semua akses network lempar error
@@ -200,7 +217,7 @@ function r2Aktif() {
 // di background. Key: osis_cache_<nama>
 // =========================================================================
 const Cache = {
-  version: "v2",
+  version: "v3",
   prefix: "osis_cache_",
   key(key) {
     return Cache.prefix + Cache.version + "_" + key;
@@ -217,10 +234,14 @@ const Cache = {
   },
   set(key, data) {
     try {
-      localStorage.setItem(
-        Cache.key(key),
-        JSON.stringify({ data, t: Date.now(), v: Cache.version }),
-      );
+      // Bagi dua: data kecil (teks) boleh di-cache buat offline.
+      // Data besar / media-heavy (galeri, feed, kegiatan, dll) jangan
+      // di-cache — hemat storage + hindari quota localStorage.
+      const BERAT = new Set(["gallery", "feed", "kegiatan", "arsip", "poster", "prestasi", "dokumen", "informasi", "wawancara_calon", "wawancara_hasil_publik"]);
+      if (BERAT.has(key)) return;
+      const payload = JSON.stringify({ data, t: Date.now(), v: Cache.version });
+      if (payload.length > 250000) return; // ~250KB, hindari data besar
+      localStorage.setItem(Cache.key(key), payload);
     } catch {}
   },
   del(key) {

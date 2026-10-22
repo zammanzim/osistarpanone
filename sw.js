@@ -3,7 +3,7 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v170";
+const VERSI = "tarpan-v173";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 
@@ -46,7 +46,10 @@ const APP_SHELL = [
   "./osis/absensi.html",
   "./osis/agenda.html",
   "./osis/akses.html",
+  "./osis/anggota.html",
   "./osis/dokumen.html",
+  "./osis/program-bulanan.html",
+  "./osis/program-tahunan.html",
   "./osis/index.html",
   "./osis/informasi.html",
   "./osis/keuangan.html",
@@ -112,6 +115,8 @@ const APP_SHELL = [
   "./js/push.js",
   "./js/outbox.js",
   "./js/pengaturan.js",
+  "./js/pengurus.js",
+  "./js/program.js",
   "./js/sekbid.js",
   "./js/show-popup.js",
   "./js/site-edit.js",
@@ -243,21 +248,30 @@ function apiJanganCache(url) {
 // Saat fetch gagal (offline): fallback cache persis, lalu cache tanpa
 // query (?v=7) biar URL berversion tetap ketemu precache.
 async function basiDulu(request, namaCache) {
-  const cache = await caches.open(namaCache);
-  const cached = await cache.match(request, { ignoreSearch: false });
+  // Precache (STATIS) juga ikut dicek, supaya aset yang sudah di-precache
+  // tetap ke-serve saat RUNTIME kosong (mis. setelah update SW).
+  const daftarCache = namaCache === STATIS ? [STATIS] : [namaCache, STATIS];
+  const cacheUtama = await caches.open(namaCache);
+  let cached = null;
+  for (const nama of daftarCache) {
+    const c = await caches.open(nama);
+    const m = await c.match(request, { ignoreSearch: false });
+    if (m) { cached = m; break; }
+  }
   const ambil = fetch(request)
     .then((res) => {
       if (res && (res.ok || res.type === "opaque"))
-        cache.put(request, res.clone());
+        cacheUtama.put(request, res.clone());
       return res;
     })
     .catch(async () => {
       if (cached) return cached;
       if (new URL(request.url).origin === self.location.origin) {
-        const tanpaQuery = await cache.match(request, {
-          ignoreSearch: true,
-        });
-        if (tanpaQuery) return tanpaQuery;
+        for (const nama of daftarCache) {
+          const c = await caches.open(nama);
+          const tanpaQuery = await c.match(request, { ignoreSearch: true });
+          if (tanpaQuery) return tanpaQuery;
+        }
       }
       throw new Error("offline");
     });

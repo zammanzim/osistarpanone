@@ -455,7 +455,9 @@ const Absensi = {
         const tglSet = {};
         all.forEach(r => {
             if (!r.tanggal) return;
-            if (!Absensi.cocokFokus(r.nama)) return;
+            // Baris 'hadir' dari QR tetap ditampilkan meski nama-nya tidak
+            // masuk roster tahun fokus (biar scan QR tidak "hilang").
+            if (!Absensi.cocokFokus(r.nama) && r.status !== "hadir") return;
             if (Absensi.filter.tanggal && String(r.tanggal) !== String(Absensi.filter.tanggal)) return;
             tglSet[String(r.tanggal)] = true;
         });
@@ -464,7 +466,12 @@ const Absensi = {
             const h = Absensi.hadirTanggal(t);
             const hariRows = all.filter(r => String(r.tanggal) === String(t));
             const keg = (hariRows.map(r => String(r.kegiatan || "").trim()).find(Boolean) || "");
-            const daftar = h.daftar.filter(n => Absensi.cocokFokus(n));
+            // Baris 'hadir' tersimpan (termasuk hasil scan QR) ditampilkan
+            // apa adanya; filter tahun fokus cuma berlaku untuk daftar otomatis
+            // (roster - tidak hadir).
+            const daftar = h.otomatis
+                ? h.daftar.filter(n => Absensi.cocokFokus(n))
+                : h.daftar;
             if (q && !(daftar.some(n => n.toLowerCase().includes(q)) || keg.toLowerCase().includes(q))) return;
             grupHadir[t] = { daftar, otomatis: h.otomatis, keg };
         });
