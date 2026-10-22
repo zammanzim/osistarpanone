@@ -696,7 +696,7 @@ const Home = {
         const tahunList = (Home.tahunList && Home.tahunList.length ? [...Home.tahunList] : [tahun]).sort((a, b) => b - a);
         const idx = tahunList.indexOf(tahun);
         if (idx < 0) return;
-        const next = tahunList[(idx - arah + tahunList.length) % tahunList.length];
+        const next = tahunList[(idx + arah + tahunList.length) % tahunList.length];
         if (document.body.classList.contains("edit-mode") && typeof SiteEdit !== "undefined" && SiteEdit.savePopup) {
             SiteEdit.savePopup(tahun, modal);
         }
