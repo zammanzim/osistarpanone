@@ -2230,6 +2230,119 @@ body.edit-mode .bento-meta .gal-del {
 }
 
 /* ============================================================
+   MUSIK PAGE (request lagu) — kartu aturan
+   ============================================================ */
+.rule-info {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  padding: 16px;
+}
+.rule-info-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--yellow);
+  border: 2.5px solid var(--ink);
+  border-radius: 9px;
+  padding: 5px 11px;
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: rotate(-1.5deg);
+  margin-bottom: 14px;
+}
+.rule-info-list {
+  display: grid;
+  gap: 10px;
+}
+.rule-info-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--paper-2);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  padding: 11px 12px;
+}
+.rule-info-ico {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 9px;
+  font-size: 0.78rem;
+}
+.rule-info-item h5 {
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.rule-info-item p {
+  font-size: 0.66rem;
+  color: var(--gray);
+  font-weight: 600;
+  line-height: 1.45;
+  margin-top: 3px;
+}
+@media (min-width: 768px) {
+  .rule-info-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .rule-info-item {
+    flex-direction: column;
+  }
+}
+
+/* catatan singkat di bawah kartu aturan */
+.rule-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 11px 12px;
+  background: var(--paper-2);
+  border: 2.5px dashed var(--ink);
+  border-radius: 14px;
+}
+.rule-note-ico {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: var(--yellow);
+  border: 2.5px solid var(--ink);
+  border-radius: 9px;
+  font-size: 0.75rem;
+}
+.rule-note-body {
+  flex: 1;
+  min-width: 0;
+}
+.rule-note-tag {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--red-dark);
+}
+.rule-note p {
+  font-size: 0.68rem;
+  color: var(--gray);
+  font-weight: 600;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
+/* ============================================================
    KONTAK PAGE
    ============================================================ */
 .kontak-grid {

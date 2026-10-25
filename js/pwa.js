@@ -251,6 +251,19 @@
     } catch (e) {}
   }
 
+  // ---- 5) Context menu global — muat sibling js/context-menu.js ----
+  function muatContextMenu() {
+    try {
+      if (document.querySelector('script[data-ctx-menu]')) return;
+      var dalamSub = location.pathname.split("/").filter(Boolean).length > 1;
+      var s = document.createElement("script");
+      s.src = (dalamSub ? "../" : "") + "js/context-menu.js";
+      s.defer = true;
+      s.setAttribute("data-ctx-menu", "1");
+      document.head.appendChild(s);
+    } catch (e) {}
+  }
+
   // Pesan dari SW (Background Sync) — teruskan ke Outbox bila sudah termuat.
   try {
     if ("serviceWorker" in navigator) {
@@ -268,6 +281,7 @@
     hintIOS();
     muatOutbox();
     muatPush();
+    muatContextMenu();
   });
 
   // Buat HeaderMore (titik-tiga mobile): kapan menu boleh tampil.

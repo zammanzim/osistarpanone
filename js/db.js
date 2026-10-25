@@ -858,6 +858,16 @@ async function getRequestLagu(batas = 30) {
   return data || [];
 }
 
+// Total request lagu di server (dihitung Postgres, bukan jumlah baris yang
+// ke-load). Buat badge jumlah pas paging — head:true = cuma ambil angkanya.
+async function getLaguCount() {
+  const { count, error } = await supa
+    .from("lagu_requests")
+    .select("id", { count: "exact", head: true });
+  if (error) throw error;
+  return count || 0;
+}
+
 // Hapus request lagu milik sendiri (device_id dicek di server)
 async function hapusLaguSendiri(id) {
   const { data, error } = await supa.rpc("hapus_lagu_own", {

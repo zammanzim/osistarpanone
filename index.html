@@ -1031,7 +1031,7 @@
     </style>
     <script src="js/supabase.min.js?v=10"></script>
     <script src="js/config.js?v=14"></script>
-    <script src="js/db.js?v=35" defer></script>
+    <script src="js/db.js?v=38" defer></script>
     <script src="js/compress-video.js?v=8" defer></script>
     <script src="js/app.js?v=15" defer></script>
     <script src="js/dropdown.js?v=3" defer></script>
@@ -1047,7 +1047,7 @@
     <script src="js/sekbid.js?v=11" defer></script>
     <script src="js/pengurus.js?v=11" defer></script>
     <script src="js/aspirasi.js?v=13" defer></script>
-    <script src="js/lagu.js?v=13" defer></script>
+    <script src="js/lagu.js?v=14" defer></script>
     <script src="js/galeri.js?v=17" defer></script>
     <script src="js/feed.js?v=8" defer></script>
     <script src="js/arsip.js?v=21" defer></script>
@@ -1122,13 +1122,6 @@
               id="headerMorePengaturan"
               onclick="HeaderMore.close()"
               ><i class="fa-solid fa-gear"></i> Pengaturan</a
-            >
-            <a
-              href="jepun.html"
-              class="header-more-item"
-              id="headerMoreJepun"
-              onclick="HeaderMore.close()"
-              ><i class="fa-solid fa-language"></i> Tebak Huruf</a
             >
             <a
               href="osis/index"
@@ -2030,6 +2023,63 @@
           </div>
         </div>
 
+        <div class="rule-info">
+          <div class="rule-info-head">
+            <i class="fa-solid fa-circle-info"></i> Aturan
+          </div>
+          <div class="rule-info-list">
+            <div class="rule-info-item">
+              <span class="rule-info-ico"
+                ><i class="fa-solid fa-hand"></i
+              ></span>
+              <div>
+                <h5 data-edit-key="musik_rule_1_title">Lagu Harus Sopan</h5>
+                <p data-edit-key="musik_rule_1_desc">
+                  Pastikan lagu yang direquest tidak mengandung kata-kata
+                  kasar, unsur seksual, penghinaan, atau konten tidak pantas
+                  lainnya yang tidak sesuai dengan lingkungan sekolah.
+                </p>
+              </div>
+            </div>
+            <div class="rule-info-item">
+              <span class="rule-info-ico"
+                ><i class="fa-solid fa-shuffle"></i
+              ></span>
+              <div>
+                <h5 data-edit-key="musik_rule_2_title">Pemilihan Lagu</h5>
+                <p data-edit-key="musik_rule_2_desc">
+                  Lagu dipilih acak, yang lagi trend di pilih duluan.
+                </p>
+              </div>
+            </div>
+            <div class="rule-info-item">
+              <span class="rule-info-ico"
+                ><i class="fa-solid fa-hourglass-half"></i
+              ></span>
+              <div>
+                <h5 data-edit-key="musik_rule_3_title">Masa Expired</h5>
+                <p data-edit-key="musik_rule_3_desc">
+                  Lagu yang udah tenggelam 3+ hari gabakal di play, karna
+                  banyak yang requestnya.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rule-note">
+          <div class="rule-note-ico"><i class="fa-solid fa-note-sticky"></i></div>
+          <div class="rule-note-body">
+            <span class="rule-note-tag" data-edit-key="musik_rule_note_tag"
+              >Catatan</span
+            >
+            <p data-edit-key="musik_rule_note">
+              Mohon maaf kalo lagu yang direquest ga selalu bisa diputer, kuota
+              jam istirahat terbatas.
+            </p>
+          </div>
+        </div>
+
         <div class="kontak-grid">
           <div class="form-card">
             <div class="form-head" id="headFormLagu">Form Request Lagu</div>
@@ -2343,12 +2393,6 @@
               href="changelog.html"
               style="color: inherit; font-size: 0.72rem; font-weight: 800; opacity: 0.85"
               >Changelog</a
-            >
-            <span style="opacity: 0.5">•</span>
-            <a
-              href="jepun.html"
-              style="color: inherit; font-size: 0.72rem; font-weight: 800; opacity: 0.85"
-              >Tebak Huruf</a
             >
           </span>
         </div>

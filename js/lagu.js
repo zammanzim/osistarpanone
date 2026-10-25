@@ -10,6 +10,7 @@ const Lagu = {
     langkah: 30,   // nambah berapa per klik "Muat lebih banyak"
     habis: false,  // true kalau server udah ngasih semua (fetch < ambil)
     lagiMuat: false,
+    total: 0,      // jumlah asli di server (Postgres ngitung, bukan yang ke-load)
 
     async init() {
         if (Lagu.terinisialisasi) return;
@@ -44,14 +45,39 @@ const Lagu = {
     },
 
     // ============ PLAYLIST — SWR ============
+    // Badge jumlah: pakai total server, bukan panjang array yang ke-load.
+    // Kalau total belum kebaca (offline / count gagal), mundur ke jumlah lokal.
+    perbaruiJumlah() {
+        const jum = document.getElementById("jumLagu");
+        if (!jum) return;
+        const lokal = (Lagu.cache || []).length;
+        const n = Lagu.total > 0 ? Lagu.total : lokal;
+        jum.textContent = n;
+        if (Lagu.total > lokal) {
+            jum.title = `Total di server: ${Lagu.total}. Menampilkan ${lokal} terbaru.`;
+        } else {
+            jum.removeAttribute("title");
+        }
+    },
+
+    // Total dari server (1 query ringan, Postgres yang ngitung).
+    // Gagal = diamkan — badge tetep pakai jumlah lokal.
+    muatTotal() {
+        if (typeof getLaguCount !== "function") return Promise.resolve(Lagu.total);
+        return getLaguCount().then(n => {
+            Lagu.total = parseInt(n, 10) || 0;
+            Lagu.perbaruiJumlah();
+            return Lagu.total;
+        }).catch(() => Lagu.total);
+    },
+
     async muatDaftar() {
         const list = document.getElementById("daftarLagu");
         if (!list) return;
 
         const render = (data) => {
             Lagu.cache = data || [];
-            const jum = document.getElementById("jumLagu");
-            if (jum) jum.textContent = data.length;
+            Lagu.perbaruiJumlah();
             if (!data || data.length === 0) {
                 list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-headphones"></i> Playlist masih kosong. Jadilah request pertama!</div>`;
                 return;
@@ -120,27 +146,34 @@ const Lagu = {
                 }).join("");
                 return sep + items;
             }).join("");
-            // Paging: kasih tombol kalau kemungkinan masih ada sisa di server.
-            if (!Lagu.habis && data.length >= Lagu.langkah) {
-                list.innerHTML += `<div style="text-align:center;padding:12px 0 4px"><button class="btn btn-white btn-sm" id="btnMuatLagu" onclick="Lagu.muatLagi()"><i class="fa-solid fa-angles-down"></i> Muat lebih banyak</button></div>`;
+            // Paging: kasih tombol selama masih ada yang belum ke-load.
+            // Total dari server lebih akurat daripada "fetch penuh atau nggak".
+            const sisa = Lagu.total > 0 ? Lagu.total - data.length : -1;
+            if (!Lagu.habis && (sisa > 0 || (sisa < 0 && data.length >= Lagu.langkah))) {
+                const teks = sisa > 0 ? ` (${sisa} lagi)` : "";
+                list.innerHTML += `<div id="muatLaguWrap" style="text-align:center;padding:12px 0 4px"><button class="btn btn-white btn-sm" id="btnMuatLagu" onclick="Lagu.muatLagi()"><i class="fa-solid fa-angles-down"></i> Muat lebih banyak${teks}</button></div>`;
             }
         };
 
         const cached = Cache.get("lagu");
         if (cached) {
             render(cached);
-            getRequestLagu(Lagu.ambil).then(fresh => {
-                Lagu.habis = (fresh || []).length < Lagu.ambil;
-                if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
-                    Cache.set("lagu", fresh);
-                    render(fresh);
-                }
-            }).catch(() => {});
+            // Segarkan baris + total bareng (total dipakai badge & label tombol).
+            const totalSebelum = Lagu.total;
+            Promise.all([getRequestLagu(Lagu.ambil), Lagu.muatTotal()])
+                .then(([fresh, totalBaru]) => {
+                    Lagu.habis = (fresh || []).length < Lagu.ambil;
+                    const bedaBaris = JSON.stringify(fresh) !== JSON.stringify(cached);
+                    if (bedaBaris) Cache.set("lagu", fresh);
+                    // Total juga berubah -> render ulang biar label tombol ikut.
+                    if (bedaBaris || totalBaru !== totalSebelum) render(fresh);
+                })
+                .catch(() => {});
             return;
         }
 
         try {
-            const data = await getRequestLagu(Lagu.ambil);
+            const [data] = await Promise.all([getRequestLagu(Lagu.ambil), Lagu.muatTotal()]);
             Lagu.habis = (data || []).length < Lagu.ambil;
             Cache.set("lagu", data);
             render(data);
