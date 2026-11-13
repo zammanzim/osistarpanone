@@ -30,7 +30,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-index.css?v=11" />
+    <link rel="stylesheet" href="../css/osis-index.css?v=13" />
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=14"></script>
     <script src="../js/db.js?v=35" defer></script>
@@ -45,7 +45,7 @@
     <script src="../js/osis-sidebar.js?v=45" defer></script>
     <script src="../js/osis-header.js?v=14" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/dashboard.js?v=14" defer></script>
+    <script src="../js/dashboard.js?v=16" defer></script>
     <script src="../js/osis-visitor.js?v=5" defer></script>
     <script src="../js/pwa.js?v=11" defer></script>
   </head>
@@ -82,226 +82,310 @@
     </header>
 
     <div class="osis-wrap">
-      <div class="osis-hero" id="osisHero">
-        <div class="osis-avatar" id="osisAvatar">O</div>
-        <div style="flex: 1; min-width: 180px">
-          <h1 id="osisHello">Halo, OSIS!</h1>
-          <p id="osisSub">Berikut ringkasan aktivitas OSIS saat ini.</p>
-          <div class="osis-meta" id="osisMeta"></div>
-        </div>
-        <div class="osis-clock">
-          <b id="dashTanggal">-</b>
-          <div class="jam"><span id="dashJam">-</span><small>WIB</small></div>
-        </div>
-      </div>
+      <!-- ===== 1. HERO + RINGKASAN PRIBADI SAYA ===== -->
+      <div class="bento-top">
+        <div class="osis-hero" id="osisHero">
+          <div class="osis-hero-main">
+            <div class="osis-avatar" id="osisAvatar">O</div>
+            <div class="osis-hero-text">
+              <div class="osis-kicker">COMMAND CENTER PENGURUS</div>
+              <h1 id="osisHello">Halo, OSIS!</h1>
+              <p id="osisSub">Berikut ringkasan aktivitas &amp; performa OSIS saat ini.</p>
+              <div class="osis-meta" id="osisMeta"></div>
+            </div>
+            <div class="osis-clock">
+              <b id="dashTanggal">-</b>
+              <div class="jam"><span id="dashJam">-</span><small>WIB</small></div>
+            </div>
+          </div>
 
-      <div class="dash-split">
-      <div class="dash-side">
+          <div class="osis-hero-bar">
+            <div class="hak-wrap">
+              <span class="hak-lbl"><i class="fa-solid fa-key"></i> Akses:</span>
+              <div class="hak-chips" id="hakChips">
+                <span class="hak-note">Memuat hak akses...</span>
+              </div>
+              <span class="hak-sekbid" id="hakSekbid"></span>
+            </div>
+            <div class="hero-actions">
+              <a href="profil" class="btn btn-white btn-sm">
+                <i class="fa-solid fa-user-pen"></i> Profil Saya
+              </a>
+            </div>
+          </div>
 
-      <div class="dash-panel">
-        <h3><i class="fa-solid fa-key"></i> Hak Kendali Saya</h3>
-        <div class="hak-chips" id="hakChips">
-          <span class="hak-note">Memuat hak akses...</span>
+          <!-- Pintasan Cepat sesuai hak akses -->
+          <div class="quick-strip" id="quickActions"></div>
         </div>
-        <div class="hak-note" id="hakSekbid"></div>
-      </div>
 
-      <div class="dash-panel">
-        <h3><i class="fa-solid fa-grip"></i> Menu Halaman</h3>
-        <div class="menu-grid">
-          <a class="menu-card" href="anggota">
-            <span class="mi"><i class="fa-solid fa-users"></i></span>
-            <span><b>Anggota</b><small>Pengurus &amp; sekbid</small></span>
-          </a>
-          <a class="menu-card" href="absensi">
-            <span class="mi"><i class="fa-solid fa-clipboard-user"></i></span>
-            <span><b>Absensi</b><small>Kehadiran pengurus</small></span>
-          </a>
-          <a class="menu-card" href="tabungan">
-            <span class="mi"><i class="fa-solid fa-piggy-bank"></i></span>
-            <span><b>Tabungan</b><small>Setoran pengurus</small></span>
-          </a>
-          <a class="menu-card" href="keuangan">
-            <span class="mi"><i class="fa-solid fa-wallet"></i></span>
-            <span><b>Keuangan</b><small>Kas OSIS</small></span>
-          </a>
-          <a class="menu-card" href="agenda">
-            <span class="mi"><i class="fa-solid fa-calendar-days"></i></span>
-            <span><b>Agenda</b><small>Per sekbid &amp; orang</small></span>
-          </a>
-          <a class="menu-card" href="dokumen">
-            <span class="mi"><i class="fa-solid fa-folder-open"></i></span>
-            <span><b>Dokumen</b><small>Arsip &amp; file</small></span>
-          </a>
-          <a class="menu-card" href="poster">
-            <span class="mi"><i class="fa-solid fa-newspaper"></i></span>
-            <span><b>Poster</b><small>Galeri poster</small></span>
-          </a>
-          <a class="menu-card" href="informasi">
-            <span class="mi"><i class="fa-solid fa-bullhorn"></i></span>
-            <span><b>Informasi Internal</b><small>Broadcast pengurus</small></span>
-          </a>
-          <a class="menu-card" href="../index.html#/informasi">
-            <span class="mi"><i class="fa-solid fa-earth-americas"></i></span>
-            <span><b>Informasi Publik</b><small>Pengumuman &amp; acara</small></span>
-          </a>
-          <a class="menu-card" href="program-tahunan">
-            <span class="mi"><i class="fa-solid fa-calendar"></i></span>
-            <span><b>Program Tahunan</b><small>Rencana besar</small></span>
-          </a>
-          <a class="menu-card" href="program-bulanan">
-            <span class="mi"><i class="fa-solid fa-calendar-days"></i></span>
-            <span><b>Program Bulanan</b><small>Operasional</small></span>
-          </a>
-          <a class="menu-card" href="akses" id="menuAksesCard" style="display: none">
-            <span class="mi"><i class="fa-solid fa-key"></i></span>
-            <span><b>Akses</b><small>Bagi kendali halaman</small></span>
-          </a>
+        <!-- Ringkasan Pribadi Saya -->
+        <div class="personal-bento">
+          <div class="pb-head">
+            <span><i class="fa-solid fa-id-badge"></i> Ringkasan Pribadi Saya</span>
+            <small id="personalNameTag">-</small>
+          </div>
+          <div class="pb-grid">
+            <a href="tabungan" class="pb-card pb-tabungan">
+              <div class="pb-icon"><i class="fa-solid fa-piggy-bank"></i></div>
+              <div class="pb-info">
+                <span class="pb-lbl">Tabungan Saya</span>
+                <b id="myTabunganVal">Rp0</b>
+                <small id="myTabunganSub">memuat...</small>
+              </div>
+            </a>
+            <a href="absensi" class="pb-card pb-absen">
+              <div class="pb-icon"><i class="fa-solid fa-user-check"></i></div>
+              <div class="pb-info">
+                <div class="pb-row">
+                  <span class="pb-lbl">Kehadiran Saya</span>
+                  <span class="pb-pct" id="myAbsenPct">-</span>
+                </div>
+                <b id="myAbsenVal">-</b>
+                <div class="dash-bar"><span id="myAbsenBar" style="width: 100%"></span></div>
+                <small id="myAbsenSub">memuat...</small>
+              </div>
+            </a>
+          </div>
         </div>
       </div>
 
-      <div class="dash-panel">
-        <h3>
-          <i class="fa-solid fa-calendar-days"></i> Agenda Terdekat
-          <a class="go" href="agenda">Lihat semua →</a>
-        </h3>
-        <div id="agendaDekat">
-          <div class="dash-empty">Memuat agenda...</div>
-        </div>
-      </div>
-
-      <div class="dash-panel">
-        <h3>
-          <i class="fa-solid fa-folder-open"></i> Dokumen Terbaru
-          <a class="go" href="dokumen">Lihat semua →</a>
-        </h3>
-        <div id="dokBaru">
-          <div class="dash-empty">Memuat dokumen...</div>
-        </div>
-      </div>
-      </div>
-      <div class="dash-main">
-
+      <!-- ===== 2. 4 STAT CARD UTAMA ===== -->
       <div class="dash-stats">
-        <button
-          type="button"
-          class="dash-stat visitor-card"
-          onclick="OsisVisitor.bukaPopup()"
-          title="Lihat detail pengunjung"
-        >
-          <span class="lbl"><i class="fa-solid fa-eye"></i> Pengunjung</span
-          ><b id="dashVisitor">-</b
-          ><small>hari ini · klik buat detail</small>
-        </button>
-        <a href="agenda" class="dash-stat"
-          ><span class="lbl"
-            ><i class="fa-solid fa-calendar-days"></i> Total Agenda</span
-          ><b id="statAgenda">-</b
-          ><small id="statAgendaSub">memuat...</small></a
-        >
-        <a href="anggota" class="dash-stat"
-          ><span class="lbl"
-            ><i class="fa-solid fa-users"></i> Anggota</span
-          ><b id="statAnggota">-</b
-          ><small id="statAnggotaSub">memuat...</small></a
-        >
-        <a href="keuangan" class="dash-stat"
-          ><span class="lbl"
-            ><i class="fa-solid fa-wallet"></i> Saldo Kas</span
-          ><b id="statKas" style="font-size: 1.2rem">-</b
-          ><small id="statKasSub">memuat...</small></a
-        >
-        <a href="tabungan" class="dash-stat"
-          ><span class="lbl"
-            ><i class="fa-solid fa-piggy-bank"></i> Total Tabungan</span
-          ><b id="statTabungan" style="font-size: 1.2rem">-</b
-          ><small id="statTabunganSub">memuat...</small></a
-        >
+        <a href="agenda" class="dash-stat stat-ag">
+          <span class="lbl"><i class="fa-solid fa-calendar-days"></i> Total Agenda</span>
+          <b id="statAgenda">-</b>
+          <small id="statAgendaSub">memuat...</small>
+        </a>
+
+        <a href="keuangan" class="dash-stat stat-kas">
+          <span class="lbl"><i class="fa-solid fa-wallet"></i> Saldo Kas OSIS</span>
+          <b id="statKas">-</b>
+          <small id="statKasSub">memuat...</small>
+        </a>
+
+        <a href="tabungan" class="dash-stat stat-tab">
+          <span class="lbl"><i class="fa-solid fa-piggy-bank"></i> Total Tabungan</span>
+          <b id="statTabungan">-</b>
+          <small id="statTabunganSub">memuat...</small>
+        </a>
+
+        <a href="anggota" class="dash-stat stat-ang">
+          <span class="lbl"><i class="fa-solid fa-users"></i> Pengurus Aktif</span>
+          <b id="statAnggota">-</b>
+          <small id="statAnggotaSub">memuat...</small>
+        </a>
       </div>
 
-      <div class="dash-panel">
-        <h3>
-          <i class="fa-solid fa-wallet"></i> Keuangan Terakhir
-          <a class="go" href="keuangan">Lihat semua →</a>
-        </h3>
-        <div id="kasTerakhir">
-          <div class="dash-empty">Memuat keuangan...</div>
-        </div>
-      </div>
+      <!-- ===== 3. BENTO GRID UTAMA ===== -->
+      <div class="bento-grid">
+        <!-- A. AGENDA & NOTULENSI -->
+        <section class="dash-panel bento-span-6 panel-rapat">
+          <div class="panel-head">
+            <h3>
+              <span class="ph-ico"><i class="fa-solid fa-clipboard-list"></i></span>
+              Agenda &amp; Notulensi
+            </h3>
+            <div class="bento-tabs" id="rapatTabs">
+              <button type="button" class="btab active" data-rapat-tab="agenda">
+                Agenda
+              </button>
+              <button type="button" class="btab" data-rapat-tab="notulensi">
+                Notulensi <span class="btab-badge" id="badgeNotulensi">0</span>
+              </button>
+            </div>
+          </div>
+          <div id="agendaPane">
+            <div id="agendaDekat">
+              <div class="dash-empty">Memuat agenda...</div>
+            </div>
+            <div class="pane-foot">
+              <a href="agenda" class="go">Lihat semua agenda →</a>
+            </div>
+          </div>
+          <div id="notulensiPane" style="display: none">
+            <div id="notulensiBaru">
+              <div class="dash-empty">Memuat notulensi rapat...</div>
+            </div>
+            <div class="pane-foot">
+              <a href="notulensi" class="go">Lihat semua notulensi →</a>
+            </div>
+          </div>
+        </section>
 
-      <div class="dash-panel">
-        <h3>
-          <i class="fa-solid fa-clipboard-user"></i> Absensi Terakhir
-          <a class="go" href="absensi">Lihat semua →</a>
-        </h3>
-        <div id="absensiTerakhir">
-          <div class="dash-empty">Memuat absensi...</div>
-        </div>
-      </div>
+        <!-- B. KEUANGAN -->
+        <section class="dash-panel bento-span-6">
+          <div class="panel-head">
+            <h3>
+              <span class="ph-ico"><i class="fa-solid fa-wallet"></i></span>
+              Keuangan Terakhir
+            </h3>
+            <a class="go" href="keuangan">Detail →</a>
+          </div>
+          <div id="kasMiniRekap"></div>
+          <div id="kasTerakhir">
+            <div class="dash-empty">Memuat keuangan...</div>
+          </div>
+        </section>
 
-      <div class="dash-panel">
-        <h3><i class="fa-solid fa-clock-rotate-left"></i> Aktivitas Terbaru</h3>
-        <div id="aktivitasList">
-          <div class="dash-empty">Memuat aktivitas...</div>
-        </div>
-      </div>
-      </div>
+        <!-- C. ABSENSI -->
+        <section class="dash-panel bento-span-5">
+          <div class="panel-head">
+            <h3>
+              <span class="ph-ico"><i class="fa-solid fa-clipboard-user"></i></span>
+              Absensi Terakhir
+            </h3>
+            <a class="go" href="absensi">Detail →</a>
+          </div>
+          <div id="absensiTerakhir">
+            <div class="dash-empty">Memuat absensi...</div>
+          </div>
+        </section>
+
+        <!-- D. PROGRAM KERJA -->
+        <section class="dash-panel bento-span-7 panel-program">
+          <div class="panel-head">
+            <h3>
+              <span class="ph-ico"><i class="fa-solid fa-list-check"></i></span>
+              Progres Program Kerja
+            </h3>
+            <div class="panel-actions">
+              <a href="program-bulanan" class="go-pill">Bulanan</a>
+              <a href="program-tahunan" class="go-pill">Tahunan</a>
+            </div>
+          </div>
+          <div class="prog-summary" id="progSummary"></div>
+          <div id="progresProgram">
+            <div class="dash-empty">Memuat program kerja...</div>
+          </div>
+        </section>
+
+        <!-- E. PAPAN INFORMASI INTERNAL -->
+        <section class="dash-panel bento-span-7 panel-info">
+          <div class="panel-head">
+            <h3>
+              <span class="ph-ico"><i class="fa-solid fa-bullhorn"></i></span>
+              Papan Informasi Internal
+            </h3>
+            <div class="panel-actions">
+              <a href="informasi" class="go-pill">Semua Info →</a>
+            </div>
+          </div>
+          <div id="infoInternal">
+            <div class="dash-empty">Memuat pengumuman pengurus...</div>
+          </div>
+        </section>
+
+        <!-- F. INBOX SISWA -->
+        <section class="dash-panel bento-span-5 panel-inbox">
+          <div class="panel-head">
+            <h3>
+              <span class="ph-ico"><i class="fa-solid fa-inbox"></i></span>
+              Inbox Siswa
+            </h3>
+            <div class="bento-tabs" id="inboxTabs">
+              <button type="button" class="btab active" data-inbox-tab="aspirasi">
+                Aspirasi <span class="btab-badge" id="badgeAspirasi">0</span>
+              </button>
+              <button type="button" class="btab" data-inbox-tab="lagu">
+                Lagu <span class="btab-badge" id="badgeLagu">0</span>
+              </button>
+            </div>
+          </div>
+          <div id="inboxAspirasiPane">
+            <div class="dash-empty">Memuat aspirasi siswa...</div>
+          </div>
+          <div id="inboxLaguPane" style="display: none">
+            <div class="dash-empty">Memuat request lagu...</div>
+          </div>
+        </section>
+
+        <!-- G. LOG & ARSIP -->
+        <section class="dash-panel bento-span-12">
+          <div class="panel-head">
+            <h3>
+              <span class="ph-ico"><i class="fa-solid fa-clock-rotate-left"></i></span>
+              Log &amp; Arsip
+            </h3>
+            <div class="bento-tabs" id="logTabs">
+              <button type="button" class="btab active" data-log-tab="aktivitas">
+                Aktivitas
+              </button>
+              <button type="button" class="btab" data-log-tab="dokumen">
+                Dokumen
+              </button>
+            </div>
+          </div>
+          <div id="aktivitasPane">
+            <div id="aktivitasList">
+              <div class="dash-empty">Memuat aktivitas...</div>
+            </div>
+          </div>
+          <div id="dokumenPane" style="display: none">
+            <div id="dokBaru">
+              <div class="dash-empty">Memuat dokumen...</div>
+            </div>
+            <div class="pane-foot">
+              <a href="dokumen" class="go">Semua dokumen →</a>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
-  <!-- ===== POPUP VISITOR (markup sama kayak index.html) ===== -->
-  <div class="visitor-overlay" id="visitorOverlay">
-    <div class="visitor-popup">
-      <div class="visitor-pop-head">
-        <h3><i class="fa-solid fa-eye"></i> Pengunjung</h3>
-        <button
-          id="tutupVisitor"
-          onclick="OsisVisitor.tutupPopup()"
-          aria-label="Tutup"
-        >
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="visitor-stats duo">
-        <div class="vstat-card now">
-          <b id="vstatHari">-</b>
-          <span><i class="fa-solid fa-eye"></i> Hari Ini</span>
-        </div>
-        <div class="vstat-card all">
-          <b id="vstatTotal">-</b>
-          <span><i class="fa-solid fa-chart-simple"></i> Total</span>
-        </div>
-      </div>
-      <div class="visitor-list-head">
-        <h4><i class="fa-solid fa-mobile-screen"></i> Daftar Perangkat</h4>
-        <div class="vtab-wrap">
+
+    <!-- ===== POPUP VISITOR (markup sama kayak index.html) ===== -->
+    <div class="visitor-overlay" id="visitorOverlay">
+      <div class="visitor-popup">
+        <div class="visitor-pop-head">
+          <h3><i class="fa-solid fa-eye"></i> Pengunjung</h3>
           <button
-            type="button"
-            class="vtab active"
-            data-vtab="hari"
-            onclick="OsisVisitor.gantiTab('hari')"
+            id="tutupVisitor"
+            onclick="OsisVisitor.tutupPopup()"
+            aria-label="Tutup"
           >
-            Hari Ini
-          </button>
-          <button
-            type="button"
-            class="vtab"
-            data-vtab="total"
-            onclick="OsisVisitor.gantiTab('total')"
-          >
-            Total
+            <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
-      </div>
-      <div class="visitor-list" id="visitorList">
-        <div class="pesan-empty">
-          <i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar...
+        <div class="visitor-stats duo">
+          <div class="vstat-card now">
+            <b id="vstatHari">-</b>
+            <span><i class="fa-solid fa-eye"></i> Hari Ini</span>
+          </div>
+          <div class="vstat-card all">
+            <b id="vstatTotal">-</b>
+            <span><i class="fa-solid fa-chart-simple"></i> Total</span>
+          </div>
         </div>
+        <div class="visitor-list-head">
+          <h4><i class="fa-solid fa-mobile-screen"></i> Daftar Perangkat</h4>
+          <div class="vtab-wrap">
+            <button
+              type="button"
+              class="vtab active"
+              data-vtab="hari"
+              onclick="OsisVisitor.gantiTab('hari')"
+            >
+              Hari Ini
+            </button>
+            <button
+              type="button"
+              class="vtab"
+              data-vtab="total"
+              onclick="OsisVisitor.gantiTab('total')"
+            >
+              Total
+            </button>
+          </div>
+        </div>
+        <div class="visitor-list" id="visitorList">
+          <div class="pesan-empty">
+            <i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar...
+          </div>
+        </div>
+        <p class="visitor-note">
+          <i class="fa-solid fa-circle-info"></i> Satu perangkat dihitung 1x per
+          hari.
+        </p>
       </div>
-      <p class="visitor-note">
-        <i class="fa-solid fa-circle-info"></i> Satu perangkat dihitung 1x per
-        hari.
-      </p>
     </div>
-  </div>
   </body>
 </html>
