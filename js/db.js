@@ -441,6 +441,19 @@ function emailKlaimOsis(id) {
 // Fallback ke kolom minimal kalau migrasi foto/bio/auth_id belum di-run.
 async function getOsisUser(username) {
   try {
+    const { data, error } = await supa.rpc("cari_osis_login", {
+      p_username: username || "",
+    });
+    if (!error) return data || null;
+    if (!/cari_osis_login|PGRST202|42883|not found|does not exist/i.test(String(error.message || ""))) {
+      throw error;
+    }
+  } catch (e) {
+    if (!/cari_osis_login|PGRST202|42883|not found|does not exist/i.test(String(e.message || ""))) {
+      throw e;
+    }
+  }
+  try {
     const { data, error } = await supa
       .from("osis_users")
       .select("id, username, nama, jabatan, foto, bio, angkatan, auth_id, auth_email")
@@ -520,6 +533,19 @@ function emailUntukBiasa(row) {
 
 // Ambil akun biasa by username (TANPA password — verifikasi via Auth API).
 async function getBiasaUser(username) {
+  try {
+    const { data, error } = await supa.rpc("cari_biasa_login", {
+      p_username: username || "",
+    });
+    if (!error) return data || null;
+    if (!/cari_biasa_login|PGRST202|42883|not found|does not exist/i.test(String(error.message || ""))) {
+      throw error;
+    }
+  } catch (e) {
+    if (!/cari_biasa_login|PGRST202|42883|not found|does not exist/i.test(String(e.message || ""))) {
+      throw e;
+    }
+  }
   const { data, error } = await supa
     .from("biasa_users")
     .select("id, username, nama, auth_id, auth_email")
@@ -671,23 +697,38 @@ async function kirimAspirasi(nama, kelas, isi, isPrivate = false) {
 
 // Ambil aspirasi terbaru buat ditampilkan (terbaru di atas, default 50/halaman)
 async function getAspirasi(limit = 50, offset = 0) {
+  try {
+    const { data, error } = await supa.rpc("aspirasi_list_publik", {
+      p_device_id: getDeviceId(),
+      p_limit: limit,
+      p_offset: offset,
+    });
+    if (!error && Array.isArray(data)) return data;
+    if (error && !/aspirasi_list_publik|PGRST202|42883|not found|does not exist/i.test(String(error.message || ""))) {
+      throw error;
+    }
+  } catch (e) {
+    if (!/aspirasi_list_publik|PGRST202|42883|not found|does not exist/i.test(String(e.message || ""))) {
+      throw e;
+    }
+  }
   let { data, error } = await supa
     .from("aspirasi")
-    .select("id, device_id, nama, kelas, isi, is_private, balasan, dibalas_oleh, dibalas_at, created_at")
+    .select("id, nama, kelas, isi, is_private, balasan, dibalas_oleh, dibalas_at, created_at")
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
   // Fallback: DB belum dimigrasi (kolom balasan belum ada) -> select lama.
   if (error && String(error.message || "").match(/balasan|dibalas|schema cache|column/i)) {
     const fb = await supa
       .from("aspirasi")
-      .select("id, device_id, nama, kelas, isi, is_private, created_at")
+      .select("id, nama, kelas, isi, is_private, created_at")
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
     if (fb.error) throw fb.error;
-    return (fb.data || []).map(r => ({ ...r, balasan: "", dibalas_oleh: "", dibalas_at: null }));
+    return (fb.data || []).map(r => ({ ...r, device_id: "", balasan: "", dibalas_oleh: "", dibalas_at: null }));
   }
   if (error) throw error;
-  return data || [];
+  return (data || []).map(r => ({ device_id: "", ...r }));
 }
 
 // Hapus aspirasi milik sendiri (device_id dicek di server)
@@ -828,7 +869,21 @@ function catatAksi(aksi, detail) {
 // Ambil request lagu terbaru (paging: awal 30, +30 tiap klik "Muat lebih banyak")
 async function getRequestLagu(batas = 30) {
   const n = Math.min(200, Math.max(1, parseInt(batas, 10) || 30));
-  const kolom = "id, device_id, judul, penyanyi, pesan, nama, selesai, balasan, dibalas_oleh, dibalas_at, created_at";
+  try {
+    const { data, error } = await supa.rpc("lagu_list_publik", {
+      p_device_id: getDeviceId(),
+      p_batas: n,
+    });
+    if (!error && Array.isArray(data)) return data;
+    if (error && !/lagu_list_publik|PGRST202|42883|not found|does not exist/i.test(String(error.message || ""))) {
+      throw error;
+    }
+  } catch (e) {
+    if (!/lagu_list_publik|PGRST202|42883|not found|does not exist/i.test(String(e.message || ""))) {
+      throw e;
+    }
+  }
+  const kolom = "id, judul, penyanyi, pesan, nama, selesai, balasan, dibalas_oleh, dibalas_at, created_at";
   let { data, error } = await supa
     .from("lagu_requests")
     .select(kolom)
@@ -838,24 +893,24 @@ async function getRequestLagu(batas = 30) {
   if (error && String(error.message || "").match(/balasan|dibalas/i)) {
     const fb = await supa
       .from("lagu_requests")
-      .select("id, device_id, judul, penyanyi, pesan, nama, selesai, created_at")
+      .select("id, judul, penyanyi, pesan, nama, selesai, created_at")
       .order("created_at", { ascending: false })
       .range(0, n - 1);
     if (fb.error) throw fb.error;
-    return (fb.data || []).map(r => ({ ...r, balasan: "", dibalas_oleh: "", dibalas_at: null }));
+    return (fb.data || []).map(r => ({ ...r, device_id: "", balasan: "", dibalas_oleh: "", dibalas_at: null }));
   }
   // Fallback: DB belum dimigrasi (kolom selesai belum ada) -> select lama.
   if (error && String(error.message || "").match(/selesai|schema cache|column/i)) {
     const fb = await supa
       .from("lagu_requests")
-      .select("id, device_id, judul, penyanyi, pesan, nama, created_at")
+      .select("id, judul, penyanyi, pesan, nama, created_at")
       .order("created_at", { ascending: false })
       .range(0, n - 1);
     if (fb.error) throw fb.error;
-    return (fb.data || []).map(r => ({ ...r, selesai: false }));
+    return (fb.data || []).map(r => ({ ...r, device_id: "", selesai: false }));
   }
   if (error) throw error;
-  return data || [];
+  return (data || []).map(r => ({ device_id: "", ...r }));
 }
 
 // Total request lagu di server (dihitung Postgres, bukan jumlah baris yang
@@ -3085,13 +3140,13 @@ async function getSemuaPengaturan() {
 }
 
 async function simpanPengaturan(kunci, nilai) {
-  const { error } = await supa
-    .from("pengaturan")
-    .upsert(
-      { kunci: kunci, nilai: nilai, updated_at: new Date().toISOString() },
-      { onConflict: "kunci" },
-    );
+  const { data, error } = await supa.rpc("simpan_pengaturan", {
+    p_user_id: _uid(),
+    p_kunci: kunci,
+    p_nilai: nilai,
+  });
   if (error) throw error;
+  cekOk(data);
 }
 
 // userId diambil dari sesi login (biar signature lama tetap kompatibel).

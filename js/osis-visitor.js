@@ -104,7 +104,13 @@ const OsisVisitor = {
     // Skip kalau sudah ada.
     pasangOverlay() {
         try {
-            if (document.getElementById("visitorOverlay")) return;
+            var statis = document.getElementById("visitorOverlay");
+            if (statis) {
+                // Markup statis (osis/index.html) sudah ada — backdrop tetap
+                // dipasang, biar klik area kosong nutup popup.
+                OsisVisitor.pasangBackdrop(statis);
+                return;
+            }
             var ov = document.createElement("div");
             ov.className = "visitor-overlay";
             ov.id = "visitorOverlay";
@@ -124,10 +130,19 @@ const OsisVisitor = {
                 '<div class="visitor-list" id="visitorList"><div class="pesan-empty"><i class="fa-solid fa-spinner fa-spin"></i> Memuat daftar...</div></div>' +
                 '<p class="visitor-note"><i class="fa-solid fa-circle-info"></i> Satu perangkat dihitung 1x per hari.</p>' +
                 "</div>";
+            document.body.appendChild(ov);
+            OsisVisitor.pasangBackdrop(ov);
+        } catch (e) {}
+    },
+
+    // Pasang sekali aja: klik area kosong (backdrop) nutup popup.
+    pasangBackdrop(ov) {
+        try {
+            if (ov._visBackdrop) return;
+            ov._visBackdrop = true;
             ov.addEventListener("click", function (e) {
                 if (e.target === ov) OsisVisitor.tutupPopup();
             });
-            document.body.appendChild(ov);
         } catch (e) {}
     },
 

@@ -197,6 +197,73 @@ async function cekHakOsis(env, authUserId) {
   }
 }
 
+// Cek hak modul OSIS via RPC osis_bisa (service_role meneruskan p_user_id).
+async function cekBisaHalaman(env, osisId, halaman) {
+  if (!osisId || !halaman || !env.SUPABASE_SERVICE_KEY) return false;
+  try {
+    const base = String(env.SUPABASE_URL).replace(/\/$/, "");
+    const r = await fetch(`${base}/rest/v1/rpc/osis_bisa`, {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: "Bearer " + env.SUPABASE_SERVICE_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ p_user_id: osisId, p_halaman: halaman }),
+    });
+    if (!r.ok) return false;
+    return (await r.json()) === true;
+  } catch {
+    return false;
+  }
+}
+
+const FOLDER_KE_HALAMAN = {
+  gallery: ["galeri"],
+  kegiatan: ["kegiatan"],
+  pelantikan: ["kegiatan"],
+  arsip: ["arsip"],
+  prestasi: ["prestasi"],
+  poster: ["poster"],
+  polling: ["polling"],
+  kas: ["keuangan"],
+  keuangan: ["keuangan"],
+  notulensi: ["notulensi"],
+  proker: ["proker"],
+  evaluasi: ["evaluasi"],
+  formulir: ["formulir"],
+  pimpinan: ["site", "pengurus"],
+  angkatan: ["site", "pengurus"],
+  sekbid: ["site", "pengurus"],
+  web: ["site"],
+  moments: ["site", "galeri"],
+};
+
+async function cekHakPath(env, osisId, path, op) {
+  if (!osisId) return false;
+  const seg = String(path || "").split("/");
+  const folder = seg[0] || "";
+  // Folder milik pribadi / terbuka untuk seluruh pengurus OSIS:
+  if (folder === "profil" || folder === "feed" || folder === "agenda") return true;
+  // pengurus/*: tambah/edit pengurus butuh hak site/pengurus/anggota, kecuali PUT biodata sendiri
+  if (folder === "pengurus") {
+    if (op === "put") return true;
+    return (await cekBisaHalaman(env, osisId, "site"))
+      || (await cekBisaHalaman(env, osisId, "pengurus"))
+      || (await cekBisaHalaman(env, osisId, "anggota"));
+  }
+  // dokumen/*: dipakai halaman dokumen & dokumentasi wawancara (dokumen/wawancara-*)
+  if (folder === "dokumen") {
+    if (/^dokumen\/wawancara-\d+-/i.test(path)) return true;
+    return await cekBisaHalaman(env, osisId, "dokumen");
+  }
+  const daftar = FOLDER_KE_HALAMAN[folder];
+  if (!daftar) return true;
+  for (const h of daftar) {
+    if (await cekBisaHalaman(env, osisId, h)) return true;
+  }
+  return false;
+}
 // Cek super admin (tabel osis_super_admins, kolom username).
 // return true kalau username OSIS pengirim terdaftar sebagai super admin.
 async function cekSuper(env, authUserId) {
@@ -361,8 +428,26 @@ async function enkripsiPush(p256dhB64, authB64, payloadBytes) {
   return body;
 }
 
+const PUSH_HOST_SUFFIX_BOLEH = [
+  "googleapis.com",
+  "google.com",
+  "mozilla.com",
+  "push.apple.com",
+  "windows.com",
+  "notify.windows.com",
+];
+
+function endpointPushValid(epUrl) {
+  if (!epUrl || epUrl.protocol !== "https:") return false;
+  const h = String(epUrl.hostname || "").toLowerCase();
+  return PUSH_HOST_SUFFIX_BOLEH.some((suf) => h === suf || h.endsWith("." + suf));
+}
+
 async function kirimSatuPush(sub, payloadObj, env) {
   const ep = new URL(sub.endpoint);
+  if (!endpointPushValid(ep)) {
+    throw new Error("Endpoint push tidak diizinkan.");
+  }
   const asal = ep.origin;
   const payloadBytes = new TextEncoder().encode(JSON.stringify(payloadObj));
   const body = await enkripsiPush(sub.p256dh, sub.auth, payloadBytes);
@@ -400,17 +485,29 @@ async function tanganiPushKirim(req, env) {
   let body;
   try { body = await req.json(); }
   catch { return jsonResponse({ error: "Body harus JSON." }, 400, env, req); }
-  // Broadcast bebas (osis/notifikasi) khusus super admin — server tolak
-  // kalau bukan, walau halaman client sudah digate juga.
+  // Broadcast bebas (osis/notifikasi) khusus super admin; kirim notif dari
+  // halaman informasi wajib punya hak modul "informasi" (termasuk super admin).
   if (body && body.only_super) {
     const superUser = await cekSuper(env, authUserId);
     if (!superUser) return jsonResponse({ error: "Halaman ini khusus super admin." }, 403, env, req);
+  } else {
+    const bolehInfo = await cekBisaHalaman(env, osisId, "informasi");
+    if (!bolehInfo) return jsonResponse({ error: "Kamu tidak punya hak kirim notifikasi informasi." }, 403, env, req);
   }
 
   const judul = String(body.judul || "").trim().slice(0, 80);
   const isi = String(body.isi || "").trim().slice(0, 180);
   let urlTarget = String(body.url || "#/informasi").trim().slice(0, 300) || "#/informasi";
-  if (!/^(#\/|https?:\/\/|osis\/|polling|changelog)/i.test(urlTarget)) urlTarget = "#/informasi";
+  if (/^https?:\/\//i.test(urlTarget)) {
+    try {
+      const u = new URL(urlTarget);
+      if (u.hostname.toLowerCase() !== "osistarpanone.my.id") urlTarget = "#/informasi";
+    } catch {
+      urlTarget = "#/informasi";
+    }
+  } else if (!/^(#\/|osis\/|polling|changelog)/i.test(urlTarget)) {
+    urlTarget = "#/informasi";
+  }
   let aud = String(body.audience || "publik").trim().toLowerCase();
   if (!["publik", "osis", "semua"].includes(aud)) aud = "publik";
   if (!judul || !isi) return jsonResponse({ error: "Judul + isi wajib diisi." }, 400, env, req);
@@ -578,6 +675,10 @@ export default {
       const osisId = await cekHakOsis(env, authUserId);
       if (!osisId) {
         return jsonResponse({ error: "Akun ini tidak punya hak upload." }, 403, env, req);
+      }
+      const bolehPath = await cekHakPath(env, osisId, path, op);
+      if (!bolehPath) {
+        return jsonResponse({ error: "Kamu tidak punya hak kelola media untuk modul ini." }, 403, env, req);
       }
     }
 
