@@ -35,13 +35,50 @@ const Absensi = {
         document.getElementById("btnTabTidak")?.addEventListener("click", () => Absensi.setTab("tidak"));
         document.getElementById("btnTabHadir")?.addEventListener("click", () => Absensi.setTab("hadir"));
         document.getElementById("btnResetFilter")?.addEventListener("click", () => Absensi.resetFilter());
-        // Tombol fokus tahun (2026 / 2027) di bawah absensi-head
+        // Tombol fokus tahun (2026 / 2027) di sidebar
         document.getElementById("tahunTabs")?.addEventListener("click", (e) => {
             const b = e.target.closest("[data-tahun-fokus]");
             if (b) Absensi.setTahunFokus(parseInt(b.dataset.tahunFokus, 10));
         });
         ["filterQ", "filterStatus", "filterTanggal"].forEach(id => {
-            document.getElementById(id)?.addEventListener("input", () => Absensi.bacaFilter());
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener("input", () => Absensi.bacaFilter());
+            if (id !== "filterQ") el.addEventListener("change", () => Absensi.bacaFilter());
+        });
+        document.getElementById("btnClearQ")?.addEventListener("click", () => {
+            const el = document.getElementById("filterQ");
+            if (el) { el.value = ""; el.focus(); }
+            Absensi.bacaFilter();
+        });
+        document.getElementById("absensiDateRail")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-rail-tgl]");
+            if (!b) return;
+            const tgl = b.dataset.railTgl || "";
+            const inp = document.getElementById("filterTanggal");
+            if (inp) inp.value = (!tgl || inp.value === tgl) ? "" : tgl;
+            Absensi.bacaFilter();
+        });
+        document.getElementById("absensiTopPanel")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-top-nama]");
+            if (!b) return;
+            const nama = decodeURIComponent(b.dataset.topNama || "");
+            const inp = document.getElementById("filterQ");
+            if (inp) inp.value = (Absensi.norm(inp.value) === Absensi.norm(nama)) ? "" : nama;
+            Absensi.bacaFilter();
+        });
+        document.getElementById("absensiChips")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-abs-clearchip]");
+            if (!b) return;
+            const k = b.dataset.absClearchip;
+            if (k === "q") { const el = document.getElementById("filterQ"); if (el) el.value = ""; }
+            else if (k === "tanggal") { const el = document.getElementById("filterTanggal"); if (el) el.value = ""; }
+            else if (k === "status") {
+                const el = document.getElementById("filterStatus");
+                if (el) el.value = "";
+                try { if (window.Dropdown && Dropdown.segarkanSemua) Dropdown.segarkanSemua(); } catch {}
+            }
+            Absensi.bacaFilter();
         });
         document.getElementById("btnBatalAbsensi")?.addEventListener("click", () => Absensi.tutupForm());
         document.getElementById("btnSimpanAbsensi")?.addEventListener("click", () => Absensi.simpan());
@@ -125,6 +162,20 @@ const Absensi = {
         const d = new Date(t + "T00:00:00");
         if (isNaN(d)) return t;
         return d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    },
+
+    fmtTanggalPendek(t) {
+        if (!t) return "-";
+        const d = new Date(t + "T00:00:00");
+        if (isNaN(d)) return t;
+        return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    },
+
+    fmtTanggalRail(t) {
+        if (!t) return "-";
+        const d = new Date(t + "T00:00:00");
+        if (isNaN(d)) return t;
+        return d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
     },
 
     // "2026-09" -> "September 2026" (pembatas per bulan)
@@ -244,9 +295,15 @@ const Absensi = {
 
     renderTahunTabs() {
         const box = document.getElementById("tahunTabs");
+        const panel = document.getElementById("tahunPanel");
         if (!box) return;
         const thns = Absensi.tahunAktifList();
-        if (!thns.length) { box.style.display = "none"; box.innerHTML = ""; return; }
+        if (!thns.length) {
+            box.style.display = "none";
+            box.innerHTML = "";
+            if (panel) panel.style.display = "none";
+            return;
+        }
         // Selalu ada 1 kepilih: pulihkan pilihan terakhir, fallback ke kiri (pertama)
         let f = Absensi.langsung.tahunFokus;
         if (!thns.includes(f)) {
@@ -255,9 +312,15 @@ const Absensi = {
         }
         const berubah = Absensi.langsung.tahunFokus !== f;
         Absensi.langsung.tahunFokus = f;
+        const cntPerTahun = {};
+        (Absensi.langsung.anggota || []).forEach(o => {
+            const t = (o && typeof o === "object") ? o.tahun : null;
+            if (t != null) cntPerTahun[t] = (cntPerTahun[t] || 0) + 1;
+        });
+        if (panel) panel.style.display = "";
         box.style.display = "";
         box.innerHTML = thns.map(t =>
-            `<button type="button" class="${f === t ? "on" : ""}" data-tahun-fokus="${t}"><i class="fa-solid fa-calendar"></i> ${t}</button>`
+            `<button type="button" class="${f === t ? "on" : ""}" data-tahun-fokus="${t}"><i class="fa-solid fa-calendar"></i> ${t}${cntPerTahun[t] ? ` <small>${cntPerTahun[t]}</small>` : ""}</button>`
         ).join("");
         if (berubah) {
             Absensi.renderLangsung();
@@ -312,24 +375,174 @@ const Absensi = {
     },
 
     // ============ RENDER ============
+    setStatSlot(idx, idVal, labelHtml, count, suffix, sub) {
+        const lbl = document.getElementById("lblStat" + idx);
+        if (lbl) lbl.innerHTML = labelHtml;
+        const el = document.getElementById(idVal);
+        if (el) el.innerHTML = escapeHtml(String(count)) + (suffix ? `<span class="stat-suffix"> ${escapeHtml(suffix)}</span>` : "");
+        const subEl = document.getElementById("subStat" + idx);
+        if (subEl) subEl.textContent = sub || "-";
+    },
+
+    renderFilterBar(nItem, nHari, isHadir) {
+        const qVal = document.getElementById("filterQ")?.value || "";
+        const btnClear = document.getElementById("btnClearQ");
+        if (btnClear) btnClear.style.display = qVal ? "" : "none";
+        try { window.OsisSearch?.sync?.("absTopSearch"); } catch {}
+
+        const bar = document.getElementById("absensiBar");
+        const countEl = document.getElementById("absensiBarCount");
+        const chipsEl = document.getElementById("absensiChips");
+        if (!bar || !countEl || !chipsEl) return;
+
+        const f = Absensi.filter;
+        const adaFilter = !!(f.q.trim() || f.tanggal || (!isHadir && f.status));
+        if (!adaFilter && nHari === 0) {
+            bar.style.display = "none";
+            return;
+        }
+        bar.style.display = "";
+        countEl.innerHTML = isHadir
+            ? `Menampilkan <b>${nHari}</b> hari kehadiran (<b>${nItem}</b> entri)`
+            : `Menampilkan <b>${nItem}</b> catatan di <b>${nHari}</b> hari`;
+
+        const chips = [];
+        if (f.q.trim()) {
+            chips.push(`<button type="button" class="abs-chip" data-abs-clearchip="q">Cari: "${escapeHtml(f.q.trim())}" <i class="fa-solid fa-xmark"></i></button>`);
+        }
+        if (f.tanggal) {
+            chips.push(`<button type="button" class="abs-chip" data-abs-clearchip="tanggal">Tanggal: ${escapeHtml(Absensi.fmtTanggalPendek(f.tanggal))} <i class="fa-solid fa-xmark"></i></button>`);
+        }
+        if (!isHadir && f.status) {
+            chips.push(`<button type="button" class="abs-chip" data-abs-clearchip="status">Status: ${escapeHtml(Absensi.labelStatus(f.status))} <i class="fa-solid fa-xmark"></i></button>`);
+        }
+        chipsEl.innerHTML = chips.join("");
+    },
+
+    renderSidePanels(isHadir) {
+        const all = Absensi.cache || [];
+        const railEl = document.getElementById("absensiDateRail");
+        const cntEl = document.getElementById("dateRailCount");
+        const topEl = document.getElementById("absensiTopPanel");
+        const topTitleEl = document.getElementById("topPanelTitle");
+
+        // 1. Rail Tanggal Cepat
+        if (railEl) {
+            const perTgl = {};
+            all.forEach(r => {
+                if (!r.tanggal) return;
+                if (r.status !== "hadir" && !Absensi.cocokFokus(r.nama)) return;
+                const t = String(r.tanggal);
+                if (!perTgl[t]) perTgl[t] = { keg: "", tk: 0, hTersimpan: 0 };
+                if (!perTgl[t].keg && String(r.kegiatan || "").trim()) perTgl[t].keg = String(r.kegiatan).trim();
+                if (r.status === "hadir") perTgl[t].hTersimpan++;
+                else perTgl[t].tk++;
+            });
+            const tgls = Object.keys(perTgl).sort().reverse();
+            if (cntEl) cntEl.textContent = String(tgls.length);
+            const tAktif = Absensi.filter.tanggal || "";
+            const btnSemua = `
+                <button type="button" class="abs-date-btn${!tAktif ? " active" : ""}" data-rail-tgl="">
+                    <span class="abs-date-txt"><b>Semua Tanggal</b><small>Tampilkan seluruh riwayat</small></span>
+                    <span class="abs-date-badge">${tgls.length} hari</span>
+                </button>`;
+            const itemsHtml = tgls.map(t => {
+                const info = perTgl[t];
+                let badge = "";
+                if (isHadir) {
+                    const h = Absensi.hadirTanggal(t);
+                    const jmlH = h.otomatis ? h.daftar.filter(n => Absensi.cocokFokus(n)).length : h.daftar.length;
+                    badge = `${jmlH} H`;
+                } else {
+                    badge = info.tk ? `${info.tk} TK` : `${info.hTersimpan} H`;
+                }
+                return `
+                <button type="button" class="abs-date-btn${tAktif === t ? " active" : ""}" data-rail-tgl="${escapeHtml(t)}" title="${escapeHtml(Absensi.fmtTanggalPanjang(t))}">
+                    <span class="abs-date-txt"><b>${escapeHtml(Absensi.fmtTanggalRail(t))}</b><small>${escapeHtml(info.keg || "Tanpa nama kegiatan")}</small></span>
+                    <span class="abs-date-badge">${escapeHtml(badge)}</span>
+                </button>`;
+            }).join("");
+            railEl.innerHTML = btnSemua + itemsHtml;
+        }
+
+        // 2. Top Ketidakhadiran / Kehadiran Teraktif
+        if (topEl) {
+            const qNorm = Absensi.norm(Absensi.filter.q || "");
+            if (!isHadir) {
+                if (topTitleEl) topTitleEl.innerHTML = `<i class="fa-solid fa-chart-simple"></i> Top Ketidakhadiran`;
+                const rekap = {};
+                all.filter(r => r.status !== "hadir" && Absensi.cocokFokus(r.nama)).forEach(r => {
+                    const nama = String(r.nama || "").trim();
+                    const k = Absensi.norm(nama);
+                    if (!k) return;
+                    if (!rekap[k]) rekap[k] = { nama, izin: 0, sakit: 0, alpha: 0, total: 0 };
+                    if (r.status === "izin") rekap[k].izin++;
+                    else if (r.status === "sakit") rekap[k].sakit++;
+                    else if (r.status === "alpha") rekap[k].alpha++;
+                    rekap[k].total++;
+                });
+                const top = Object.values(rekap)
+                    .sort((a, b) => b.total - a.total || b.alpha - a.alpha || a.nama.localeCompare(b.nama))
+                    .slice(0, 6);
+                topEl.innerHTML = top.length
+                    ? top.map((o, i) => {
+                        const det = [o.alpha ? `${o.alpha}A` : "", o.izin ? `${o.izin}I` : "", o.sakit ? `${o.sakit}S` : ""].filter(Boolean).join(" · ");
+                        const akt = qNorm && qNorm === Absensi.norm(o.nama);
+                        return `<button type="button" class="abs-top-item${i === 0 ? " r1" : ""}${akt ? " active" : ""}" data-top-nama="${encodeURIComponent(o.nama)}" title="Filter nama ${escapeHtml(o.nama)}">
+                            <span class="abs-top-rank">${i + 1}</span>
+                            <span class="abs-top-info"><b>${escapeHtml(o.nama)}</b><small>${escapeHtml(det || "-")}</small></span>
+                            <span class="abs-top-cnt">${o.total}x</span>
+                        </button>`;
+                    }).join("")
+                    : `<div class="abs-panel-empty">Belum ada catatan ketidakhadiran.</div>`;
+            } else {
+                if (topTitleEl) topTitleEl.innerHTML = `<i class="fa-solid fa-award"></i> Kehadiran Teraktif`;
+                const tglMap = new Set();
+                all.forEach(r => {
+                    if (!r.tanggal) return;
+                    if (!Absensi.cocokFokus(r.nama) && r.status !== "hadir") return;
+                    tglMap.add(String(r.tanggal));
+                });
+                const hitung = {};
+                tglMap.forEach(t => {
+                    const h = Absensi.hadirTanggal(t);
+                    const daftar = h.otomatis ? h.daftar.filter(n => Absensi.cocokFokus(n)) : h.daftar;
+                    const unikHari = new Set();
+                    daftar.forEach(n => {
+                        const k = Absensi.norm(n);
+                        if (!k || unikHari.has(k)) return;
+                        unikHari.add(k);
+                        if (!hitung[k]) hitung[k] = { nama: n, total: 0 };
+                        hitung[k].total++;
+                    });
+                });
+                const top = Object.values(hitung)
+                    .sort((a, b) => b.total - a.total || a.nama.localeCompare(b.nama))
+                    .slice(0, 6);
+                topEl.innerHTML = top.length
+                    ? top.map((o, i) => {
+                        const akt = qNorm && qNorm === Absensi.norm(o.nama);
+                        return `<button type="button" class="abs-top-item${i === 0 ? " r1" : ""}${akt ? " active" : ""}" data-top-nama="${encodeURIComponent(o.nama)}" title="Filter nama ${escapeHtml(o.nama)}">
+                            <span class="abs-top-rank">${i + 1}</span>
+                            <span class="abs-top-info"><b>${escapeHtml(o.nama)}</b><small>tercatat hadir</small></span>
+                            <span class="abs-top-cnt">${o.total} sesi</span>
+                        </button>`;
+                    }).join("")
+                    : `<div class="abs-panel-empty">Belum ada data hadir.</div>`;
+            }
+        }
+    },
+
     render() {
         if (Absensi.filter.tab === "hadir") { Absensi.renderHadir(); return; }
-        // Kembalikan stat tab Tidak Hadir (diubah/disembunyikan tab Hadir)
-        ["statIzin", "statSakit", "statAlpha"].forEach(id => {
+        const statsGrid = document.getElementById("absensiStats");
+        if (statsGrid) statsGrid.classList.remove("mode-hadir");
+        ["statIzin", "statSakit", "statAlpha", "statTotal"].forEach(id => {
             const card = document.getElementById(id)?.closest(".stat-card");
             if (card) card.style.display = "";
         });
-        const totalLbl0 = document.getElementById("statTotal")?.closest(".stat-card")?.querySelector(".lbl");
-        if (totalLbl0) totalLbl0.innerHTML = `<i class="fa-solid fa-users-slash"></i> Total Tidak Hadir`;
+
         const data = Absensi.dataTampil();
-        // Angka + suffix (suffix disembunyikan di mobile via CSS .stat-suffix)
-        const setStat = (id, count, suffix) => {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = String(count) + `<span class="stat-suffix"> ${suffix}</span>`;
-        };
-        // Stat paling atas = tanggal terakhir (atau tanggal filter), bukan keseluruhan.
-        // Baris 'hadir' tidak ikut hitungan statistik ketidakhadiran.
-        // Fokus tahun aktif: cuma nama roster tahun itu yang dihitung.
         const all = Absensi.cache || [];
         const allTK = all.filter(r => r.status !== "hadir" && Absensi.cocokFokus(r.nama));
         let tTarget = Absensi.filter.tanggal || "";
@@ -338,29 +551,39 @@ const Absensi = {
         }
         const statRows = tTarget ? allTK.filter(r => String(r.tanggal) === String(tTarget)) : [];
         const n = (s) => statRows.filter(r => r.status === s).length;
-        setStat("statIzin", n("izin"), "pengurus");
-        setStat("statSakit", n("sakit"), "pengurus");
-        setStat("statAlpha", n("alpha"), "pengurus");
-        setStat("statTotal", statRows.length, "tidak hadir");
+        const tglSub = tTarget ? Absensi.fmtTanggalPendek(tTarget) : "belum ada sesi";
+        const jmlHariUnik = new Set(allTK.map(r => r.tanggal).filter(Boolean)).size;
+
+        Absensi.setStatSlot(1, "statIzin", "Izin", n("izin"), "pengurus", tglSub);
+        Absensi.setStatSlot(2, "statSakit", "Sakit", n("sakit"), "pengurus", tglSub);
+        Absensi.setStatSlot(3, "statAlpha", "Alpha", n("alpha"), "pengurus", tglSub);
+        Absensi.setStatSlot(4, "statTotal", "Total Tidak Hadir", statRows.length, "orang", `${allTK.length} catatan di ${jmlHariUnik} hari`);
+
+        Absensi.renderSidePanels(false);
 
         const wrap = document.getElementById("absensiWrap");
         if (!wrap) return;
         const boleh = OsisAuth.bisa("absensi");
         if (!allTK.length) {
-            wrap.innerHTML = `<div class="pesan-empty" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-clipboard-user" style="color:var(--red)"></i></div><b>Belum ada data ketidakhadiran</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Catat pengurus yang izin, sakit, atau alpha.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Absensi.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah Data</button>` : ""}</div>`;
+            Absensi.renderFilterBar(0, 0, false);
+            wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:30px 16px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-clipboard-user" style="color:var(--red)"></i></div><b>Belum ada data ketidakhadiran</b><p style="font-size:0.82rem; color:var(--gray); margin:6px 0 14px">Catat pengurus yang izin, sakit, atau alpha pada periode ini.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Absensi.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah Data</button>` : ""}</div>`;
             return;
         }
         if (!data.length) {
-            if (Absensi.filter.tanggal) {
-                wrap.innerHTML = `<div class="pesan-empty" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-circle-check" style="color:#146314"></i></div><b>Semua pengurus hadir.</b><p style="font-size:0.8rem; color:var(--gray); margin-top:6px">Tidak ada record ketidakhadiran pada tanggal ini.</p></div>`;
+            Absensi.renderFilterBar(0, 0, false);
+            if (Absensi.filter.tanggal && !Absensi.filter.q.trim() && !Absensi.filter.status) {
+                wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:30px 16px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-circle-check" style="color:#146314"></i></div><b>Semua pengurus hadir.</b><p style="font-size:0.82rem; color:var(--gray); margin:6px 0 12px">Tidak ada catatan izin, sakit, atau alpha pada tanggal ini.</p><button class="btn btn-white btn-sm" onclick="Absensi.resetFilter()"><i class="fa-solid fa-rotate-left"></i> Lihat Semua Tanggal</button></div>`;
             } else {
-                wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Absensi.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
+                wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:26px 14px"><i class="fa-solid fa-magnifying-glass" style="font-size:1.5rem; color:var(--red); margin-bottom:8px"></i><div style="font-weight:900">Tidak ada yang cocok dengan filter</div><p style="font-size:0.8rem; color:var(--gray); margin:4px 0 12px">Coba ubah kata kunci, status, atau pilih tanggal lain.</p><button class="btn btn-white btn-sm" onclick="Absensi.resetFilter()"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button></div>`;
             }
             return;
         }
+
         const grup = {};
         data.forEach(r => { (grup[r.tanggal] = grup[r.tanggal] || []).push(r); });
         const tgls = Object.keys(grup).sort().reverse();
+        Absensi.renderFilterBar(data.length, tgls.length, false);
+
         // Bagi per bulan (terbaru dulu): pembatas bulan + kartu per hari
         const perBulan = {};
         tgls.forEach(t => { const ym = String(t).slice(0, 7); (perBulan[ym] = perBulan[ym] || []).push(t); });
@@ -368,19 +591,42 @@ const Absensi = {
             const rows = grup[t].slice().sort((a, b) => String(a.nama || "").localeCompare(String(b.nama || "")));
             const keg = (rows.map(r => String(r.kegiatan || "").trim()).find(Boolean) || "");
             const pencatat = [...new Set(rows.map(r => String(r.pengunggah || "").trim()).filter(Boolean))].join(", ");
-            return `<div class="rekap-card" style="margin-bottom:12px">
-                <h3><i class="fa-solid fa-calendar-day"></i> ${escapeHtml(Absensi.fmtTanggalPanjang(t))} <span class="jenis total" style="margin-left:auto">${rows.length} tidak hadir</span></h3>
-                ${keg ? `<div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:700; color:var(--gray); margin:-4px 0 8px 2px"><i class="fa-solid fa-bullhorn" style="color:var(--red)"></i> ${escapeHtml(keg)}</div>` : ""}
-                ${pencatat ? `<div style="font-size:0.72rem; font-weight:700; color:var(--gray); margin:-2px 0 8px 2px">Dicatat oleh ${escapeHtml(pencatat)}</div>` : ""}
+            const cIzin = rows.filter(r => r.status === "izin").length;
+            const cSakit = rows.filter(r => r.status === "sakit").length;
+            const cAlpha = rows.filter(r => r.status === "alpha").length;
+            const nHadirRaw = all.filter(r => String(r.tanggal) === String(t) && r.status === "hadir").length;
+            const sumSeg = nHadirRaw + cIzin + cSakit + cAlpha;
+            const segHtml = sumSeg > 0 ? `<div class="abs-ratio-bar" title="Proporsi Hadir / Izin / Sakit / Alpha">
+                ${nHadirRaw ? `<span class="abs-ratio-seg hadir" style="width:${(nHadirRaw / sumSeg * 100).toFixed(1)}%"></span>` : ""}
+                ${cIzin ? `<span class="abs-ratio-seg izin" style="width:${(cIzin / sumSeg * 100).toFixed(1)}%"></span>` : ""}
+                ${cSakit ? `<span class="abs-ratio-seg sakit" style="width:${(cSakit / sumSeg * 100).toFixed(1)}%"></span>` : ""}
+                ${cAlpha ? `<span class="abs-ratio-seg alpha" style="width:${(cAlpha / sumSeg * 100).toFixed(1)}%"></span>` : ""}
+            </div>` : "";
+            return `<div class="rekap-card">
+                <div class="rekap-card-head">
+                    <h3><i class="fa-solid fa-calendar-day"></i> ${escapeHtml(Absensi.fmtTanggalPanjang(t))}</h3>
+                    <div class="rekap-badges">
+                        ${nHadirRaw ? `<span class="jenis hadir">${nHadirRaw} Hadir</span>` : ""}
+                        ${cIzin ? `<span class="jenis izin">${cIzin} Izin</span>` : ""}
+                        ${cSakit ? `<span class="jenis sakit">${cSakit} Sakit</span>` : ""}
+                        ${cAlpha ? `<span class="jenis alpha">${cAlpha} Alpha</span>` : ""}
+                        <span class="jenis total">${rows.length} tidak hadir</span>
+                    </div>
+                </div>
+                ${(keg || pencatat) ? `<div class="rekap-meta-row">
+                    ${keg ? `<span><i class="fa-solid fa-bullhorn"></i> ${escapeHtml(keg)}</span>` : ""}
+                    ${pencatat ? `<span><i class="fa-solid fa-user-pen"></i> Dicatat oleh ${escapeHtml(pencatat)}</span>` : ""}
+                </div>` : ""}
+                ${segHtml}
                 <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Nama</th><th>Status</th><th>Alasan</th></tr></thead><tbody>
                 ${rows.map((r, i) => `<tr>
                     <td>${i + 1}</td>
                     <td><b>${escapeHtml(r.nama || "-")}</b></td>
                     <td><span class="jenis ${r.status}">${Absensi.labelStatus(r.status)}</span></td>
-                    <td>${escapeHtml(r.alasan || "Tidak ada keterangan")}</td>
+                    <td>${r.alasan ? escapeHtml(r.alasan) : `<span class="alasan-kosong">Tanpa keterangan</span>`}</td>
                 </tr>`).join("")}
                 </tbody></table></div>
-                ${boleh ? `<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
+                ${boleh ? `<div class="rekap-foot">
                     <button class="btn btn-white btn-sm" data-abs-edithari="${t}"><i class="fa-solid fa-pen"></i> Edit</button>
                     <button class="btn btn-red btn-sm" data-abs-delhari="${t}"><i class="fa-solid fa-trash-can"></i> Hapus</button>
                 </div>` : ""}
@@ -438,17 +684,12 @@ const Absensi = {
     },
 
     renderHadir() {
-        const setStat = (id, count, suffix) => {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = String(count) + `<span class="stat-suffix"> ${suffix}</span>`;
-        };
-        // Stat per-status disembunyikan, tinggal total hadir
-        ["statIzin", "statSakit", "statAlpha"].forEach(id => {
+        const statsGrid = document.getElementById("absensiStats");
+        if (statsGrid) statsGrid.classList.add("mode-hadir");
+        ["statIzin", "statSakit", "statAlpha", "statTotal"].forEach(id => {
             const card = document.getElementById(id)?.closest(".stat-card");
-            if (card) card.style.display = "none";
+            if (card) card.style.display = "";
         });
-        const totalLbl = document.getElementById("statTotal")?.closest(".stat-card")?.querySelector(".lbl");
-        if (totalLbl) totalLbl.innerHTML = `<i class="fa-solid fa-user-check"></i> Total Hadir`;
 
         const all = Absensi.cache || [];
         const q = Absensi.filter.q.trim().toLowerCase();
@@ -466,6 +707,7 @@ const Absensi = {
             const h = Absensi.hadirTanggal(t);
             const hariRows = all.filter(r => String(r.tanggal) === String(t));
             const keg = (hariRows.map(r => String(r.kegiatan || "").trim()).find(Boolean) || "");
+            const tkCount = hariRows.filter(r => r.status !== "hadir" && Absensi.cocokFokus(r.nama)).length;
             // Baris 'hadir' tersimpan (termasuk hasil scan QR) ditampilkan
             // apa adanya; filter tahun fokus cuma berlaku untuk daftar otomatis
             // (roster - tidak hadir).
@@ -473,21 +715,66 @@ const Absensi = {
                 ? h.daftar.filter(n => Absensi.cocokFokus(n))
                 : h.daftar;
             if (q && !(daftar.some(n => n.toLowerCase().includes(q)) || keg.toLowerCase().includes(q))) return;
-            grupHadir[t] = { daftar, otomatis: h.otomatis, keg };
+            grupHadir[t] = { daftar, otomatis: h.otomatis, keg, tkCount };
         });
         const tgls = Object.keys(grupHadir).sort().reverse();
 
         const tTarget = Absensi.filter.tanggal || (tgls[0] || "");
-        setStat("statTotal", tTarget && grupHadir[tTarget] ? grupHadir[tTarget].daftar.length : 0, "pengurus");
+        const gTarget = tTarget && grupHadir[tTarget] ? grupHadir[tTarget] : null;
+        const nHadirTarget = gTarget ? gTarget.daftar.length : 0;
+        const nTkTarget = gTarget ? gTarget.tkCount : 0;
+        const denomTarget = nHadirTarget + nTkTarget;
+        const pctTarget = denomTarget > 0 ? Math.round((nHadirTarget / denomTarget) * 100) + "%" : "0%";
+        const manualDays = tgls.filter(t => !grupHadir[t].otomatis).length;
+        const rosterLen = Absensi.rosterFokus().length;
+        const tahunLbl = Absensi.langsung.tahunFokus ? ("Periode " + Absensi.langsung.tahunFokus) : "periode aktif";
+
+        Absensi.setStatSlot(
+            1,
+            "statIzin",
+            "Hadir Sesi Ini",
+            nHadirTarget,
+            "pengurus",
+            tTarget ? Absensi.fmtTanggalPendek(tTarget) : "belum ada sesi"
+        );
+        Absensi.setStatSlot(
+            2,
+            "statSakit",
+            "Tingkat Hadir",
+            pctTarget,
+            "",
+            gTarget ? `${nTkTarget} tidak hadir di sesi ini` : "menunggu data"
+        );
+        Absensi.setStatSlot(
+            3,
+            "statAlpha",
+            "Sesi Tercatat",
+            tgls.length,
+            "hari",
+            `${manualDays} sesi langsung / QR`
+        );
+        Absensi.setStatSlot(
+            4,
+            "statTotal",
+            "Roster Aktif",
+            rosterLen,
+            "pengurus",
+            tahunLbl
+        );
+
+        Absensi.renderSidePanels(true);
 
         const wrap = document.getElementById("absensiWrap");
         if (!wrap) return;
         const boleh = OsisAuth.bisa("absensi");
+        const totalEntriHadir = tgls.reduce((a, t) => a + grupHadir[t].daftar.length, 0);
+        Absensi.renderFilterBar(totalEntriHadir, tgls.length, true);
+
         if (!tgls.length) {
             if (Absensi.filter.tanggal || q) {
-                wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada data hadir yang cocok. <a href="#" onclick="event.preventDefault(); Absensi.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
+                wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:26px 14px"><i class="fa-solid fa-magnifying-glass" style="font-size:1.5rem; color:var(--red); margin-bottom:8px"></i><div style="font-weight:900">Tidak ada data hadir yang cocok</div><p style="font-size:0.8rem; color:var(--gray); margin:4px 0 12px">Coba ubah pencarian atau pilih tanggal lain.</p><button class="btn btn-white btn-sm" onclick="Absensi.resetFilter()"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button></div>`;
             } else {
-                wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-user-check" style="color:#146314"></i></div><b>Belum ada data kehadiran</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Tandai kehadiran pengurus lewat Absen Langsung.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Absensi.bukaLangsung()"><i class="fa-solid fa-bolt"></i> Absen Langsung</button>` : ""}</div>`;
+                wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:30px 16px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-user-check" style="color:#146314"></i></div><b>Belum ada data kehadiran</b><p style="font-size:0.82rem; color:var(--gray); margin:6px 0 14px">Tandai kehadiran pengurus lewat Absen Langsung atau Scan QR.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Absensi.bukaLangsung()"><i class="fa-solid fa-bolt"></i> Absen Langsung</button>` : ""}</div>`;
             }
             return;
         }
@@ -495,14 +782,27 @@ const Absensi = {
         tgls.forEach(t => { const ym = String(t).slice(0, 7); (perBulan[ym] = perBulan[ym] || []).push(t); });
         const kartuHari = (t) => {
             const g = grupHadir[t];
-            return `<div class="rekap-card" style="margin-bottom:12px">
-                <h3><i class="fa-solid fa-calendar-day"></i> ${escapeHtml(Absensi.fmtTanggalPanjang(t))} <span class="jenis total" style="margin-left:auto">${g.daftar.length} hadir</span></h3>
-                ${g.keg ? `<div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:700; color:var(--gray); margin:-4px 0 8px 2px"><i class="fa-solid fa-bullhorn" style="color:var(--red)"></i> ${escapeHtml(g.keg)}</div>` : ""}
-                ${g.otomatis ? `<div style="font-size:0.7rem; font-weight:700; color:var(--gray); margin:-2px 0 8px 2px"><i class="fa-solid fa-wand-magic-sparkles"></i> Otomatis: daftar anggota − tidak hadir</div>` : ""}
-                <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Nama</th><th>Status</th></tr></thead><tbody>
-                ${g.daftar.map((n, i) => `<tr><td>${i + 1}</td><td><b>${escapeHtml(n)}</b></td><td><span class="jenis hadir">Hadir</span></td></tr>`).join("") || `<tr><td colspan="3" style="text-align:center; color:var(--gray)">Tidak ada — daftar anggota belum termuat.</td></tr>`}
-                </tbody></table></div>
-                ${boleh ? `<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
+            const denom = g.daftar.length + g.tkCount;
+            const pct = denom > 0 ? Math.round((g.daftar.length / denom) * 100) : 0;
+            return `<div class="rekap-card">
+                <div class="rekap-card-head">
+                    <h3><i class="fa-solid fa-calendar-day"></i> ${escapeHtml(Absensi.fmtTanggalPanjang(t))}</h3>
+                    <div class="rekap-badges">
+                        ${denom > 0 ? `<span class="jenis total">${pct}% hadir</span>` : ""}
+                        <span class="jenis hadir">${g.daftar.length} hadir</span>
+                    </div>
+                </div>
+                <div class="rekap-meta-row">
+                    ${g.keg ? `<span><i class="fa-solid fa-bullhorn"></i> ${escapeHtml(g.keg)}</span>` : ""}
+                    <span><i class="fa-solid ${g.otomatis ? "fa-wand-magic-sparkles" : "fa-qrcode"}"></i> ${g.otomatis ? "Otomatis: roster − tidak hadir" : "Tercatat langsung / QR"}</span>
+                </div>
+                ${g.daftar.length
+                    ? `<div class="hadir-grid">${g.daftar.map((n, i) => {
+                        const hit = q && n.toLowerCase().includes(q);
+                        return `<div class="hadir-chip${hit ? " sorot" : ""}"><span class="hadir-num">${i + 1}</span><span class="hadir-nama" title="${escapeHtml(n)}">${escapeHtml(n)}</span></div>`;
+                    }).join("")}</div>`
+                    : `<div class="abs-panel-empty">Tidak ada — daftar anggota belum termuat.</div>`}
+                ${boleh ? `<div class="rekap-foot">
                     <button class="btn btn-red btn-sm" data-abs-delhari="${t}"><i class="fa-solid fa-trash-can"></i> Hapus</button>
                 </div>` : ""}
             </div>`;
@@ -517,6 +817,7 @@ const Absensi = {
 
     bacaFilter() {
         Absensi.filter = {
+            tab: Absensi.filter.tab || "tidak",
             q: document.getElementById("filterQ").value || "",
             status: document.getElementById("filterStatus").value || "",
             tanggal: document.getElementById("filterTanggal").value || ""
@@ -529,6 +830,7 @@ const Absensi = {
             const el = document.getElementById(id);
             if (el) el.value = "";
         });
+        try { if (window.Dropdown && Dropdown.segarkanSemua) Dropdown.segarkanSemua(); } catch {}
         // Fokus tahun tidak ikut di-reset (tab harus selalu ada yang kepilih)
         Absensi.bacaFilter();
     },
@@ -1034,7 +1336,8 @@ const Absensi = {
         const aktif = (Absensi.langsung.periodeTahun || []).filter(Number.isFinite);
         let pakai, th = null;
         if (aktif.length) {
-            pakai = bersih.filter(a => aktif.includes(parseInt(a.tahun, 10)));
+            const cocok = bersih.filter(a => aktif.includes(parseInt(a.tahun, 10)));
+            pakai = cocok.length ? cocok : bersih;
         } else {
             const thns = [...new Set(bersih.map(a => parseInt(a.tahun, 10)).filter(Number.isFinite))].sort((a, b) => b - a);
             th = thns.length ? thns[0] : null;

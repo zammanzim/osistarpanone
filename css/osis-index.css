@@ -1,13 +1,9 @@
 /* ============================================================
    DASHBOARD OSIS — Bento Grid Neo-Brutalism (osis/index.html)
+   Layout dasar dari osis2.css, override bento grid di sini.
    ============================================================ */
 
 .osis-wrap {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
   gap: 16px;
 }
 
@@ -25,14 +21,11 @@
 }
 
 .osis-hero {
-  background: var(--white);
-  border: 3px solid var(--ink);
   border-radius: 20px;
-  padding: 18px;
   box-shadow: 5px 5px 0 var(--ink);
-  display: flex;
   flex-direction: column;
   gap: 14px;
+  align-items: stretch;
   justify-content: space-between;
 }
 
@@ -47,21 +40,8 @@
   width: 62px;
   height: 62px;
   border-radius: 16px;
-  border: 3px solid var(--ink);
-  background: var(--yellow);
-  display: grid;
-  place-items: center;
   font-size: 1.45rem;
-  font-weight: 900;
   box-shadow: 3px 3px 0 var(--ink);
-  flex-shrink: 0;
-  overflow: hidden;
-}
-.osis-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 
 .osis-hero-text {
@@ -78,32 +58,21 @@
 }
 .osis-hero h1 {
   font-size: 1.35rem;
-  font-weight: 900;
   line-height: 1.15;
 }
 .osis-hero p {
   font-size: 0.8rem;
-  color: var(--gray);
-  font-weight: 600;
   margin-top: 3px;
 }
 .osis-hero .osis-meta {
-  display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 8px;
 }
 .osis-badge {
   font-size: 0.66rem;
-  font-weight: 800;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
   background: var(--red);
   color: #fff;
-  border: 2px solid var(--ink);
   padding: 3px 10px;
-  border-radius: 999px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -115,32 +84,22 @@
 }
 
 .osis-clock {
-  text-align: right;
-  flex-shrink: 0;
   background: var(--paper-2);
   border: 2px solid var(--ink);
   border-radius: 12px;
   padding: 8px 12px;
 }
 .osis-clock b {
-  display: block;
   font-size: 0.72rem;
   font-weight: 800;
   color: var(--gray);
 }
 .osis-clock .jam {
   font-size: 1.25rem;
-  font-weight: 900;
-  color: var(--red);
-  font-variant-numeric: tabular-nums;
-  display: flex;
-  align-items: baseline;
-  justify-content: flex-end;
   gap: 4px;
 }
 .osis-clock .jam small {
   font-size: 0.62rem;
-  font-weight: 800;
   color: var(--ink);
 }
 

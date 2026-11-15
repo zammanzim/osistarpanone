@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agenda — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=40" />
+    <link rel="stylesheet" href="../css/style.css?v=41" />
+    <link rel="stylesheet" href="../css/osis2.css?v=14" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -30,12 +31,12 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-agenda.css?v=10" />
+    <link rel="stylesheet" href="../css/osis-agenda.css?v=12" />
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=14"></script>
     <script src="../js/db.js?v=35" defer></script>
     <script src="../js/aktivitas.js?v=10" defer></script>
-    <script src="../js/app.js?v=10" defer></script>
+    <script src="../js/app.js?v=16" defer></script>
     <script src="../js/dropdown.js?v=3" defer></script>
     <script src="../js/toast.js?v=10" defer></script>
     <script src="../js/notice.js?v=10" defer></script>
@@ -44,9 +45,9 @@
     <script src="../js/osis-auth.js?v=19" defer></script>
     <script src="../js/osis-visitor.js?v=5" defer></script>
     <script src="../js/osis-sidebar.js?v=45" defer></script>
-    <script src="../js/osis-header.js?v=14" defer></script>
+    <script src="../js/osis-header.js?v=18" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/agenda.js?v=31" defer></script>
+    <script src="../js/agenda.js?v=33" defer></script>
     <script src="../js/pwa.js?v=11" defer></script>
   </head>
   <body>
@@ -68,43 +69,192 @@
       </div>
     </header>
 
-    <div class="agenda-wrap">
-      <div class="agenda-cols">
-      <div class="agenda-side">
+    <div class="osis-wrap">
+      <div class="osis-top-search" id="agendaTopSearch" data-osis-auto-count="1">
+        <div class="osis-sb-bar">
+          <div class="osis-sb-row">
+            <i class="fa-solid fa-magnifying-glass osis-sb-ico"></i>
+            <input
+              type="text"
+              id="filterAgendaQ"
+              class="osis-sb-input"
+              placeholder="Cari judul, lokasi, deskripsi, atau pengunggah..."
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="osis-sb-clear"
+              id="btnClearAgendaQ"
+              title="Hapus pencarian"
+              style="display: none"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="osis-sb-divider" aria-hidden="true"></span>
+            <button type="button" class="osis-sb-filter-btn" aria-expanded="false">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Filter</span>
+              <span class="osis-sb-badge" hidden>0</span>
+              <i class="fa-solid fa-chevron-down osis-sb-chev"></i>
+            </button>
+          </div>
+        </div>
+        <div class="osis-sb-panel">
+          <div class="osis-sb-panel-head">
+            <span class="osis-sb-panel-title"><i class="fa-solid fa-filter"></i> Filter Agenda</span>
+            <div class="osis-sb-panel-acts">
+              <button type="button" class="btn btn-white btn-sm" id="btnResetAgendaFilter" style="display: none" title="Reset filter">
+                <i class="fa-solid fa-rotate-left"></i> Reset Filter
+              </button>
+              <button type="button" class="osis-sb-close" title="Tutup filter">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="osis-sb-fields">
+            <div class="osis-sb-field grow">
+              <label>Sekbid / Divisi</label>
+              <select id="pilihSekbid" class="admin-input"></select>
+            </div>
+            <div class="osis-sb-field grow">
+              <label>Pengunggah</label>
+              <select id="pilihNama" class="admin-input"></select>
+            </div>
+            <div class="osis-sb-field">
+              <label>Dokumentasi</label>
+              <button
+                type="button"
+                class="osis-sb-pill"
+                id="btnFilterFoto"
+                aria-pressed="false"
+                title="Tampilkan hanya agenda yang ada foto dokumentasinya"
+              >
+                <i class="fa-solid fa-camera"></i> <span>Ada Foto</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div class="agenda-head">
-        <div class="ico"><i class="fa-solid fa-calendar-days"></i></div>
-        <div style="flex: 1; min-width: 180px">
-          <h1>AGENDA</h1>
+      <div class="osis-hero agenda-hero">
+        <div class="osis-avatar agenda-hero-ico">
+          <i class="fa-solid fa-calendar-days"></i>
+        </div>
+        <div style="flex: 1; min-width: 200px">
+          <div class="agenda-kicker">
+            <i class="fa-solid fa-bolt"></i> LOG KEGIATAN SEKBID
+          </div>
+          <h1>AGENDA OSIS</h1>
           <p>
-            Kegiatan yang sudah dilaksanakan — terbaru di atas,
-            dikelompokkan per hari.
+            Rekam jejak kegiatan yang sudah dilaksanakan — dikelompokkan per
+            hari, lengkap dengan lokasi, pengunggah, dan dokumentasi.
           </p>
+          <div class="osis-meta">
+            <span class="osis-badge"
+              ><i class="fa-solid fa-sitemap"></i> Lintas Sekbid</span
+            >
+            <span class="osis-badge"
+              ><i class="fa-solid fa-images"></i> Galeri Dokumentasi</span
+            >
+          </div>
         </div>
         <button class="btn btn-red" id="btnTambahAgenda" style="display: none">
           <i class="fa-solid fa-plus"></i> Tambah Agenda
         </button>
       </div>
 
-      <!-- Statistik ringkas -->
-      <div class="agenda-stats" id="agendaStats"></div>
-
-      <div class="agenda-toolbar">
-        <select
-          id="pilihSekbid"
-          class="admin-input"
-          style="max-width: 280px"
-        ></select>
-        <select
-          id="pilihNama"
-          class="admin-input"
-          style="max-width: 220px"
-        ></select>
+      <!-- Statistik ringkas full-width (nilai diisi RPC sekbid_agenda_ringkas) -->
+      <div class="stat-grid" id="agendaStats">
+        <div class="stat-card">
+          <div class="stat-head">
+            <span class="stat-ico blue"
+              ><i class="fa-solid fa-calendar-check"></i
+            ></span>
+            <span class="lbl">Total Agenda</span>
+          </div>
+          <b>…</b>
+          <small>sesuai filter aktif</small>
+        </div>
+        <div class="stat-card">
+          <div class="stat-head">
+            <span class="stat-ico yellow"><i class="fa-solid fa-clock"></i></span>
+            <span class="lbl">Bulan Ini</span>
+          </div>
+          <b>…</b>
+          <small>kegiatan berjalan</small>
+        </div>
+        <div class="stat-card">
+          <div class="stat-head">
+            <span class="stat-ico red"
+              ><i class="fa-solid fa-layer-group"></i
+            ></span>
+            <span class="lbl">Sekbid Terlibat</span>
+          </div>
+          <b>…</b>
+          <small>divisi aktif</small>
+        </div>
+        <div class="stat-card">
+          <div class="stat-head">
+            <span class="stat-ico green"><i class="fa-solid fa-users"></i></span>
+            <span class="lbl">Pengunggah</span>
+          </div>
+          <b>…</b>
+          <small>pengurus tercatat</small>
+        </div>
       </div>
-      </div>
-      <div class="agenda-main">
 
-      <div class="agenda-form" id="agendaForm">
+      <div class="agenda-cols">
+        <aside class="agenda-side">
+          <div class="sekbid-panel">
+            <div class="sekbid-panel-head">
+              <span><i class="fa-solid fa-sitemap"></i> Pilih Sekbid</span>
+              <span class="sekbid-total-pill" id="sekbidTotalBadge">-</span>
+            </div>
+            <div class="sekbid-rail" id="sekbidRail"></div>
+          </div>
+        </aside>
+
+        <section class="agenda-main">
+          <div class="agenda-toolbar-row">
+            <div class="agenda-bar" id="agendaBar" style="display: none">
+              <span class="agenda-bar-count" id="agendaBarCount"></span>
+              <div class="agenda-chips" id="agendaChips"></div>
+            </div>
+            <div
+              class="agenda-view-toggle"
+              role="group"
+              aria-label="Mode tampilan agenda"
+            >
+              <button
+                type="button"
+                class="agenda-view-btn active"
+                id="btnAgendaGrid"
+                title="Tampilan Grid Bento"
+              >
+                <i class="fa-solid fa-grip"></i>
+              </button>
+              <button
+                type="button"
+                class="agenda-view-btn"
+                id="btnAgendaList"
+                title="Tampilan List Padat"
+              >
+                <i class="fa-solid fa-list"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="agendaList">
+            <div class="loading-block">
+              <div class="spinner"></div>
+              Memuat agenda...
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="agenda-form" id="agendaForm">
         <div class="agenda-form-inner">
           <div
             style="
@@ -209,17 +359,7 @@
         </div>
       </div>
 
-      <div id="agendaList">
-        <div class="loading-block">
-          <div class="spinner"></div>
-          Memuat agenda...
-        </div>
-      </div>
-      </div>
-      </div>
-    </div>
-
-    <!-- POPUP DETAIL: klik foto -->
+      <!-- POPUP DETAIL: klik foto -->
     <div class="agenda-detail" id="agendaDetail">
       <div class="agenda-detail-inner">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px">

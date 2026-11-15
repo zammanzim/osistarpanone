@@ -23,7 +23,7 @@ const Aktivitas = {
     // Label halaman file (osis/* + standalone)
     LABEL_FILE: {
         login: "Login", polling: "Polling", changelog: "Changelog",
-        tabungan: "Tabungan", keuangan: "Keuangan", absensi: "Absensi",
+        tabungan: "Tabungan", keuangan: "Keuangan", "uang-kas": "Uang Kas", absensi: "Absensi",
         agenda: "Agenda", anggota: "Anggota", dokumen: "Dokumen",
         akses: "Akses", informasi: "Informasi", poster: "Poster",
         profil: "Profil", "program-bulanan": "Program Bulanan",

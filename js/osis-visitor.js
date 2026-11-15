@@ -219,12 +219,15 @@ const OsisVisitor = {
     async muatStats() {
         const uid = OsisVisitor.uid();
         if (!uid) return;
+        const angId = (typeof OsisAuth !== "undefined" && OsisAuth.getAngkatanAktif)
+            ? OsisAuth.getAngkatanAktif() : null;
+        const rpcArgs = angId ? { p_user_id: uid, p_angkatan_id: angId } : { p_user_id: uid };
         const apply = (rows) => OsisVisitor.terapkanRows(rows);
         try {
             const cached = (typeof Cache !== "undefined" && Cache.get) ? Cache.get("osis_visitor") : null;
             if (cached) {
                 apply(cached);
-                supa.rpc("osis_visitor_list", { p_user_id: uid }).then(({ data, error }) => {
+                supa.rpc("osis_visitor_list", rpcArgs).then(({ data, error }) => {
                     if (error || !data) return;
                     if (JSON.stringify(data) !== JSON.stringify(cached)) {
                         try { Cache.set("osis_visitor", data); } catch {}
@@ -233,7 +236,7 @@ const OsisVisitor = {
                 });
                 return;
             }
-            const { data, error } = await supa.rpc("osis_visitor_list", { p_user_id: uid });
+            const { data, error } = await supa.rpc("osis_visitor_list", rpcArgs);
             if (error) throw error;
             const rows = Array.isArray(data) ? data : [];
             try { Cache.set("osis_visitor", rows); } catch {}

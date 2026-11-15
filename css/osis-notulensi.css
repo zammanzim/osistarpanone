@@ -4,27 +4,6 @@
   flex-direction: column;
   gap: 10px;
 }
-/* Filter */
-#notulensiFilter {
-  background: var(--white);
-  border: 2.5px solid var(--ink);
-  border-radius: 14px;
-  box-shadow: 3px 3px 0 var(--ink);
-  padding: 12px;
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr auto;
-  gap: 10px;
-  align-items: end;
-  margin-bottom: 12px;
-}
-#notulensiFilter .field {
-  margin-bottom: 0;
-}
-@media (max-width: 720px) {
-  #notulensiFilter {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 /* ===== Artikel single (hias ala info-card) ===== */
 .not-card {
   background: var(--white);

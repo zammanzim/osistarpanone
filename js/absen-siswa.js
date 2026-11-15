@@ -81,6 +81,7 @@ const AbsenSiswa = {
             ERR_SESI_TUTUP: "Sesi QR sudah ditutup.",
             ERR_KEDALUWARSA: "QR sudah kedaluwarsa.",
             ERR_BENTROK: "Kamu udah tercatat izin/sakit. Lapor ke operator ya.",
+            ERR_BEDA_ANGKATAN: "Akunmu bukan dari angkatan yang sama dengan sesi absen QR ini.",
             ERR_NO_NAMA: "Nama kamu gak kebaca. Hubungi operator.",
             ERR_UNKNOWN: "Gagal memproses. Coba lagi.",
         };
@@ -157,8 +158,10 @@ const AbsenSiswa = {
             }
             const tgl = AbsenSiswa.fmtTanggal(r.tanggal);
             const keg = String(r.kegiatan || "").trim() || "(tanpa kegiatan)";
+            const angHtml = r.angkatan ? `<span><i class="fa-solid fa-graduation-cap"></i> ${escapeHtml(r.angkatan)}</span>` : "";
             box.innerHTML =
                 `<span><i class="fa-solid fa-bullhorn"></i> ${escapeHtml(keg)}</span>` +
+                angHtml +
                 `<span><i class="fa-solid fa-calendar"></i> ${escapeHtml(tgl)}</span>` +
                 `<span><i class="fa-solid fa-clock"></i> Berlaku sampai ${escapeHtml(AbsenSiswa.fmtWaktu(r.berakhir_at))}</span>`;
             if (btn) btn.disabled = false;

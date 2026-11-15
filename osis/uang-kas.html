@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uang Kas — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../css/style.css?v=41" />
+    <link rel="stylesheet" href="../css/osis2.css?v=14" />
+    <meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/osis-uang-kas.css?v=3" />
+    <script src="../js/supabase.min.js?v=10"></script>
+    <script src="../js/config.js?v=14"></script>
+    <script src="../js/db.js?v=35" defer></script>
+    <script src="../js/aktivitas.js?v=10" defer></script>
+    <script src="../js/app.js?v=16" defer></script>
+    <script src="../js/dropdown.js?v=3" defer></script>
+    <script src="../js/toast.js?v=10" defer></script>
+    <script src="../js/notice.js?v=10" defer></script>
+    <script src="../js/upload.js?v=10" defer></script>
+    <script src="../js/show-popup.js?v=15" defer></script>
+    <script src="../js/osis-auth.js?v=19" defer></script>
+    <script src="../js/osis-visitor.js?v=5" defer></script>
+    <script src="../js/osis-sidebar.js?v=45" defer></script>
+    <script src="../js/osis-header.js?v=18" defer></script>
+    <script src="../js/form-persist.js?v=10" defer></script>
+    <script src="../js/uang-kas.js?v=3" defer></script>
+    <script src="../js/pwa.js?v=11" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>UANG KAS</h2>
+          <p>Iuran Mingguan</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm">
+          <i class="fa-solid fa-house"></i> Beranda
+        </a>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="osis-wrap">
+      <!-- STICKY TOP SEARCH + FILTER DRAWER -->
+      <div class="osis-top-search" id="ukTopSearch">
+        <div class="osis-sb-bar">
+          <div class="osis-sb-row">
+            <i class="fa-solid fa-magnifying-glass osis-sb-ico"></i>
+            <input
+              type="text"
+              id="filterQ"
+              class="osis-sb-input"
+              placeholder="Cari nama anggota, kelas, atau jabatan..."
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="osis-sb-clear"
+              id="btnClearQ"
+              title="Hapus pencarian"
+              style="display: none"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="osis-sb-divider" aria-hidden="true"></span>
+            <button type="button" class="osis-sb-filter-btn" aria-expanded="false">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Filter</span>
+              <span class="osis-sb-badge" hidden>0</span>
+              <i class="fa-solid fa-chevron-down osis-sb-chev"></i>
+            </button>
+          </div>
+        </div>
+        <div class="osis-sb-panel">
+          <div class="osis-sb-panel-head">
+            <span class="osis-sb-panel-title"><i class="fa-solid fa-filter"></i> Filter &amp; Urutkan</span>
+            <div class="osis-sb-panel-acts">
+              <button type="button" class="btn btn-white btn-sm" id="btnResetFilter" title="Reset semua filter">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+              <button type="button" class="osis-sb-close" title="Tutup filter">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="osis-sb-fields">
+            <div class="osis-sb-field full-sm">
+              <label>Status Iuran</label>
+              <div class="uk-chips" id="ukFilterChips">
+                <button type="button" class="uk-chip active" data-uk-status="semua">Semua</button>
+                <button type="button" class="uk-chip" data-uk-status="lunas">Lunas</button>
+                <button type="button" class="uk-chip" data-uk-status="nunggak">Ada Tunggakan</button>
+              </div>
+            </div>
+            <div class="osis-sb-field filter-tahun-wrap" id="filterTahunWrap" style="display: none">
+              <label>Tahun</label>
+              <select id="filterTahun" class="admin-input" aria-label="Tahun angkatan"></select>
+            </div>
+            <div class="osis-sb-field grow filter-sort-wrap">
+              <label>Urutkan</label>
+              <select id="filterSort" class="admin-input" aria-label="Urutkan anggota">
+                <option value="nama">Nama A-Z</option>
+                <option value="tunggak">Tunggakan terbanyak</option>
+                <option value="setor">Setoran terbesar</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-chips" id="filterChips"></div>
+        </div>
+      </div>
+
+      <!-- HERO FULL-WIDTH -->
+      <div class="osis-hero uk-hero">
+        <div class="osis-avatar uk-hero-ico">
+          <i class="fa-solid fa-coins"></i>
+        </div>
+        <div style="flex: 1; min-width: 200px">
+          <div class="uk-kicker">
+            <i class="fa-solid fa-wallet"></i> REKAP IURAN MINGGUAN
+          </div>
+          <h1>UANG KAS</h1>
+          <p>Pantau iuran mingguan per anggota — setor masuk langsung otomatis ceklis.</p>
+          <div class="uk-cfg-strip" id="ukCfgStrip"></div>
+        </div>
+        <div class="uk-hero-acts" id="ukHeroActs" style="display: none">
+          <button type="button" class="btn btn-red" id="btnTambahSetor">
+            <i class="fa-solid fa-plus"></i> Catat Setoran
+          </button>
+          <button type="button" class="btn btn-white" id="btnAturKas">
+            <i class="fa-solid fa-sliders"></i> Tarif &amp; Minggu Libur
+          </button>
+        </div>
+      </div>
+
+      <!-- SUMMARY BENTO HUB (DARK TOTAL HERO + 4 STAT CARDS) -->
+      <div class="uk-summary-hub">
+        <div class="uk-total-hero">
+          <div>
+            <div class="uk-total-head">
+              <span class="lbl"><i class="fa-solid fa-vault"></i> Total Kas Terkumpul</span>
+              <span class="uk-lunas-pill" id="ukLunasPill">0% lunas</span>
+            </div>
+            <b id="statTerkumpul">Rp0</b>
+          </div>
+          <div>
+            <div class="uk-verif-wrap">
+              <div class="uk-verif-track" aria-hidden="true">
+                <span id="ukLunasBar" style="width: 0%"></span>
+              </div>
+              <div class="uk-verif-lbl">
+                <span id="ukLunasLbl">0 / 0 anggota lunas</span>
+                <span id="ukNunggakInfo">0 belum lunas</span>
+              </div>
+            </div>
+            <div class="uk-hero-rumus">
+              <span class="masuk" id="statTransaksi">0 setoran</span>
+              <span class="kurang" id="statTunggakanRp">Tunggakan Rp0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-ico blue"><i class="fa-solid fa-calendar-week"></i></span>
+              <span class="lbl">Minggu Aktif</span>
+            </div>
+            <b id="statMingguAktif">-</b>
+            <small id="statMingguSub">-</small>
+          </div>
+          <div class="stat-card lunas">
+            <div class="stat-head">
+              <span class="stat-ico green"><i class="fa-solid fa-circle-check"></i></span>
+              <span class="lbl">Sudah Lunas</span>
+            </div>
+            <b id="statLunas">-</b>
+            <small>s.d. minggu ini</small>
+          </div>
+          <div class="stat-card nunggak">
+            <div class="stat-head">
+              <span class="stat-ico red"><i class="fa-solid fa-clock"></i></span>
+              <span class="lbl">Belum Lunas</span>
+            </div>
+            <b id="statNunggak">-</b>
+            <small id="statNunggakSub">perlu ditagih</small>
+          </div>
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-ico yellow"><i class="fa-solid fa-sack-dollar"></i></span>
+              <span class="lbl">Tarif &amp; Anggota</span>
+            </div>
+            <b id="statTarif">-</b>
+            <small id="statTarifSub">-</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- WORKSPACE 2-KOLOM PROPORSIONAL -->
+      <div class="uk-cols">
+        <aside class="uk-side">
+          <div class="uk-panel" id="ukRulePanel">
+            <div class="uk-panel-head">
+              <span><i class="fa-solid fa-sliders"></i> Aturan Kas Aktif</span>
+              <span class="uk-pill-cnt" id="ukRuleTahun">Aktif</span>
+            </div>
+            <div class="uk-rule-body" id="ukRuleBody">
+              <div class="pesan-empty">Memuat aturan kas...</div>
+            </div>
+          </div>
+
+          <div class="uk-panel" id="ukRosterPanel">
+            <div class="uk-panel-head">
+              <span id="ukSideRosterTitle"><i class="fa-solid fa-bolt"></i> Prioritas &amp; Pintas</span>
+              <span class="uk-pill-cnt" id="ukSideRosterCnt">0</span>
+            </div>
+            <div class="uk-roster-list" id="ukSideRoster">
+              <div class="pesan-empty">Memuat anggota...</div>
+            </div>
+          </div>
+        </aside>
+
+        <main class="uk-main">
+          <div class="uk-list-card">
+            <div class="uk-list-head">
+              <h3><i class="fa-solid fa-users"></i> Progres Per Anggota</h3>
+              <div class="uk-list-meta">
+                <small id="ukListSub">Ketuk anggota untuk cek kalender mingguan</small>
+                <span class="uk-count-pill" id="ukListCount">Memuat...</span>
+              </div>
+            </div>
+            <div id="ukListWrap">
+              <div class="loading-block"><div class="spinner"></div>Memuat data uang kas...</div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- POPUP DETAIL ORANG: Progres per minggu + riwayat setoran -->
+    <div class="kas-form" id="ukDetailModal">
+      <div class="kas-form-inner uk-modal-wide">
+        <div class="uk-modal-head">
+          <div>
+            <div class="uk-modal-title">
+              <i class="fa-solid fa-user-check"></i>
+              <span id="ukDetNama">-</span>
+            </div>
+            <div class="uk-modal-sub" id="ukDetMeta">-</div>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0">
+            <button type="button" class="btn btn-red btn-sm" id="btnDetSetor" style="display: none">
+              <i class="fa-solid fa-plus"></i> Setor
+            </button>
+            <button type="button" class="icon-btn" onclick="UangKas.tutupDetail()" title="Tutup" style="width: 34px; height: 34px">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="uk-det-summary" id="ukDetSummary"></div>
+
+        <div class="uk-sec-title">
+          <span><i class="fa-solid fa-calendar-check" style="color: var(--red)"></i> Progres Mingguan</span>
+          <div class="uk-legend">
+            <span><i class="uk-dot lunas"></i> Lunas</span>
+            <span><i class="uk-dot dimuka"></i> Di Muka</span>
+            <span><i class="uk-dot cicil"></i> Nyicil</span>
+            <span><i class="uk-dot belum"></i> Belum</span>
+            <span><i class="uk-dot libur"></i> Libur</span>
+          </div>
+        </div>
+        <div id="ukDetWeeks"></div>
+
+        <div class="uk-sec-title" style="margin-top: 14px">
+          <span><i class="fa-solid fa-clock-rotate-left" style="color: var(--red)"></i> Riwayat Setoran</span>
+          <small id="ukDetHistCount" style="font-size: 0.7rem; color: var(--gray); text-transform: none"></small>
+        </div>
+        <div id="ukDetHistory"></div>
+      </div>
+    </div>
+
+    <!-- POPUP SETORAN: Tambah / Edit Setoran -->
+    <div class="kas-form" id="ukSetorModal">
+      <div class="kas-form-inner">
+        <div class="uk-modal-head">
+          <div class="uk-modal-title">
+            <i class="fa-solid fa-coins"></i>
+            <span id="ukSetorTitle">Catat Setoran</span>
+          </div>
+          <button type="button" class="icon-btn" onclick="UangKas.tutupSetor()" title="Tutup" style="width: 34px; height: 34px">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="field" id="ukNamaSearchWrap">
+          <label>Nama anggota</label>
+          <input type="text" id="ukNamaSearch" class="admin-input" placeholder="Ketik nama buat cari..." autocomplete="off" />
+        </div>
+        <div class="tb-dipilih kosong" id="ukNamaDipilih"></div>
+        <div class="tb-list" id="ukNamaListBox"></div>
+        <input type="hidden" id="ukSetorId" />
+        <input type="hidden" id="ukSetorNama" />
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px">
+          <div class="field" style="margin-bottom: 0">
+            <label>Tanggal bayar</label>
+            <input type="date" id="ukSetorTanggal" class="admin-input" />
+          </div>
+          <div class="field" style="margin-bottom: 0">
+            <label>Nominal (Rp)</label>
+            <input type="text" id="ukSetorNominal" class="admin-input" placeholder="2.000" inputmode="numeric" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="uk-nom-chips" id="ukNomChips"></div>
+        <div class="uk-auto-preview kosong" id="ukAutoPreview"></div>
+
+        <div class="field" style="margin-top: 10px; margin-bottom: 0">
+          <label>Catatan (opsional)</label>
+          <input type="text" id="ukSetorCatatan" class="admin-input" placeholder="Mis. bayar rapel / titip lewat..." maxlength="300" />
+        </div>
+
+        <div class="form-actions-row" style="margin-top: 14px">
+          <button type="button" class="btn btn-white" id="btnBatalSetor">Batal</button>
+          <button type="button" class="btn btn-red" id="btnSimpanSetor">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Setoran
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP PENGATURAN: Tarif & Minggu Libur -->
+    <div class="kas-form" id="ukSettingModal">
+      <div class="kas-form-inner uk-modal-wide">
+        <div class="uk-modal-head">
+          <div>
+            <div class="uk-modal-title">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Pengaturan Uang Kas</span>
+            </div>
+            <div class="uk-modal-sub">Atur tarif mingguan, tanggal mulai, dan minggu libur untuk angkatan ini.</div>
+          </div>
+          <button type="button" class="icon-btn" onclick="UangKas.tutupSetting()" title="Tutup" style="width: 34px; height: 34px">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div class="field" style="margin-bottom: 0">
+            <label>Tarif per minggu (Rp)</label>
+            <input type="text" id="ukCfgNominal" class="admin-input" placeholder="2.000" inputmode="numeric" autocomplete="off" />
+          </div>
+          <div class="field" style="margin-bottom: 0">
+            <label>Tanggal mulai kas</label>
+            <input type="date" id="ukCfgMulai" class="admin-input" />
+          </div>
+        </div>
+        <div id="ukCfgMulaiInfo" style="font-size: 0.7rem; font-weight: 700; color: var(--gray); margin-top: 4px"></div>
+
+        <div class="uk-tarif-scope" id="ukTarifScope" style="display: none">
+          <div><b>Tarif berubah</b> — pilih kapan tarif baru mulai berlaku:</div>
+          <label><input type="radio" name="ukTarifScope" value="minggu_ini" checked /> Mulai minggu berjalan saja (minggu lama tetap pakai tarif lama)</label>
+          <label><input type="radio" name="ukTarifScope" value="semua" /> Terapkan ke semua minggu sejak awal</label>
+        </div>
+
+        <div class="field" style="margin-top: 12px; margin-bottom: 0">
+          <label>Minggu libur (ketuk minggu untuk tandai/batal libur)</label>
+          <div class="uk-libur-grid" id="ukCfgLiburGrid"></div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap">
+            <input type="date" id="ukCfgLiburDate" class="admin-input" style="max-width: 190px" />
+            <button type="button" class="btn btn-white btn-sm" id="btnTambahLiburDate">
+              <i class="fa-solid fa-calendar-xmark"></i> Tambah Minggu Libur
+            </button>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 12px; margin-bottom: 0">
+          <label>Catatan aturan (opsional)</label>
+          <input type="text" id="ukCfgCatatan" class="admin-input" placeholder="Mis. Wajib dikumpulkan tiap hari Senin" maxlength="300" />
+        </div>
+
+        <div class="form-actions-row" style="margin-top: 14px">
+          <button type="button" class="btn btn-white" id="btnBatalSetting">Batal</button>
+          <button type="button" class="btn btn-red" id="btnSimpanSetting">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

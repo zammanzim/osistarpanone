@@ -9,9 +9,14 @@
 
 const Tabungan = {
     cache: [],
-    filter: { q: "" },
+    filter: { q: "", status: "", sort: "nama", orang: "" },
+    defaultGrupLimit: 5,
+    grupLimit: 5,
+    stepGrupLimit: 10,
+    defaultRowLimit: 5,
+    expandedGrups: new Set(),
     // Tanpa hak kelola: default cuma lihat milik sendiri, bisa intip semua
-    // lewat tombol di bawah. Pemegang hak langsung lihat semua.
+    // lewat tombol di atas/bawah. Pemegang hak langsung lihat semua.
     hanyaSaya: false,
     editingId: null,
     detailId: null,
@@ -35,8 +40,51 @@ const Tabungan = {
         Tabungan.terapkanAkses();
 
         document.getElementById("btnTambahTabungan")?.addEventListener("click", () => Tabungan.bukaForm());
+        document.getElementById("btnToggleLingkupHero")?.addEventListener("click", () => Tabungan.toggleLingkup());
         document.getElementById("btnResetFilter")?.addEventListener("click", () => Tabungan.resetFilter());
         document.getElementById("filterQ")?.addEventListener("input", () => Tabungan.bacaFilter());
+        document.getElementById("filterSort")?.addEventListener("input", () => Tabungan.bacaFilter());
+        document.getElementById("btnClearQ")?.addEventListener("click", () => {
+            const el = document.getElementById("filterQ");
+            if (el) el.value = "";
+            Tabungan.bacaFilter();
+        });
+        document.getElementById("statusFilterPills")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-status-pill]");
+            if (!b) return;
+            Tabungan.filter.status = b.dataset.statusPill || "";
+            Tabungan.grupLimit = Tabungan.defaultGrupLimit;
+            Tabungan.render();
+        });
+        document.getElementById("tbRosterList")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-pick-orang]");
+            if (!b) return;
+            const k = decodeURIComponent(b.dataset.pickOrang || "");
+            Tabungan.filter.orang = Tabungan.filter.orang === k ? "" : k;
+            Tabungan.grupLimit = Tabungan.defaultGrupLimit;
+            Tabungan.render();
+        });
+        document.getElementById("filterChips")?.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-clear-filter]");
+            if (!b) return;
+            const key = b.dataset.clearFilter;
+            if (key === "q") {
+                const el = document.getElementById("filterQ");
+                if (el) el.value = "";
+                Tabungan.filter.q = "";
+            } else if (key === "status") {
+                Tabungan.filter.status = "";
+            } else if (key === "orang") {
+                Tabungan.filter.orang = "";
+            } else if (key === "sort") {
+                const fs = document.getElementById("filterSort");
+                if (fs) fs.value = "nama";
+                Tabungan.filter.sort = "nama";
+                Tabungan.segarkanDropdown();
+            }
+            Tabungan.grupLimit = Tabungan.defaultGrupLimit;
+            Tabungan.render();
+        });
         document.getElementById("btnBatalTabungan")?.addEventListener("click", () => Tabungan.tutupForm());
         document.getElementById("btnSimpanTabungan")?.addEventListener("click", () => Tabungan.simpan());
         // Pilih nama dari data anggota (ketuk, bukan ketik bebas)
@@ -70,6 +118,14 @@ const Tabungan = {
             if (mr) { e.stopPropagation(); Tabungan.toggleMenu(mr); return; }
             const tb = e.target.closest("[data-tab-tambah]");
             if (tb) { Tabungan.bukaForm(decodeURIComponent(tb.dataset.tabTambah || "")); return; }
+            const ex = e.target.closest("[data-tab-expand-rows]");
+            if (ex) {
+                const k = decodeURIComponent(ex.dataset.tabExpandRows || "");
+                if (Tabungan.expandedGrups.has(k)) Tabungan.expandedGrups.delete(k);
+                else Tabungan.expandedGrups.add(k);
+                Tabungan.render();
+                return;
+            }
             const pf = e.target.closest("[data-tab-pdf]");
             if (pf) { e.stopPropagation(); Tabungan.tutupSemuaMenu(); Tabungan.exportSatu(decodeURIComponent(pf.dataset.tabPdf || "")); return; }
             // Klik di dalam menu tapi bukan tombol: jangan tembus ke detail baris
@@ -234,16 +290,43 @@ const Tabungan = {
         return all.filter(r => Tabungan.milikSaya(r));
     },
 
+    segarkanDropdown() {
+        try {
+            if (window.Dropdown && Dropdown.segarkanSemua) Dropdown.segarkanSemua();
+        } catch {}
+    },
+
     dataTampil() {
-        const q = Tabungan.filter.q.trim().toLowerCase();
+        const f = Tabungan.filter;
+        const q = String(f.q || "").trim().toLowerCase();
+        const orang = String(f.orang || "").trim().toLowerCase();
         return Tabungan.dataLingkup().filter(r => {
-            if (q && !String(r.nama || "").toLowerCase().includes(q)) return false;
+            const nm = String(r.nama || "").trim().toLowerCase();
+            if (q && !nm.includes(q)) return false;
+            if (orang && nm !== orang) return false;
             return true;
         });
     },
 
     toggleLingkup() {
         Tabungan.hanyaSaya = !Tabungan.hanyaSaya;
+        Tabungan.filter.orang = "";
+        Tabungan.grupLimit = Tabungan.defaultGrupLimit;
+        Tabungan.render();
+    },
+
+    tampilGrupLebihBanyak() {
+        Tabungan.grupLimit += Tabungan.stepGrupLimit;
+        Tabungan.render();
+    },
+
+    tampilSemuaGrup() {
+        Tabungan.grupLimit = Infinity;
+        Tabungan.render();
+    },
+
+    ringkasGrup() {
+        Tabungan.grupLimit = Tabungan.defaultGrupLimit;
         Tabungan.render();
     },
 
@@ -254,7 +337,7 @@ const Tabungan = {
         (data || []).forEach(r => {
             const kunci = String(r.nama || "").trim().toLowerCase();
             if (!kunci) return;
-            if (!grup[kunci]) grup[kunci] = { nama: String(r.nama).trim(), rows: [] };
+            if (!grup[kunci]) grup[kunci] = { kunci, nama: String(r.nama).trim(), rows: [] };
             grup[kunci].rows.push(r);
         });
         return Object.values(grup)
@@ -268,23 +351,122 @@ const Tabungan = {
                     return { ...r, _total: jalan };
                 });
                 g.total = jalan;
+                g.sudah = g.rows.filter(r => !!r.cek).length;
+                g.belum = g.rows.length - g.sudah;
                 return g;
             })
             .sort((a, b) => a.nama.localeCompare(b.nama));
+    },
+
+    urutDanSaringGrup(grups) {
+        const f = Tabungan.filter;
+        let list = (grups || []).slice();
+        if (f.status === "belum") list = list.filter(g => g.belum > 0);
+        else if (f.status === "lunas") list = list.filter(g => g.rows.length > 0 && g.belum === 0);
+
+        if (f.sort === "saldo") {
+            list.sort((a, b) => (b.total - a.total) || a.nama.localeCompare(b.nama));
+        } else if (f.sort === "belum") {
+            list.sort((a, b) => (b.belum - a.belum) || a.nama.localeCompare(b.nama));
+        } else {
+            // Milik sendiri selalu paling atas pada urutan default, sisanya A-Z
+            list.sort((a, b) =>
+                ((Tabungan.milikSaya({ nama: b.nama }) ? 1 : 0) - (Tabungan.milikSaya({ nama: a.nama }) ? 1 : 0)) ||
+                a.nama.localeCompare(b.nama));
+        }
+        return list;
+    },
+
+    sinkronKontrolFilter(shownCards, totalCards, shownRows, totalRows) {
+        const f = Tabungan.filter;
+        const clearBtn = document.getElementById("btnClearQ");
+        if (clearBtn) clearBtn.style.display = String(f.q || "").trim() ? "" : "none";
+
+        document.querySelectorAll("#statusFilterPills [data-status-pill]").forEach(btn => {
+            btn.classList.toggle("on", (btn.dataset.statusPill || "") === (f.status || ""));
+        });
+
+        const chipsEl = document.getElementById("filterChips");
+        if (chipsEl) {
+            const chips = [];
+            if (String(f.q || "").trim()) chips.push({ k: "q", l: `Cari: "${String(f.q).trim()}"` });
+            if (f.orang) chips.push({ k: "orang", l: `Penabung: ${f.orang}` });
+            if (f.status === "belum") chips.push({ k: "status", l: "Status: Belum Ceklis" });
+            else if (f.status === "lunas") chips.push({ k: "status", l: "Status: Lunas ✓" });
+            if (f.sort && f.sort !== "nama") {
+                const sLbl = f.sort === "saldo" ? "Saldo tertinggi" : "Belum ceklis terbanyak";
+                chips.push({ k: "sort", l: `Urutan: ${sLbl}` });
+            }
+            chipsEl.innerHTML = chips.map(c =>
+                `<button type="button" class="filter-chip" data-clear-filter="${c.k}" title="Hapus filter ini">${escapeHtml(c.l)} <i class="fa-solid fa-xmark"></i></button>`
+            ).join("");
+        }
+
+        const cntEl = document.getElementById("filterCountInfo");
+        if (cntEl && typeof shownCards === "number") {
+            cntEl.textContent = totalCards > shownCards
+                ? `${shownCards}/${totalCards} penabung · ${shownRows} baris`
+                : `${shownCards} penabung · ${totalRows} setoran`;
+        }
+
+        if (window.OsisSearch && OsisSearch.setCount) {
+            const activeDrawer =
+                (f.status ? 1 : 0) +
+                (f.orang ? 1 : 0) +
+                (f.sort && f.sort !== "nama" ? 1 : 0);
+            OsisSearch.setCount("#tbTopSearch", activeDrawer);
+        }
     },
 
     // ============ RENDER ============
     render() {
         const data = Tabungan.dataTampil();
         const lingkup = Tabungan.dataLingkup();
+        const boleh = OsisAuth.bisa("tabungan");
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         const setStat = (id, count, suffix) => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = String(count) + `<span class="stat-suffix"> ${suffix}</span>`;
         };
         const orang = new Set(lingkup.map(r => String(r.nama || "").trim().toLowerCase()).filter(Boolean)).size;
         const totalSemua = lingkup.reduce((a, r) => a + Tabungan.nilai(r), 0);
+        const totalMasuk = lingkup.reduce((a, r) => a + (!Tabungan.isKeluar(r) ? (parseInt(r.nominal, 10) || 0) : 0), 0);
+        const totalKeluar = lingkup.reduce((a, r) => a + (Tabungan.isKeluar(r) ? (parseInt(r.nominal, 10) || 0) : 0), 0);
         const sudah = lingkup.filter(r => !!r.cek).length;
         const belum = lingkup.length - sudah;
+        const pctCek = lingkup.length ? Math.round((sudah / lingkup.length) * 100) : 0;
+
+        // Hero badges & toggle lingkup
+        const hbOrg = document.getElementById("heroPenabungBadge");
+        if (hbOrg) hbOrg.innerHTML = `<i class="fa-solid fa-users"></i> ${orang} penabung`;
+        const hbSet = document.getElementById("heroSetoranBadge");
+        if (hbSet) hbSet.innerHTML = `<i class="fa-solid fa-list-check"></i> ${lingkup.length} setoran`;
+        const hbLing = document.getElementById("heroLingkupBadge");
+        const btnHeroLing = document.getElementById("btnToggleLingkupHero");
+        const showLing = !boleh && (Tabungan.cache || []).length > 0;
+        if (hbLing) {
+            hbLing.style.display = showLing ? "" : "none";
+            if (showLing) {
+                hbLing.innerHTML = `<i class="fa-solid ${Tabungan.hanyaSaya ? "fa-user-check" : "fa-users"}"></i> ${Tabungan.hanyaSaya ? "Tabunganku" : "Semua Penabung"}`;
+            }
+        }
+        if (btnHeroLing) {
+            btnHeroLing.style.display = showLing ? "" : "none";
+            if (showLing) {
+                btnHeroLing.innerHTML = `<i class="fa-solid ${Tabungan.hanyaSaya ? "fa-users" : "fa-user-check"}"></i> ${Tabungan.hanyaSaya ? "Lihat Semua Penabung" : "Kembali ke Tabunganku"}`;
+            }
+        }
+
+        // Dark Total Hero card
+        set("statTotal", Tabungan.rp(totalSemua));
+        set("tbCekPill", `${pctCek}% ceklis`);
+        const vb = document.getElementById("tbVerifBar");
+        if (vb) vb.style.width = pctCek + "%";
+        set("tbVerifLbl", `${sudah} / ${lingkup.length} terverifikasi`);
+        set("tbBelumPct", `${belum} belum`);
+        set("tbRumusMasuk", "+ " + Tabungan.rp(totalMasuk));
+        set("tbRumusKeluar", "− " + Tabungan.rp(totalKeluar));
+
         // Total minggu berjalan (Senin-Minggu) + bulan berjalan dari tanggal setoran.
         const now = new Date();
         const mundur = (now.getDay() + 6) % 7; // Senin=0 ... Minggu=6
@@ -297,56 +479,101 @@ const Tabungan = {
         const blnIni = keStr(now).slice(0, 7);
         const rows = lingkup;
         const strHariIni = keStr(now);
-        const totalHarian = rows.reduce((a, r) => {
-            return a + (String(r.tanggal || "") === strHariIni ? Tabungan.nilai(r) : 0);
-        }, 0);
+        const totalHarian = rows.reduce((a, r) => a + (String(r.tanggal || "") === strHariIni ? Tabungan.nilai(r) : 0), 0);
+        const nHarian = rows.filter(r => String(r.tanggal || "") === strHariIni).length;
         const totalMinggu = rows.reduce((a, r) => {
             const t = String(r.tanggal || "");
             return a + ((t >= strSenin && t <= strMinggu) ? Tabungan.nilai(r) : 0);
         }, 0);
-        const totalBulan = rows.reduce((a, r) => {
-            return a + (String(r.tanggal || "").slice(0, 7) === blnIni ? Tabungan.nilai(r) : 0);
-        }, 0);
+        const nMinggu = rows.filter(r => {
+            const t = String(r.tanggal || "");
+            return t >= strSenin && t <= strMinggu;
+        }).length;
+        const totalBulan = rows.reduce((a, r) => a + (String(r.tanggal || "").slice(0, 7) === blnIni ? Tabungan.nilai(r) : 0), 0);
+        const nBulan = rows.filter(r => String(r.tanggal || "").slice(0, 7) === blnIni).length;
+
+        set("statBulan", Tabungan.rp(totalBulan));
+        set("statBulanSub", nBulan ? `${nBulan} setoran bulan ini` : "bulan berjalan");
+        set("statMinggu", Tabungan.rp(totalMinggu));
+        set("statMingguSub", nMinggu ? `${nMinggu} setoran minggu ini` : "Senin - Minggu");
+        set("statHarian", Tabungan.rp(totalHarian));
+        set("statHarianSub", nHarian ? `${nHarian} setoran hari ini` : "hari ini");
         setStat("statOrang", orang, "orang");
-        const elTotal = document.getElementById("statTotal");
-        if (elTotal) elTotal.textContent = Tabungan.rp(totalSemua);
-        const elHarian = document.getElementById("statHarian");
-        if (elHarian) elHarian.textContent = Tabungan.rp(totalHarian);
-        const elMinggu = document.getElementById("statMinggu");
-        if (elMinggu) elMinggu.textContent = Tabungan.rp(totalMinggu);
-        const elBulan = document.getElementById("statBulan");
-        if (elBulan) elBulan.textContent = Tabungan.rp(totalBulan);
+        set("statOrangSub", orang ? `rata-rata ${Tabungan.rp(Math.round(totalSemua / orang))}` : "pengurus aktif");
         setStat("statSudah", sudah, "setoran");
+        set("statSudahSub", `${pctCek}% dari total setoran`);
         setStat("statBelum", belum, "setoran");
+        set("statBelumSub", belum ? `${100 - pctCek}% menunggu ceklis` : "semua sudah terverifikasi");
+
+        // Rail Kiri: Daftar Penabung interaktif (dari lingkup aktif)
+        const rosterGrups = Tabungan.urutDanSaringGrup(Tabungan.grupPerOrang(lingkup));
+        set("tbRosterCount", rosterGrups.length);
+        const rl = document.getElementById("tbRosterList");
+        if (rl) {
+            if (!rosterGrups.length) {
+                rl.innerHTML = `<div class="pesan-empty">Belum ada penabung.</div>`;
+            } else {
+                rl.innerHTML = rosterGrups.map(g => {
+                    const on = Tabungan.filter.orang === g.kunci ? " on" : "";
+                    const badgeCls = g.belum === 0 ? "lunas" : "belum";
+                    const badgeTxt = g.belum === 0 ? "Lunas ✓" : `${g.belum} blm`;
+                    return `<button type="button" class="tb-roster-item${on}" data-pick-orang="${encodeURIComponent(g.kunci)}" title="${on ? "Klik untuk tampilkan semua" : "Klik untuk fokus penabung ini"}">
+                        <div style="min-width:0; flex:1">
+                            <div class="tb-roster-name">${escapeHtml(g.nama)}</div>
+                            <div class="tb-roster-sub">${g.rows.length} transaksi</div>
+                        </div>
+                        <div class="tb-roster-right">
+                            <span class="tb-roster-amt">${Tabungan.rp(g.total)}</span>
+                            <span class="tb-roster-badge ${badgeCls}">${badgeTxt}</span>
+                        </div>
+                    </button>`;
+                }).join("");
+            }
+        }
 
         const wrap = document.getElementById("tabunganWrap");
         if (!wrap) return;
-        const boleh = OsisAuth.bisa("tabungan");
         if (!(Tabungan.cache || []).length) {
+            Tabungan.sinkronKontrolFilter(0, 0, 0, 0);
             wrap.innerHTML = `<div class="rekap-card" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-piggy-bank" style="color:var(--red)"></i></div><b>Belum ada data tabungan</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Catat setoran tabungan per pengurus.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Tabungan.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah Data</button>` : ""}</div>`;
             return;
         }
-        const grups = Tabungan.grupPerOrang(data);
-        // Milik sendiri selalu paling atas, sisanya tetap A-Z
-        grups.sort((a, b) => (Tabungan.milikSaya({ nama: b.nama }) ? 1 : 0) - (Tabungan.milikSaya({ nama: a.nama }) ? 1 : 0));
+        const grups = Tabungan.urutDanSaringGrup(Tabungan.grupPerOrang(data));
         // Tombol intip di bawah: khusus yang tanpa hak kelola.
         const tombolLingkup = (!boleh && (Tabungan.cache || []).length)
-            ? `<div style="text-align:center;margin-top:4px"><button class="btn btn-white btn-sm" onclick="Tabungan.toggleLingkup()"><i class="fa-solid ${Tabungan.hanyaSaya ? "fa-users" : "fa-user-check"}"></i> ${Tabungan.hanyaSaya ? "Lihat tabungan orang lain" : "Kembali ke tabunganku"}</button></div>` : "";
+            ? `<div style="text-align:center;margin-top:8px"><button class="btn btn-white btn-sm" onclick="Tabungan.toggleLingkup()"><i class="fa-solid ${Tabungan.hanyaSaya ? "fa-users" : "fa-user-check"}"></i> ${Tabungan.hanyaSaya ? "Lihat tabungan orang lain" : "Kembali ke tabunganku"}</button></div>` : "";
         if (!grups.length) {
+            Tabungan.sinkronKontrolFilter(0, 0, 0, data.length);
             const q = Tabungan.filter.q.trim();
-            wrap.innerHTML = (Tabungan.hanyaSaya && !q)
+            wrap.innerHTML = (Tabungan.hanyaSaya && !q && !Tabungan.filter.status && !Tabungan.filter.orang)
                 ? `<div class="pesan-empty"><i class="fa-solid fa-piggy-bank"></i> Belum ada tabungan atas namamu.</div>` + tombolLingkup
                 : `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Tabungan.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
             return;
         }
-        wrap.innerHTML = grups.map(g => {
-            const sudahSemua = g.rows.length > 0 && g.rows.every(r => !!r.cek);
+
+        const grupsTampil = grups.slice(0, Tabungan.grupLimit);
+        const totalRowsTampil = grupsTampil.reduce((a, g) => a + g.rows.length, 0);
+        const totalRowsCocok = grups.reduce((a, g) => a + g.rows.length, 0);
+        Tabungan.sinkronKontrolFilter(grupsTampil.length, grups.length, totalRowsTampil, totalRowsCocok);
+
+        const sisaGrup = Math.max(0, grups.length - grupsTampil.length);
+        const tambahGrup = Math.min(sisaGrup, Tabungan.stepGrupLimit);
+
+        wrap.innerHTML = grupsTampil.map(g => {
+            const sudahSemua = g.rows.length > 0 && g.belum === 0;
             // Label hijau "Milik sendiri" tampil di kanan bawah (footer card)
             const milik = Tabungan.milikSaya({ nama: g.nama });
             const namaEnc = encodeURIComponent(g.nama);
+            const kunciEnc = encodeURIComponent(g.kunci);
+            const isExpanded = Tabungan.expandedGrups.has(g.kunci);
+            const bisaRingkasBaris = g.rows.length > Tabungan.defaultRowLimit;
+            const visibleRows = (!bisaRingkasBaris || isExpanded)
+                ? g.rows.map((r, idx) => ({ r, no: idx + 1 }))
+                : g.rows.slice(-Tabungan.defaultRowLimit).map((r, idx, arr) => ({ r, no: g.rows.length - arr.length + idx + 1 }));
+
             return `<div class="rekap-card" style="margin-bottom:12px">
                 <div class="tb-head">
-                    <h3><i class="fa-solid fa-piggy-bank"></i> <span class="tb-title">Tabungan — ${escapeHtml(g.nama)}</span> <span class="jenis total">${Tabungan.rp(g.total)}${sudahSemua ? " ✓" : ""}</span></h3>
+                    <h3><i class="fa-solid fa-piggy-bank"></i> <span class="tb-title">${escapeHtml(g.nama)}</span> <span class="jenis total">${Tabungan.rp(g.total)}${sudahSemua ? " ✓" : ""}</span></h3>
                     <div class="tb-menu-wrap">
                         <button type="button" class="tb-more-btn" data-tab-more="${namaEnc}" title="Menu lainnya"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                         <div class="tb-menu" hidden>
@@ -354,30 +581,46 @@ const Tabungan = {
                         </div>
                     </div>
                 </div>
-                <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Ceklis</th><th>Tanggal</th><th>Nominal</th><th>Total Semua</th>${boleh ? `<th style="text-align:right">Aksi</th>` : ""}</tr></thead><tbody>
-                ${g.rows.map((r, i) => {
+                <div class="tb-submeta">
+                    <span class="tb-meta-pill"><i class="fa-solid fa-receipt"></i> ${g.rows.length} setoran</span>
+                    <span class="tb-meta-pill ${sudahSemua ? "ok" : "warn"}"><i class="fa-solid ${sudahSemua ? "fa-circle-check" : "fa-clock"}"></i> ${sudahSemua ? "Semua sudah ceklis" : `${g.belum} belum ceklis`}</span>
+                    ${bisaRingkasBaris && !isExpanded ? `<span class="tb-meta-pill"><i class="fa-solid fa-eye"></i> ${visibleRows.length} terbaru</span>` : ""}
+                </div>
+                <div class="kas-scroll"><table class="kas-tabel"><thead><tr><th>No</th><th>Ceklis</th><th>Tanggal</th><th>Nominal</th><th>Saldo Jalan</th>${boleh ? `<th style="text-align:right">Aksi</th>` : ""}</tr></thead><tbody>
+                ${visibleRows.map(({ r, no }) => {
                     // Kelola (akses tabungan) boleh ceklis siapa saja; lainnya cuma milik sendiri
                     const bisaCek = boleh || Tabungan.milikSaya(r);
                     return `<tr data-tab-row="${r.id}">
-                    <td>${i + 1}</td>
-                    <td>${bisaCek
+                    <td class="col-no">${no}</td>
+                    <td class="col-cek">${bisaCek
                         ? `<button type="button" class="cek-btn ${r.cek ? "on" : ""}" data-tab-toggle="${r.id}" title="${r.cek ? "Sudah diceklis — klik untuk batalkan" : "Belum diceklis — klik untuk tandai"}"><i class="fa-solid ${r.cek ? "fa-check" : "fa-minus"}"></i></button>`
                         : `<span class="cek-btn ${r.cek ? "on" : ""}" style="cursor:default"><i class="fa-solid ${r.cek ? "fa-check" : "fa-minus"}"></i></span>`}</td>
-                    <td>${escapeHtml(Tabungan.fmtTanggalPendek(r.tanggal))}${olehLabel(r) ? `<br>${olehLabel(r)}` : ""}</td>
-                    <td><span class="jenis ${Tabungan.isKeluar(r) ? "keluar" : "masuk"}">${Tabungan.isKeluar(r) ? "−" : "+"} ${Tabungan.rp(r.nominal)}</span></td>
-                    <td class="num">${Tabungan.rp(r._total)}</td>
-                    ${boleh ? `<td><div class="row-act">
+                    <td class="col-tgl">${escapeHtml(Tabungan.fmtTanggalPendek(r.tanggal))}${olehLabel(r) ? `<br>${olehLabel(r)}` : ""}</td>
+                    <td class="col-nom"><span class="jenis ${Tabungan.isKeluar(r) ? "keluar" : "masuk"}">${Tabungan.isKeluar(r) ? "−" : "+"} ${Tabungan.rp(r.nominal)}</span></td>
+                    <td class="num col-sal">${Tabungan.rp(r._total)}</td>
+                    ${boleh ? `<td class="col-act"><div class="row-act">
                         <button type="button" class="icon-btn" data-tab-edit="${r.id}" title="Edit" style="width:30px; height:30px; font-size:0.75rem; border-width:2px"><i class="fa-solid fa-pen"></i></button>
                         <button type="button" class="icon-btn" data-tab-del="${r.id}" title="Hapus" style="width:30px; height:30px; font-size:0.75rem; background:var(--red); color:#fff; border-width:2px"><i class="fa-solid fa-trash-can"></i></button>
                     </div></td>` : ""}
                 </tr>`;}).join("")}
                 </tbody></table></div>
-                ${(boleh || milik) ? `<div class="tb-foot">
-                    ${boleh ? `<button class="btn btn-white btn-sm" data-tab-tambah="${namaEnc}"><i class="fa-solid fa-plus"></i> Tambah Setoran</button>` : `<span></span>`}
+                ${(boleh || milik || bisaRingkasBaris) ? `<div class="tb-foot">
+                    <div class="tb-foot-actions">
+                        ${boleh ? `<button class="btn btn-white btn-sm" data-tab-tambah="${namaEnc}"><i class="fa-solid fa-plus"></i> Tambah Setoran</button>` : ""}
+                        ${bisaRingkasBaris ? `<button type="button" class="btn btn-white btn-sm" data-tab-expand-rows="${kunciEnc}"><i class="fa-solid ${isExpanded ? "fa-compress" : "fa-angles-down"}"></i> ${isExpanded ? `Ringkas (${Tabungan.defaultRowLimit})` : `Lihat semua (${g.rows.length})`}</button>` : ""}
+                    </div>
                     ${milik ? `<span class="jenis milik"><i class="fa-solid fa-user-check"></i> Milik sendiri</span>` : ""}
                 </div>` : ""}
             </div>`;
-        }).join("") + tombolLingkup;
+        }).join("")
+        + ((sisaGrup > 0 || (grups.length > Tabungan.defaultGrupLimit && grupsTampil.length > Tabungan.defaultGrupLimit))
+            ? `<div class="tb-expand-bar">
+                ${sisaGrup > 0 ? `<button type="button" class="btn btn-white btn-sm" onclick="Tabungan.tampilGrupLebihBanyak()"><i class="fa-solid fa-angles-down"></i> Tampilkan Lebih Banyak (+${tambahGrup})</button>` : ""}
+                ${sisaGrup > tambahGrup ? `<button type="button" class="btn btn-red btn-sm" onclick="Tabungan.tampilSemuaGrup()"><i class="fa-solid fa-layer-group"></i> Lihat Semua (${grups.length})</button>` : ""}
+                ${grupsTampil.length > Tabungan.defaultGrupLimit ? `<button type="button" class="btn btn-white btn-sm" onclick="Tabungan.ringkasGrup()"><i class="fa-solid fa-compress"></i> Ringkas (${Tabungan.defaultGrupLimit})</button>` : ""}
+            </div>`
+            : "")
+        + tombolLingkup;
     },
 
     toggleMenu(btn) {
@@ -398,14 +641,24 @@ const Tabungan = {
     },
 
     bacaFilter() {
-        Tabungan.filter = { q: document.getElementById("filterQ").value || "" };
+        Tabungan.filter = {
+            ...Tabungan.filter,
+            q: document.getElementById("filterQ")?.value || "",
+            sort: document.getElementById("filterSort")?.value || "nama",
+        };
+        Tabungan.grupLimit = Tabungan.defaultGrupLimit;
         Tabungan.render();
     },
 
     resetFilter() {
         const el = document.getElementById("filterQ");
         if (el) el.value = "";
-        Tabungan.bacaFilter();
+        const fs = document.getElementById("filterSort");
+        if (fs) fs.value = "nama";
+        Tabungan.filter = { q: "", status: "", sort: "nama", orang: "" };
+        Tabungan.grupLimit = Tabungan.defaultGrupLimit;
+        Tabungan.segarkanDropdown();
+        Tabungan.render();
     },
 
     // ============ NAMA DARI DATA ANGGOTA (ketuk, bukan ketik bebas) ============
@@ -482,7 +735,8 @@ const Tabungan = {
         const aktif = (Tabungan.periodeTahun || []).filter(Number.isFinite);
         let pakai;
         if (aktif.length) {
-            pakai = bersih.filter(a => aktif.includes(parseInt(a.tahun, 10)));
+            const cocok = bersih.filter(a => aktif.includes(parseInt(a.tahun, 10)));
+            pakai = cocok.length ? cocok : bersih;
         } else {
             const thns = [...new Set(bersih.map(a => parseInt(a.tahun, 10)).filter(Number.isFinite))].sort((a, b) => b - a);
             const th = thns.length ? thns[0] : null;

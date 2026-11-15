@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Program Bulanan — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=40" />
+    <link rel="stylesheet" href="../css/style.css?v=41" />
+    <link rel="stylesheet" href="../css/osis2.css?v=14" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -30,12 +31,12 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-program-bulanan.css?v=3" />
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../css/osis-program-bulanan.css?v=4" />
+    <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=14"></script>
     <script src="../js/db.js?v=35" defer></script>
     <script src="../js/aktivitas.js?v=10" defer></script>
-    <script src="../js/app.js?v=10" defer></script>
+    <script src="../js/app.js?v=16" defer></script>
     <script src="../js/dropdown.js?v=3" defer></script>
     <script src="../js/toast.js?v=10" defer></script>
     <script src="../js/notice.js?v=10" defer></script>
@@ -44,9 +45,9 @@
     <script src="../js/osis-auth.js?v=19" defer></script>
     <script src="../js/osis-visitor.js?v=5" defer></script>
     <script src="../js/osis-sidebar.js?v=45" defer></script>
-    <script src="../js/osis-header.js?v=14" defer></script>
+    <script src="../js/osis-header.js?v=18" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/program.js?v=11" defer></script>
+    <script src="../js/program.js?v=12" defer></script>
     <script src="../js/pwa.js?v=11" defer></script>
   </head>
   <body data-tipe="bulanan">
@@ -68,12 +69,74 @@
       </div>
     </header>
 
-    <div class="program-wrap">
+    <div class="osis-wrap">
+      <div class="osis-top-search" id="progTopSearch" data-osis-auto-count="1">
+        <div class="osis-sb-bar">
+          <div class="osis-sb-row">
+            <i class="fa-solid fa-magnifying-glass osis-sb-ico"></i>
+            <input
+              type="text"
+              id="filterQ"
+              class="osis-sb-input"
+              placeholder="Cari nama program, PIC, atau sekbid..."
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="osis-sb-clear"
+              data-osis-clear="auto"
+              title="Hapus pencarian"
+              hidden
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="osis-sb-divider" aria-hidden="true"></span>
+            <button type="button" class="osis-sb-filter-btn" aria-expanded="false">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Filter</span>
+              <span class="osis-sb-badge" hidden>0</span>
+              <i class="fa-solid fa-chevron-down osis-sb-chev"></i>
+            </button>
+          </div>
+        </div>
+        <div class="osis-sb-panel">
+          <div class="osis-sb-panel-head">
+            <span class="osis-sb-panel-title"><i class="fa-solid fa-filter"></i> Filter Program</span>
+            <div class="osis-sb-panel-acts">
+              <button type="button" class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+              <button type="button" class="osis-sb-close" title="Tutup filter">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="osis-sb-fields">
+            <div class="osis-sb-field grow">
+              <label>Sekbid</label>
+              <select id="filterSekbid" class="admin-input">
+                <option value="">Semua sekbid</option>
+              </select>
+            </div>
+            <div class="osis-sb-field grow">
+              <label>Status</label>
+              <select id="filterStatus" class="admin-input">
+                <option value="">Semua status</option>
+                <option value="rencana">Rencana</option>
+                <option value="berjalan">Berjalan</option>
+                <option value="selesai">Selesai</option>
+                <option value="batal">Batal</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="program-cols">
       <div class="program-side">
 
-      <div class="program-head">
-        <div class="ico"><i class="fa-solid fa-calendar-days"></i></div>
+      <div class="osis-hero">
+        <div class="osis-avatar"><i class="fa-solid fa-calendar-days"></i></div>
         <div style="flex: 1; min-width: 180px">
           <h1>PROGRAM BULANAN</h1>
           <p>Kegiatan operasional OSIS bulan per bulan.</p>
@@ -103,44 +166,6 @@
         <div class="stat-card">
           <span class="lbl"><i class="fa-solid fa-clock"></i> Rencana</span
           ><b id="statRencana">-</b>
-        </div>
-      </div>
-
-      <div class="filter-card">
-        <div class="field">
-          <label>Cari program</label
-          ><input
-            type="text"
-            id="filterQ"
-            class="admin-input"
-            placeholder="Nama / PIC / sekbid..."
-          />
-        </div>
-        <div class="field">
-          <label>Sekbid</label
-          ><select id="filterSekbid" class="admin-input">
-            <option value="">Semua sekbid</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Status</label
-          ><select id="filterStatus" class="admin-input">
-            <option value="">Semua status</option>
-            <option value="rencana">Rencana</option>
-            <option value="berjalan">Berjalan</option>
-            <option value="selesai">Selesai</option>
-            <option value="batal">Batal</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label
-          ><button
-            class="btn btn-white btn-sm"
-            id="btnResetFilter"
-            title="Reset filter"
-          >
-            <i class="fa-solid fa-rotate-left"></i>
-          </button>
         </div>
       </div>
       </div>

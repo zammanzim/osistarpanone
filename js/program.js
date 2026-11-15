@@ -174,7 +174,9 @@ const Program = {
             const el = document.getElementById(id);
             if (el) el.value = "";
         });
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
         Program.bacaFilter();
+        try { window.OsisSearch?.sync?.("progTopSearch"); } catch {}
     },
 
     dataTampil() {

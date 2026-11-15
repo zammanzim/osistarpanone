@@ -16,9 +16,11 @@ const Dokumen = {
     detailId: null,
     stagedFile: null,   // File baru di popup (upload atau edit)
     existingPath: "",   // file_path lama pas edit
+    viewMode: "grid",   // "grid" | "list"
+    VIEW_KEY: "osis_dokumen_view",
 
     KATEGORI: [
-        ["semua", "Semua Dokumen", "fa-solid fa-folder"],
+        ["semua", "Semua", "fa-solid fa-folder"],
         ["proposal", "Proposal", "fa-solid fa-file-lines"],
         ["lpj", "LPJ", "fa-solid fa-file-circle-check"],
         ["surat", "Surat", "fa-solid fa-envelope-open-text"],
@@ -37,6 +39,12 @@ const Dokumen = {
             location.replace("../login");
             return;
         }
+        try {
+            const v = localStorage.getItem(Dokumen.VIEW_KEY);
+            if (v === "list" || v === "grid") Dokumen.viewMode = v;
+        } catch {}
+        Dokumen.syncViewBtns();
+
         // Segarkan hak kendali (biar perubahan akses langsung berlaku)
         try { await OsisAuth.refreshAkses(); } catch {}
         Dokumen.terapkanAkses();
@@ -59,11 +67,15 @@ const Dokumen = {
             const fd = document.getElementById("filterDivisi");
             if (fd) fd.innerHTML = `<option value="">Semua</option>` + opts;
         } catch {}
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
 
         document.getElementById("btnUploadDokumen")?.addEventListener("click", () => Dokumen.bukaForm());
         document.getElementById("btnBatalDokumen")?.addEventListener("click", () => Dokumen.tutupForm());
         document.getElementById("btnSimpanDokumen")?.addEventListener("click", () => Dokumen.simpan());
         document.getElementById("btnResetFilter")?.addEventListener("click", () => Dokumen.resetFilter());
+        document.getElementById("btnViewGrid")?.addEventListener("click", () => Dokumen.setView("grid"));
+        document.getElementById("btnViewList")?.addEventListener("click", () => Dokumen.setView("list"));
+        document.getElementById("btnClearQ")?.addEventListener("click", () => Dokumen.hapusFilter("q"));
         document.getElementById("btnDownloadDetail")?.addEventListener("click", () => Dokumen.downloadAktif());
         document.getElementById("btnEditDariDetail")?.addEventListener("click", () => {
             const id = Dokumen.detailId;
@@ -78,6 +90,14 @@ const Dokumen = {
         ["filterQ", "filterKategori", "filterTahun", "filterDivisi", "filterSort"].forEach(id => {
             document.getElementById(id)?.addEventListener("input", () => Dokumen.bacaFilter());
         });
+
+        // Draft otomatis form tambah dokumen
+        if (typeof FormPersist !== "undefined") {
+            FormPersist.watch("dokumenForm", {
+                fields: ["dokNama", "dokKategori", "dokTahun", "dokDivisi", "dokDeskripsi"],
+                isEditing: () => !!Dokumen.editingId
+            });
+        }
 
         // drop zone upload (semua tipe file, bukan cuma gambar)
         const drop = document.getElementById("dokDrop");
@@ -239,6 +259,42 @@ const Dokumen = {
         return data;
     },
 
+    setView(mode) {
+        Dokumen.viewMode = mode === "list" ? "list" : "grid";
+        try { localStorage.setItem(Dokumen.VIEW_KEY, Dokumen.viewMode); } catch {}
+        Dokumen.syncViewBtns();
+        Dokumen.render();
+    },
+
+    syncViewBtns() {
+        const g = document.getElementById("btnViewGrid");
+        const l = document.getElementById("btnViewList");
+        if (g) g.classList.toggle("active", Dokumen.viewMode === "grid");
+        if (l) l.classList.toggle("active", Dokumen.viewMode === "list");
+    },
+
+    renderResultBar(total, tampil) {
+        const bar = document.getElementById("dokResultBar");
+        if (!bar) return;
+        if (!total) { bar.style.display = "none"; bar.innerHTML = ""; return; }
+        const f = Dokumen.filter;
+        const chips = [];
+        if ((f.q || "").trim()) chips.push(["q", `Cari: "${f.q.trim().slice(0, 24)}"`]);
+        if (f.kategori && f.kategori !== "semua") chips.push(["kategori", `Kategori: ${Dokumen.katLabel(f.kategori)}`]);
+        if (f.tahun) chips.push(["tahun", `Tahun: ${f.tahun}`]);
+        if (f.divisi) chips.push(["divisi", `Divisi: ${f.divisi}`]);
+        const countTxt = tampil === total
+            ? `Menampilkan <b>${total}</b> dokumen`
+            : `Menampilkan <b>${tampil}</b> dari <b>${total}</b> dokumen`;
+        bar.style.display = "";
+        bar.innerHTML = `<span class="dok-bar-count">${countTxt}</span>`
+            + (chips.length
+                ? `<div class="dok-chips">${chips.map(([k, lbl]) =>
+                    `<button type="button" class="dok-chip" onclick="Dokumen.hapusFilter('${k}')">${escapeHtml(lbl)} <i class="fa-solid fa-xmark"></i></button>`
+                ).join("")}</div>`
+                : "");
+    },
+
     render() {
         const all = Dokumen.cache || [];
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -249,6 +305,10 @@ const Dokumen = {
         set("statBulanLbl", now.toLocaleDateString("id-ID", { month: "long", year: "numeric" }));
         set("statProposal", String(all.filter(d => d.kategori === "proposal").length));
         set("statLpj", String(all.filter(d => d.kategori === "lpj").length));
+        set("folderTotalBadge", String(all.length));
+
+        const clrQ = document.getElementById("btnClearQ");
+        if (clrQ) clrQ.style.display = (Dokumen.filter.q || "").trim() ? "" : "none";
 
         // opsi tahun dinamis
         const years = [...new Set(all.map(d => parseInt(d.tahun, 10)).filter(Number.isFinite))].sort((a, b) => b - a);
@@ -259,6 +319,7 @@ const Dokumen = {
             ft.value = cur;
             Dokumen.filter.tahun = cur;
         }
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
 
         // folder + count
         const fg = document.getElementById("folderGrid");
@@ -266,60 +327,97 @@ const Dokumen = {
             const katAktif = Dokumen.filter.kategori || "semua";
             fg.innerHTML = Dokumen.KATEGORI.map(k => {
                 const n = k[0] === "semua" ? all.length : all.filter(d => (d.kategori || "") === k[0]).length;
-                return `<button class="folder-card ${katAktif === k[0] ? "active" : ""}" onclick="Dokumen.pilihKategori('${k[0]}')"><div class="fic"><i class="${k[2]}"></i></div><b>${k[1]}</b><small>${n} dokumen</small></button>`;
+                return `<button type="button" class="folder-card ${katAktif === k[0] ? "active" : ""}" onclick="Dokumen.pilihKategori('${k[0]}')"><span class="fic"><i class="${k[2]}"></i></span><b>${k[1]}</b><small>${n}</small></button>`;
             }).join("");
         }
 
         // list
         const listEl = document.getElementById("dokumenList");
+        const footEl = document.getElementById("dokumenFooter");
         if (!listEl) return;
+        listEl.classList.toggle("dok-grid", Dokumen.viewMode !== "list");
+        listEl.classList.toggle("dok-list", Dokumen.viewMode === "list");
+        Dokumen.syncViewBtns();
+
         const boleh = OsisAuth.bisa("dokumen");
         const data = Dokumen.dataTampil();
+        Dokumen.renderResultBar(all.length, data.length);
+        try { window.OsisSearch?.sync?.("dokTopSearch"); } catch {}
+
         if (!all.length) {
-            listEl.innerHTML = `<div class="pesan-empty" style="background:var(--white); border:2.5px dashed var(--ink); border-radius:14px; padding:28px 16px; text-align:center"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-folder-open" style="color:var(--red)"></i></div><b>Belum ada dokumen</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Dokumen pada arsip ini akan muncul di sini.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Dokumen.bukaForm()"><i class="fa-solid fa-plus"></i> Upload Dokumen</button>` : ""}</div>`;
+            listEl.innerHTML = `<div class="pesan-empty dok-empty-box"><div class="dok-empty-ico"><i class="fa-solid fa-folder-open"></i></div><b>Belum ada dokumen</b><p>Dokumen pada arsip ini akan muncul di sini.</p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Dokumen.bukaForm()"><i class="fa-solid fa-plus"></i> Upload Dokumen</button>` : ""}</div>`;
+            if (footEl) footEl.innerHTML = "";
             return;
         }
         if (!data.length) {
             const kat = Dokumen.filter.kategori && Dokumen.filter.kategori !== "semua" ? ` pada kategori <b>${escapeHtml(Dokumen.katLabel(Dokumen.filter.kategori))}</b>` : "";
-            listEl.innerHTML = `<div class="pesan-empty" style="background:var(--white); border:2.5px dashed var(--ink); border-radius:14px; padding:28px 16px; text-align:center"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-folder-open" style="color:var(--red)"></i></div><b>Belum ada dokumen</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">Dokumen${kat} akan muncul di sini. <a href="#" onclick="event.preventDefault(); Dokumen.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></p>${boleh ? `<button class="btn btn-red btn-sm" onclick="Dokumen.bukaForm()"><i class="fa-solid fa-plus"></i> Upload Dokumen</button>` : ""}</div>`
-                + (Dokumen.habis ? "" : `<div style="text-align:center; padding:12px 4px"><button class="btn btn-white btn-sm" onclick="Dokumen.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button></div><div id="dokumenSentinel" style="height:8px"></div>`);
-            try { pasangSentinel("dokumenSentinel", () => Dokumen.muat(false)); } catch {}
+            listEl.innerHTML = `<div class="pesan-empty dok-empty-box"><div class="dok-empty-ico"><i class="fa-solid fa-magnifying-glass"></i></div><b>Tidak ada dokumen yang cocok</b><p>Coba ubah kata kunci atau reset filter${kat}.</p><button type="button" class="btn btn-white btn-sm" onclick="Dokumen.resetFilter()"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button></div>`;
+            if (footEl) {
+                footEl.innerHTML = Dokumen.habis ? "" : `<div style="text-align:center; padding:12px 4px"><button class="btn btn-white btn-sm" onclick="Dokumen.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button></div><div id="dokumenSentinel" style="height:8px"></div>`;
+                try { pasangSentinel("dokumenSentinel", () => Dokumen.muat(false)); } catch {}
+            }
             return;
         }
+
         listEl.innerHTML = data.map(d => {
             const ext = Dokumen.extOf(d);
             const [cls, icon] = Dokumen.fileIcon(ext);
             const contoh = Dokumen.isContoh(d);
+            const extLbl = (ext || "FILE").toUpperCase();
             return `
-                <div class="dok-item">
-                    <div class="dok-ico ${cls}"><i class="${icon}"></i></div>
-                    <div class="dok-body">
-                        <h4>${escapeHtml(d.nama || "Tanpa nama")}${contoh ? `<span class="dok-tag-contoh">Contoh</span>` : ""}</h4>
-                        <div class="dok-meta"><b>${escapeHtml(Dokumen.katLabel(d.kategori))}</b> · ${escapeHtml(String(d.tahun || "-"))} · Divisi ${escapeHtml(d.divisi || "-")}</div>
-                        <div class="dok-meta">Diupload ${Dokumen.fmtTanggal(d.created_at)} · ${Dokumen.fmtBytes(d.ukuran_bytes)} · oleh ${escapeHtml(d.pengunggah || "-")}</div>
+                <article class="dok-item">
+                    <button type="button" class="dok-card-hit" onclick="Dokumen.detail(${d.id})">
+                        <div class="dok-ico ${cls}"><i class="${icon}"></i><span class="dok-ext-pill">${escapeHtml(extLbl)}</span></div>
+                        <div class="dok-body">
+                            <div class="dok-badges">
+                                <span class="dok-kat-pill">${escapeHtml(Dokumen.katLabel(d.kategori))}</span>
+                                <span class="dok-tahun-pill">${escapeHtml(String(d.tahun || "-"))}</span>
+                                ${contoh ? `<span class="dok-tag-contoh">Contoh</span>` : ""}
+                            </div>
+                            <h4>${escapeHtml(d.nama || "Tanpa nama")}</h4>
+                            ${d.deskripsi ? `<p class="dok-desc">${escapeHtml(d.deskripsi)}</p>` : ""}
+                            <div class="dok-meta">
+                                <span><i class="fa-solid fa-layer-group"></i> ${escapeHtml(d.divisi || "Umum")}</span>
+                                <span><i class="fa-solid fa-user"></i> ${escapeHtml(d.pengunggah || "-")}</span>
+                            </div>
+                        </div>
+                    </button>
+                    <div class="dok-card-foot">
+                        <span class="dok-foot-info">${Dokumen.fmtBytes(d.ukuran_bytes)} · ${Dokumen.fmtTanggal(d.created_at)}</span>
                         <div class="dok-actions">
-                            <button class="btn btn-white btn-sm" onclick="Dokumen.detail(${d.id})"><i class="fa-solid fa-eye"></i> Buka</button>
-                            <button class="btn btn-white btn-sm" onclick="Dokumen.download(${d.id})"><i class="fa-solid fa-download"></i> Download</button>
-                            ${boleh ? `<button class="btn btn-white btn-sm" onclick="Dokumen.edit(${d.id})"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn btn-red btn-sm" onclick="Dokumen.hapus(${d.id})"><i class="fa-solid fa-trash-can"></i></button>` : ""}
+                            <button type="button" class="btn btn-yellow btn-sm" onclick="Dokumen.detail(${d.id})"><i class="fa-solid fa-eye"></i> Buka</button>
+                            <button type="button" class="btn btn-white btn-sm" onclick="Dokumen.download(${d.id})" title="Download"><i class="fa-solid fa-download"></i></button>
+                            ${boleh ? `<button type="button" class="btn btn-white btn-sm" onclick="Dokumen.edit(${d.id})" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                            <button type="button" class="btn btn-red btn-sm" onclick="Dokumen.hapus(${d.id})" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>` : ""}
                         </div>
                     </div>
-                </div>`;
+                </article>`;
         }).join("");
-        // sentinel infinite-scroll + tombol manual (fallback tanpa IO)
-        listEl.innerHTML += `<div style="text-align:center; padding:12px 4px">`
-            + (Dokumen.habis
-                ? `<small style="color:var(--gray); font-weight:700">— Udah paling bawah —</small>`
-                : `<button class="btn btn-white btn-sm" onclick="Dokumen.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
-            + `</div><div id="dokumenSentinel" style="height:8px"></div>`;
-        try { pasangSentinel("dokumenSentinel", () => Dokumen.muat(false)); } catch {}
+
+        if (footEl) {
+            footEl.innerHTML = `<div style="text-align:center; padding:12px 4px">`
+                + (Dokumen.habis
+                    ? `<small style="color:var(--gray); font-weight:700">— Udah paling bawah —</small>`
+                    : `<button class="btn btn-white btn-sm" onclick="Dokumen.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+                + `</div><div id="dokumenSentinel" style="height:8px"></div>`;
+            try { pasangSentinel("dokumenSentinel", () => Dokumen.muat(false)); } catch {}
+        }
     },
 
     pilihKategori(k) {
         Dokumen.filter.kategori = (k === "semua") ? "" : k;
         const fk = document.getElementById("filterKategori");
         if (fk) fk.value = Dokumen.filter.kategori;
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
         Dokumen.render();
+    },
+
+    hapusFilter(key) {
+        const map = { q: "filterQ", kategori: "filterKategori", tahun: "filterTahun", divisi: "filterDivisi" };
+        const el = document.getElementById(map[key]);
+        if (el) el.value = "";
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
+        Dokumen.bacaFilter();
     },
 
     bacaFilter() {
@@ -339,6 +437,7 @@ const Dokumen = {
         document.getElementById("filterTahun").value = "";
         document.getElementById("filterDivisi").value = "";
         document.getElementById("filterSort").value = "baru";
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
         Dokumen.bacaFilter();
     },
 
@@ -351,9 +450,16 @@ const Dokumen = {
         document.getElementById("dokId").value = "";
         document.getElementById("dokNama").value = "";
         document.getElementById("dokKategori").value = (Dokumen.filter.kategori && Dokumen.filter.kategori !== "semua") ? Dokumen.filter.kategori : "proposal";
-        document.getElementById("dokTahun").value = String(new Date().getFullYear());
+        const _angTh = OsisAuth.getAngkatanAktifObj?.()?.tahun;
+        document.getElementById("dokTahun").value = String(_angTh || new Date().getFullYear());
         document.getElementById("dokDivisi").value = "";
         document.getElementById("dokDeskripsi").value = "";
+        if (typeof FormPersist !== "undefined") {
+            const draft = FormPersist.load("dokumenForm");
+            const adaIsi = draft && (String(draft.dokNama || "").trim() || String(draft.dokDeskripsi || "").trim() || String(draft.dokDivisi || "").trim());
+            if (adaIsi) FormPersist.fillFields(draft);
+        }
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
         const fi = document.getElementById("dokFile");
         if (fi) fi.value = "";
         document.getElementById("dokumenFormTitle").textContent = "Upload Dokumen";
@@ -384,6 +490,7 @@ const Dokumen = {
             dv.value = item.divisi || "";
         }
         document.getElementById("dokDeskripsi").value = item.deskripsi || "";
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
         const fi = document.getElementById("dokFile");
         if (fi) fi.value = "";
         document.getElementById("dokumenFormTitle").textContent = "Edit Dokumen";
@@ -402,6 +509,14 @@ const Dokumen = {
         if (fi) fi.value = "";
         const drop = document.getElementById("dokDrop");
         if (drop) drop.classList.remove("dragover");
+    },
+
+    clearStagedFile() {
+        Dokumen.stagedFile = null;
+        const fi = document.getElementById("dokFile");
+        if (fi) fi.value = "";
+        const existing = Dokumen.editingId ? Dokumen.cache.find(d => String(d.id) === String(Dokumen.editingId)) : null;
+        Dokumen.renderFileInfo(existing);
     },
 
     handleFile(file) {
@@ -428,13 +543,13 @@ const Dokumen = {
             const ext = (f.name.split(".").pop() || "").toLowerCase();
             const [, icon] = Dokumen.fileIcon(ext);
             box.style.display = "";
-            box.innerHTML = `<div class="dok-file-info"><i class="${icon}"></i><div style="min-width:0"><div style="overflow-wrap:anywhere">${escapeHtml(f.name)}</div><small>${ext.toUpperCase() || "FILE"} · ${Dokumen.fmtBytes(f.size)}${Dokumen.editingId ? " — ganti file lama pas Simpan" : ""}</small></div></div>`;
+            box.innerHTML = `<div class="dok-file-info"><i class="${icon}"></i><div style="min-width:0; flex:1"><div style="overflow-wrap:anywhere">${escapeHtml(f.name)}</div><small>${escapeHtml(ext.toUpperCase() || "FILE")} · ${Dokumen.fmtBytes(f.size)}${Dokumen.editingId ? " — ganti file lama pas Simpan" : ""}</small></div><button type="button" class="btn btn-white btn-sm dok-file-clear" onclick="Dokumen.clearStagedFile()" title="Batal pilih file"><i class="fa-solid fa-xmark"></i></button></div>`;
             drop.style.display = "none";
         } else if (existing && existing.file_path) {
             const ext = Dokumen.extOf(existing);
             const [, icon] = Dokumen.fileIcon(ext);
             box.style.display = "";
-            box.innerHTML = `<div class="dok-file-info"><i class="${icon}"></i><div style="min-width:0"><div>File saat ini tersimpan</div><small>${ext.toUpperCase() || "FILE"} · ${Dokumen.fmtBytes(existing.ukuran_bytes)} — drop/klik kotak di atas buat ganti</small></div></div>`;
+            box.innerHTML = `<div class="dok-file-info"><i class="${icon}"></i><div style="min-width:0; flex:1"><div>File saat ini tersimpan</div><small>${escapeHtml(ext.toUpperCase() || "FILE")} · ${Dokumen.fmtBytes(existing.ukuran_bytes)} — drop/klik kotak di atas buat ganti</small></div></div>`;
             drop.style.display = "";
         } else {
             box.style.display = "none";
@@ -472,7 +587,10 @@ const Dokumen = {
                 files: fl ? [{ slot: "file", file: fl, name: fl.name, type: fl.type }] : [],
                 cacheKeys: ["dokumen"] };
         };
-        const __sesudahAntre = () => { Dokumen.tutupForm(); };
+        const __sesudahAntre = () => {
+            if (!id && typeof FormPersist !== "undefined") FormPersist.clear("dokumenForm");
+            Dokumen.tutupForm();
+        };
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
             try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
             Outbox.sesudahAntre(__sesudahAntre);
@@ -515,6 +633,7 @@ const Dokumen = {
             } else {
                 const newId = await buatDokumen(u.id, f);
                 if (!newId || newId <= 0) throw new Error("Gagal simpan (" + newId + ")");
+                if (typeof FormPersist !== "undefined") FormPersist.clear("dokumenForm");
                 showToast("Dokumen tersimpan!", "success");
                 catatAksi("simpan_dokumen", String(nama || "").slice(0, 60));
             }
@@ -580,32 +699,48 @@ const Dokumen = {
         if (!d) return;
         Dokumen.detailId = id;
         const ext = Dokumen.extOf(d);
-        const [, icon] = Dokumen.fileIcon(ext);
+        const [cls, icon] = Dokumen.fileIcon(ext);
         const contoh = Dokumen.isContoh(d);
+        const url = contoh ? "" : Dokumen.fileUrl(d);
+
+        const tabBtn = document.getElementById("btnBukaTabDetail");
+        if (tabBtn) {
+            if (url) { tabBtn.href = url; tabBtn.style.display = ""; }
+            else { tabBtn.href = "#"; tabBtn.style.display = "none"; }
+        }
+
         let preview = "";
         if (contoh) {
-            preview = `<div class="detail-text" style="opacity:.7">Belum ada file — data contoh untuk uji tampilan. Klik Edit buat lampirkan file asli.</div>`;
+            preview = `<div class="dok-preview-empty"><i class="fa-solid fa-file-circle-question"></i>Belum ada file fisik — ini data contoh tampilan. Klik <b>Edit</b> buat lampirkan file asli.</div>`;
         } else {
             const pv = Dokumen.bisaPreview(d);
-            const url = Dokumen.fileUrl(d);
             if (pv === "img") preview = `<div class="dok-preview-box media-muat media-muat-tinggi"><img src="${url}" alt="" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></div>`;
             else if (pv === "pdf") preview = `<div class="dok-preview-box"><iframe src="${url}" title="Preview PDF"></iframe></div>`;
-            else preview = `<div class="detail-text" style="opacity:.7">Preview tidak tersedia untuk tipe .${escapeHtml(ext || "?")} — klik Download buat buka file.</div>`;
+            else preview = `<div class="dok-preview-empty"><i class="${icon}"></i>Preview langsung belum tersedia untuk tipe <b>.${escapeHtml(ext || "?")}</b> — klik <b>Download</b> untuk membuka file.</div>`;
         }
-        const info = (k, v) => `<div><div class="k">${k}</div><div class="v">${v || "-"}</div></div>`;
+        const info = (k, v) => `<div class="detail-kv"><div class="k">${k}</div><div class="v">${v || "-"}</div></div>`;
         document.getElementById("dokDetailBody").innerHTML = `
-            <h4 style="font-size:1rem; font-weight:900; overflow-wrap:anywhere"><i class="${icon}" style="color:var(--red); margin-right:6px"></i>${escapeHtml(d.nama || "Tanpa nama")}${contoh ? `<span class="dok-tag-contoh">Contoh</span>` : ""}</h4>
+            <div class="dok-detail-head">
+                <div class="dok-ico ${cls}"><i class="${icon}"></i><span class="dok-ext-pill">${escapeHtml((ext || "FILE").toUpperCase())}</span></div>
+                <div style="flex:1; min-width:0">
+                    <div class="dok-badges">
+                        <span class="dok-kat-pill">${escapeHtml(Dokumen.katLabel(d.kategori))}</span>
+                        <span class="dok-tahun-pill">${escapeHtml(String(d.tahun || "-"))}</span>
+                        ${contoh ? `<span class="dok-tag-contoh">Contoh</span>` : ""}
+                    </div>
+                    <h4>${escapeHtml(d.nama || "Tanpa nama")}</h4>
+                </div>
+            </div>
             ${preview}
             <div class="detail-info">
-                ${info("Tipe", (ext || "-").toUpperCase())}
-                ${info("Ukuran", Dokumen.fmtBytes(d.ukuran_bytes))}
                 ${info("Kategori", escapeHtml(Dokumen.katLabel(d.kategori)))}
+                ${info("Divisi", escapeHtml(d.divisi || "Umum"))}
+                ${info("Ukuran", Dokumen.fmtBytes(d.ukuran_bytes))}
                 ${info("Tahun", escapeHtml(String(d.tahun || "-")))}
-                ${info("Divisi", escapeHtml(d.divisi || "-"))}
                 ${info("Pengunggah", escapeHtml(d.pengunggah || "-"))}
-                ${info("Tanggal Upload", Dokumen.fmtTanggal(d.created_at))}
+                ${info("Diunggah", Dokumen.fmtTanggal(d.created_at))}
             </div>
-            ${d.deskripsi ? `<div class="detail-text">${escapeHtml(d.deskripsi)}</div>` : ""}`;
+            ${d.deskripsi ? `<div class="detail-desc-wrap"><div class="detail-desc-lbl">Deskripsi</div><div class="detail-text">${escapeHtml(d.deskripsi)}</div></div>` : ""}`;
         document.getElementById("dokumenDetail").classList.add("open");
         document.body.style.overflow = "hidden";
     },

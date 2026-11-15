@@ -2710,8 +2710,64 @@ const Wawancara = {
             return;
         }
         Wawancara.renderKelolaTanya();
+        await Wawancara.siapkanSalinAngkatan();
         document.getElementById("wwTanyaForm").classList.add("open");
         document.body.style.overflow = "hidden";
+    },
+
+    async siapkanSalinAngkatan() {
+        const wrap = document.getElementById("wwSalinWrap");
+        const sel = document.getElementById("wwSalinDari");
+        if (!wrap || !sel) return;
+        const aktifId = typeof OsisAuth !== "undefined" && OsisAuth.getAngkatanAktif ? OsisAuth.getAngkatanAktif() : null;
+        let list = [];
+        try {
+            list = typeof getAngkatanList === "function" ? await getAngkatanList() : [];
+        } catch {}
+        const lain = (list || []).filter((a) => a && Number(a.id) !== Number(aktifId));
+        if (!lain.length) {
+            wrap.style.display = "none";
+            return;
+        }
+        sel.innerHTML = lain.map((a) =>
+            `<option value="${escapeHtml(a.id)}">${escapeHtml(a.nama)}${a.aktif === false ? " (Arsip)" : ""}</option>`
+        ).join("");
+        wrap.style.display = "flex";
+    },
+
+    async salinPertanyaan() {
+        if (!Wawancara.bolehKelola()) return;
+        const sel = document.getElementById("wwSalinDari");
+        const btn = document.getElementById("btnWwSalin");
+        const dariId = Number(sel && sel.value ? sel.value : 0);
+        if (!dariId) {
+            showToast("Pilih angkatan sumber dulu.", "error");
+            return;
+        }
+        if (typeof Outbox !== "undefined" && Outbox.offline()) {
+            showToast("Butuh koneksi internet buat salin pertanyaan.", "error");
+            return;
+        }
+        const namaSrc = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : "angkatan terpilih";
+        const yakin = typeof showPopup === "function"
+            ? await showPopup(`Salin pertanyaan master dari <b>${escapeHtml(namaSrc)}</b> ke angkatan aktif sekarang?<br><br><small>Pertanyaan yang teksnya sudah ada otomatis dilewati (tidak dobel).</small>`, "confirm")
+            : true;
+        if (!yakin) return;
+        const oldHtml = btn ? btn.innerHTML : "";
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyalin...'; }
+        try {
+            const res = await wawancaraPertanyaanSalin(Wawancara.uid(), dariId);
+            const d = Number(res.disalin || 0);
+            const s = Number(res.dilewati || 0);
+            showToast(d > 0 ? `${d} pertanyaan disalin${s ? ` (${s} dilewati)` : ""}.` : "Semua pertanyaan dari angkatan itu sudah ada di sini.", d > 0 ? "success" : "info");
+            Wawancara.pertanyaan = await getWawancaraPertanyaan();
+            Wawancara.renderKelolaTanya();
+        } catch (err) {
+            console.error(err);
+            showToast("Gagal salin: " + (err.message || err), "error");
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+        }
     },
 
     tutupKelolaTanya() {

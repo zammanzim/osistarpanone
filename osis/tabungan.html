@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tabungan Pengurus — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=40" />
+    <link rel="stylesheet" href="../css/style.css?v=41" />
+    <link rel="stylesheet" href="../css/osis2.css?v=14" />
 <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
 <link rel="manifest" href="../manifest.webmanifest" />
@@ -22,12 +23,12 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-tabungan.css?v=3" />
+    <link rel="stylesheet" href="../css/osis-tabungan.css?v=5" />
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=14"></script>
     <script src="../js/db.js?v=35" defer></script>
     <script src="../js/aktivitas.js?v=10" defer></script>
-    <script src="../js/app.js?v=10" defer></script>
+    <script src="../js/app.js?v=16" defer></script>
     <script src="../js/dropdown.js?v=3" defer></script>
     <script src="../js/toast.js?v=10" defer></script>
     <script src="../js/notice.js?v=10" defer></script>
@@ -36,9 +37,9 @@
     <script src="../js/osis-auth.js?v=19" defer></script>
     <script src="../js/osis-visitor.js?v=5" defer></script>
     <script src="../js/osis-sidebar.js?v=45" defer></script>
-    <script src="../js/osis-header.js?v=14" defer></script>
+    <script src="../js/osis-header.js?v=18" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/tabungan.js?v=18" defer></script>
+    <script src="../js/tabungan.js?v=20" defer></script>
   <script src="../js/pwa.js?v=11" defer></script>
   </head>
   <body>
@@ -56,42 +57,242 @@
       </div>
     </header>
 
-    <div class="tabungan-wrap">
-      <div class="tabungan-cols">
-      <div class="tabungan-side">
+    <div class="osis-wrap">
+      <!-- STICKY TOP SEARCH + FILTER DRAWER -->
+      <div class="osis-top-search" id="tbTopSearch">
+        <div class="osis-sb-bar">
+          <div class="osis-sb-row">
+            <i class="fa-solid fa-magnifying-glass osis-sb-ico"></i>
+            <input
+              type="text"
+              id="filterQ"
+              class="osis-sb-input"
+              placeholder="Cari nama penabung..."
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="osis-sb-clear"
+              id="btnClearQ"
+              title="Hapus pencarian"
+              style="display: none"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="osis-sb-divider" aria-hidden="true"></span>
+            <button type="button" class="osis-sb-filter-btn" aria-expanded="false">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Filter</span>
+              <span class="osis-sb-badge" hidden>0</span>
+              <i class="fa-solid fa-chevron-down osis-sb-chev"></i>
+            </button>
+          </div>
+        </div>
+        <div class="osis-sb-panel">
+          <div class="osis-sb-panel-head">
+            <span class="osis-sb-panel-title"><i class="fa-solid fa-filter"></i> Filter &amp; Urutkan</span>
+            <div class="osis-sb-panel-acts">
+              <button
+                type="button"
+                class="btn btn-white btn-sm"
+                id="btnResetFilter"
+                title="Reset semua filter"
+              >
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+              <button type="button" class="osis-sb-close" title="Tutup filter">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="osis-sb-fields">
+            <div class="osis-sb-field full-sm">
+              <label>Status Ceklis</label>
+              <div class="status-filter-pills" id="statusFilterPills">
+                <button type="button" data-status-pill="" class="on">Semua</button>
+                <button type="button" data-status-pill="belum">Belum Ceklis</button>
+                <button type="button" data-status-pill="lunas">Lunas</button>
+              </div>
+            </div>
+            <div class="osis-sb-field grow filter-sort-wrap">
+              <label>Urutkan</label>
+              <select id="filterSort" class="admin-input" aria-label="Urutkan penabung">
+                <option value="nama">Nama A-Z</option>
+                <option value="saldo">Saldo tertinggi</option>
+                <option value="belum">Belum ceklis terbanyak</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-chips" id="filterChips"></div>
+        </div>
+      </div>
 
-      <div class="tabungan-head">
-        <div class="ico"><i class="fa-solid fa-piggy-bank"></i></div>
-        <div style="flex: 1; min-width: 180px">
+      <!-- HERO FULL-WIDTH -->
+      <div class="osis-hero tb-hero">
+        <div class="osis-avatar tb-hero-ico">
+          <i class="fa-solid fa-piggy-bank"></i>
+        </div>
+        <div style="flex: 1; min-width: 200px">
+          <div class="tb-kicker">
+            <i class="fa-solid fa-coins"></i> REKAP SIMPANAN PENGURUS
+          </div>
           <h1>TABUNGAN PENGURUS</h1>
-          <p>Catat setoran tabungan per orang, satu tabel per orang.</p>
+          <p>
+            Catat setoran, penarikan, saldo jalan per pengurus, dan verifikasi
+            ceklis tabungan OSIS dalam satu dashboard.
+          </p>
+          <div class="osis-meta">
+            <span class="osis-badge" id="heroPenabungBadge"
+              ><i class="fa-solid fa-users"></i> Memuat data...</span
+            >
+            <span class="osis-badge" id="heroSetoranBadge"
+              ><i class="fa-solid fa-list-check"></i> 0 setoran</span
+            >
+            <span class="osis-badge" id="heroLingkupBadge" style="display: none"
+              ><i class="fa-solid fa-user-check"></i> Tabunganku</span
+            >
+          </div>
         </div>
-        <button class="btn btn-red" id="btnTambahTabungan" style="display: none"><i class="fa-solid fa-plus"></i> Tambah Data</button>
+        <div class="tb-hero-actions">
+          <button
+            class="btn btn-red"
+            id="btnTambahTabungan"
+            style="display: none"
+          >
+            <i class="fa-solid fa-plus"></i> Tambah Data
+          </button>
+          <button
+            class="btn btn-white"
+            id="btnToggleLingkupHero"
+            style="display: none"
+          >
+            <i class="fa-solid fa-users"></i> Lihat Semua
+          </button>
+        </div>
       </div>
 
-      <div class="stat-grid">
-        <div class="stat-group stat-group-total">
-          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-wallet"></i> Total Tabungan</span><b id="statTotal">-</b></div>
-          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-days"></i> Total Bulanan</span><b id="statBulan">-</b></div>
-          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-week"></i> Total Mingguan</span><b id="statMinggu">-</b></div>
-          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-calendar-day"></i> Total Harian</span><b id="statHarian">-</b></div>
+      <!-- SUMMARY BENTO HUB (DARK TOTAL HERO + 6 STAT CARDS) -->
+      <div class="tb-summary-hub">
+        <div class="tb-total-hero">
+          <div>
+            <div class="tb-total-head">
+              <span class="lbl"
+                ><i class="fa-solid fa-vault"></i> Total Tabungan</span
+              >
+              <span class="tb-cek-pill" id="tbCekPill">0% ceklis</span>
+            </div>
+            <b id="statTotal">-</b>
+          </div>
+          <div>
+            <div class="tb-verif-wrap">
+              <div class="tb-verif-track" aria-hidden="true">
+                <span id="tbVerifBar" style="width: 0%"></span>
+              </div>
+              <div class="tb-verif-lbl">
+                <span id="tbVerifLbl">0 / 0 terverifikasi</span>
+                <span id="tbBelumPct">0 belum</span>
+              </div>
+            </div>
+            <div class="tb-flow-rumus">
+              <span class="masuk" id="tbRumusMasuk">+ Rp0</span>
+              <span class="keluar" id="tbRumusKeluar">- Rp0</span>
+            </div>
+          </div>
         </div>
-        <div class="stat-group stat-group-count">
-          <div class="stat-card"><span class="lbl"><i class="fa-solid fa-users"></i> Penabung</span><b id="statOrang">-</b></div>
-          <div class="stat-card sudah"><span class="lbl"><i class="fa-solid fa-square-check"></i> Sudah Ceklis</span><b id="statSudah">-</b></div>
-          <div class="stat-card belum"><span class="lbl"><i class="fa-solid fa-square"></i> Belum Ceklis</span><b id="statBelum">-</b></div>
+
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-ico blue"
+                ><i class="fa-solid fa-calendar-days"></i
+              ></span>
+              <span class="lbl">Total Bulanan</span>
+            </div>
+            <b id="statBulan">-</b>
+            <small id="statBulanSub">bulan berjalan</small>
+          </div>
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-ico yellow"
+                ><i class="fa-solid fa-calendar-week"></i
+              ></span>
+              <span class="lbl">Total Mingguan</span>
+            </div>
+            <b id="statMinggu">-</b>
+            <small id="statMingguSub">Senin - Minggu</small>
+          </div>
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-ico green"
+                ><i class="fa-solid fa-calendar-day"></i
+              ></span>
+              <span class="lbl">Total Harian</span>
+            </div>
+            <b id="statHarian">-</b>
+            <small id="statHarianSub">hari ini</small>
+          </div>
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-ico blue"
+                ><i class="fa-solid fa-users"></i
+              ></span>
+              <span class="lbl">Penabung</span>
+            </div>
+            <b id="statOrang">-</b>
+            <small id="statOrangSub">pengurus aktif</small>
+          </div>
+          <div class="stat-card sudah">
+            <div class="stat-head">
+              <span class="stat-ico green"
+                ><i class="fa-solid fa-square-check"></i
+              ></span>
+              <span class="lbl">Sudah Ceklis</span>
+            </div>
+            <b id="statSudah">-</b>
+            <small id="statSudahSub">sudah diverifikasi</small>
+          </div>
+          <div class="stat-card belum">
+            <div class="stat-head">
+              <span class="stat-ico red"
+                ><i class="fa-solid fa-square-minus"></i
+              ></span>
+              <span class="lbl">Belum Ceklis</span>
+            </div>
+            <b id="statBelum">-</b>
+            <small id="statBelumSub">menunggu ceklis</small>
+          </div>
         </div>
       </div>
-      </div>
-      <div class="tabungan-main">
 
-      <div class="filter-card">
-        <div class="field"><label>Cari penabung</label><input type="text" id="filterQ" class="admin-input" placeholder="Ketik nama..." /></div>
-        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
-      </div>
+      <!-- WORKSPACE 2-KOLOM PROPORSIONAL -->
+      <div class="tabungan-cols">
+        <aside class="tabungan-side">
+          <div class="tb-panel" id="tbRosterPanel">
+            <div class="tb-panel-head">
+              <span><i class="fa-solid fa-users"></i> Daftar Penabung</span>
+              <span class="tb-pill-cnt" id="tbRosterCount">0</span>
+            </div>
+            <div class="tb-roster-list" id="tbRosterList">
+              <div class="pesan-empty">Memuat penabung...</div>
+            </div>
+          </div>
+        </aside>
 
-      <div id="tabunganWrap"><div class="rekap-card"><div class="loading-block"><div class="spinner"></div>Memuat tabungan...</div></div></div>
-      </div>
+        <main class="tabungan-main">
+          <div class="tb-list-bar">
+            <span class="tb-list-title"><i class="fa-solid fa-piggy-bank"></i> Rekap Penabung</span>
+            <span class="tb-count-pill" id="filterCountInfo">Memuat data...</span>
+          </div>
+
+          <div id="tabunganWrap">
+            <div class="rekap-card">
+              <div class="loading-block">
+                <div class="spinner"></div>
+                Memuat tabungan...
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
 

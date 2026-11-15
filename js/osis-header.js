@@ -22,6 +22,18 @@
   var VISITOR_ID = "osisMoreVisitor";
   var PENG_ID = "osisMorePengaturan";
   var CSS_ID = "osisMoreCss";
+  var ANG_WRAP_ID = "osisAngkatanWrap";
+  var ANG_SEL_ID = "osisAngkatanSelect";
+  var _angFetched = false;
+
+  function esc(s) {
+    if (typeof escapeHtml === "function") return escapeHtml(s);
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
 
   function diHalamanOsis() {
     try {
@@ -104,6 +116,7 @@
     wrap.innerHTML =
       '<button class="icon-btn" id="' + BTN_ID + '" title="Menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>' +
       '<div class="header-more-menu" id="' + MENU_ID + '">' +
+      '<div class="ang-more-box" id="' + ANG_WRAP_ID + '" style="display:none"></div>' +
       '<a href="../index#/" class="header-more-item" id="' + BERANDA_ID + '" style="display:none"><i class="fa-solid fa-house"></i> Beranda</a>' +
       '<button class="header-more-item" id="' + VISITOR_ID + '" style="display:none"><span><i class="fa-solid fa-eye"></i> Visitor</span><b id="osisMoreVisitorCount">-</b></button>' +
       '<a href="../index#/pengaturan" class="header-more-item" id="' + PENG_ID + '"><i class="fa-solid fa-gear"></i> Pengaturan</a>' +
@@ -157,8 +170,94 @@
     return wrap;
   }
 
+  function bangunAngkatan() {
+    if (!diHalamanOsis()) return null;
+    var el = document.getElementById(ANG_WRAP_ID);
+    if (el) return el;
+    bangun();
+    return document.getElementById(ANG_WRAP_ID);
+  }
+
+  function renderAngkatan() {
+    var wrap = bangunAngkatan();
+    if (!wrap) return;
+    var u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()) || null;
+    if (!u || u.mode !== "osis") {
+      wrap.innerHTML = "";
+      wrap.style.display = "none";
+      wrap.removeAttribute("data-visible");
+      return;
+    }
+    wrap.style.display = "";
+    wrap.setAttribute("data-visible", "1");
+    var lintas = !!(typeof OsisAuth.isLintasAngkatan === "function" && OsisAuth.isLintasAngkatan());
+    var aktifId = typeof OsisAuth.getAngkatanAktif === "function" ? OsisAuth.getAngkatanAktif() : null;
+    var list = typeof OsisAuth.getAngkatanList === "function" ? OsisAuth.getAngkatanList() : [];
+    var aktifObj = typeof OsisAuth.getAngkatanAktifObj === "function" ? OsisAuth.getAngkatanAktifObj() : null;
+    if (!lintas) {
+      var lbl = (aktifObj && aktifObj.nama) || u.angkatan || "OSIS";
+      wrap.innerHTML =
+        '<div class="ang-more-lbl"><i class="fa-solid fa-graduation-cap"></i><span>Angkatan</span></div>' +
+        '<div class="ang-more-pill" title="Angkatan terkunci ke akunmu"><span>' + esc(lbl) + "</span></div>";
+      return;
+    }
+    if (!list.length) {
+      var lblLintas = (aktifObj && aktifObj.nama) || "Memuat angkatan...";
+      wrap.innerHTML =
+        '<div class="ang-more-lbl"><i class="fa-solid fa-layer-group"></i><span>Angkatan Aktif</span></div>' +
+        '<div class="ang-more-pill" title="Akses lintas angkatan"><span>' + esc(lblLintas) + "</span></div>";
+      return;
+    }
+    var opts = "";
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      var sel = Number(a.id) === Number(aktifId) ? " selected" : "";
+      var teks = String(a.nama || a.kode || ("Angkatan " + a.id)) + (a.aktif === false ? " (Arsip)" : "");
+      opts += '<option value="' + esc(a.id) + '"' + sel + ">" + esc(teks) + "</option>";
+    }
+    wrap.innerHTML =
+      '<div class="ang-more-lbl"><i class="fa-solid fa-layer-group"></i><span>Angkatan Aktif</span></div>' +
+      '<select id="' + ANG_SEL_ID + '" class="ang-more-select" title="Ganti angkatan aktif" aria-label="Pilih angkatan">' + opts + "</select>";
+    var el = document.getElementById(ANG_SEL_ID);
+    if (el) {
+      el.addEventListener("change", function () {
+        var newId = Number(el.value || 0);
+        if (!newId || newId === Number(aktifId)) return;
+        OsisAuth.setAngkatanAktif(newId);
+        close();
+        try { location.reload(); } catch (e) {}
+      });
+    }
+  }
+
+  function muatAngkatan() {
+    if (_angFetched || !diHalamanOsis()) return;
+    var u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()) || null;
+    if (!u || u.mode !== "osis" || typeof getAngkatanList !== "function") return;
+    _angFetched = true;
+    var beforeId = typeof OsisAuth.getAngkatanAktif === "function" ? OsisAuth.getAngkatanAktif() : null;
+    getAngkatanList().then(function (list) {
+      renderAngkatan();
+      if (typeof OsisAuth.isLintasAngkatan === "function" && OsisAuth.isLintasAngkatan() && !beforeId && list && list.length) {
+        var afterId = OsisAuth.getAngkatanAktif();
+        if (afterId) {
+          OsisAuth.setAngkatanAktif(afterId);
+          try {
+            if (!sessionStorage.getItem("osis_ang_boot_reload")) {
+              sessionStorage.setItem("osis_ang_boot_reload", "1");
+              location.reload();
+              return;
+            }
+          } catch (e) {}
+        }
+      }
+      try { sessionStorage.removeItem("osis_ang_boot_reload"); } catch (e) {}
+    }).catch(function () {});
+  }
+
   function refresh() {
     var wrap = document.getElementById(WRAP_ID) || bangun();
+    renderAngkatan();
     if (!wrap) return;
     var narrow = false;
     try {
@@ -180,6 +279,7 @@
     if (vis) vis.style.display = narrow && isOsis ? "" : "none";
     var keluar = document.getElementById(LOGOUT_ID);
     if (keluar) keluar.style.display = logged ? "" : "none";
+    muatAngkatan();
   }
 
   function init() {
@@ -209,6 +309,8 @@
   } else {
     init();
   }
-  window.addEventListener("resize", refresh);
-  window.OsisMore = { toggle: toggle, close: close, refresh: refresh };
+  window.addEventListener("resize", function () {
+    refresh();
+  });
+  window.OsisMore = { toggle: toggle, close: close, refresh: refresh, renderAngkatan: renderAngkatan };
 })();

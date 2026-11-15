@@ -62,7 +62,19 @@ const Profil = {
             }
             // sync localStorage biar header & dashboard ikut update (tanpa password)
             const cur = OsisAuth.getUser() || {};
-            const next = { ...cur, id: fresh.id, username: fresh.username, nama: fresh.nama, jabatan: fresh.jabatan, foto: fresh.foto || "", bio: fresh.bio || "", mode: "osis" };
+            const next = {
+                ...cur,
+                id: fresh.id,
+                username: fresh.username,
+                nama: fresh.nama,
+                jabatan: fresh.jabatan,
+                angkatan: ("angkatan" in fresh) ? (fresh.angkatan || "") : (cur.angkatan || ""),
+                angkatan_id: ("angkatan_id" in fresh) ? fresh.angkatan_id : (cur.angkatan_id ?? null),
+                lintas_angkatan: cur.lintas_angkatan,
+                foto: fresh.foto || "",
+                bio: fresh.bio || "",
+                mode: "osis",
+            };
             delete next.password;
             localStorage.setItem(OsisAuth.KEY, JSON.stringify(next));
             if (typeof OsisAuth.renderHeader === "function") OsisAuth.renderHeader();

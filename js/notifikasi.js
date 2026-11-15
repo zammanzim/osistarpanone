@@ -33,7 +33,7 @@ const Notifikasi = {
     }
     if (!superUser) {
       document.getElementById("notifWrap").innerHTML =
-        '<div class="notif-card" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-lock" style="color:var(--red)"></i></div><b>Halaman ini khusus super admin.</b></div>';
+        '<div class="osis-panel notif-card" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-lock" style="color:var(--red)"></i></div><b>Halaman ini khusus super admin.</b></div>';
       return;
     }
     Notifikasi.pasang();
@@ -188,14 +188,19 @@ const Notifikasi = {
       Notifikasi.hasil("Judul + isi wajib diisi.", false);
       return;
     }
-    let ok = true;
+    let ok = false;
     try {
+      if (typeof showPopup !== "function") {
+        Notifikasi.hasil("Popup konfirmasi belum siap, refresh halaman.", false);
+        return;
+      }
       ok = await showPopup(
         `Kirim "${f.judul.slice(0, 40)}" ke target ${f.audience.toUpperCase()}?`,
         "confirm",
       );
     } catch {
-      ok = confirm("Kirim notifikasi?");
+      Notifikasi.hasil("Gagal membuka konfirmasi kirim notif.", false);
+      return;
     }
     if (!ok) return;
     const btn = document.getElementById("btnNotifKirim");

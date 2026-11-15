@@ -36,6 +36,7 @@ const OsisSidebar = {
     { href: "dokumen", label: "Dokumen", icon: "fa-solid fa-folder-open", grup: "Sekretaris" },
     { href: "keuangan", label: "Keuangan", icon: "fa-solid fa-wallet", grup: "Bendahara" },
     { href: "tabungan", label: "Tabungan", icon: "fa-solid fa-piggy-bank", grup: "Bendahara" },
+    { href: "uang-kas", label: "Uang Kas", icon: "fa-solid fa-coins", grup: "Bendahara" },
   ],
 
   // Kompatibel ke belakang: kode lama baca OsisSidebar.MENU (array).
@@ -44,6 +45,7 @@ const OsisSidebar = {
     ["anggota", "Anggota", "fa-solid fa-users"],
     ["absensi", "Absensi", "fa-solid fa-clipboard-user"],
     ["tabungan", "Tabungan", "fa-solid fa-piggy-bank"],
+    ["uang-kas", "Uang Kas", "fa-solid fa-coins"],
     ["keuangan", "Keuangan", "fa-solid fa-wallet"],
     ["agenda", "Agenda", "fa-solid fa-calendar-days"],
     ["dokumen", "Dokumen", "fa-solid fa-folder-open"],
@@ -72,6 +74,7 @@ const OsisSidebar = {
     "fa-solid fa-clipboard-list",
     "fa-solid fa-clipboard-check",
     "fa-solid fa-piggy-bank",
+    "fa-solid fa-coins",
     "fa-solid fa-wallet",
     "fa-solid fa-calendar-days",
     "fa-solid fa-calendar",

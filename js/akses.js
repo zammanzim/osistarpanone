@@ -13,6 +13,7 @@ const Akses = {
         ["anggota", "Anggota"],
         ["absensi", "Absensi"],
         ["tabungan", "Tabungan"],
+        ["uang-kas", "Uang Kas"],
         ["keuangan", "Keuangan"],
         ["agenda", "Agenda"],
         ["dokumen", "Dokumen"],
@@ -33,7 +34,9 @@ const Akses = {
         ["site", "Site/Edit"],
     ],
     rows: [],
+    angkatanList: [],
     filterQ: "",
+    filterAng: null,
     detailId: null,
 
     async init() {
@@ -44,6 +47,8 @@ const Akses = {
         }
         try { await OsisAuth.refreshAkses(); } catch {}
         if (!OsisAuth.isSuper()) {
+            const sb = document.getElementById("aksesTopSearch");
+            if (sb) sb.style.display = "none";
             const wrap = document.getElementById("aksesWrap");
             if (wrap) {
                 wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-lock"></i> Halaman ini khusus super admin.</div>`;
@@ -53,6 +58,11 @@ const Akses = {
         document.getElementById("aksesQ")?.addEventListener("input", (e) => {
             Akses.filterQ = e.target.value || "";
             Akses.render();
+        });
+        document.getElementById("aksesFilterAng")?.addEventListener("change", (e) => {
+            const v = e.target.value || "";
+            Akses.filterAng = v === "-1" ? -1 : (v ? Number(v) : null);
+            Akses.muat();
         });
         // Hidupkan warna hijau checkbox langsung saat dicentang di popup
         document.getElementById("aksDetailBody")?.addEventListener("change", (e) => {
@@ -78,6 +88,7 @@ const Akses = {
                 if (e.key === "Escape") Akses.tutupDetail();
             }
         });
+        await Akses.muatAngkatan();
         await Akses.muat();
     },
 
@@ -272,7 +283,8 @@ const Akses = {
             }
             showToast("Akses diperbarui.", "success");
             Akses.tutupDetail();
-            await Akses.muat();
+            await Akses.muatAngkatan();
+        await Akses.muat();
         } catch (err) {
             console.error(err);
             if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specAks())) {

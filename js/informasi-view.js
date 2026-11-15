@@ -329,12 +329,13 @@ const InfoView = (function () {
     if (toolbar) toolbar.style.display = "";
 
     const daftar = urutkan(semua.filter(cocok));
+    const liburN = semua.filter(function (x) { return x.kategori === "libur"; }).length;
+    const acaraN = semua.filter(function (x) { return x.kategori === "acara"; }).length;
     if (hitung) hitung.textContent = String(daftar.length);
     if (sub) {
       sub.textContent =
-        semua.length + " info • " +
-        semua.filter(function (x) { return x.kategori === "libur"; }).length + " libur • " +
-        semua.filter(function (x) { return x.kategori === "acara"; }).length + " acara";
+        (daftar.length === semua.length ? "info" : "dari " + semua.length + " info") +
+        " • " + liburN + " libur • " + acaraN + " acara";
     }
 
     const pin = semua.filter(function (x) { return !!x.is_pinned; }).slice(0, 8);
@@ -522,16 +523,33 @@ const InfoView = (function () {
     location.hash = "#/informasi?id=" + encodeURIComponent(kunci);
   }
 
+  function bukaSalinPopup(url) {
+    if (typeof showPopup === "function") {
+      showPopup(
+        'Salin link ini secara manual:<input id="salinLinkManual" type="text" class="uni-input" readonly style="margin-top:10px" onclick="this.select()">',
+        "info",
+      );
+      const inp = document.getElementById("salinLinkManual");
+      if (inp) {
+        inp.value = url;
+        inp.focus();
+        inp.select();
+      }
+      return;
+    }
+    info("Browser tidak mengizinkan salin otomatis.");
+  }
+
   function salinLink(kunci) {
     const url = urlShare(kunci);
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(function () {
         info("Link info berhasil disalin!");
       }).catch(function () {
-        prompt("Salin link ini:", url);
+        bukaSalinPopup(url);
       });
     } else {
-      prompt("Salin link ini:", url);
+      bukaSalinPopup(url);
     }
   }
 

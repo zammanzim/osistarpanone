@@ -1,10 +1,6 @@
-/* osis-notifikasi.css -- pindahan <style> inline notifikasi.html (v6.5.1, visual sama). */
-.notif-wrap{max-width:1280px;margin:0 auto;padding:18px;display:flex;flex-direction:column;gap:14px}
-      .notif-hero{background:var(--white);border:3px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);padding:20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-      .notif-hero .ico{width:52px;height:52px;border-radius:14px;border:3px solid var(--ink);background:var(--red);color:#fff;display:grid;place-items:center;font-size:1.4rem;flex-shrink:0}
-      .notif-hero h1{font-size:1.25rem;font-weight:900;line-height:1.1}
-      .notif-hero p{font-size:.8rem;color:var(--gray);font-weight:600;margin-top:4px}
-      .notif-card{background:var(--white);border:3px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);padding:18px;display:flex;flex-direction:column;gap:12px}
+/* osis-notifikasi.css -- layout dasar dari osis2.css, style khusus modul notifikasi di sini. */
+.osis-hero .osis-avatar{background:var(--red);color:#fff}
+.notif-card{padding:18px;display:flex;flex-direction:column;gap:12px}
       .notif-card .field{margin-bottom:0}
       .notif-hitung{font-size:.68rem;font-weight:700;color:var(--gray);text-align:right;margin-top:2px}
       .notif-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}

@@ -13,6 +13,7 @@ const Dashboard = {
         { key: "absensi", href: "absensi", label: "Kelola Absensi", icon: "fa-solid fa-clipboard-user" },
         { key: "notulensi", href: "notulensi", label: "Notulensi Rapat", icon: "fa-solid fa-clipboard-list" },
         { key: "keuangan", href: "keuangan", label: "Kas & Keuangan", icon: "fa-solid fa-wallet" },
+        { key: "uang-kas", href: "uang-kas", label: "Uang Kas", icon: "fa-solid fa-coins" },
         { key: "tabungan", href: "tabungan", label: "Tabungan", icon: "fa-solid fa-piggy-bank" },
         { key: "agenda", href: "agenda", label: "Agenda Sekbid", icon: "fa-solid fa-calendar-days" },
         { key: "program", href: "program-bulanan", label: "Program Kerja", icon: "fa-solid fa-list-check" },
@@ -62,7 +63,14 @@ const Dashboard = {
                 if (fresh.bio && subEl) subEl.textContent = fresh.bio;
                 try {
                     const cur = OsisAuth.getUser() || {};
-                    localStorage.setItem(OsisAuth.KEY, JSON.stringify({ ...cur, foto: fresh.foto || cur.foto, bio: fresh.bio || cur.bio }));
+                    localStorage.setItem(OsisAuth.KEY, JSON.stringify({
+                        ...cur,
+                        foto: fresh.foto || cur.foto,
+                        bio: fresh.bio || cur.bio,
+                        angkatan_id: fresh.angkatan_id !== undefined ? fresh.angkatan_id : cur.angkatan_id,
+                        angkatan: fresh.angkatan || cur.angkatan,
+                        lintas_angkatan: fresh.lintas_angkatan !== undefined ? !!fresh.lintas_angkatan : !!cur.lintas_angkatan,
+                    }));
                 } catch {}
             }).catch(() => {});
         }
@@ -168,8 +176,13 @@ const Dashboard = {
     renderMeta(u) {
         const meta = document.getElementById("osisMeta");
         if (!meta) return;
+        const angNama = OsisAuth.getAngkatanAktifObj?.()?.nama || u.angkatan || "";
+        const angPill = angNama
+            ? `<span class="osis-badge"><i class="fa-solid fa-layer-group"></i> ${escapeHtml(angNama)}</span>`
+            : "";
         meta.innerHTML = `
             <span class="osis-badge"><i class="fa-solid fa-id-card"></i> ${escapeHtml(u.jabatan || "OSIS")}</span>
+            ${angPill}
             <span class="osis-handle">@${escapeHtml(u.username || "-")}</span>`;
     },
 
@@ -410,7 +423,8 @@ const Dashboard = {
         set("statTabungan", Dashboard.rp(totalTab));
         set("statTabunganSub", penabung ? `${penabung} pengurus menabung` : "belum ada data");
 
-        // 4. Pengurus Aktif (ambil dari periode aktif di tabel periode; fallback tahun terbaru)
+        // 4. Pengurus Aktif (ambil dari periode aktif di tabel periode; fallback ke semua pengurus di angkatan aktif)
+        const angObj = OsisAuth.getAngkatanAktifObj?.();
         const thAktif = periodeList
             .filter(p => p && p.aktif)
             .map(p => parseInt(p.tahun, 10))
@@ -418,13 +432,20 @@ const Dashboard = {
             .sort((a, b) => a - b);
         let angAktif;
         let subAnggota;
-        if (thAktif.length) {
-            angAktif = anggota.filter(a => thAktif.includes(parseInt(a.tahun, 10)));
-            subAnggota = `periode ${thAktif.join(" & ")}`;
+        const cocokAktif = thAktif.length
+            ? anggota.filter(a => thAktif.includes(parseInt(a.tahun, 10)))
+            : [];
+        if (cocokAktif.length) {
+            angAktif = cocokAktif;
+            subAnggota = angObj?.nama
+                ? `${angObj.nama} · ${thAktif.join(" & ")}`
+                : `periode ${thAktif.join(" & ")}`;
         } else {
             const thns = [...new Set(anggota.map(a => parseInt(a.tahun, 10)).filter(Number.isFinite))].sort((a, b) => b - a);
-            angAktif = thns.length ? anggota.filter(a => parseInt(a.tahun, 10) === thns[0]) : anggota;
-            subAnggota = thns.length ? `periode ${thns[0]}` : "semua periode";
+            angAktif = anggota;
+            subAnggota = angObj?.nama
+                ? `${angObj.nama}${thns.length ? " · " + thns.join(", ") : ""}`
+                : (thns.length ? `periode ${thns.join(", ")}` : "semua periode");
         }
         set("statAnggota", String(angAktif.length));
         set("statAnggotaSub", subAnggota);

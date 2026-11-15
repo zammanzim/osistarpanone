@@ -3,3 +3,4 @@ worker/.dev.vars
 .env
 .env.*
 opencode.json
+serve.json

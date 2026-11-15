@@ -1,24 +1,4 @@
 /* osis-anggota.css -- pindahan <style> inline anggota.html (v6.5.1, visual sama). */
-.angg-tools {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 10px;
-      }
-      @media (min-width: 720px) {
-        .angg-tools {
-          grid-template-columns: 2fr 1.4fr auto;
-          align-items: end;
-        }
-      }
-      .angg-tools .field { margin-bottom: 0; }
-      /* Tombol periode (dipencet ~1x setahun): ikon + kecil nempel dropdown */
-      .periode-row { display: flex; gap: 8px; }
-      .periode-row select { flex: 1; min-width: 0; }
-      .periode-row .btn-plus { flex-shrink: 0; }
-      /* Label kosong penyelarai desktop disembunyikan di HP biar tombol rapat */
-      @media (max-width: 719px) {
-        .angg-tools .field-act label { display: none; }
-      }
       .angg-list { display: flex; flex-direction: column; }
       .angg-head,
       .angg-row {

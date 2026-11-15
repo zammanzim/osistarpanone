@@ -29,6 +29,7 @@ const Anggota = {
             if (q) q.value = "";
             Anggota.q = "";
             Anggota.render();
+            try { window.OsisSearch?.sync?.("anggotaTopSearch"); } catch {}
         });
         document.getElementById("anggotaQ")?.addEventListener("input", (e) => {
             Anggota.q = e.target.value || "";
@@ -90,9 +91,11 @@ const Anggota = {
             if (Number.isFinite(t)) setTahun.add(t);
         });
         Anggota.tahunList = [...setTahun].sort((a, b) => b - a);
-        if (!Anggota.tahunList.length) Anggota.tahunList = [new Date().getFullYear()];
+        const angObj = (typeof OsisAuth !== "undefined" && OsisAuth.getAngkatanAktifObj) ? OsisAuth.getAngkatanAktifObj() : null;
+        const angTahun = angObj && angObj.tahun ? parseInt(angObj.tahun, 10) : null;
+        if (!Anggota.tahunList.length) Anggota.tahunList = [angTahun || new Date().getFullYear()];
         if (!Anggota.tahun || !Anggota.tahunList.includes(Anggota.tahun)) {
-            Anggota.tahun = Anggota.tahunList[0];
+            Anggota.tahun = (angTahun && Anggota.tahunList.includes(angTahun)) ? angTahun : Anggota.tahunList[0];
         }
         Anggota.render();
     },
@@ -122,6 +125,7 @@ const Anggota = {
             sel.innerHTML = Anggota.tahunList
                 .map(t => `<option value="${t}" ${t === Anggota.tahun ? "selected" : ""}>Periode ${t}</option>`)
                 .join("");
+            try { window.Dropdown?.segarkanSemua?.(); } catch {}
         }
         const boleh = OsisAuth.bisa("anggota");
         const head = document.getElementById("anggotaHead");

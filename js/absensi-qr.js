@@ -58,6 +58,7 @@ const AbsensiQr = {
             ERR_SESI_TUTUP: "Sesi QR sudah ditutup.",
             ERR_KEDALUWARSA: "QR sudah kedaluwarsa.",
             ERR_BENTROK: "Sudah tercatat (izin/sakit/alpha).",
+            ERR_BEDA_ANGKATAN: "Anggota ini berbeda angkatan dengan sesi absen QR ini.",
             ERR_PAKAI: "QR kartu ini sudah pernah dipakai.",
             ERR_UNKNOWN: "Gagal memproses.",
         };

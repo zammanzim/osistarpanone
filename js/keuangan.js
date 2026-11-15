@@ -6,7 +6,6 @@
 
 const Keuangan = {
   cache: [],
-  prokerCache: [],
   agendaCache: [],
   // Paging hemat egress: 20/halaman + sentinel. Statistik/rekap TIDAK dari
   // cache parsial melainkan RPC ringkas (benar walau belum discroll habis).
@@ -14,6 +13,9 @@ const Keuangan = {
   habis: false,
   loading: false,
   perPage: 20,
+  defaultLimit: 5,
+  tampilLimit: 5,
+  stepTampil: 15,
   ringkas: null,
   filter: {
     q: "",
@@ -75,6 +77,7 @@ const Keuangan = {
       if (dd) dd.innerHTML = `<option value="">- Pilih -</option>` + opts;
       const fd = document.getElementById("filterDivisi");
       if (fd) fd.innerHTML = `<option value="">Semua</option>` + opts;
+      Keuangan.segarkanDropdown();
     } catch {}
 
     document
@@ -89,6 +92,56 @@ const Keuangan = {
     document
       .getElementById("btnResetFilter")
       ?.addEventListener("click", () => Keuangan.resetFilter());
+    document
+      .getElementById("btnClearQ")
+      ?.addEventListener("click", () => {
+        const q = document.getElementById("filterQ");
+        if (q) q.value = "";
+        Keuangan.bacaFilter();
+      });
+    document
+      .getElementById("jenisFilterPills")
+      ?.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-jenis-pill]");
+        if (!btn) return;
+        const fj = document.getElementById("filterJenis");
+        if (fj) fj.value = btn.dataset.jenisPill || "";
+        Keuangan.bacaFilter();
+      });
+    document
+      .getElementById("btnMuatSemua")
+      ?.addEventListener("click", () => Keuangan.tampilSemua());
+    document
+      .getElementById("katSummaryBody")
+      ?.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-kat-pick]");
+        if (!btn) return;
+        const fk = document.getElementById("filterKategori");
+        if (!fk) return;
+        const picked = btn.dataset.katPick || "";
+        fk.value = fk.value === picked ? "" : picked;
+        Keuangan.segarkanDropdown();
+        Keuangan.bacaFilter();
+      });
+    document
+      .getElementById("filterChips")
+      ?.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-clear-filter]");
+        if (!btn) return;
+        const key = btn.dataset.clearFilter;
+        const map = {
+          q: "filterQ",
+          jenis: "filterJenis",
+          kategori: "filterKategori",
+          divisi: "filterDivisi",
+          periode: "filterPeriode",
+          sort: "filterSort",
+        };
+        const el = document.getElementById(map[key]);
+        if (el) el.value = key === "sort" ? "baru" : "";
+        Keuangan.segarkanDropdown();
+        Keuangan.bacaFilter();
+      });
 
     document
       .getElementById("btnExport")
@@ -187,7 +240,6 @@ const Keuangan = {
           "kasKategori",
           "kasDivisi",
           "kasPic",
-          "kasProker",
           "kasAgenda",
           "kasCatatan",
         ],
@@ -236,14 +288,6 @@ const Keuangan = {
     return (t.tanggal || "").slice(0, 4);
   },
 
-  prokerName(id) {
-    if (!id) return "";
-    const p = (Keuangan.prokerCache || []).find(
-      (x) => String(x.id) === String(id),
-    );
-    return p ? p.nama : `#${id} (dihapus)`;
-  },
-
   agendaName(id) {
     if (!id) return "";
     const a = (Keuangan.agendaCache || []).find(
@@ -272,6 +316,12 @@ const Keuangan = {
     return null;
   },
 
+  segarkanDropdown() {
+    try {
+      if (window.Dropdown && Dropdown.segarkanSemua) Dropdown.segarkanSemua();
+    } catch {}
+  },
+
   // ============ DATA ============
   // muat() tanpa argumen = refresh penuh (dipakai outbox + pasca simpan/hapus)
   async muat(awal = true) {
@@ -286,11 +336,11 @@ const Keuangan = {
         Keuangan.cache = [];
         Keuangan.habis = false;
         Keuangan.ringkas = null;
+        Keuangan.tampilLimit = Keuangan.defaultLimit;
         // Render cache persisten DULU (hanya bila tanpa filter) biar offline langsung tampil.
         if (Keuangan.scopeKosong()) {
           const cached = Cache.get("kas");
           if (cached) {
-            Keuangan.prokerCache = Cache.get("proker") || [];
             Keuangan.agendaCache = Cache.get("agenda_all") || [];
             try { Keuangan.buildOptions(); } catch {}
             Keuangan.cache = cached;
@@ -302,13 +352,9 @@ const Keuangan = {
         (typeof osisKasRingkas === "function" ? osisKasRingkas(uid, scope) : Promise.resolve(null)).catch(() => null),
         getKas(Keuangan.perPage, Keuangan.offset, scope),
       ]);
-      // Lookup proker/agenda tetap full (kecil) buat opsi form + tampilan nama.
+      // Lookup agenda tetap full (kecil) buat opsi form + tampilan nama.
       try {
-        const [pk, ag] = await Promise.all([
-          getProker().catch(() => null),
-          getAllAgenda().catch(() => null),
-        ]);
-        if (pk) { Keuangan.prokerCache = pk; try { Cache.set("proker", pk); } catch {} }
+        const ag = await getAllAgenda().catch(() => null);
         if (ag) { Keuangan.agendaCache = ag; try { Cache.set("agenda_all", ag); } catch {} }
       } catch {}
       if (ringkas) Keuangan.ringkas = ringkas;
@@ -337,6 +383,66 @@ const Keuangan = {
     } finally {
       Keuangan.loading = false;
     }
+  },
+
+  async muatSemua() {
+    if (Keuangan.loading) return;
+    Keuangan.loading = true;
+    const btn = document.getElementById("btnMuatSemua");
+    const oldHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...';
+    }
+    try {
+      const scope = Keuangan.scopeDariFilter();
+      const rows = await getKas(null, 0, scope);
+      Keuangan.cache = rows || [];
+      Keuangan.offset = Keuangan.cache.length;
+      Keuangan.habis = true;
+      if (Keuangan.scopeKosong()) {
+        try { Cache.set("kas", Keuangan.cache); } catch {}
+      }
+      try { Keuangan.buildOptions(); } catch {}
+      Keuangan.render();
+    } catch (err) {
+      console.error(err);
+      if (btn && oldHtml) btn.innerHTML = oldHtml;
+      if (typeof showToast === "function") {
+        showToast("Gagal memuat semua transaksi.", "error");
+      }
+    } finally {
+      Keuangan.loading = false;
+      if (btn) btn.disabled = false;
+    }
+  },
+
+  async tampilLebihBanyak() {
+    const data = Keuangan.dataTampil();
+    const cur = Keuangan.tampilLimit;
+    if (data.length > cur) {
+      Keuangan.tampilLimit = cur + Keuangan.stepTampil;
+      Keuangan.render();
+      return;
+    }
+    if (!Keuangan.habis) {
+      Keuangan.tampilLimit = cur + Keuangan.perPage;
+      await Keuangan.muat(false);
+    }
+  },
+
+  async tampilSemua() {
+    Keuangan.tampilLimit = Infinity;
+    if (!Keuangan.habis) {
+      await Keuangan.muatSemua();
+      return;
+    }
+    Keuangan.render();
+  },
+
+  ringkasTampil() {
+    Keuangan.tampilLimit = Keuangan.defaultLimit;
+    Keuangan.render();
   },
 
   buildOptions() {
@@ -380,17 +486,6 @@ const Keuangan = {
       fk.value = cur;
       Keuangan.filter.kategori = cur;
     }
-    const tp = document.getElementById("kasProker");
-    if (tp) {
-      tp.innerHTML =
-        `<option value="">- Tidak ada -</option>` +
-        (Keuangan.prokerCache || [])
-          .map(
-            (p) =>
-              `<option value="${p.id}">${escapeHtml(p.nama || "Tanpa nama")}</option>`,
-          )
-          .join("");
-    }
     const ta = document.getElementById("kasAgenda");
     if (ta) {
       const list = [...(Keuangan.agendaCache || [])].sort((a, b) =>
@@ -410,6 +505,7 @@ const Keuangan = {
           })
           .join("");
     }
+    Keuangan.segarkanDropdown();
   },
 
   dataTampil() {
@@ -486,6 +582,55 @@ const Keuangan = {
   },
 
   // ============ RENDER ============
+  sinkronKontrolFilter(dataCount, totalServer) {
+    const f = Keuangan.filter;
+    const clearBtn = document.getElementById("btnClearQ");
+    if (clearBtn) clearBtn.style.display = String(f.q || "").trim() ? "" : "none";
+
+    document.querySelectorAll("#jenisFilterPills [data-jenis-pill]").forEach((btn) => {
+      btn.classList.toggle("on", (btn.dataset.jenisPill || "") === (f.jenis || ""));
+    });
+
+    const chipsEl = document.getElementById("filterChips");
+    if (chipsEl) {
+      const chips = [];
+      if (String(f.q || "").trim())
+        chips.push({ k: "q", l: `Cari: "${String(f.q).trim()}"` });
+      if (f.jenis)
+        chips.push({ k: "jenis", l: f.jenis === "masuk" ? "Pemasukan" : "Pengeluaran" });
+      if (f.kategori)
+        chips.push({ k: "kategori", l: "Kategori: " + f.kategori });
+      if (f.divisi)
+        chips.push({ k: "divisi", l: "Divisi: " + f.divisi });
+      if (f.periode)
+        chips.push({ k: "periode", l: "Periode: " + f.periode });
+      if (f.sort && f.sort !== "baru") {
+        const sortLbl = {
+          lama: "Terlama",
+          besar: "Nominal terbesar",
+          kecil: "Nominal terkecil",
+        }[f.sort] || f.sort;
+        chips.push({ k: "sort", l: "Urutan: " + sortLbl });
+      }
+      chipsEl.innerHTML = chips
+        .map(
+          (c) =>
+            `<button type="button" class="filter-chip" data-clear-filter="${c.k}" title="Hapus filter ini">${escapeHtml(c.l)} <i class="fa-solid fa-xmark"></i></button>`,
+        )
+        .join("");
+    }
+
+    const cntEl = document.getElementById("filterCountInfo");
+    if (cntEl && typeof dataCount === "number") {
+      const total = typeof totalServer === "number" && totalServer > dataCount ? totalServer : dataCount;
+      cntEl.textContent =
+        total > dataCount
+          ? `Menampilkan ${dataCount} dari ${total} transaksi`
+          : `Menampilkan ${dataCount} transaksi`;
+    }
+    try { window.OsisSearch?.sync?.("keuTopSearch"); } catch {}
+  },
+
   render() {
     const data = Keuangan.dataTampil();
     const f = Keuangan.filter;
@@ -498,25 +643,87 @@ const Keuangan = {
         .reduce((a, t) => a + (parseInt(t.nominal, 10) || 0), 0);
     const masuk = R ? parseInt(R.masuk, 10) || 0 : sum("masuk");
     const keluar = R ? parseInt(R.keluar, 10) || 0 : sum("keluar");
-    const nTrans = R && R.n != null ? R.n : data.length;
+    const nTrans = R && R.n != null ? parseInt(R.n, 10) || 0 : data.length;
     const saldo = masuk - keluar;
     const set = (id, v) => {
       const el = document.getElementById(id);
       if (el) el.textContent = v;
     };
-    set("saldoAkhir", Keuangan.rp(saldo));
+
+    // Hero badges & status saldo
+    const statusTxt = saldo > 0 ? "Surplus" : saldo < 0 ? "Defisit" : "Seimbang";
+    const statusCls = saldo > 0 ? "surplus" : saldo < 0 ? "defisit" : "";
+    const hbTrans = document.getElementById("heroTransBadge");
+    if (hbTrans)
+      hbTrans.innerHTML = `<i class="fa-solid fa-receipt"></i> ${nTrans} transaksi`;
+    const hbPer = document.getElementById("heroPeriodeBadge");
+    if (hbPer)
+      hbPer.innerHTML = `<i class="fa-solid fa-calendar-days"></i> ${escapeHtml(f.periode ? "Periode " + f.periode : "Semua Periode")}`;
+    const hbStat = document.getElementById("heroStatusBadge");
+    if (hbStat) {
+      hbStat.className = "osis-badge kas-badge-status" + (statusCls ? " " + statusCls : "");
+      hbStat.innerHTML = `<i class="fa-solid fa-scale-balanced"></i> ${statusTxt}`;
+    }
+
+    // Kartu Saldo Dark-Ink + Rasio Arus Kas
+    set("saldoAkhir", (saldo < 0 ? "- " : "") + Keuangan.rp(Math.abs(saldo)));
     set("rumusMasuk", "+ " + Keuangan.rp(masuk));
     set("rumusKeluar", "- " + Keuangan.rp(keluar));
     set(
       "saldoPeriodeLbl",
       f.periode ? `· Periode ${f.periode}` : "· Semua periode",
     );
+    const sp = document.getElementById("saldoStatusPill");
+    if (sp) {
+      sp.textContent = statusTxt;
+      sp.className = "saldo-status-pill" + (statusCls ? " " + statusCls : "");
+    }
+    const totalFlow = masuk + keluar;
+    const pctIn = totalFlow > 0 ? Math.round((masuk / totalFlow) * 100) : 50;
+    const pctOut = totalFlow > 0 ? 100 - pctIn : 50;
+    const rIn = document.getElementById("saldoRatioIn");
+    const rOut = document.getElementById("saldoRatioOut");
+    if (rIn) rIn.style.width = pctIn + "%";
+    if (rOut) rOut.style.width = pctOut + "%";
+    const rasioKeluar = masuk > 0 ? Math.round((keluar / masuk) * 100) : (keluar > 0 ? 100 : 0);
+    set(
+      "saldoRatioPct",
+      totalFlow > 0 ? `Porsi keluar: ${rasioKeluar}% dari masuk` : "Belum ada arus kas",
+    );
+    const nBukti = (Keuangan.cache || []).filter((t) => !!t.bukti_path).length;
+    set(
+      "saldoBuktiInfo",
+      nBukti > 0 ? `${nBukti} nota dimuat` : "Tanpa filter nota",
+    );
+
+    // 4 Stat Cards
     set("statMasuk", Keuangan.rp(masuk));
+    set(
+      "statMasukSub",
+      totalFlow > 0 ? `${pctIn}% dari total perputaran` : "arus kas masuk",
+    );
     set("statKeluar", Keuangan.rp(keluar));
+    set(
+      "statKeluarSub",
+      masuk > 0 ? `${rasioKeluar}% dari pemasukan` : "arus kas keluar",
+    );
     set("statCount", nTrans + " transaksi");
     set(
+      "statCountSub",
+      `${(Keuangan.cache || []).length} dimuat di layar`,
+    );
+    set(
       "statSelisih",
-      (masuk - keluar < 0 ? "- " : "") + Keuangan.rp(Math.abs(masuk - keluar)),
+      (saldo < 0 ? "- " : saldo > 0 ? "+ " : "") + Keuangan.rp(Math.abs(saldo)),
+    );
+    const selCard = document.getElementById("statSelisih")?.closest(".stat-card");
+    if (selCard) {
+      selCard.classList.toggle("positif", saldo > 0);
+      selCard.classList.toggle("negatif", saldo < 0);
+    }
+    set(
+      "statSelisihSub",
+      saldo > 0 ? "surplus periode aktif" : saldo < 0 ? "defisit periode aktif" : "masuk = keluar",
     );
 
     // rekap per bulan (dari RPC bila ada, fallback data tampil)
@@ -538,6 +745,7 @@ const Keuangan = {
       });
       keys = Object.keys(byBulan).sort().reverse().slice(0, 6);
     }
+    set("rekapCount", keys.length + " bln");
     const rb = document.getElementById("rekapBody");
     if (rb) {
       if (!keys.length) {
@@ -550,7 +758,7 @@ const Keuangan = {
         const namaBulan = (ym) => {
           try {
             return new Date(ym + "-01").toLocaleDateString("id-ID", {
-              month: "long",
+              month: "short",
               year: "numeric",
             });
           } catch {
@@ -560,12 +768,16 @@ const Keuangan = {
         rb.innerHTML = keys
           .map((ym) => {
             const b = byBulan[ym];
+            const net = b.masuk - b.keluar;
+            const netCls = net >= 0 ? "plus" : "minus";
+            const netStr = (net >= 0 ? "+" : "-") + Keuangan.rp(Math.abs(net));
             return `<div class="rekap-row">
-                        <div class="top"><span>${namaBulan(ym)}</span><small>Selisih ${Keuangan.rp(b.masuk - b.keluar)}</small></div>
-                        <div class="top"><small>Masuk ${Keuangan.rp(b.masuk)}</small></div>
-                        <div class="bar masuk"><span style="width:${Math.round((b.masuk / max) * 100)}%"></span></div>
-                        <div class="top" style="margin-top:4px"><small>Keluar ${Keuangan.rp(b.keluar)}</small></div>
-                        <div class="bar keluar"><span style="width:${Math.round((b.keluar / max) * 100)}%"></span></div>
+                        <div class="top"><span>${namaBulan(ym)}</span><span class="rekap-net ${netCls}">${netStr}</span></div>
+                        <div class="rekap-nums"><span class="m">+${Keuangan.rp(b.masuk)}</span><span class="k">-${Keuangan.rp(b.keluar)}</span></div>
+                        <div class="rekap-bars">
+                          <div class="bar masuk"><span style="width:${Math.round((b.masuk / max) * 100)}%"></span></div>
+                          <div class="bar keluar"><span style="width:${Math.round((b.keluar / max) * 100)}%"></span></div>
+                        </div>
                     </div>`;
           })
           .join("");
@@ -577,77 +789,127 @@ const Keuangan = {
           : "Rekap Per Bulan";
     }
 
-    // rekap proker (dari RPC bila ada, fallback cache full)
-    const pc = document.getElementById("prokerCard");
-    if (pc) {
-      const byProker = {};
-      if (R && Array.isArray(R.per_proker)) {
-        R.per_proker.forEach((b) => {
-          if (!b || b.proker_id == null) return;
-          byProker[String(b.proker_id)] = { masuk: parseInt(b.masuk, 10) || 0, keluar: parseInt(b.keluar, 10) || 0 };
-        });
+    // Ringkasan Top Kategori interaktif (rail kiri)
+    const katMap = {};
+    (Keuangan.cache || []).forEach((t) => {
+      const k = t.kategori || "Lainnya";
+      if (!katMap[k]) katMap[k] = { name: k, masuk: 0, keluar: 0, n: 0 };
+      katMap[k].n++;
+      if (t.jenis === "masuk") katMap[k].masuk += parseInt(t.nominal, 10) || 0;
+      else katMap[k].keluar += parseInt(t.nominal, 10) || 0;
+    });
+    const katList = Object.values(katMap)
+      .map((x) => ({
+        ...x,
+        total: x.masuk + x.keluar,
+        dom: x.masuk >= x.keluar ? "masuk" : "keluar",
+      }))
+      .sort((a, b) => b.total - a.total);
+    set("katCount", katList.length);
+    const kb = document.getElementById("katSummaryBody");
+    if (kb) {
+      if (!katList.length) {
+        kb.innerHTML = `<div class="pesan-empty">Belum ada data kategori.</div>`;
       } else {
-        (Keuangan.cache || []).forEach((t) => {
-          if (!t.proker_id) return;
-          const k = String(t.proker_id);
-          if (!byProker[k]) byProker[k] = { masuk: 0, keluar: 0 };
-          byProker[k][t.jenis === "masuk" ? "masuk" : "keluar"] +=
-            parseInt(t.nominal, 10) || 0;
-        });
-      }
-      const pkeys = Object.keys(byProker);
-      if (!pkeys.length) {
-        pc.style.display = "none";
-      } else {
-        pc.style.display = "";
-        document.getElementById("prokerBody").innerHTML = pkeys
+        const maxKat = Math.max(...katList.map((k) => k.total), 1);
+        const top = katList.slice(0, 7);
+        kb.innerHTML = `<div class="kat-list">${top
           .map((k) => {
-            const b = byProker[k];
-            return `<div class="rekap-row">
-                        <div class="top"><span>${escapeHtml(Keuangan.prokerName(k))}</span><small>Sisa ${Keuangan.rp(b.masuk - b.keluar)}</small></div>
-                        <div class="top"><small>Masuk ${Keuangan.rp(b.masuk)} · Keluar ${Keuangan.rp(b.keluar)}</small></div>
-                    </div>`;
+            const on = f.kategori === k.name ? " on" : "";
+            return `<button type="button" class="kat-item${on}" data-kat-pick="${escapeHtml(k.name)}" title="${on ? "Klik untuk lepas filter" : "Klik untuk filter kategori ini"}">
+              <div class="kat-item-top">
+                <span>${escapeHtml(k.name)}</span>
+                <span class="kat-item-amt ${k.dom}">${Keuangan.rp(k.total)}</span>
+              </div>
+              <div class="kat-item-sub">
+                <span>${k.n} transaksi</span>
+                <span>${k.dom === "masuk" ? "Dominan masuk" : "Dominan keluar"}</span>
+              </div>
+              <div class="kat-bar ${k.dom}"><span style="width:${Math.round((k.total / maxKat) * 100)}%"></span></div>
+            </button>`;
           })
-          .join("");
+          .join("")}</div>${!Keuangan.habis ? `<div class="kat-note">Dihitung dari ${(Keuangan.cache || []).length} transaksi termuat.</div>` : ""}`;
       }
     }
 
-    // tabel
+    // Header ledger counter & Tampilkan Semua + Sinkron filter bar
+    const totalDiketahui = nTrans > data.length ? nTrans : data.length;
+    const tampil = data.slice(0, Keuangan.tampilLimit);
+    const adaLagi = tampil.length < data.length || !Keuangan.habis;
+
+    set(
+      "kasLoadedInfo",
+      totalDiketahui > tampil.length
+        ? `${tampil.length} / ${totalDiketahui} tampil`
+        : `${tampil.length} transaksi`,
+    );
+    const btnAll = document.getElementById("btnMuatSemua");
+    if (btnAll) {
+      const showAll = adaLagi && (Keuangan.cache || []).length > 0;
+      btnAll.style.display = showAll ? "" : "none";
+      if (showAll) {
+        btnAll.innerHTML =
+          totalDiketahui > tampil.length
+            ? `<i class="fa-solid fa-layer-group"></i> Tampilkan Semua (${totalDiketahui})`
+            : `<i class="fa-solid fa-layer-group"></i> Tampilkan Semua`;
+      }
+    }
+    Keuangan.sinkronKontrolFilter(tampil.length, totalDiketahui);
+
+    // tabel / ledger (default 5 baris, sisanya muncul saat diklik)
     const wrap = document.getElementById("kasWrap");
     if (!wrap) return;
     if (!(Keuangan.cache || []).length) {
-      wrap.innerHTML = `      <div class="pesan-empty" style="text-align:center; padding:26px 12px"><div
-          style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-wallet"
-          style="color:var(--red)"></i></div><b>Belum ada transaksi</b><p style="font-size:0.8rem; color:var(--gray);
-          margin:6px 0 12px">Tambahkan transaksi pertama untuk mulai mencatat keuangan OSIS.</p>${OsisAuth.bisa("keuangan") ? `<button class="btn
-           btn-red btn-sm" onclick="Keuangan.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah
-           Transaksi</button>` : ""}</div>`;
+      wrap.innerHTML = `<div class="pesan-empty" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-wallet" style="color:var(--red)"></i></div><b>Belum ada transaksi</b><p style="font-size:0.8rem; color:var(--gray); margin:6px 0 12px">${Keuangan.scopeKosong() ? "Tambahkan transaksi pertama untuk mulai mencatat keuangan OSIS." : "Tidak ada transaksi untuk filter saat ini."}</p>${!Keuangan.scopeKosong() ? `<button class="btn btn-white btn-sm" onclick="Keuangan.resetFilter()" style="margin-right:6px"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>` : ""}${OsisAuth.bisa("keuangan") ? `<button class="btn btn-red btn-sm" onclick="Keuangan.bukaForm()"><i class="fa-solid fa-plus"></i> Tambah Transaksi</button>` : ""}</div>`;
       return;
     }
     if (!data.length) {
       wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok dengan filter. <a href="#" onclick="event.preventDefault(); Keuangan.resetFilter()" style="color:var(--red); font-weight:800">Reset filter</a></div>`;
       return;
     }
-    wrap.innerHTML = `<table class="kas-tabel"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th>Kategori</th><th>Nominal</th></tr></thead><tbody>${data
-      .map(
-        (t) => `
+    const sisaTersimpan = Math.max(0, data.length - tampil.length);
+    const tambahanKlik = sisaTersimpan > 0 ? Math.min(sisaTersimpan, Keuangan.stepTampil) : Keuangan.perPage;
+    const sisaTotal = Math.max(0, totalDiketahui - tampil.length);
+
+    wrap.innerHTML = `<table class="kas-tabel"><thead><tr><th>Tanggal</th><th>Transaksi</th><th>Jenis</th><th>Kategori</th><th class="num">Nominal</th></tr></thead><tbody>${tampil
+      .map((t) => {
+        const divTag = t.divisi
+          ? `<span class="kas-mini-tag"><i class="fa-solid fa-users"></i> ${escapeHtml(t.divisi)}</span>`
+          : "";
+        const buktiTag = t.bukti_path
+          ? `<span class="kas-mini-tag bukti"><i class="fa-solid fa-image"></i> Nota</span>`
+          : "";
+        const agendaTag = t.agenda_id
+          ? `<span class="kas-mini-tag agenda"><i class="fa-solid fa-calendar-check"></i> ${escapeHtml(Keuangan.agendaName(t.agenda_id))}</span>`
+          : "";
+        return `
             <tr data-kas-row="${t.id}">
-                <td style="white-space:nowrap">${Keuangan.fmtTanggal(t.tanggal)}</td>
-                <td><b>${escapeHtml(t.keterangan || "Tanpa keterangan")}</b><br><small style="color:var(--gray)">${escapeHtml(t.pic || "-")} ${olehLabel(t)}</small></td>
-                <td><span class="jenis ${t.jenis}">${t.jenis === "masuk" ? "Pemasukan" : "Pengeluaran"}</span></td>
-                <td>${escapeHtml(t.kategori || "-")}</td>
+                <td class="col-tgl"><span class="kas-tgl-pill">${Keuangan.fmtTanggal(t.tanggal)}</span></td>
+                <td class="col-ket">
+                  <div class="kas-desc-title">${escapeHtml(t.keterangan || "Tanpa keterangan")}</div>
+                  <div class="kas-meta-line">
+                    <span><i class="fa-regular fa-user"></i> ${escapeHtml(t.pic || "-")}</span>
+                    ${divTag}${buktiTag}${agendaTag}
+                    <span>${olehLabel(t)}</span>
+                  </div>
+                </td>
+                <td class="col-jenis"><span class="jenis ${t.jenis}">${t.jenis === "masuk" ? "Pemasukan" : "Pengeluaran"}</span></td>
+                <td class="col-kat"><span class="kat-chip">${escapeHtml(t.kategori || "-")}</span></td>
                 <td class="nominal ${t.jenis}">${t.jenis === "masuk" ? "+" : "-"} ${Keuangan.rp(t.nominal)}</td>
-            </tr>`,
-      )
+            </tr>`;
+      })
       .join("")}</tbody></table>`
-      + `<div style="text-align:center; padding:12px 4px">`
-      + (Keuangan.habis
-        ? `<small style="color:var(--gray); font-weight:700">— Semua transaksi sudah dimuat —</small>`
-        : `<button class="btn btn-white btn-sm" onclick="Keuangan.muat(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
-      + `</div><div id="kasSentinel" style="height:8px"></div>`;
-    let io = null;
-    try { if (typeof pasangSentinel === "function") io = pasangSentinel("kasSentinel", () => Keuangan.muat(false)); } catch {}
-    if (!io) { const s = document.getElementById("kasSentinel"); if (s) s.style.display = "none"; }
+      + `<div class="kas-expand-bar">`
+      + (adaLagi
+        ? `<button type="button" class="btn btn-white btn-sm" onclick="Keuangan.tampilLebihBanyak()"><i class="fa-solid fa-angles-down"></i> Tampilkan Lebih Banyak (+${tambahanKlik})</button>`
+          + (sisaTotal > tambahanKlik || !Keuangan.habis
+            ? `<button type="button" class="btn btn-red btn-sm" onclick="Keuangan.tampilSemua()"><i class="fa-solid fa-layer-group"></i> Lihat Semua (${totalDiketahui})</button>`
+            : "")
+        : `<small style="color:var(--gray); font-weight:700">— Semua ${tampil.length} transaksi ditampilkan —</small>`)
+      + (tampil.length > Keuangan.defaultLimit
+        ? `<button type="button" class="btn btn-white btn-sm" onclick="Keuangan.ringkasTampil()"><i class="fa-solid fa-compress"></i> Ringkas (${Keuangan.defaultLimit})</button>`
+        : "")
+      + `</div>`;
   },
 
   bacaFilter() {
@@ -665,6 +927,7 @@ const Keuangan = {
     const scopeBerubah = ["q", "jenis", "kategori", "divisi", "periode"]
       .some((k) => (baru[k] || "") !== (lama[k] || ""));
     Keuangan.filter = baru;
+    Keuangan.sinkronKontrolFilter();
     if (!scopeBerubah) { Keuangan.render(); return; }
     try { clearTimeout(Keuangan._filterT); } catch {}
     if (baru.q) Keuangan._filterT = setTimeout(() => { Keuangan.muat(true); }, 400);
@@ -679,9 +942,12 @@ const Keuangan = {
       "filterDivisi",
       "filterPeriode",
     ].forEach((id) => {
-      document.getElementById(id).value = "";
+      const el = document.getElementById(id);
+      if (el) el.value = "";
     });
-    document.getElementById("filterSort").value = "baru";
+    const fs = document.getElementById("filterSort");
+    if (fs) fs.value = "baru";
+    Keuangan.segarkanDropdown();
     Keuangan.bacaFilter();
   },
 
@@ -700,6 +966,7 @@ const Keuangan = {
         .map((c) => `<option value="${c}">${c}</option>`)
         .join("");
       if (list.includes(cur)) ks.value = cur;
+      Keuangan.segarkanDropdown();
     }
     if (typeof FormPersist !== "undefined") FormPersist.touch("kasForm");
   },
@@ -728,7 +995,6 @@ const Keuangan = {
     document.getElementById("kasKeterangan").value = "";
     document.getElementById("kasDivisi").value = "";
     document.getElementById("kasPic").value = "";
-    document.getElementById("kasProker").value = "";
     document.getElementById("kasAgenda").value = "";
     document.getElementById("kasCatatan").value = "";
     const fi = document.getElementById("kasBukti");
@@ -753,6 +1019,7 @@ const Keuangan = {
     } catch {}
     document.getElementById("kasForm").classList.add("open");
     document.body.style.overflow = "hidden";
+    Keuangan.segarkanDropdown();
   },
 
   edit(id) {
@@ -795,13 +1062,13 @@ const Keuangan = {
       dv.value = item.divisi || "";
     }
     document.getElementById("kasPic").value = item.pic || "";
-    document.getElementById("kasProker").value = item.proker_id || "";
     document.getElementById("kasAgenda").value = item.agenda_id || "";
     document.getElementById("kasCatatan").value = item.catatan || "";
     const fi = document.getElementById("kasBukti");
     if (fi) fi.value = "";
     document.getElementById("kasFormTitle").textContent = "Edit Transaksi";
     Keuangan.renderBukti();
+    Keuangan.segarkanDropdown();
     document.getElementById("kasForm").classList.add("open");
     document.body.style.overflow = "hidden";
   },
@@ -880,7 +1147,7 @@ const Keuangan = {
         : parseInt(document.getElementById("kasNominal").value, 10) || 0),
       divisi: v("kasDivisi"),
       pic: v("kasPic"),
-      proker_id: num("kasProker"),
+      proker_id: null,
       agenda_id: num("kasAgenda"),
       catatan: v("kasCatatan"),
     };
@@ -1021,7 +1288,6 @@ const Keuangan = {
                 ${info("Kategori", escapeHtml(t.kategori))}
                 ${info("Divisi", escapeHtml(t.divisi))}
                 ${info("PIC", escapeHtml(t.pic))}
-                ${info("Program Kerja", escapeHtml(t.proker_id ? Keuangan.prokerName(t.proker_id) : ""))}
                 ${info("Agenda", escapeHtml(t.agenda_id ? Keuangan.agendaName(t.agenda_id) : ""))}
                 ${info("Dibuat", Keuangan.fmtTanggalWaktu(t.created_at))}
                 ${info("Diupload oleh", escapeHtml(t.pengunggah || "-"))}

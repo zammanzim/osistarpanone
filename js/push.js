@@ -302,7 +302,9 @@
       window.showPopup(tanya, "confirm").then(function (ok) {
         if (ok) aktifkan();
       });
-    } else if (confirm(tanya)) aktifkan();
+    } else {
+      toast("Popup belum siap, coba lagi sebentar.", "error");
+    }
   }
 
   function pilihAksi() {

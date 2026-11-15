@@ -39,6 +39,7 @@ const Notulensi = {
                 if (fd) fd.innerHTML = `<option value="">Semua divisi</option>` + opts;
                 const nd = document.getElementById("notDivisi");
                 if (nd) nd.innerHTML = `<option value="">— Pilih —</option>` + opts;
+                try { window.Dropdown?.segarkanSemua?.(); } catch {}
             }).catch(() => {});
         } catch {}
 
@@ -372,7 +373,9 @@ const Notulensi = {
             const el = document.getElementById(id);
             if (el) el.value = "";
         });
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
         Notulensi.bacaFilter();
+        try { window.OsisSearch?.sync?.("notulensiFilter"); } catch {}
     },
 
     kembali() {

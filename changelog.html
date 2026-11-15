@@ -25,7 +25,7 @@
     />
     <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
     <link rel="canonical" href="https://osistarpanone.my.id/changelog.html" />
-    <link rel="stylesheet" href="css/style.css?v=40" />
+    <link rel="stylesheet" href="css/style.css?v=41" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -88,51 +88,27 @@
         font-size: 0.95rem;
         color: var(--red);
       }
-      .cl-filter {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
       .cl-seg {
         display: inline-flex;
-        border: 2.5px solid var(--ink);
-        border-radius: 12px;
+        flex-wrap: wrap;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
         overflow: hidden;
+        background: var(--paper);
       }
       .cl-seg button {
         border: none;
-        background: var(--white);
+        background: transparent;
         font-family: inherit;
-        font-size: 0.76rem;
+        font-size: 0.74rem;
         font-weight: 900;
-        padding: 8px 14px;
+        padding: 7px 12px;
         cursor: pointer;
+        color: var(--ink);
       }
       .cl-seg button.on {
         background: var(--ink);
-        color: #fff;
-      }
-      .cl-search {
-        flex: 1;
-        min-width: 180px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border: 2.5px solid var(--ink);
-        border-radius: 12px;
-        padding: 8px 12px;
-        background: var(--white);
-      }
-      .cl-search input {
-        border: none;
-        outline: none;
-        flex: 1;
-        font-family: inherit;
-        font-size: 0.82rem;
-        font-weight: 700;
-        background: transparent;
-        min-width: 0;
+        color: var(--yellow);
       }
       .cl-top {
         display: flex;
@@ -250,7 +226,7 @@
     <script src="js/config.js?v=14"></script>
     <script src="js/db.js?v=35" defer></script>
     <script src="js/aktivitas.js?v=10" defer></script>
-    <script src="js/app.js?v=10" defer></script>
+    <script src="js/app.js?v=16" defer></script>
     <script src="js/dropdown.js?v=3" defer></script>
     <script src="js/toast.js?v=10" defer></script>
     <script src="js/notice.js?v=10" defer></script>
@@ -288,6 +264,105 @@
     </header>
 
     <main class="cl-wrap">
+      <div class="osis-top-search" id="clTopSearch" data-osis-auto-count="1">
+        <div class="osis-sb-bar">
+          <div class="osis-sb-row">
+            <i class="fa-solid fa-magnifying-glass osis-sb-ico" aria-hidden="true"></i>
+            <input
+              type="search"
+              class="osis-sb-input"
+              id="clCari"
+              placeholder="Cari versi / fitur…"
+              autocomplete="off"
+              aria-label="Cari versi atau fitur"
+            />
+            <button
+              type="button"
+              class="osis-sb-clear"
+              data-osis-clear="auto"
+              hidden
+              aria-label="Hapus pencarian"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="osis-sb-divider" aria-hidden="true"></span>
+            <button
+              type="button"
+              class="osis-sb-filter-btn"
+              aria-expanded="false"
+              aria-controls="clFilterPanel"
+            >
+              <i class="fa-solid fa-sliders"></i>
+              <span>Filter</span>
+              <span class="osis-sb-badge" hidden>0</span>
+              <i class="fa-solid fa-chevron-down osis-sb-chev" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="osis-sb-panel" id="clFilterPanel">
+          <div class="osis-sb-panel-head">
+            <span class="osis-sb-panel-title">
+              <i class="fa-solid fa-sliders"></i> Filter Changelog
+            </span>
+            <div class="osis-sb-panel-acts">
+              <button
+                type="button"
+                class="btn btn-sm btn-white"
+                data-osis-reset="auto"
+                onclick="Changelog.filter('semua')"
+              >
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+              <button
+                type="button"
+                class="osis-sb-close"
+                aria-label="Tutup panel filter"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="osis-sb-fields">
+            <div class="osis-sb-field grow full-sm">
+              <label>Tipe Rilis</label>
+              <span class="cl-seg" id="clFilterSeg">
+                <button
+                  type="button"
+                  data-f="semua"
+                  data-default="1"
+                  class="on"
+                  onclick="Changelog.filter('semua')"
+                >
+                  Semua
+                </button>
+                <button
+                  type="button"
+                  data-f="major"
+                  onclick="Changelog.filter('major')"
+                >
+                  Major
+                </button>
+                <button
+                  type="button"
+                  data-f="minor"
+                  onclick="Changelog.filter('minor')"
+                >
+                  Minor
+                </button>
+                <button
+                  type="button"
+                  data-f="patch"
+                  onclick="Changelog.filter('patch')"
+                >
+                  Patch
+                </button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <section class="cl-card accent-top cl-hero">
         <div class="sec-tag">Riwayat Versi</div>
         <h1>Changelog <span id="clVersi">…</span></h1>
@@ -310,50 +385,6 @@
           >
             <i class="fa-solid fa-plus"></i> Tambah
           </button>
-        </div>
-      </section>
-
-      <section class="cl-card">
-        <div class="cl-filter">
-          <span class="cl-seg" id="clFilterSeg">
-            <button
-              type="button"
-              data-f="semua"
-              class="on"
-              onclick="Changelog.filter('semua')"
-            >
-              Semua
-            </button>
-            <button
-              type="button"
-              data-f="major"
-              onclick="Changelog.filter('major')"
-            >
-              Major
-            </button>
-            <button
-              type="button"
-              data-f="minor"
-              onclick="Changelog.filter('minor')"
-            >
-              Minor
-            </button>
-            <button
-              type="button"
-              data-f="patch"
-              onclick="Changelog.filter('patch')"
-            >
-              Patch
-            </button>
-          </span>
-          <label class="cl-search"
-            ><i class="fa-solid fa-magnifying-glass"></i
-            ><input
-              type="search"
-              id="clCari"
-              placeholder="Cari versi / fitur…"
-              autocomplete="off"
-          /></label>
         </div>
         <p class="cl-legend" style="margin: 10px 0 0">
           Aturan: <b>vX.0.0</b> naik kalau perubahan gede/breaking ·

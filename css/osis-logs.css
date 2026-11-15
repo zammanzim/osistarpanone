@@ -1,47 +1,8 @@
-/* osis-logs.css -- pindahan <style> inline logs.html (v6.5.1, visual sama). */
-.logs-wrap {
-        max-width: 1280px;
-        margin: 0 auto;
-        padding: 18px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-      .logs-head {
-        background: var(--white);
-        border: 3px solid var(--ink);
-        border-radius: 18px;
-        padding: 18px;
-        box-shadow: 4px 4px 0 var(--ink);
-        display: flex;
-        gap: 14px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .logs-head .ico {
-        width: 52px;
-        height: 52px;
-        border-radius: 14px;
-        border: 3px solid var(--ink);
-        background: var(--ink);
-        color: #fff;
-        display: grid;
-        place-items: center;
-        font-size: 1.4rem;
-        box-shadow: 2px 2px 0 var(--ink);
-        flex-shrink: 0;
-      }
-      .logs-head h1 {
-        font-size: 1.25rem;
-        font-weight: 900;
-        line-height: 1.1;
-      }
-      .logs-head p {
-        font-size: 0.8rem;
-        color: var(--gray);
-        font-weight: 600;
-        margin-top: 4px;
-      }
+/* osis-logs.css -- layout dasar dari osis2.css, style khusus modul logs di sini. */
+.osis-hero .osis-avatar {
+  background: var(--ink);
+  color: #fff;
+}
       .logs-stats {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -124,26 +85,6 @@
         font-weight: 600;
         color: var(--gray);
       }
-      .filter-card {
-        background: var(--white);
-        border: 3px solid var(--ink);
-        border-radius: 18px;
-        padding: 14px;
-        box-shadow: 4px 4px 0 var(--ink);
-        display: grid;
-        grid-template-columns: 1fr 1fr auto;
-        gap: 10px;
-        align-items: end;
-      }
-      @media (max-width: 560px) {
-        .filter-card {
-          grid-template-columns: 1fr auto;
-        }
-        .filter-card .field:first-child {
-          grid-column: 1 / -1;
-        }
-      }
-      .filter-card .field { margin-bottom: 0; }
       .logs-item {
         background: var(--white);
         border: 2.5px solid var(--ink);

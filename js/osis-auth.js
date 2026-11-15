@@ -12,13 +12,15 @@
 const OsisAuth = {
     KEY: "osis_user",
     AKSES_KEY: "osis_akses",
+    ANGKATAN_AKTIF_KEY: "osis_angkatan_aktif",
+    ANGKATAN_LIST_KEY: "osis_angkatan_list",
 
     getUser() {
         try { return JSON.parse(localStorage.getItem(OsisAuth.KEY) || "null"); }
         catch { return null; }
     },
 
-    // Cache hak kendali per halaman {halaman:[], sekbid_id, sekbid_nama, super}.
+    // Cache hak kendali per halaman {halaman:[], sekbid_id, sekbid_nama, super, angkatan_id, angkatan, lintas_angkatan}.
     // null = belum dimuat -> dianggap TIDAK BOLEH kendali (fail closed).
     getAkses() {
         try { return JSON.parse(localStorage.getItem(OsisAuth.AKSES_KEY) || "null"); }
@@ -34,11 +36,131 @@ const OsisAuth = {
         try {
             const a = await aksesSaya(u.id);
             try { localStorage.setItem(OsisAuth.AKSES_KEY, JSON.stringify(a || null)); } catch {}
+            if (a) {
+                try {
+                    const cur = OsisAuth.getUser();
+                    if (cur && Number(cur.id) === Number(u.id)) {
+                        let dirty = false;
+                        if ("angkatan_id" in a && cur.angkatan_id !== a.angkatan_id) {
+                            cur.angkatan_id = a.angkatan_id;
+                            dirty = true;
+                        }
+                        if ("angkatan" in a && a.angkatan && cur.angkatan !== a.angkatan) {
+                            cur.angkatan = a.angkatan;
+                            dirty = true;
+                        }
+                        if ("lintas_angkatan" in a && cur.lintas_angkatan !== !!a.lintas_angkatan) {
+                            cur.lintas_angkatan = !!a.lintas_angkatan;
+                            dirty = true;
+                        }
+                        if (dirty) localStorage.setItem(OsisAuth.KEY, JSON.stringify(cur));
+                    }
+                } catch {}
+            }
             return a;
         } catch (err) {
             console.error("Gagal muat hak akses:", err);
             return OsisAuth.getAkses();
         }
+    },
+
+    getAngkatanList() {
+        try {
+            const arr = JSON.parse(localStorage.getItem(OsisAuth.ANGKATAN_LIST_KEY) || "[]");
+            return Array.isArray(arr) ? arr : [];
+        } catch {
+            return [];
+        }
+    },
+
+    setAngkatanList(list) {
+        try {
+            localStorage.setItem(OsisAuth.ANGKATAN_LIST_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+        } catch {}
+    },
+
+    isLintasAngkatan() {
+        const u = OsisAuth.getUser();
+        if (!u || u.mode !== "osis") return false;
+        const a = OsisAuth.getAkses();
+        if (a && typeof a.lintas_angkatan === "boolean") return a.lintas_angkatan;
+        if (a && a.super) return true;
+        if (typeof u.lintas_angkatan === "boolean") return u.lintas_angkatan;
+        const jab = String(u.jabatan || "").trim().toUpperCase();
+        const ang = String(u.angkatan || "").trim().toUpperCase();
+        return jab === "PEMBINA" || ang === "PEMBINA";
+    },
+
+    getAngkatanAktif() {
+        const u = OsisAuth.getUser();
+        if (!u || u.mode !== "osis") return null;
+        if (!OsisAuth.isLintasAngkatan()) {
+            return u.angkatan_id ? Number(u.angkatan_id) : null;
+        }
+        const list = OsisAuth.getAngkatanList();
+        let saved = 0;
+        try { saved = Number(localStorage.getItem(OsisAuth.ANGKATAN_AKTIF_KEY) || 0); } catch {}
+        if (saved > 0 && (list.length === 0 || list.some((x) => Number(x.id) === saved))) {
+            return saved;
+        }
+        if (u.angkatan_id) {
+            const uid = Number(u.angkatan_id);
+            if (uid > 0) return uid;
+        }
+        if (list.length > 0) {
+            const yr = new Date().getFullYear();
+            const pick = list.find((x) => x.aktif && Number(x.tahun) === yr)
+                || list.find((x) => x.aktif)
+                || list[0];
+            if (pick && pick.id) return Number(pick.id);
+        }
+        return null;
+    },
+
+    getAngkatanAktifObj() {
+        const id = OsisAuth.getAngkatanAktif();
+        const list = OsisAuth.getAngkatanList();
+        if (id) {
+            const hit = list.find((x) => Number(x.id) === Number(id));
+            if (hit) return hit;
+        }
+        const u = OsisAuth.getUser();
+        if (u && u.mode === "osis") {
+            return {
+                id: u.angkatan_id || id || null,
+                nama: String(u.angkatan || "").trim(),
+                kode: "",
+            };
+        }
+        return null;
+    },
+
+    setAngkatanAktif(id) {
+        if (!OsisAuth.isLintasAngkatan()) return OsisAuth.getAngkatanAktif();
+        const num = Number(id || 0);
+        try {
+            if (num > 0) localStorage.setItem(OsisAuth.ANGKATAN_AKTIF_KEY, String(num));
+            else localStorage.removeItem(OsisAuth.ANGKATAN_AKTIF_KEY);
+        } catch {}
+        OsisAuth.clearScopedCache();
+        return OsisAuth.getAngkatanAktif();
+    },
+
+    clearScopedCache() {
+        try {
+            const rm = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (!k) continue;
+                if (k.startsWith("osis_cache_") && (
+                    /_ang_/.test(k) ||
+                    /_(kas|saldo_awal|absensi|tabungan|anggota|agenda_|program|notulensi|informasi|dokumen|poster|osis_visitor|osis_users|akses_matriks|wawancara_)/.test(k)
+                )) {
+                    rm.push(k);
+                }
+            }
+            rm.forEach((k) => localStorage.removeItem(k));
+        } catch {}
     },
 
     // Punya kendali atas halaman? super/'*' -> semua true.
@@ -88,9 +210,14 @@ const OsisAuth = {
     // Masuk sebagai anggota OSIS (dipanggil setelah signIn Auth sukses).
     // userObj = baris osis_users TANPA password. Session JWT dipegang supabase-js.
     loginOsis(userObj) {
+        const prev = OsisAuth.getUser();
         const aman = { ...userObj };
         delete aman.password;
         aman.mode = "osis";
+        if (prev && Number(prev.id) !== Number(aman.id)) {
+            try { localStorage.removeItem(OsisAuth.ANGKATAN_AKTIF_KEY); } catch {}
+            OsisAuth.clearScopedCache();
+        }
         localStorage.setItem(OsisAuth.KEY, JSON.stringify(aman));
     },
 
@@ -106,6 +233,8 @@ const OsisAuth = {
     buangCacheOsis() {
         try { localStorage.removeItem(OsisAuth.KEY); } catch {}
         try { localStorage.removeItem(OsisAuth.AKSES_KEY); } catch {}
+        try { localStorage.removeItem(OsisAuth.ANGKATAN_AKTIF_KEY); } catch {}
+        OsisAuth.clearScopedCache();
     },
 
     // Sinkronkan cache dengan session Auth. Dipanggil tiap halaman dimuat
@@ -128,7 +257,7 @@ const OsisAuth = {
             }
             return;
         }
-        if (cached && cached.mode === "osis" && cached.auth_id === session.user.id && cached.id && cached.auth_email) {
+        if (cached && cached.mode === "osis" && cached.auth_id === session.user.id && cached.id && cached.auth_email && ("angkatan_id" in cached)) {
             return; // sudah sinkron
         }
         if (cached && cached.mode === "biasa" && cached.auth_id === session.user.id && cached.id) {
@@ -207,8 +336,9 @@ const OsisAuth = {
         const user = OsisAuth.getUser();
 
         if (!user) {
+            const diSub = /(^|\/)osis\//.test(String(location.pathname || "").replace(/\\/g, "/"));
             area.innerHTML = `
-                <a href="login" class="btn btn-red btn-sm" onclick="OsisAuth.simpanBack()"><i class="fa-solid fa-right-to-bracket"></i> Masuk</a>`;
+                <a href="${diSub ? "../" : ""}login" class="btn btn-red btn-sm" onclick="OsisAuth.simpanBack()"><i class="fa-solid fa-right-to-bracket"></i> Masuk</a>`;
             return;
         }
 

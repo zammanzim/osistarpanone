@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Absensi Pengurus — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=40" />
+    <link rel="stylesheet" href="../css/style.css?v=41" />
+    <link rel="stylesheet" href="../css/osis2.css?v=14" />
 <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
 <link rel="manifest" href="../manifest.webmanifest" />
@@ -22,12 +23,12 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-absensi.css?v=4" />
+    <link rel="stylesheet" href="../css/osis-absensi.css?v=6" />
     <script src="../js/supabase.min.js?v=10"></script>
     <script src="../js/config.js?v=14"></script>
     <script src="../js/db.js?v=36" defer></script>
     <script src="../js/aktivitas.js?v=10" defer></script>
-    <script src="../js/app.js?v=10" defer></script>
+    <script src="../js/app.js?v=16" defer></script>
     <script src="../js/dropdown.js?v=3" defer></script>
     <script src="../js/toast.js?v=10" defer></script>
     <script src="../js/notice.js?v=10" defer></script>
@@ -36,9 +37,9 @@
     <script src="../js/osis-auth.js?v=19" defer></script>
     <script src="../js/osis-visitor.js?v=5" defer></script>
     <script src="../js/osis-sidebar.js?v=45" defer></script>
-    <script src="../js/osis-header.js?v=14" defer></script>
+    <script src="../js/osis-header.js?v=18" defer></script>
     <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/absensi.js?v=20" defer></script>
+    <script src="../js/absensi.js?v=22" defer></script>
     <script src="../js/vendor/qrcode.min.js?v=1"></script>
     <script src="../js/vendor/jsQR.min.js?v=1"></script>
     <script src="../js/absensi-qr.js?v=1" defer></script>
@@ -59,49 +60,206 @@
       </div>
     </header>
 
-    <div class="absensi-wrap">
-      <div class="absensi-cols">
-      <div class="absensi-side">
+    <div class="osis-wrap">
+      <div class="osis-top-search" id="absTopSearch" data-osis-auto-count="1">
+        <div class="osis-sb-bar">
+          <div class="osis-sb-row">
+            <i class="fa-solid fa-magnifying-glass osis-sb-ico"></i>
+            <input
+              type="text"
+              id="filterQ"
+              class="osis-sb-input"
+              placeholder="Cari nama pengurus atau kegiatan..."
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="osis-sb-clear"
+              id="btnClearQ"
+              title="Hapus pencarian"
+              style="display: none"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="osis-sb-divider" aria-hidden="true"></span>
+            <button type="button" class="osis-sb-filter-btn" aria-expanded="false">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Filter</span>
+              <span class="osis-sb-badge" hidden>0</span>
+              <i class="fa-solid fa-chevron-down osis-sb-chev"></i>
+            </button>
+          </div>
+        </div>
+        <div class="osis-sb-panel">
+          <div class="osis-sb-panel-head">
+            <span class="osis-sb-panel-title"><i class="fa-solid fa-filter"></i> Filter Kehadiran</span>
+            <div class="osis-sb-panel-acts">
+              <button type="button" class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+              <button type="button" class="osis-sb-close" title="Tutup filter">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="osis-sb-fields">
+            <div class="osis-sb-field grow">
+              <label>Tanggal</label>
+              <input type="date" id="filterTanggal" class="admin-input" />
+            </div>
+            <div class="osis-sb-field grow">
+              <label>Status</label>
+              <select id="filterStatus" class="admin-input">
+                <option value="">Semua</option>
+                <option value="izin">Izin</option>
+                <option value="sakit">Sakit</option>
+                <option value="alpha">Alpha</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div class="absensi-head">
-        <div class="ico"><i class="fa-solid fa-clipboard-user"></i></div>
-        <div style="flex: 1; min-width: 180px">
+      <div class="osis-hero abs-hero">
+        <div class="osis-avatar abs-hero-ico">
+          <i class="fa-solid fa-clipboard-user"></i>
+        </div>
+        <div style="flex: 1; min-width: 200px">
+          <div class="abs-kicker">
+            <i class="fa-solid fa-bolt"></i> REKAP KEHADIRAN OSIS
+          </div>
           <h1>ABSENSI PENGURUS</h1>
-          <p>Catat pengurus yang tidak hadir: izin, sakit, atau alpha.</p>
+          <p>
+            Pantau kehadiran rapat, izin, sakit, alpha, hingga scan QR per
+            periode pengurus dalam satu dashboard.
+          </p>
+          <div class="osis-meta">
+            <span class="osis-badge"
+              ><i class="fa-solid fa-user-check"></i> Hadir &amp; Tidak
+              Hadir</span
+            >
+            <span class="osis-badge"
+              ><i class="fa-solid fa-qrcode"></i> Absen Langsung &amp; QR</span
+            >
+          </div>
         </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap">
-          <button class="btn btn-red" id="btnTambahAbsensi" style="display: none"><i class="fa-solid fa-plus"></i> Tambah Data</button>
-          <button class="btn btn-white" id="btnAbsenLangsung" style="display: none"><i class="fa-solid fa-bolt"></i> Absen Langsung</button>
-          <button class="btn btn-white" id="btnAbsenQr" style="display: none"><i class="fa-solid fa-qrcode"></i> Absen QR</button>
+        <div class="abs-hero-actions">
+          <button
+            class="btn btn-red"
+            id="btnTambahAbsensi"
+            style="display: none"
+          >
+            <i class="fa-solid fa-plus"></i> Tambah Data
+          </button>
+          <button
+            class="btn btn-white"
+            id="btnAbsenLangsung"
+            style="display: none"
+          >
+            <i class="fa-solid fa-bolt"></i> Absen Langsung
+          </button>
+          <button class="btn btn-white" id="btnAbsenQr" style="display: none">
+            <i class="fa-solid fa-qrcode"></i> Absen QR
+          </button>
         </div>
       </div>
 
-      <!-- Fokus tahun roster absen (periode aktif). Selalu 1 kepilih, default kiri. -->
-      <div class="tahun-tabs" id="tahunTabs" style="display: none"></div>
+      <div class="stat-grid" id="absensiStats">
+        <div class="stat-card izin">
+          <div class="stat-head">
+            <span class="stat-ico yellow" id="icoStat1"
+              ><i class="fa-solid fa-envelope-open-text"></i
+            ></span>
+            <span class="lbl" id="lblStat1">Izin</span>
+          </div>
+          <b id="statIzin">-</b>
+          <small id="subStat1">sesi terbaru</small>
+        </div>
+        <div class="stat-card sakit">
+          <div class="stat-head">
+            <span class="stat-ico green" id="icoStat2"
+              ><i class="fa-solid fa-briefcase-medical"></i
+            ></span>
+            <span class="lbl" id="lblStat2">Sakit</span>
+          </div>
+          <b id="statSakit">-</b>
+          <small id="subStat2">sesi terbaru</small>
+        </div>
+        <div class="stat-card alpha">
+          <div class="stat-head">
+            <span class="stat-ico red" id="icoStat3"
+              ><i class="fa-solid fa-user-xmark"></i
+            ></span>
+            <span class="lbl" id="lblStat3">Alpha</span>
+          </div>
+          <b id="statAlpha">-</b>
+          <small id="subStat3">sesi terbaru</small>
+        </div>
+        <div class="stat-card total">
+          <div class="stat-head">
+            <span class="stat-ico blue" id="icoStat4"
+              ><i class="fa-solid fa-users-slash"></i
+            ></span>
+            <span class="lbl" id="lblStat4">Total Tidak Hadir</span>
+          </div>
+          <b id="statTotal">-</b>
+          <small id="subStat4">riwayat tercatat</small>
+        </div>
+      </div>
 
-      <div class="stat-grid">
-        <div class="stat-card izin"><span class="lbl"><i class="fa-solid fa-envelope-open-text"></i> Izin</span><b id="statIzin">-</b></div>
-        <div class="stat-card sakit"><span class="lbl"><i class="fa-solid fa-briefcase-medical"></i> Sakit</span><b id="statSakit">-</b></div>
-        <div class="stat-card alpha"><span class="lbl"><i class="fa-solid fa-user-xmark"></i> Alpha</span><b id="statAlpha">-</b></div>
-        <div class="stat-card"><span class="lbl"><i class="fa-solid fa-users-slash"></i> Total Tidak Hadir</span><b id="statTotal">-</b></div>
-      </div>
-      </div>
-      <div class="absensi-main">
+      <div class="absensi-cols">
+        <aside class="absensi-side">
+          <div class="abs-panel" id="tahunPanel" style="display: none">
+            <div class="abs-panel-head">
+              <span
+                ><i class="fa-solid fa-graduation-cap"></i> Periode Roster</span
+              >
+            </div>
+            <div class="tahun-tabs" id="tahunTabs"></div>
+          </div>
 
-      <div class="tipe-tabs">
-        <button type="button" id="btnTabTidak" class="on-tidak"><i class="fa-solid fa-user-xmark"></i> Tidak Hadir</button>
-        <button type="button" id="btnTabHadir"><i class="fa-solid fa-user-check"></i> Hadir</button>
-      </div>
+          <div class="abs-panel">
+            <div class="abs-panel-head">
+              <span><i class="fa-solid fa-calendar-days"></i> Riwayat Tanggal</span>
+              <span class="abs-pill-cnt" id="dateRailCount">0</span>
+            </div>
+            <div class="abs-date-rail" id="absensiDateRail"></div>
+          </div>
 
-      <div class="filter-card">
-        <div class="field"><label>Cari pengurus</label><input type="text" id="filterQ" class="admin-input" placeholder="Ketik nama / kegiatan..." /></div>
-        <div class="field"><label>Tanggal</label><input type="date" id="filterTanggal" class="admin-input" /></div>
-        <div class="field"><label>Status</label><select id="filterStatus" class="admin-input"><option value="">Semua</option><option value="izin">Izin</option><option value="sakit">Sakit</option><option value="alpha">Alpha</option></select></div>
-        <div class="field"><label>&nbsp;</label><button class="btn btn-white btn-sm" id="btnResetFilter" title="Reset filter"><i class="fa-solid fa-rotate-left"></i></button></div>
-      </div>
+          <div class="abs-panel" id="topPanel">
+            <div class="abs-panel-head">
+              <span id="topPanelTitle"
+                ><i class="fa-solid fa-chart-simple"></i> Top Ketidakhadiran</span
+              >
+            </div>
+            <div class="abs-top-list" id="absensiTopPanel"></div>
+          </div>
+        </aside>
 
-      <div id="absensiWrap"><div class="rekap-card"><div class="loading-block"><div class="spinner"></div>Memuat absensi...</div></div></div>
-      </div>
+        <section class="absensi-main">
+          <div class="tipe-tabs">
+            <button type="button" id="btnTabTidak" class="on-tidak">
+              <i class="fa-solid fa-user-xmark"></i> Tidak Hadir
+            </button>
+            <button type="button" id="btnTabHadir">
+              <i class="fa-solid fa-user-check"></i> Hadir
+            </button>
+          </div>
+
+          <div class="abs-bar" id="absensiBar" style="display: none">
+            <span class="abs-bar-count" id="absensiBarCount"></span>
+            <div class="abs-chips" id="absensiChips"></div>
+          </div>
+
+          <div id="absensiWrap">
+            <div class="rekap-card">
+              <div class="loading-block">
+                <div class="spinner"></div>
+                Memuat absensi...
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
 

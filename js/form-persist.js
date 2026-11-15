@@ -22,11 +22,17 @@ const FormPersist = {
     // cth: "osis_draft_v1_absensi_absensiForm"
     key(formId) {
         let page = "umum";
+        let scope = "";
         try {
-            const seg = (location.pathname.split("/").pop() || "").toLowerCase().replace(/\.html?$/, "");
+            const p = String(location.pathname || "").replace(/\\/g, "/");
+            const seg = (p.split("/").pop() || "").toLowerCase().replace(/\.html?$/, "");
             if (seg) page = seg;
+            if (/(^|\/)osis\//.test(p) && typeof OsisAuth !== "undefined" && OsisAuth.getAngkatanAktif) {
+                const angId = OsisAuth.getAngkatanAktif();
+                if (angId) scope = "ang" + angId + "_";
+            }
         } catch {}
-        return FormPersist.PREFIX + page + "_" + formId;
+        return FormPersist.PREFIX + scope + page + "_" + formId;
     },
 
     save(formId, data) {

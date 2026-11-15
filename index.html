@@ -135,7 +135,7 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="css/style.css?v=40" />
+    <link rel="stylesheet" href="css/style.css?v=41" />
     <link rel="stylesheet" href="css/feed.css?v=3" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
@@ -553,16 +553,6 @@
         font-weight: 700;
         color: var(--gray);
       }
-      .infv-toolbar {
-        background: var(--white);
-        border: 3px solid var(--ink);
-        border-radius: 18px;
-        padding: 14px;
-        box-shadow: 4px 4px 0 var(--ink);
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
       .infv-chips {
         display: flex;
         gap: 6px;
@@ -573,58 +563,32 @@
         align-items: center;
         gap: 6px;
         font-family: inherit;
-        font-size: 0.76rem;
+        font-size: 0.74rem;
         font-weight: 800;
-        padding: 8px 13px;
-        border-radius: 999px;
-        border: 2.5px solid var(--ink);
-        background: var(--white);
+        padding: 6px 11px;
+        border-radius: 10px;
+        border: 2px solid var(--ink);
+        background: var(--paper);
         color: var(--ink);
         cursor: pointer;
       }
+      .infv-chips button:hover {
+        background: var(--paper-2);
+      }
       .infv-chips button.on {
         background: var(--ink);
-        color: #fff;
-      }
-      .infv-tools {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-      .infv-cari {
-        flex: 1;
-        min-width: 200px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: var(--paper);
-        border: 2.5px solid var(--ink);
-        border-radius: 12px;
-        padding: 7px 12px;
-      }
-      .infv-cari i {
-        color: var(--gray);
-        font-size: 0.85rem;
-      }
-      .infv-cari input {
-        border: none;
-        background: transparent;
-        font-family: inherit;
-        font-size: 0.82rem;
-        font-weight: 600;
-        width: 100%;
-        outline: none;
-        color: var(--ink);
+        color: var(--yellow);
       }
       .infv-urut {
-        border: 2.5px solid var(--ink);
-        border-radius: 12px;
-        background: var(--white);
+        width: 100%;
+        min-height: 38px;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        background: var(--paper);
         font-family: inherit;
         font-size: 0.76rem;
-        font-weight: 700;
-        padding: 8px 10px;
+        font-weight: 800;
+        padding: 7px 10px;
         cursor: pointer;
         color: var(--ink);
       }
@@ -1033,7 +997,7 @@
     <script src="js/config.js?v=14"></script>
     <script src="js/db.js?v=38" defer></script>
     <script src="js/compress-video.js?v=8" defer></script>
-    <script src="js/app.js?v=15" defer></script>
+    <script src="js/app.js?v=16" defer></script>
     <script src="js/dropdown.js?v=3" defer></script>
     <script src="js/toast.js?v=10" defer></script>
     <script src="js/notice.js?v=10" defer></script>
@@ -1603,7 +1567,7 @@
           <div>
             <div class="sec-tag">Struktur Organisasi</div>
             <h2 class="sec-title">
-              <span id="jumSekbid">â€¦</span>
+              <span id="jumSekbid">…</span>
               <span class="red">Seksi</span> Bidang
             </h2>
             <p class="sec-sub">
@@ -2157,6 +2121,126 @@
          ============================================================ -->
     <section class="view" data-view="informasi">
       <div class="wrap infv-wrap">
+        <div class="osis-top-search" id="infvToolbar" data-osis-auto-count="1">
+          <div class="osis-sb-bar">
+            <div class="osis-sb-row">
+              <i class="fa-solid fa-magnifying-glass osis-sb-ico" aria-hidden="true"></i>
+              <input
+                type="search"
+                class="osis-sb-input"
+                id="infvCari"
+                placeholder="Cari libur, lomba, ujian…"
+                autocomplete="off"
+                aria-label="Cari informasi sekolah"
+              />
+              <button
+                type="button"
+                class="osis-sb-clear"
+                data-osis-clear="auto"
+                hidden
+                aria-label="Hapus pencarian"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+              <span class="osis-sb-divider" aria-hidden="true"></span>
+              <button
+                type="button"
+                class="osis-sb-filter-btn"
+                aria-expanded="false"
+                aria-controls="infvFilterPanel"
+              >
+                <i class="fa-solid fa-sliders"></i>
+                <span>Filter</span>
+                <span class="osis-sb-badge" hidden>0</span>
+                <i class="fa-solid fa-chevron-down osis-sb-chev" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="osis-sb-panel" id="infvFilterPanel">
+            <div class="osis-sb-panel-head">
+              <span class="osis-sb-panel-title">
+                <i class="fa-solid fa-sliders"></i> Filter Informasi
+              </span>
+              <div class="osis-sb-panel-acts">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-white"
+                  id="btnResetInfvFilter"
+                  data-osis-reset="auto"
+                  onclick="InfoView.setKategori('semua')"
+                >
+                  <i class="fa-solid fa-rotate-left"></i> Reset
+                </button>
+                <button
+                  type="button"
+                  class="osis-sb-close"
+                  aria-label="Tutup panel filter"
+                >
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
+            <div class="osis-sb-fields">
+              <div class="osis-sb-field grow full-sm">
+                <label>Kategori</label>
+                <div class="infv-chips" id="infvChips">
+                  <button
+                    type="button"
+                    data-kat="semua"
+                    data-default="1"
+                    class="on"
+                    onclick="InfoView.setKategori('semua')"
+                  >
+                    <i class="fa-solid fa-layer-group"></i> Semua
+                  </button>
+                  <button
+                    type="button"
+                    data-kat="pengumuman"
+                    onclick="InfoView.setKategori('pengumuman')"
+                  >
+                    <i class="fa-solid fa-bullhorn"></i> Pengumuman
+                  </button>
+                  <button
+                    type="button"
+                    data-kat="libur"
+                    onclick="InfoView.setKategori('libur')"
+                  >
+                    <i class="fa-solid fa-umbrella-beach"></i> Libur
+                  </button>
+                  <button
+                    type="button"
+                    data-kat="acara"
+                    onclick="InfoView.setKategori('acara')"
+                  >
+                    <i class="fa-solid fa-calendar-day"></i> Acara
+                  </button>
+                  <button
+                    type="button"
+                    data-kat="penting"
+                    onclick="InfoView.setKategori('penting')"
+                  >
+                    <i class="fa-solid fa-triangle-exclamation"></i> Penting
+                  </button>
+                </div>
+              </div>
+              <div class="osis-sb-field grow">
+                <label for="infvUrut">Urutkan</label>
+                <select
+                  class="infv-urut"
+                  id="infvUrut"
+                  data-default="baru"
+                  onchange="InfoView.setUrut(this.value)"
+                  aria-label="Urutan tampil"
+                >
+                  <option value="baru">Terbaru dulu</option>
+                  <option value="lama">Terlama dulu</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="sec-head">
           <div>
             <div class="sec-tag">Info Sekolah</div>
@@ -2206,67 +2290,6 @@
             <i class="fa-solid fa-thumbtack"></i> Disematkan — jangan kelewat
           </div>
           <div class="infv-sorotan" id="infvSorotan"></div>
-        </div>
-
-        <div class="infv-toolbar" id="infvToolbar">
-          <div class="infv-chips" id="infvChips">
-            <button
-              type="button"
-              data-kat="semua"
-              class="on"
-              onclick="InfoView.setKategori('semua')"
-            >
-              <i class="fa-solid fa-layer-group"></i> Semua
-            </button>
-            <button
-              type="button"
-              data-kat="pengumuman"
-              onclick="InfoView.setKategori('pengumuman')"
-            >
-              <i class="fa-solid fa-bullhorn"></i> Pengumuman
-            </button>
-            <button
-              type="button"
-              data-kat="libur"
-              onclick="InfoView.setKategori('libur')"
-            >
-              <i class="fa-solid fa-umbrella-beach"></i> Libur
-            </button>
-            <button
-              type="button"
-              data-kat="acara"
-              onclick="InfoView.setKategori('acara')"
-            >
-              <i class="fa-solid fa-calendar-day"></i> Acara
-            </button>
-            <button
-              type="button"
-              data-kat="penting"
-              onclick="InfoView.setKategori('penting')"
-            >
-              <i class="fa-solid fa-triangle-exclamation"></i> Penting
-            </button>
-          </div>
-          <div class="infv-tools">
-            <label class="infv-cari">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input
-                type="search"
-                id="infvCari"
-                placeholder="Cari libur, lomba, ujian…"
-                autocomplete="off"
-              />
-            </label>
-            <select
-              class="infv-urut"
-              id="infvUrut"
-              onchange="InfoView.setUrut(this.value)"
-              aria-label="Urutan tampil"
-            >
-              <option value="baru">Terbaru dulu</option>
-              <option value="lama">Terlama dulu</option>
-            </select>
-          </div>
         </div>
 
         <div class="infv-list" id="infvList">
@@ -2609,3 +2632,5 @@
     </div>
   </body>
 </html>
+
+

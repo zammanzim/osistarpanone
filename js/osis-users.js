@@ -14,7 +14,10 @@ const OsisUsers = {
     CACHE: "osis_users",
     rows: [],
     sekbidList: [],
+    angkatanList: [],
+    periodeList: [],
     q: "",
+    filterAng: "",
     saya: null,
 
     async init() {
@@ -27,10 +30,16 @@ const OsisUsers = {
         try { await OsisAuth.refreshAkses(); } catch {}
 
         if (!OsisAuth.isSuper()) {
+            const sb = document.getElementById("usersTopSearch");
+            if (sb) sb.style.display = "none";
+            const panelAng = document.getElementById("angkatanPanel");
+            if (panelAng) panelAng.style.display = "none";
             const btn = document.getElementById("btnTambahUser");
             if (btn) btn.style.display = "none";
             const q = document.getElementById("usersQ");
             if (q) q.disabled = true;
+            const fa = document.getElementById("usersFilterAng");
+            if (fa) fa.disabled = true;
             const cnt = document.getElementById("usersCount");
             if (cnt) cnt.textContent = "Khusus super admin";
             const wrap = document.getElementById("usersWrap");
@@ -41,15 +50,31 @@ const OsisUsers = {
             return;
         }
 
+        document.getElementById("btnTambahAngkatan")?.addEventListener("click", () => OsisUsers.bukaFormAngkatan(null));
+        document.getElementById("angkatanWrap")?.addEventListener("click", (e) => {
+            const ed = e.target.closest("[data-ang-edit]");
+            if (ed) { OsisUsers.bukaFormAngkatan(ed.dataset.angEdit); return; }
+            const del = e.target.closest("[data-ang-del]");
+            if (del) OsisUsers.hapusAngkatan(del.dataset.angDel);
+        });
         document.getElementById("btnTambahUser")?.addEventListener("click", () => OsisUsers.bukaForm(null));
         document.getElementById("btnResetQ")?.addEventListener("click", () => {
             const el = document.getElementById("usersQ");
             if (el) el.value = "";
+            const fa = document.getElementById("usersFilterAng");
+            if (fa) fa.value = "";
             OsisUsers.q = "";
+            OsisUsers.filterAng = "";
+            try { window.Dropdown?.segarkanSemua?.(); } catch {}
             OsisUsers.render();
+            try { window.OsisSearch?.sync?.("usersTopSearch"); } catch {}
         });
         document.getElementById("usersQ")?.addEventListener("input", (e) => {
             OsisUsers.q = e.target.value || "";
+            OsisUsers.render();
+        });
+        document.getElementById("usersFilterAng")?.addEventListener("change", (e) => {
+            OsisUsers.filterAng = e.target.value || "";
             OsisUsers.render();
         });
         document.getElementById("usersWrap")?.addEventListener("click", (e) => {
@@ -59,7 +84,7 @@ const OsisUsers = {
             if (del) OsisUsers.hapus(del.dataset.del);
         });
 
-        await OsisUsers.muat();
+        await Promise.all([OsisUsers.muatAngkatan(), OsisUsers.muat()]);
     },
 
     // ============ DATA (cache-first + revalidasi) ============
@@ -104,11 +129,143 @@ const OsisUsers = {
     },
 
     rowsTampil() {
+        const fa = String(OsisUsers.filterAng || "");
         const q = String(OsisUsers.q || "").trim().toLowerCase();
-        if (!q) return OsisUsers.rows;
-        return OsisUsers.rows.filter((r) =>
-            [r.nama, r.username, r.jabatan, r.angkatan, r.sekbid_nama]
-                .some((v) => String(v || "").toLowerCase().includes(q)));
+        return OsisUsers.rows.filter((r) => {
+            if (fa === "-1" && r.angkatan_id) return false;
+            if (Number(fa) > 0 && Number(r.angkatan_id) !== Number(fa)) return false;
+            if (!q) return true;
+            return [r.nama, r.username, r.jabatan, r.angkatan, r.sekbid_nama]
+                .some((v) => String(v || "").toLowerCase().includes(q));
+        });
+    },
+
+    async muatAngkatan(force = false) {
+        try {
+            const [list, per] = await Promise.all([
+                typeof getAngkatanList === "function" ? getAngkatanList(force) : Promise.resolve([]),
+                typeof getPeriode === "function" ? getPeriode().catch(() => []) : Promise.resolve([]),
+            ]);
+            if (Array.isArray(list)) OsisUsers.angkatanList = list;
+            if (Array.isArray(per) && per.length) OsisUsers.periodeList = per;
+        } catch {}
+        OsisUsers.renderAngkatan();
+        OsisUsers.renderFilterAngkatan();
+        try { OsisMore?.renderAngkatan?.(); } catch {}
+    },
+
+    renderFilterAngkatan() {
+        const sel = document.getElementById("usersFilterAng");
+        if (!sel) return;
+        const cur = String(OsisUsers.filterAng || "");
+        const list = OsisUsers.angkatanList || [];
+        let html = `<option value="">Semua Angkatan</option><option value="-1">Pembina / Lintas Angkatan</option>`;
+        list.forEach((a) => {
+            html += `<option value="${escapeHtml(a.id)}">${escapeHtml(a.nama)}${a.aktif === false ? " (Arsip)" : ""}</option>`;
+        });
+        sel.innerHTML = html;
+        sel.value = cur;
+        try { window.Dropdown?.segarkanSemua?.(); window.OsisSearch?.sync?.("usersTopSearch"); } catch {}
+    },
+
+    renderAngkatan() {
+        const wrap = document.getElementById("angkatanWrap");
+        const cnt = document.getElementById("angCount");
+        if (!wrap) return;
+        const list = OsisUsers.angkatanList || [];
+        if (cnt) cnt.textContent = `${list.length} angkatan`;
+        if (!list.length) {
+            wrap.innerHTML = `<div class="osis-empty">Belum ada master angkatan.</div>`;
+            return;
+        }
+        wrap.innerHTML = list.map((a) => {
+            const badgeAktif = a.aktif !== false
+                ? `<span class="osis-badge" style="background:var(--green-bg);color:var(--green)">Aktif</span>`
+                : `<span class="osis-badge">Arsip</span>`;
+            const tahunLbl = a.tahun ? ` · Periode ${escapeHtml(a.tahun)}` : "";
+            return `<div class="aks-row" style="cursor:default">
+                <span class="ava" style="background:var(--yellow);color:var(--ink)">${escapeHtml(a.urutan ?? "#")}</span>
+                <span style="min-width:0;flex:1">
+                    <span class="nm">${escapeHtml(a.nama)} ${badgeAktif}</span>
+                    <span class="sub">Kode: ${escapeHtml(a.kode)} · Urutan #${escapeHtml(a.urutan ?? 0)}${tahunLbl}</span>
+                </span>
+                <span style="display:flex;gap:6px;flex-shrink:0">
+                    <button type="button" class="btn btn-white btn-sm" data-ang-edit="${escapeHtml(a.id)}" title="Edit angkatan"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="btn btn-red btn-sm" data-ang-del="${escapeHtml(a.id)}" title="Hapus angkatan"><i class="fa-solid fa-trash-can"></i></button>
+                </span>
+            </div>`;
+        }).join("");
+    },
+
+    async bukaFormAngkatan(id) {
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!u || u.mode !== "osis" || !OsisAuth.isSuper()) return;
+        const item = id ? (OsisUsers.angkatanList || []).find((a) => String(a.id) === String(id)) : null;
+        if (id && !item) return;
+        if (!OsisUsers.periodeList.length && typeof getPeriode === "function") {
+            try { OsisUsers.periodeList = (await getPeriode()) || []; } catch {}
+        }
+        const perOpts = [{ value: "", label: "— Tanpa tautan tahun —" }].concat(
+            [...(OsisUsers.periodeList || [])]
+                .sort((a, b) => Number(b.tahun) - Number(a.tahun))
+                .map((p) => ({ value: String(p.tahun), label: `${p.tahun}${p.aktif ? " (Aktif)" : ""}` })),
+        );
+        const fields = [
+            { name: "kode", label: "Kode unik (kapital, angka, _ / -)", type: "text", placeholder: "cth: ADIABI-5", value: item ? (item.kode || "") : "" },
+            { name: "nama", label: "Nama angkatan", type: "text", placeholder: "cth: ADIABI JILID 5", value: item ? (item.nama || "") : "" },
+            { name: "urutan", label: "Urutan jilid / periode", type: "number", placeholder: "cth: 5", value: item ? String(item.urutan ?? 0) : String((OsisUsers.angkatanList.length || 0) + 1) },
+            { name: "tahun", label: "Tautkan tahun periode (opsional)", type: "select", options: perOpts, value: item && item.tahun ? String(item.tahun) : "" },
+            {
+                name: "aktif", label: "Status", type: "select",
+                options: [{ value: "1", label: "Aktif" }, { value: "0", label: "Arsip (Nonaktif)" }],
+                value: item && item.aktif === false ? "0" : "1",
+            },
+        ];
+        const res = await showPopup(item ? "Edit master angkatan" : "Tambah master angkatan", "form", {
+            title: item ? "Edit Angkatan" : "Tambah Angkatan",
+            icon: '<i class="fa-solid fa-layer-group"></i>',
+            fields,
+        });
+        if (!res) return;
+        const kode = String(res.kode || "").trim().toUpperCase();
+        const nama = String(res.nama || "").trim().slice(0, 80);
+        const urutan = parseInt(res.urutan, 10) || 0;
+        const tahun = res.tahun ? parseInt(res.tahun, 10) : null;
+        const aktif = res.aktif !== "0";
+        if (!/^[A-Z0-9_-]{2,40}$/.test(kode)) {
+            showToast("Kode 2-40 karakter huruf kapital, angka, _ atau -.", "error");
+            return;
+        }
+        if (!nama) { showToast("Nama angkatan wajib diisi.", "error"); return; }
+        try {
+            const hasil = await angkatanSimpan(u.id, { id: item ? item.id : null, kode, nama, urutan, tahun, aktif });
+            if (hasil !== "OK") throw new Error(OsisUsers.pesanKode(hasil));
+            showToast(item ? "Angkatan diperbarui." : "Angkatan ditambahkan.", "success");
+            await OsisUsers.muatAngkatan(true);
+            await OsisUsers.segarkan(false);
+        } catch (err) {
+            console.error(err);
+            showToast("Gagal simpan angkatan: " + OsisUsers.pesanKode(err.message || err), "error");
+        }
+    },
+
+    async hapusAngkatan(id) {
+        const u = OsisAuth.getUser && OsisAuth.getUser();
+        if (!u || u.mode !== "osis" || !OsisAuth.isSuper()) return;
+        const item = (OsisUsers.angkatanList || []).find((a) => String(a.id) === String(id));
+        if (!item) return;
+        const yakin = await showPopup(`Hapus master angkatan <b>${escapeHtml(item.nama)}</b>?<br><br><small>Hanya bisa dihapus kalau belum ada akun atau data di dalamnya.</small>`, "confirm");
+        if (!yakin) return;
+        try {
+            const hasil = await angkatanHapus(u.id, item.id);
+            if (hasil !== "OK") throw new Error(OsisUsers.pesanKode(hasil));
+            showToast("Angkatan dihapus.", "success");
+            if (Number(OsisUsers.filterAng) === Number(item.id)) OsisUsers.filterAng = "";
+            await OsisUsers.muatAngkatan(true);
+        } catch (err) {
+            console.error(err);
+            showToast("Gagal hapus angkatan: " + OsisUsers.pesanKode(err.message || err), "error");
+        }
     },
 
     kunciAngkatan(r) {
@@ -253,8 +410,28 @@ const OsisUsers = {
         const item = id ? OsisUsers.rows.find((r) => String(r.id) === String(id)) : null;
         if (id && !item) return;
 
-        await OsisUsers.muatSekbid();
+        await Promise.all([OsisUsers.muatSekbid(), OsisUsers.muatAngkatan()]);
         const jabatanOpts = OsisUsers.opsiJabatan(item);
+        const angOpts = [{ value: "-1", label: "PEMBINA (Lintas Angkatan)" }].concat(
+            (OsisUsers.angkatanList || []).map((a) => ({
+                value: String(a.id),
+                label: escapeHtml(a.nama + (a.aktif === false ? " (Arsip)" : "")),
+            })),
+        );
+        let defAng = "-1";
+        if (item) {
+            if (item.angkatan_id) defAng = String(item.angkatan_id);
+            else if (String(item.angkatan || "").trim().toUpperCase() !== "PEMBINA") {
+                const hit = (OsisUsers.angkatanList || []).find((a) =>
+                    String(a.nama || "").trim().toUpperCase() === String(item.angkatan || "").trim().toUpperCase());
+                if (hit) defAng = String(hit.id);
+            }
+        } else if (Number(OsisUsers.filterAng) > 0) {
+            defAng = String(OsisUsers.filterAng);
+        } else {
+            const akt = typeof OsisAuth.getAngkatanAktif === "function" ? OsisAuth.getAngkatanAktif() : null;
+            if (akt) defAng = String(akt);
+        }
         const bisaPassword = !item || !item.tertaut;
         const fields = [
             {
@@ -278,11 +455,17 @@ const OsisUsers = {
                     placeholder: "cth: Ketua Sekbid 1 / Bendahara / Pembina",
                     value: item ? (item.jabatan || "") : "",
                 },
-            {
-                name: "angkatan", label: "Angkatan / periode", type: "text",
-                placeholder: "cth: ADIABI JILID 4",
-                value: item ? (item.angkatan || "") : "",
-            },
+            angOpts.length > 1
+                ? {
+                    name: "angkatan_id", label: "Angkatan / periode", type: "select",
+                    options: angOpts,
+                    value: defAng,
+                }
+                : {
+                    name: "angkatan", label: "Angkatan / periode", type: "text",
+                    placeholder: "cth: ADIABI JILID 4",
+                    value: item ? (item.angkatan || "") : "",
+                },
         ];
         if (bisaPassword) {
             fields.push({
@@ -303,7 +486,19 @@ const OsisUsers = {
         const username = String(res.username || "").trim();
         const nama = String(res.nama || "").trim().slice(0, 80);
         const jabatan = String(res.jabatan || "").trim().slice(0, 80);
-        const angkatan = String(res.angkatan || "").trim().slice(0, 40);
+        let angkatan = String(res.angkatan || "").trim().slice(0, 40);
+        let angkatan_id = null;
+        if ("angkatan_id" in res) {
+            const valAng = String(res.angkatan_id || "");
+            if (valAng === "-1" || !valAng) {
+                angkatan_id = null;
+                angkatan = "PEMBINA";
+            } else {
+                angkatan_id = Number(valAng);
+                const hit = (OsisUsers.angkatanList || []).find((a) => Number(a.id) === angkatan_id);
+                angkatan = hit ? String(hit.nama || "").slice(0, 40) : angkatan;
+            }
+        }
         const pwRaw = res.password == null ? "" : String(res.password);
         if (!/^[A-Za-z0-9._-]{3,30}$/.test(username)) {
             showToast("Username 3-30 karakter: huruf, angka, titik, _ atau -.", "error");
@@ -324,7 +519,7 @@ const OsisUsers = {
             return;
         }
 
-        const f = { username, nama, jabatan, angkatan };
+        const f = { username, nama, jabatan, angkatan, angkatan_id };
         try {
             let hasil;
             if (item) {
@@ -344,6 +539,8 @@ const OsisUsers = {
                 try {
                     const fresh = await getOsisUserById(u.id);
                     if (fresh) OsisAuth.loginOsis(fresh);
+                    await OsisAuth.refreshAkses();
+                    OsisMore?.renderAngkatan?.();
                 } catch {}
             }
             await OsisUsers.segarkan(false);
@@ -394,10 +591,14 @@ const OsisUsers = {
             ERR_INVALID: "Username 3-30 karakter: huruf, angka, titik, _ atau -.",
             ERR_NO_NAMA: "Nama wajib diisi.",
             ERR_PASSWORD: "Password minimal 6 karakter (atau kosongkan).",
-            ERR_TAKEN: "Username sudah dipakai akun lain.",
-            ERR_NOT_FOUND: "Akun tidak ditemukan (mungkin sudah dihapus).",
+            ERR_TAKEN: "Username atau kode sudah dipakai.",
+            ERR_NOT_FOUND: "Data tidak ditemukan (mungkin sudah dihapus).",
             ERR_LINKED: "Akun ini sudah tertaut login. Password tidak bisa diubah dari sini.",
             ERR_SELF: "Tidak bisa menghapus akun sendiri.",
+            ERR_ANGKATAN: "Angkatan tidak ditemukan.",
+            ERR_KODE: "Kode angkatan 2-40 karakter kapital, angka, _ atau -.",
+            ERR_TAHUN: "Tahun tidak ditemukan di master periode.",
+            ERR_DIPAKAI: "Angkatan masih punya akun atau data sehingga tidak bisa dihapus.",
         };
         return map[k] || k || "Gagal simpan.";
     },

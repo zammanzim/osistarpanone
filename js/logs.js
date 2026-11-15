@@ -10,7 +10,8 @@ const Logs = {
     offset: 0,
     habis: false,
     loading: false,
-    filter: { q: "", aksi: "" },
+    filter: { q: "", aksi: "", angkatanId: null },
+    angkatanList: [],
     online: [],
     timerOnline: null,
     _fmtWib: null,
@@ -35,18 +36,46 @@ const Logs = {
         }
         try { await OsisAuth.refreshAkses(); } catch {}
         if (!OsisAuth.isSuper()) {
+            const sb = document.getElementById("logsTopSearch");
+            if (sb) sb.style.display = "none";
             document.getElementById("logsWrap").innerHTML =
                 `<div class="logs-card" style="text-align:center; padding:26px 12px"><div style="font-size:2rem; margin-bottom:8px"><i class="fa-solid fa-lock" style="color:var(--red)"></i></div><b>Halaman ini khusus super admin.</b></div>`;
             return;
         }
+        try {
+            Logs.angkatanList = typeof getAngkatanList === "function" ? await getAngkatanList() : [];
+        } catch {}
+        Logs.filter.angkatanId = OsisAuth.getAngkatanAktif ? OsisAuth.getAngkatanAktif() : null;
+        Logs.isiOpsiAngkatan();
         document.getElementById("btnRefreshLogs")?.addEventListener("click", () => Logs.segarkan());
         document.getElementById("filterQ")?.addEventListener("input", () => Logs.bacaFilter());
         document.getElementById("filterAksi")?.addEventListener("change", () => Logs.bacaFilter());
+        document.getElementById("filterAngkatan")?.addEventListener("change", () => Logs.gantiAngkatan());
         document.getElementById("btnResetFilter")?.addEventListener("click", () => Logs.resetFilter());
         document.getElementById("btnLagi")?.addEventListener("click", () => Logs.muat(false));
         await Logs.muat(true);
         Logs.muatOnline();
         try { Logs.timerOnline = setInterval(() => Logs.muatOnline(), 60000); } catch {}
+    },
+
+    isiOpsiAngkatan() {
+        const sel = document.getElementById("filterAngkatan");
+        if (!sel) return;
+        const cur = Logs.filter.angkatanId;
+        const list = Logs.angkatanList || [];
+        let html = `<option value="">Semua (Lintas)</option><option value="-1">Publik / Non-OSIS</option>`;
+        list.forEach(a => {
+            html += `<option value="${a.id}">${escapeHtml(a.nama)}</option>`;
+        });
+        sel.innerHTML = html;
+        sel.value = cur === -1 ? "-1" : (cur > 0 ? String(cur) : "");
+        try { window.Dropdown?.segarkanSemua?.(); window.OsisSearch?.sync?.("logsTopSearch"); } catch {}
+    },
+
+    async gantiAngkatan() {
+        const val = document.getElementById("filterAngkatan")?.value || "";
+        Logs.filter.angkatanId = val === "-1" ? -1 : (val ? Number(val) : null);
+        await Logs.muat(true);
     },
 
     async segarkan() {
@@ -91,7 +120,7 @@ const Logs = {
             if (wrap) wrap.innerHTML = `<div class="logs-card"><div class="loading-block"><div class="spinner"></div>Memuat logs...</div></div>`;
         }
         try {
-            const rows = await aktivitasList(Logs.limit, Logs.offset);
+            const rows = await aktivitasList(Logs.limit, Logs.offset, Logs.filter.angkatanId);
             (rows || []).forEach(r => Logs.cache.push(r));
             Logs.offset = Logs.cache.length;
             if (!rows || rows.length < Logs.limit) Logs.habis = true;
@@ -130,10 +159,8 @@ const Logs = {
     },
 
     bacaFilter() {
-        Logs.filter = {
-            q: document.getElementById("filterQ")?.value || "",
-            aksi: document.getElementById("filterAksi")?.value || "",
-        };
+        Logs.filter.q = document.getElementById("filterQ")?.value || "";
+        Logs.filter.aksi = document.getElementById("filterAksi")?.value || "";
         Logs.render();
     },
 
@@ -142,7 +169,9 @@ const Logs = {
         const a = document.getElementById("filterAksi");
         if (q) q.value = "";
         if (a) a.value = "";
+        try { window.Dropdown?.segarkanSemua?.(); } catch {}
         Logs.bacaFilter();
+        try { window.OsisSearch?.sync?.("logsTopSearch"); } catch {}
     },
 
     renderStats() {
@@ -182,6 +211,7 @@ const Logs = {
             sel.innerHTML = `<option value="">Semua aksi</option>` + [...ada].sort().map(k =>
                 `<option value="${k}"${k === pilih ? " selected" : ""}>${escapeHtml(Logs.labelAksi(k))}</option>`
             ).join("");
+            try { window.Dropdown?.segarkanSemua?.(); window.OsisSearch?.sync?.("logsTopSearch"); } catch {}
         }
         const wrap = document.getElementById("logsWrap");
         if (!wrap) return;

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kirim Notifikasi — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=40" />
-    <link rel="stylesheet" href="../css/osis2.css?v=12" />
+    <link rel="stylesheet" href="../css/style.css?v=41" />
+    <link rel="stylesheet" href="../css/osis2.css?v=14" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -28,7 +28,7 @@
     <script src="../js/config.js?v=14"></script>
     <script src="../js/db.js?v=35" defer></script>
     <script src="../js/aktivitas.js?v=10" defer></script>
-    <script src="../js/app.js?v=11" defer></script>
+    <script src="../js/app.js?v=16" defer></script>
     <script src="../js/dropdown.js?v=3" defer></script>
     <script src="../js/toast.js?v=10" defer></script>
     <script src="../js/notice.js?v=10" defer></script>
@@ -37,7 +37,7 @@
     <script src="../js/osis-auth.js?v=19" defer></script>
     <script src="../js/osis-visitor.js?v=5" defer></script>
     <script src="../js/osis-sidebar.js?v=45" defer></script>
-    <script src="../js/osis-header.js?v=14" defer></script>
+    <script src="../js/osis-header.js?v=18" defer></script>
     <script src="../js/notifikasi.js?v=10" defer></script>
     <script src="../js/pwa.js?v=11" defer></script>
   </head>
@@ -58,19 +58,19 @@
       </div>
     </header>
 
-    <div class="notif-wrap" id="notifWrap">
+    <div class="osis-wrap" id="notifWrap">
       <div class="notif-cols">
       <div class="notif-side">
 
-      <div class="notif-hero">
-        <div class="ico"><i class="fa-solid fa-paper-plane"></i></div>
+      <div class="osis-hero">
+        <div class="osis-avatar"><i class="fa-solid fa-paper-plane"></i></div>
         <div style="flex: 1; min-width: 180px">
           <h1>KIRIM NOTIFIKASI</h1>
           <p>Bebas kirim notif apapun ke HP subscriber. Khusus super admin.</p>
         </div>
       </div>
 
-      <div class="notif-card" style="font-size:.78rem;font-weight:600;color:var(--gray);line-height:1.65">
+      <div class="osis-panel notif-card" style="font-size:.78rem;font-weight:600;color:var(--gray);line-height:1.65">
         <b style="color:var(--ink)"><i class="fa-solid fa-circle-info" style="color:var(--red)"></i> Cara pakai</b>
         <span>1. <b>Tes di HP Ini</b> = munculin notif lokal, buat mastiin judul + isi enak dibaca (tanpa kirim ke siapa-siapa).</span>
         <span>2. <b>Kirim ke Semua Target</b> = push beneran ke semua HP yang sudah Aktifkan Notif sesuai target.</span>
@@ -79,7 +79,7 @@
       </div>
       <div class="notif-main">
 
-      <div class="notif-card">
+      <div class="osis-panel notif-card">
         <div class="field"><label>Judul *</label>
           <input type="text" id="notifJudul" class="admin-input" maxlength="80" placeholder="cth: Besok libur, cek infonya!" autocomplete="off" />
           <div class="notif-hitung"><span id="hitungJudul">0</span>/80</div>

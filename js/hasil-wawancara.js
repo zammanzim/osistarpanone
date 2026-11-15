@@ -199,9 +199,9 @@ const HasilWawancara = {
                     : "Keputusan lolos/tidak lolos calon pengurus OSIS. Isi hasil dan atur publikasinya di sini."}</p>
                 <div class="osis-meta">
                     <span class="hw-chip kuning"><i class="fa-solid fa-users"></i> <b>${total}</b> ${pub ? "hasil diumumkan" : "calon"}</span>
-                    <span class="hw-chip hijau"><i class="fa-solid fa-circle-check"></i> <b>${lolos}</b> lanjut</span>
+                    ${pub ? "" : `<span class="hw-chip hijau"><i class="fa-solid fa-circle-check"></i> <b>${lolos}</b> lanjut</span>
                     <span class="hw-chip merah"><i class="fa-solid fa-circle-xmark"></i> <b>${tidak}</b> gagal</span>
-                    ${pub ? "" : `<span class="hw-chip"><i class="fa-solid fa-hourglass-half"></i> <b>${belum}</b> belum diputuskan</span>
+                    <span class="hw-chip"><i class="fa-solid fa-hourglass-half"></i> <b>${belum}</b> belum diputuskan</span>
                     <span class="hw-chip"><i class="fa-solid fa-bullhorn"></i> <b>${umum}</b> diumumkan</span>`}
                 </div>
             </div>

@@ -343,3 +343,240 @@ onReady(() => {
         if (e.key === "Escape" && typeof NavMore !== "undefined") NavMore.tutup();
     });
 });
+
+// ============================================================
+// OsisSearch: sticky search bar di atas halaman + filter drawer (publik & OSIS)
+// ============================================================
+(function () {
+    function syncNavHeight() {
+        try {
+            const nav = document.querySelector("header.top-nav");
+            const h = nav ? Math.round(nav.getBoundingClientRect().height) : 74;
+            if (h > 40) document.documentElement.style.setProperty("--osis-nav-h", h + "px");
+        } catch (e) {}
+    }
+
+    function searchRootOf(target) {
+        if (!target) return null;
+        if (typeof target === "string") {
+            const byId = document.getElementById(target);
+            if (byId) return byId;
+            try {
+                return document.querySelector(target);
+            } catch (e) {
+                return null;
+            }
+        }
+        return target;
+    }
+
+    function searchOpen(target) {
+        const root = searchRootOf(target);
+        if (!root) return;
+        syncNavHeight();
+        root.classList.add("open");
+        const btn = root.querySelector(".osis-sb-filter-btn");
+        if (btn) btn.setAttribute("aria-expanded", "true");
+    }
+
+    function searchClose(target) {
+        const root = searchRootOf(target);
+        if (!root) return;
+        root.classList.remove("open");
+        const btn = root.querySelector(".osis-sb-filter-btn");
+        if (btn) btn.setAttribute("aria-expanded", "false");
+        try {
+            if (typeof Dropdown !== "undefined" && Dropdown.tutup) Dropdown.tutup();
+        } catch (e) {}
+    }
+
+    function searchSetCount(target, n) {
+        const root = searchRootOf(target);
+        if (!root) return;
+        const btn = root.querySelector(".osis-sb-filter-btn");
+        const badge = root.querySelector(".osis-sb-badge");
+        const val = parseInt(n, 10) || 0;
+        if (badge) {
+            badge.textContent = String(val);
+            badge.hidden = val <= 0;
+        }
+        if (btn) btn.classList.toggle("has-active", val > 0);
+    }
+
+    function syncClear(root) {
+        const inp = root.querySelector(".osis-sb-input");
+        const clr = root.querySelector('.osis-sb-clear[data-osis-clear="auto"]');
+        if (!inp || !clr) return;
+        const has = !!(inp.value && inp.value.trim());
+        clr.hidden = !has;
+        clr.style.display = has ? "" : "none";
+    }
+
+    function computeAutoCount(root) {
+        const panel = root.querySelector(".osis-sb-panel");
+        if (!panel) return 0;
+        let n = 0;
+        const sels = panel.querySelectorAll("select");
+        for (let i = 0; i < sels.length; i++) {
+            const s = sels[i];
+            if (s.disabled || s.hidden || s.getAttribute("data-auto-skip") === "1") continue;
+            const def = s.getAttribute("data-default") || "";
+            if ((s.value || "") !== def) n++;
+        }
+        const dates = panel.querySelectorAll('input[type="date"], input[type="month"]');
+        for (let d = 0; d < dates.length; d++) {
+            const dt = dates[d];
+            if (!dt.disabled && !dt.hidden && dt.value) n++;
+        }
+        const cbs = panel.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+        for (let c = 0; c < cbs.length; c++) {
+            const cb = cbs[c];
+            if (!cb.disabled && !cb.hidden && cb.checked) n++;
+        }
+        const pills = panel.querySelectorAll('.on, .active, [aria-pressed="true"]');
+        for (let p = 0; p < pills.length; p++) {
+            const pl = pills[p];
+            if (pl.closest(".dd")) continue;
+            if (pl.getAttribute("data-default") === "1" || pl.getAttribute("data-auto-skip") === "1") continue;
+            n++;
+        }
+        return n;
+    }
+
+    function syncAuto(target) {
+        const root = searchRootOf(target);
+        if (!root) return;
+        syncClear(root);
+        if (root.getAttribute("data-osis-auto-count") === "1") {
+            searchSetCount(root, computeAutoCount(root));
+        }
+    }
+
+    function resetAutoControls(root) {
+        const inp = root.querySelector(".osis-sb-input");
+        if (inp && inp.value) {
+            inp.value = "";
+            inp.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        const panel = root.querySelector(".osis-sb-panel");
+        if (panel) {
+            const sels = panel.querySelectorAll("select");
+            for (let i = 0; i < sels.length; i++) {
+                const s = sels[i];
+                const def = s.getAttribute("data-default") || "";
+                if ((s.value || "") !== def) {
+                    s.value = def;
+                    s.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+            }
+            const dates = panel.querySelectorAll('input[type="date"], input[type="month"]');
+            for (let d = 0; d < dates.length; d++) {
+                if (dates[d].value) {
+                    dates[d].value = "";
+                    dates[d].dispatchEvent(new Event("change", { bubbles: true }));
+                }
+            }
+            const cbs = panel.querySelectorAll('input[type="checkbox"]');
+            for (let c = 0; c < cbs.length; c++) {
+                if (cbs[c].checked) {
+                    cbs[c].checked = false;
+                    cbs[c].dispatchEvent(new Event("change", { bubbles: true }));
+                }
+            }
+            try { window.Dropdown && window.Dropdown.segarkanSemua && window.Dropdown.segarkanSemua(); } catch (e) {}
+        }
+        syncAuto(root);
+    }
+
+    function bindSearch(root) {
+        if (!root || root.dataset.osisSearchBound === "1") return;
+        root.dataset.osisSearchBound = "1";
+        const inp = root.querySelector(".osis-sb-input");
+        const btn = root.querySelector(".osis-sb-filter-btn");
+        const closeBtn = root.querySelector(".osis-sb-close");
+        const autoClr = root.querySelector('.osis-sb-clear[data-osis-clear="auto"]');
+        const autoReset = root.querySelector('[data-osis-reset="auto"]');
+
+        document.addEventListener("pointerdown", (e) => {
+            root._osisPointerInside = !!(root.contains && root.contains(e.target));
+        }, true);
+        if (inp) {
+            inp.addEventListener("focus", () => searchOpen(root));
+            inp.addEventListener("click", () => searchOpen(root));
+            inp.addEventListener("input", () => syncAuto(root));
+        }
+        if (autoClr) {
+            autoClr.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (inp) {
+                    inp.value = "";
+                    inp.dispatchEvent(new Event("input", { bubbles: true }));
+                    inp.focus();
+                }
+                syncAuto(root);
+            });
+        }
+        if (autoReset) {
+            autoReset.addEventListener("click", (e) => {
+                e.stopPropagation();
+                resetAutoControls(root);
+            });
+        }
+        if (btn) {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (root.classList.contains("open")) {
+                    searchClose(root);
+                    if (inp && document.activeElement === inp) inp.blur();
+                } else {
+                    searchOpen(root);
+                }
+            });
+        }
+        if (closeBtn) {
+            closeBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                searchClose(root);
+                if (inp && document.activeElement === inp) inp.blur();
+            });
+        }
+        root.addEventListener("change", () => setTimeout(() => syncAuto(root), 0));
+        root.addEventListener("click", () => setTimeout(() => syncAuto(root), 0));
+        document.addEventListener("click", (e) => {
+            if (root._osisPointerInside) {
+                root._osisPointerInside = false;
+                return;
+            }
+            if (!root.classList.contains("open")) return;
+            if (root.contains(e.target)) return;
+            searchClose(root);
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key !== "Escape") return;
+            if (!root.classList.contains("open")) return;
+            if (root.querySelector(".dd.buka")) return;
+            searchClose(root);
+            if (inp && document.activeElement === inp) inp.blur();
+        });
+        syncAuto(root);
+    }
+
+    function initSearchAll() {
+        syncNavHeight();
+        const list = document.querySelectorAll(".osis-top-search");
+        for (let i = 0; i < list.length; i++) bindSearch(list[i]);
+    }
+
+    function closeAllSearch() {
+        const list = document.querySelectorAll(".osis-top-search.open");
+        for (let i = 0; i < list.length; i++) searchClose(list[i]);
+    }
+
+    window.OsisSearch = { init: initSearchAll, open: searchOpen, close: searchClose, setCount: searchSetCount, sync: syncAuto };
+    onReady(initSearchAll);
+    window.addEventListener("resize", syncNavHeight);
+    window.addEventListener("hashchange", () => {
+        syncNavHeight();
+        closeAllSearch();
+    });
+})();

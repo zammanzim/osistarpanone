@@ -293,12 +293,20 @@
           blobId: bid,
         });
       }
+      var angkatanAktif = null;
+      try {
+        if (/(^|\/)osis\//.test(String(location.pathname || "").replace(/\\/g, "/")) &&
+            typeof OsisAuth !== "undefined" && OsisAuth.getAngkatanAktif) {
+          angkatanAktif = OsisAuth.getAngkatanAktif();
+        }
+      } catch {}
       var op = {
         id: id,
         modul: s.modul,
         op: s.op === "update" ? "update" : "create",
         label: String(s.label || labelModul(s.modul)),
         payload: s.payload || {},
+        angkatanId: (s.payload && s.payload.angkatan_id) || angkatanAktif || null,
         files: files,
         cacheKeys: Array.isArray(s.cacheKeys) ? s.cacheKeys : [],
         user: userSnapshot(),
@@ -596,7 +604,8 @@
     if (typeof buatAbsensi !== "function")
       throw new Error("Buka halaman Absensi saat online untuk mengirim antrean ini.");
     var uid = Outbox.butuhLogin(op);
-    var rows = (op.payload && op.payload.rows) || [];
+    var p = op.payload || {};
+    var rows = p.rows || [];
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       await buatAbsensi(uid, {
@@ -605,6 +614,7 @@
         status: r.status,
         alasan: r.alasan,
         kegiatan: r.kegiatan || "",
+        angkatan_id: r.angkatan_id || p.angkatan_id || op.angkatanId || null,
       });
     }
   };
@@ -615,7 +625,10 @@
       throw new Error("Buka halaman Tabungan saat online untuk mengirim antrean ini.");
     var uid = Outbox.butuhLogin(op);
     var p = op.payload || {};
-    var f = { nama: p.nama, tanggal: p.tanggal, nominal: p.nominal, jenis: p.jenis };
+    var f = {
+      nama: p.nama, tanggal: p.tanggal, nominal: p.nominal, jenis: p.jenis,
+      angkatan_id: p.angkatan_id || op.angkatanId || null,
+    };
     if (op.op === "update" && p.id) await updateTabungan(uid, p.id, f);
     else await buatTabungan(uid, f);
   };
@@ -631,6 +644,7 @@
     var uid = Outbox.butuhLogin(op);
     var p = op.payload || {};
     var f = Object.assign({}, p.f);
+    if (!f.angkatan_id && (p.angkatan_id || op.angkatanId)) f.angkatan_id = p.angkatan_id || op.angkatanId;
     if (op.files && op.files.length) {
       var path = await Outbox.uploadSlot(
         op.files[0], 0,
@@ -659,6 +673,7 @@
     var uid = Outbox.butuhLogin(op);
     var p = op.payload || {};
     var f = Object.assign({}, p.f);
+    if (!f.angkatan_id && (p.angkatan_id || op.angkatanId)) f.angkatan_id = p.angkatan_id || op.angkatanId;
     if (op.files && op.files.length) {
       var m = op.files[0];
       var path = await Outbox.uploadSlot(
@@ -710,7 +725,7 @@
       await updateAgenda(uid, p.id, p.judul, p.deskripsi, p.tanggal, p.lokasi, p.status, fotos);
     } else {
       if (!p.sekbid_id) throw new Error("Sekbid tidak kesimpan di antrean.");
-      await buatAgenda(uid, p.sekbid_id, p.judul, p.deskripsi, p.tanggal, p.lokasi, p.status, fotos);
+      await buatAgenda(uid, p.sekbid_id, p.judul, p.deskripsi, p.tanggal, p.lokasi, p.status, fotos, p.angkatan_id || op.angkatanId || null);
     }
   };
 
@@ -772,7 +787,7 @@
     var path = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
       return "poster/poster-" + u + "-" + Date.now() + "." + extOf(m.name, "jpg");
     }, uid);
-    await buatPoster(uid, p.judul || "", p.caption || "", path);
+    await buatPoster(uid, p.judul || "", p.caption || "", path, p.angkatan_id || op.angkatanId || null);
   };
 
   // ---- Notulensi / Proker / Evaluasi (buat + ubah, multi lampiran)
@@ -786,6 +801,9 @@
       var uid = Outbox.butuhLogin(op);
       var p = op.payload || {};
       var f = Object.assign({}, p.f);
+      if (tabel === "notulensi" && !f.angkatan_id && (p.angkatan_id || op.angkatanId)) {
+        f.angkatan_id = p.angkatan_id || op.angkatanId;
+      }
       f[cfg.field] = (p.existing || []).concat(
         await uploadBanyak(op, uid, cfg.folder, cfg.prefix),
       );
@@ -807,7 +825,11 @@
     if (op.op === "update" && p.id) {
       await updateAnggota(p.id, { nama: p.nama, jabatan: p.jabatan, kelas: p.kelas || "", username: p.username || "" });
     } else {
-      await tambahAnggota({ tahun: p.tahun, nama: p.nama, jabatan: p.jabatan, kelas: p.kelas || "", username: p.username || "" });
+      await tambahAnggota({
+        tahun: p.tahun, nama: p.nama, jabatan: p.jabatan,
+        kelas: p.kelas || "", username: p.username || "",
+        angkatan_id: p.angkatan_id || op.angkatanId || null,
+      });
     }
   };
   Outbox.handlers.pengurus = async function (op) {

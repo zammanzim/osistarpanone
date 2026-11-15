@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wawancara Calon OSIS — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=40" />
-    <link rel="stylesheet" href="../css/osis2.css?v=12" />
+    <link rel="stylesheet" href="../css/style.css?v=41" />
+    <link rel="stylesheet" href="../css/osis2.css?v=14" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -31,12 +31,12 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-wawancara.css?v=4" />
+    <link rel="stylesheet" href="../css/osis-wawancara.css?v=5" />
     <script src="../js/supabase.min.js?v=11"></script>
     <script src="../js/config.js?v=16"></script>
     <script src="../js/db.js?v=35" defer></script>
     <script src="../js/aktivitas.js?v=12" defer></script>
-    <script src="../js/app.js?v=12" defer></script>
+    <script src="../js/app.js?v=16" defer></script>
     <script src="../js/dropdown.js?v=3" defer></script>
     <script src="../js/toast.js?v=12" defer></script>
     <script src="../js/notice.js?v=12" defer></script>
@@ -45,7 +45,7 @@
     <script src="../js/osis-auth.js?v=21" defer></script>
     <script src="../js/osis-visitor.js?v=5" defer></script>
     <script src="../js/osis-sidebar.js?v=45" defer></script>
-    <script src="../js/osis-header.js?v=16" defer></script>
+    <script src="../js/osis-header.js?v=18" defer></script>
     <script src="../js/form-persist.js?v=12" defer></script>
     <script src="../js/wawancara.js?v=24" defer></script>
     <script src="../js/pwa.js?v=13" defer></script>
@@ -70,6 +70,65 @@
     </header>
 
     <div class="osis-wrap">
+      <div class="osis-top-search" id="wwDaftarSection" data-osis-auto-count="1">
+        <div class="osis-sb-bar">
+          <div class="osis-sb-row">
+            <i class="fa-solid fa-magnifying-glass osis-sb-ico"></i>
+            <input
+              type="text"
+              id="wwQ"
+              class="osis-sb-input"
+              placeholder="Cari nama calon atau kelas..."
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="osis-sb-clear"
+              data-osis-clear="auto"
+              title="Hapus pencarian"
+              hidden
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="osis-sb-divider" aria-hidden="true"></span>
+            <button type="button" class="osis-sb-filter-btn" aria-expanded="false">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Filter</span>
+              <span class="osis-sb-badge" hidden>0</span>
+              <i class="fa-solid fa-chevron-down osis-sb-chev"></i>
+            </button>
+          </div>
+        </div>
+        <div class="osis-sb-panel">
+          <div class="osis-sb-panel-head">
+            <span class="osis-sb-panel-title"><i class="fa-solid fa-filter"></i> Filter Calon</span>
+            <div class="osis-sb-panel-acts">
+              <button type="button" class="btn btn-white btn-sm" data-osis-reset="auto" title="Reset filter">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+              <button type="button" class="osis-sb-close" title="Tutup filter">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="osis-sb-fields">
+            <div class="osis-sb-field grow">
+              <label>Status Wawancara</label>
+              <select id="wwStatus" class="admin-input">
+                <option value="">Semua status</option>
+                <option value="belum">Belum dimulai</option>
+                <option value="berlangsung">Sedang berlangsung</option>
+                <option value="selesai">Selesai</option>
+              </select>
+            </div>
+            <div class="osis-sb-field">
+              <label>Penugasan</label>
+              <label class="osis-sb-check"><input type="checkbox" id="wwTugasku" /> Tugasku saja</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="ww-cols">
       <div class="ww-side">
 
@@ -103,33 +162,6 @@
           >
             <i class="fa-solid fa-plus"></i> Calon
           </button>
-        </div>
-      </div>
-
-      <div id="wwDaftarSection">
-        <div class="osis-panel" style="margin-bottom: 12px">
-          <div class="ww-filter">
-            <div class="field" style="margin-bottom: 0">
-              <input
-                type="text"
-                id="wwQ"
-                class="admin-input"
-                placeholder="Cari nama / kelas..."
-                autocomplete="off"
-              />
-            </div>
-            <div class="field" style="margin-bottom: 0">
-              <select id="wwStatus" class="admin-input">
-                <option value="">Semua status</option>
-                <option value="belum">Belum dimulai</option>
-                <option value="berlangsung">Sedang berlangsung</option>
-                <option value="selesai">Selesai</option>
-              </select>
-            </div>
-            <label class="ww-check"
-              ><input type="checkbox" id="wwTugasku" /> Tugasku</label
-            >
-          </div>
         </div>
       </div>
       </div>
@@ -271,6 +303,13 @@
           Sama untuk semua calon. Hapus utama = turunan + jawaban sesi ikut terhapus.
         </p>
         <div id="wwTanyaList"></div>
+        <div id="wwSalinWrap" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; padding: 10px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 12px">
+          <span style="font-size: 0.78rem; font-weight: 800"><i class="fa-solid fa-copy" style="color: var(--red)"></i> Salin dari angkatan:</span>
+          <select id="wwSalinDari" class="admin-input" style="flex: 1; min-width: 150px; padding: 6px 10px; font-size: 0.8rem"></select>
+          <button type="button" class="btn btn-white btn-sm" id="btnWwSalin" onclick="Wawancara.salinPertanyaan()">
+            <i class="fa-solid fa-clone"></i> Salin Pertanyaan
+          </button>
+        </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px">
           <button
             class="btn btn-red btn-sm"

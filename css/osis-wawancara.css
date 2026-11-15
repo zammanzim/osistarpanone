@@ -769,35 +769,6 @@
         opacity: 1;
         cursor: default;
       }
-      /* Filter */
-      .ww-filter {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 8px;
-      }
-      @media (min-width: 640px) {
-        .ww-filter {
-          grid-template-columns: 1fr 190px auto;
-        }
-      }
-      .ww-check {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.78rem;
-        font-weight: 800;
-        border: 2.5px solid var(--ink);
-        border-radius: 12px;
-        padding: 8px 12px;
-        background: var(--white);
-        box-shadow: 2px 2px 0 var(--ink);
-        white-space: nowrap;
-      }
-      .ww-check input {
-        width: 17px;
-        height: 17px;
-        accent-color: var(--red);
-      }
       /* Popup (ikut pola akses/anggota) */
       .ww-form {
         position: fixed;
