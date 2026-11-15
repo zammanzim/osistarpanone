@@ -92,12 +92,33 @@ const Akses = {
         await Akses.muat();
     },
 
+    async muatAngkatan() {
+        const sel = document.getElementById("aksesFilterAng");
+        if (!sel || typeof getAngkatanList !== "function") return;
+        try {
+            const list = (await getAngkatanList()) || [];
+            Akses.angkatanList = list;
+            const cur = Akses.filterAng;
+            sel.innerHTML = [
+                `<option value="">Semua Angkatan</option>`,
+                `<option value="-1">Pembina / Tanpa Angkatan</option>`,
+                ...list.map(a => {
+                    const label = String(a.nama || a.kode || ("Angkatan " + a.id)) + (a.aktif === false ? " (Arsip)" : "");
+                    return `<option value="${escapeHtml(String(a.id))}">${escapeHtml(label)}</option>`;
+                }),
+            ].join("");
+            sel.value = cur === -1 ? "-1" : (cur ? String(cur) : "");
+        } catch (err) {
+            console.error(err);
+        }
+    },
+
     async muat() {
         const wrap = document.getElementById("aksesWrap");
         if (wrap) wrap.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat data akses...</div>`;
         try {
             const u = OsisAuth.getUser();
-            const rows = await aksesMatriks(u.id);
+            const rows = await aksesMatriks(u.id, Akses.filterAng);
             Akses.rows = rows || [];
             Akses.render();
         } catch (err) {
@@ -283,8 +304,7 @@ const Akses = {
             }
             showToast("Akses diperbarui.", "success");
             Akses.tutupDetail();
-            await Akses.muatAngkatan();
-        await Akses.muat();
+            await Akses.muat();
         } catch (err) {
             console.error(err);
             if (typeof Outbox !== "undefined" && await Outbox.enqueueOnNetErr(err, __specAks())) {
