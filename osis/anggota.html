@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Anggota - OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=41" />
-    <link rel="stylesheet" href="../css/osis2.css?v=14" />
+    <link rel="stylesheet" href="../assets/css/shared/style.css?v=41" />
+    <link rel="stylesheet" href="../assets/css/shared/osis2.css?v=17" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
-    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
-    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -23,22 +23,22 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-anggota.css?v=4" />
-    <script src="../js/supabase.min.js?v=10"></script>
-    <script src="../js/config.js?v=14"></script>
-    <script src="../js/db.js?v=35" defer></script>
-    <script src="../js/aktivitas.js?v=10" defer></script>
-    <script src="../js/app.js?v=16" defer></script>
-    <script src="../js/dropdown.js?v=3" defer></script>
-    <script src="../js/toast.js?v=10" defer></script>
-    <script src="../js/notice.js?v=10" defer></script>
-    <script src="../js/show-popup.js?v=15" defer></script>
-    <script src="../js/osis-auth.js?v=19" defer></script>
-    <script src="../js/osis-visitor.js?v=5" defer></script>
-    <script src="../js/osis-sidebar.js?v=45" defer></script>
-    <script src="../js/osis-header.js?v=18" defer></script>
-    <script src="../js/anggota.js?v=13" defer></script>
-    <script src="../js/pwa.js?v=11" defer></script>
+    <link rel="stylesheet" href="../assets/css/osis/anggota.css?v=5" />
+    <script src="../assets/js/vendor/supabase.min.js?v=10"></script>
+    <script src="../assets/js/core/config.js?v=14"></script>
+    <script src="../assets/js/core/db.js?v=39" defer></script>
+    <script src="../assets/js/services/aktivitas.js?v=10" defer></script>
+    <script src="../assets/js/core/app.js?v=16" defer></script>
+    <script src="../assets/js/shared/ui/dropdown.js?v=3" defer></script>
+    <script src="../assets/js/shared/ui/toast.js?v=10" defer></script>
+    <script src="../assets/js/shared/ui/notice.js?v=10" defer></script>
+    <script src="../assets/js/shared/ui/show-popup.js?v=15" defer></script>
+    <script src="../assets/js/core/osis-auth.js?v=19" defer></script>
+    <script src="../assets/js/osis/shell/osis-visitor.js?v=5" defer></script>
+    <script src="../assets/js/osis/shell/osis-sidebar.js?v=47" defer></script>
+    <script src="../assets/js/osis/shell/osis-header.js?v=20" defer></script>
+    <script src="../assets/js/osis/modules/anggota.js?v=15" defer></script>
+    <script src="../assets/js/pwa/pwa.js?v=11" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -46,7 +46,7 @@
         <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
         <div class="brand-text">
           <h2>ANGGOTA</h2>
-          <p>Data Anggota OSIS</p>
+          <p>Roster Pengurus OSIS</p>
         </div>
       </a>
       <div class="top-nav-extra">
@@ -56,7 +56,8 @@
     </header>
 
     <div class="osis-wrap">
-      <div class="osis-top-search" id="anggotaTopSearch" data-osis-auto-count="1">
+      <!-- STICKY TOP SEARCH + FILTER DRAWER -->
+      <div class="osis-top-search" id="anggotaTopSearch">
         <div class="osis-sb-bar">
           <div class="osis-sb-row">
             <i class="fa-solid fa-magnifying-glass osis-sb-ico"></i>
@@ -70,9 +71,9 @@
             <button
               type="button"
               class="osis-sb-clear"
-              data-osis-clear="auto"
+              id="btnClearQ"
               title="Hapus pencarian"
-              hidden
+              style="display: none"
             >
               <i class="fa-solid fa-xmark"></i>
             </button>
@@ -87,9 +88,9 @@
         </div>
         <div class="osis-sb-panel">
           <div class="osis-sb-panel-head">
-            <span class="osis-sb-panel-title"><i class="fa-solid fa-filter"></i> Filter &amp; Periode</span>
+            <span class="osis-sb-panel-title"><i class="fa-solid fa-filter"></i> Filter &amp; Urutkan</span>
             <div class="osis-sb-panel-acts">
-              <button type="button" class="btn btn-white btn-sm" id="btnResetQ" title="Reset pencarian">
+              <button type="button" class="btn btn-white btn-sm" id="btnResetFilter" title="Reset semua filter">
                 <i class="fa-solid fa-rotate-left"></i> Reset
               </button>
               <button type="button" class="osis-sb-close" title="Tutup filter">
@@ -98,45 +99,204 @@
             </div>
           </div>
           <div class="osis-sb-fields">
-            <div class="osis-sb-field grow">
+            <div class="osis-sb-field full-sm">
+              <label>Status Akun</label>
+              <div class="angg-status-chips" id="anggStatusChips">
+                <button type="button" class="angg-chip active" data-angg-status="semua">Semua</button>
+                <button type="button" class="angg-chip" data-angg-status="tertaut">Tertaut Akun</button>
+                <button type="button" class="angg-chip" data-angg-status="belum">Belum Tertaut</button>
+              </div>
+            </div>
+            <div class="osis-sb-field filter-tahun-wrap">
               <label>Periode</label>
-              <select id="pilihTahun" class="admin-input" data-auto-skip="1"></select>
+              <select id="pilihTahun" class="admin-input" aria-label="Pilih periode"></select>
+            </div>
+            <div class="osis-sb-field grow">
+              <label>Kelas / Tingkat</label>
+              <select id="filterKelas" class="admin-input" aria-label="Filter kelas">
+                <option value="">Semua kelas</option>
+              </select>
+            </div>
+            <div class="osis-sb-field grow filter-sort-wrap">
+              <label>Urutkan</label>
+              <select id="filterSort" class="admin-input" aria-label="Urutkan anggota">
+                <option value="nama">Nama A–Z</option>
+                <option value="nama-desc">Nama Z–A</option>
+                <option value="kelas">Kelas A–Z</option>
+                <option value="jabatan">Jabatan A–Z</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-chips" id="filterChips"></div>
+        </div>
+      </div>
+
+      <!-- HERO FULL-WIDTH -->
+      <div class="osis-hero angg-hero">
+        <div class="osis-avatar angg-hero-ico">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div style="flex: 1; min-width: 200px">
+          <div class="angg-kicker">
+            <i class="fa-solid fa-sitemap"></i> ROSTER &amp; STRUKTUR TIM
+          </div>
+          <h1>DATA ANGGOTA</h1>
+          <p>Daftar anggota per periode (nama, jabatan, kelas, dan username penaut akun). Dipakai sebagai roster absensi &amp; administrasi OSIS.</p>
+          <div class="osis-meta">
+            <span class="osis-badge" id="anggotaCount"><i class="fa-solid fa-users"></i> Memuat...</span>
+            <span class="osis-badge angg-badge-periode" id="anggotaPeriodeBadge"><i class="fa-solid fa-calendar-days"></i> Periode -</span>
+            <a class="osis-badge angg-link-badge" href="absensi"><i class="fa-solid fa-clipboard-user"></i> Lihat Absensi</a>
+            <a class="osis-badge angg-link-badge" id="linkAkunOsis" href="users" style="display: none"><i class="fa-solid fa-user-gear"></i> Akun OSIS</a>
+          </div>
+        </div>
+        <div class="angg-hero-acts">
+          <button type="button" class="btn btn-red" id="btnTambahAnggota" style="display: none"><i class="fa-solid fa-plus"></i> Tambah Anggota</button>
+          <button type="button" class="btn btn-white" id="btnTambahTahun" style="display: none" title="Siapkan periode baru"><i class="fa-solid fa-calendar-plus"></i> Periode</button>
+        </div>
+      </div>
+
+      <!-- SUMMARY BENTO HUB (DARK TOTAL HERO + 4 STAT CARDS) -->
+      <div class="angg-summary-hub">
+        <div class="angg-total-hero">
+          <div>
+            <div class="angg-total-head">
+              <span class="lbl"><i class="fa-solid fa-users-line"></i> Total Roster Aktif</span>
+              <span class="angg-periode-pill" id="statPeriodePill">Periode -</span>
+            </div>
+            <b id="statTotalHero">-</b>
+          </div>
+          <div>
+            <div class="angg-verif-wrap">
+              <div class="angg-verif-track" aria-hidden="true">
+                <span id="statLinkBar" style="width: 0%"></span>
+              </div>
+              <div class="angg-verif-lbl">
+                <span id="statLinkLbl">0 / 0 tertaut akun</span>
+                <span id="statLinkPct">0%</span>
+              </div>
+            </div>
+            <div class="angg-hero-rumus">
+              <span class="ok" id="statHeroTertaut">Tertaut: 0</span>
+              <span class="warn" id="statHeroBelum">Belum tertaut: 0</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="anggota-cols">
-      <div class="anggota-side">
-
-      <div class="osis-hero">
-        <div class="osis-avatar"><i class="fa-solid fa-users"></i></div>
-        <div style="flex: 1; min-width: 180px">
-          <h1>DATA ANGGOTA</h1>
-          <p>Daftar anggota per periode (nama, jabatan, kelas, username). Data ini dipakai sebagai roster absensi.</p>
-          <div class="osis-meta">
-            <span class="osis-badge" id="anggotaCount">-</span>
-            <a class="osis-badge" href="absensi" style="text-decoration: none; color: inherit"><i class="fa-solid fa-clipboard-user"></i> Lihat Absensi</a>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-ico blue"><i class="fa-solid fa-id-badge"></i></span>
+              <span class="lbl">Jabatan Unik</span>
+            </div>
+            <b id="statJabatan">-</b>
+            <small id="statJabatanSub">-</small>
+          </div>
+          <button type="button" class="stat-card angg-stat-btn lunas" id="statCardTertaut" title="Klik untuk filter anggota yang sudah tertaut akun">
+            <div class="stat-head">
+              <span class="stat-ico green"><i class="fa-solid fa-link"></i></span>
+              <span class="lbl">Tertaut Akun</span>
+            </div>
+            <b id="statTertaut">-</b>
+            <small id="statTertautSub">siap autolink profil</small>
+          </button>
+          <button type="button" class="stat-card angg-stat-btn nunggak" id="statCardBelum" title="Klik untuk filter anggota tanpa username">
+            <div class="stat-head">
+              <span class="stat-ico red"><i class="fa-solid fa-link-slash"></i></span>
+              <span class="lbl">Belum Tertaut</span>
+            </div>
+            <b id="statBelum">-</b>
+            <small id="statBelumSub">ketuk untuk saring</small>
+          </button>
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-ico yellow"><i class="fa-solid fa-graduation-cap"></i></span>
+              <span class="lbl">Sebaran Kelas</span>
+            </div>
+            <b id="statKelas">-</b>
+            <small id="statKelasSub">-</small>
           </div>
         </div>
       </div>
-      </div>
-      <div class="anggota-main">
 
-      <div class="osis-panel">
-        <div class="osis-page-head" style="margin-bottom: 10px">
-          <h2><i class="fa-solid fa-table-list" style="color: var(--red)"></i> Daftar Anggota</h2>
-          <span class="spacer"></span>
-          <button class="btn btn-white btn-sm" id="btnTambahTahun" style="display: none" title="Tambah periode baru"><i class="fa-solid fa-plus"></i> Periode</button>
-          <button class="btn btn-red btn-sm" id="btnTambahAnggota" style="display: none"><i class="fa-solid fa-plus"></i> Tambah Anggota</button>
-        </div>
-        <div class="angg-list">
-          <div class="angg-head" id="anggotaHead"></div>
-          <div id="anggotaRows"><div class="loading-block"><div class="spinner"></div>Memuat anggota...</div></div>
-        </div>
-        <div id="anggotaEmpty"></div>
+      <!-- WORKSPACE 2-KOLOM PROPORSIONAL -->
+      <div class="angg-cols">
+        <aside class="angg-side">
+          <div class="angg-panel" id="anggKelasPanel">
+            <div class="angg-panel-head">
+              <span><i class="fa-solid fa-graduation-cap"></i> Sebaran Kelas</span>
+              <span class="angg-pill-cnt" id="anggKelasCnt">0</span>
+            </div>
+            <div class="angg-tingkat-chips" id="anggTingkatChips"></div>
+            <div class="angg-stat-bars" id="anggKelasBars">
+              <div class="osis-empty">Memuat kelas...</div>
+            </div>
+          </div>
+
+          <div class="angg-panel" id="anggJabatanPanel">
+            <div class="angg-panel-head">
+              <span><i class="fa-solid fa-sitemap"></i> Jabatan Utama</span>
+              <span class="angg-pill-cnt" id="anggJabatanCnt">0</span>
+            </div>
+            <div class="angg-stat-bars" id="anggJabatanBars">
+              <div class="osis-empty">Memuat jabatan...</div>
+            </div>
+          </div>
+
+          <div class="angg-panel" id="anggPeriodePanel" style="display: none">
+            <div class="angg-panel-head">
+              <span><i class="fa-solid fa-calendar-days"></i> Pintas Periode</span>
+              <span class="angg-pill-cnt" id="anggPeriodeCnt">0</span>
+            </div>
+            <div class="angg-periode-pills" id="anggPeriodePills"></div>
+          </div>
+        </aside>
+
+        <main class="angg-main">
+          <div class="angg-list-card">
+            <div class="angg-list-head">
+              <div>
+                <h3><i class="fa-solid fa-address-book"></i> Daftar Anggota</h3>
+                <small id="anggListSub">Ketuk anggota untuk lihat detail</small>
+              </div>
+              <div class="angg-list-acts">
+                <span class="angg-count-pill" id="anggListCount">Memuat...</span>
+                <div class="angg-view-tog" role="group" aria-label="Mode tampilan">
+                  <button type="button" class="angg-vbtn active" id="btnViewCard" title="Tampilan Kartu"><i class="fa-solid fa-grip"></i></button>
+                  <button type="button" class="angg-vbtn" id="btnViewTable" title="Tampilan Tabel"><i class="fa-solid fa-table-list"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="angg-list">
+              <div class="angg-head" id="anggotaHead" style="display: none"></div>
+              <div id="anggotaRows"><div class="loading-block"><div class="spinner"></div>Memuat anggota...</div></div>
+            </div>
+            <div id="anggotaMoreBar"></div>
+            <div id="anggotaEmpty"></div>
+          </div>
+        </main>
       </div>
-      </div>
+    </div>
+
+    <!-- POPUP DETAIL ANGGOTA -->
+    <div class="angg-popup" id="anggotaDetail" aria-hidden="true">
+      <div class="angg-popup-inner">
+        <div class="osis-det-mhead">
+          <span class="osis-det-mtitle">
+            <span class="osis-det-mico"><i class="fa-solid fa-id-card"></i></span>
+            <span id="anggotaDetailTitle">Detail Anggota</span>
+          </span>
+          <button type="button" class="icon-btn" onclick="Anggota.tutupDetail()" title="Tutup" style="width: 36px; height: 36px; flex-shrink: 0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="anggotaDetailBody"></div>
+        <div class="osis-det-foot">
+          <div class="osis-det-foot-left">
+            <button type="button" class="btn btn-white btn-sm" onclick="Anggota.tutupDetail()"><i class="fa-solid fa-xmark"></i> Tutup</button>
+          </div>
+          <div class="osis-det-foot-right">
+            <button type="button" class="btn btn-white btn-sm" id="btnDetEdit" style="display: none"><i class="fa-solid fa-pen"></i> Edit</button>
+            <button type="button" class="btn btn-red btn-sm" id="btnDetHapus" style="display: none"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+          </div>
+        </div>
       </div>
     </div>
   </body>

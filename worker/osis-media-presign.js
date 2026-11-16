@@ -17,7 +17,7 @@
 //   2. R2 API token (S3-compatible): simpan sebagai secret worker.
 //   3. cd worker && npx wrangler secret put R2_ACCESS_KEY (dst, lihat
 //      wrangler.toml) && npx wrangler deploy
-//   4. Isi R2_PRESIGN_URL di js/config.js dengan URL worker ini + /presign.
+//   4. Isi R2_PRESIGN_URL di assets/js/core/config.js dengan URL worker ini + /presign.
 // =========================================================================
 
 // Folder yang boleh ditulis/dihapus — SAMA dengan folder di bucket lama

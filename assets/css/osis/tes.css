@@ -1,0 +1,845 @@
+/* =========================================================================
+   TES & KUIS — style khusus halaman osis/tes.html
+   Design system: neo-brutalism (border 2.5-3px solid var(--ink), hard shadow)
+   ========================================================================= */
+
+.tes-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tes-cols,
+.tes-side,
+.tes-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .tes-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.35fr);
+    gap: 14px;
+    align-items: start;
+  }
+  .tes-side {
+    position: sticky;
+    top: 86px;
+  }
+}
+
+.tes-migrasi {
+  background: #fffbeb;
+}
+.tes-migrasi code {
+  background: var(--white);
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+/* ================= DAFTAR TES ================= */
+.tes-card {
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tes-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tes-card-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1.25;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+.tes-card-desc {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--gray);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.tes-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tes-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tes-pill.aktif { background: #dcfce7; color: #166534; }
+.tes-pill.draft { background: var(--yellow); color: var(--ink); }
+.tes-pill.ditutup { background: #ffe4e6; color: var(--red-dark); }
+.tes-pill.koreksi { background: #fef3c7; color: #92400e; }
+.tes-pill.kat { background: #dbeafe; color: #1d4ed8; }
+.tes-pill.skor { background: var(--ink); color: var(--yellow); }
+
+.tes-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+.tes-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tes-card-meta i {
+  color: var(--red);
+}
+
+.tes-card-ops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 2px dashed var(--line);
+}
+.tes-card-ops .tes-ops-right {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ================= TOP BAR (QUIZ / BUILDER / HASIL) ================= */
+.tes-topbar {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tes-topbar-title {
+  flex: 1;
+  min-width: 180px;
+}
+.tes-topbar-title h2 {
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.tes-topbar-title small {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--gray);
+  margin-top: 2px;
+}
+.tes-topbar-acts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tes-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 2.5px solid var(--ink);
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.tes-timer.danger {
+  background: var(--red);
+  color: #fff;
+  animation: tesPulse 1s infinite;
+}
+@keyframes tesPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+/* ================= QUIZ RUNNER (1 PERTANYAAN / LAYAR) ================= */
+.tes-quiz-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+@media (min-width: 900px) {
+  .tes-quiz-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(270px, 0.9fr);
+    gap: 14px;
+    align-items: start;
+  }
+  .tes-quiz-side {
+    position: sticky;
+    top: 86px;
+  }
+}
+.tes-quiz-main,
+.tes-quiz-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tes-qcard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tes-qcard.ragu {
+  background: linear-gradient(180deg, #fffdf2 0%, #fff8d6 100%);
+}
+
+.tes-qhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tes-qnum {
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--red);
+}
+.tes-ragu-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.tes-ragu-btn.on {
+  background: var(--yellow);
+}
+
+.tes-qteks {
+  font-size: 1.18rem;
+  font-weight: 800;
+  line-height: 1.55;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .tes-qteks {
+    font-size: 1.02rem;
+  }
+}
+
+.tes-qhint {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--gray);
+  margin-top: -6px;
+}
+
+/* Pilihan PG / Multi */
+.tes-opsi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.tes-opsi-btn {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.45;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease;
+}
+.tes-opsi-btn:hover {
+  background: #fffbeb;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.tes-opsi-btn:active {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.tes-opsi-btn.selected {
+  background: var(--yellow);
+}
+
+.tes-opsi-kode {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid var(--ink);
+  background: var(--paper-2);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.tes-opsi-btn.selected .tes-opsi-kode {
+  background: var(--ink);
+  color: var(--yellow);
+}
+.tes-opsi-kode.box {
+  border-radius: 8px;
+}
+.tes-opsi-teks {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* Benar / Salah */
+.tes-bs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 460px) {
+  .tes-bs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.tes-bs-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 14px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease;
+}
+.tes-bs-btn i {
+  font-size: 1.5rem;
+}
+.tes-bs-btn.benar i { color: #16a34a; }
+.tes-bs-btn.salah i { color: var(--red); }
+.tes-bs-btn.benar.selected {
+  background: #dcfce7;
+}
+.tes-bs-btn.salah.selected {
+  background: #ffe4e6;
+}
+.tes-bs-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* Skala */
+.tes-skala-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tes-skala-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tes-skala-btn {
+  flex: 1 1 44px;
+  min-width: 44px;
+  padding: 12px 6px;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.96rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.tes-skala-btn.selected {
+  background: var(--yellow);
+}
+.tes-skala-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+
+/* Essay & Isian */
+.tes-essay-area {
+  min-height: 160px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.tes-char-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  margin-top: 5px;
+}
+
+.tes-nav-foot {
+  display: flex;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 2px dashed var(--line);
+}
+.tes-nav-foot .btn {
+  flex: 1;
+}
+.tes-kbd-hint {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--gray);
+  text-align: center;
+}
+
+/* Grid Nomor Soal */
+.tes-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 7px;
+}
+.tes-navbtn {
+  position: relative;
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff, #efe7e0);
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 0.82rem;
+  padding: 8px 0;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+  color: var(--ink);
+}
+.tes-navbtn.ragu {
+  background: linear-gradient(180deg, #ffe45c, #ffc81a);
+}
+.tes-navbtn.aktif {
+  background: linear-gradient(180deg, #3a2e30, #1a1314);
+  color: #fff;
+}
+.tes-nv-cek {
+  display: none;
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #1a7f37;
+  color: #fff;
+  font-size: 0.6rem;
+  border: 2px solid var(--ink);
+  place-items: center;
+  line-height: 1;
+}
+.tes-navbtn.isi .tes-nv-cek {
+  display: grid;
+}
+.tes-nav-legend {
+  display: flex;
+  gap: 10px 14px;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--gray);
+}
+.tes-sw {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  margin-right: 5px;
+  vertical-align: -2px;
+}
+.tes-sw.kosong { background: #fff; }
+.tes-sw.ragu { background: var(--yellow); }
+.tes-sw.aktif { background: var(--ink); }
+.tes-sw.isi { background: #1a7f37; }
+
+/* ================= BUILDER SOAL CUSTOM ================= */
+.tes-builder-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+@media (min-width: 980px) {
+  .tes-builder-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.45fr);
+    gap: 14px;
+    align-items: start;
+  }
+  .tes-builder-side {
+    position: sticky;
+    top: 86px;
+  }
+}
+.tes-builder-side,
+.tes-builder-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tes-switch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tes-switch {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  background: var(--paper-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tes-switch input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--red);
+  flex-shrink: 0;
+}
+
+.tes-add-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.tes-add-grid .btn {
+  justify-content: flex-start;
+  font-size: 0.76rem;
+}
+
+.tes-qedit {
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.tes-qedit-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 2px dashed var(--line);
+}
+.tes-qedit-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid var(--ink);
+  background: var(--yellow);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 0.84rem;
+  flex-shrink: 0;
+}
+.tes-qedit-ops {
+  margin-left: auto;
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.tes-qedit-row2 {
+  display: grid;
+  grid-template-columns: 1fr 100px auto;
+  gap: 8px;
+  align-items: end;
+}
+@media (max-width: 560px) {
+  .tes-qedit-row2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.tes-opsi-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.tes-poin-inp {
+  width: 78px !important;
+  flex-shrink: 0;
+  text-align: center;
+  font-weight: 800;
+}
+.tes-key-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 9px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper-2);
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.tes-key-pick.on {
+  background: #dcfce7;
+  color: #166534;
+}
+.tes-key-pick input {
+  accent-color: #16a34a;
+}
+
+/* ================= HASIL & KOREKSI ================= */
+.tes-hasil-hero {
+  background: linear-gradient(135deg, #fffdf4 0%, var(--paper-2) 100%);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.tes-skor-box {
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 12px 18px;
+  text-align: center;
+  min-width: 130px;
+}
+.tes-skor-box b {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 900;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.tes-skor-box small {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 3px;
+}
+
+.tes-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.tes-stat-card {
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 12px 14px;
+}
+.tes-stat-card small {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray);
+}
+.tes-stat-card b {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 900;
+  margin-top: 3px;
+}
+
+.tes-peserta-row {
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tes-peserta-info {
+  flex: 1;
+  min-width: 170px;
+}
+.tes-peserta-info b {
+  display: block;
+  font-size: 0.94rem;
+  font-weight: 900;
+}
+.tes-peserta-info small {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--gray);
+}
+
+.tes-rev-item {
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 15px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tes-rev-item.benar {
+  border-left: 7px solid #16a34a;
+}
+.tes-rev-item.salah {
+  border-left: 7px solid var(--red);
+}
+.tes-rev-item.manual {
+  border-left: 7px solid #f59e0b;
+}
+
+.tes-rev-ans {
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tes-rev-kunci {
+  background: #ecfdf3;
+  border: 2px dashed #16a34a;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #14532d;
+  overflow-wrap: anywhere;
+}
+.tes-rev-bahas {
+  background: #eff6ff;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e3a8a;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tes-koreksi-box {
+  background: #fffbeb;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  align-items: end;
+}
+@media (max-width: 520px) {
+  .tes-koreksi-box {
+    grid-template-columns: 1fr;
+  }
+}

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Program Tahunan — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=41" />
-    <link rel="stylesheet" href="../css/osis2.css?v=14" />
+    <link rel="stylesheet" href="../assets/css/shared/style.css?v=41" />
+    <link rel="stylesheet" href="../assets/css/shared/osis2.css?v=15" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -13,9 +13,9 @@
       rel="icon"
       type="image/png"
       sizes="32x32"
-      href="../icons/favicon-32.png"
+      href="../assets/icons/favicon-32.png"
     />
-    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
@@ -31,24 +31,24 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-program-tahunan.css?v=4" />
-    <script src="../js/supabase.min.js?v=10"></script>
-    <script src="../js/config.js?v=14"></script>
-    <script src="../js/db.js?v=35" defer></script>
-    <script src="../js/aktivitas.js?v=10" defer></script>
-    <script src="../js/app.js?v=16" defer></script>
-    <script src="../js/dropdown.js?v=3" defer></script>
-    <script src="../js/toast.js?v=10" defer></script>
-    <script src="../js/notice.js?v=10" defer></script>
-    <script src="../js/upload.js?v=10" defer></script>
-    <script src="../js/show-popup.js?v=15" defer></script>
-    <script src="../js/osis-auth.js?v=19" defer></script>
-    <script src="../js/osis-visitor.js?v=5" defer></script>
-    <script src="../js/osis-sidebar.js?v=45" defer></script>
-    <script src="../js/osis-header.js?v=18" defer></script>
-    <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/program.js?v=12" defer></script>
-    <script src="../js/pwa.js?v=11" defer></script>
+    <link rel="stylesheet" href="../assets/css/osis/program-tahunan.css?v=5" />
+    <script src="../assets/js/vendor/supabase.min.js?v=10"></script>
+    <script src="../assets/js/core/config.js?v=14"></script>
+    <script src="../assets/js/core/db.js?v=35" defer></script>
+    <script src="../assets/js/services/aktivitas.js?v=10" defer></script>
+    <script src="../assets/js/core/app.js?v=16" defer></script>
+    <script src="../assets/js/shared/ui/dropdown.js?v=3" defer></script>
+    <script src="../assets/js/shared/ui/toast.js?v=10" defer></script>
+    <script src="../assets/js/shared/ui/notice.js?v=10" defer></script>
+    <script src="../assets/js/services/upload.js?v=10" defer></script>
+    <script src="../assets/js/shared/ui/show-popup.js?v=15" defer></script>
+    <script src="../assets/js/core/osis-auth.js?v=19" defer></script>
+    <script src="../assets/js/osis/shell/osis-visitor.js?v=5" defer></script>
+    <script src="../assets/js/osis/shell/osis-sidebar.js?v=47" defer></script>
+    <script src="../assets/js/osis/shell/osis-header.js?v=18" defer></script>
+    <script src="../assets/js/shared/utilities/form-persist.js?v=10" defer></script>
+    <script src="../assets/js/osis/modules/program.js?v=13" defer></script>
+    <script src="../assets/js/pwa/pwa.js?v=11" defer></script>
   </head>
   <body data-tipe="tahunan">
     <header class="top-nav">
@@ -325,26 +325,12 @@
 
     <!-- POPUP DETAIL -->
     <div class="program-form" id="programDetail">
-      <div class="program-form-inner" style="width: min(620px, 100%)">
-        <div
-          style="
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 6px;
-          "
-        >
-          <span
-            style="
-              font-weight: 900;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              font-size: 1rem;
-            "
-            ><i class="fa-solid fa-calendar" style="color: var(--red)"></i>
-            Detail Program</span
-          >
+      <div class="program-form-inner" style="width: min(580px, 100%)">
+        <div class="osis-det-mhead">
+          <div class="osis-det-mtitle">
+            <span class="osis-det-mico red"><i class="fa-solid fa-calendar"></i></span>
+            <span>Detail Program</span>
+          </div>
           <button
             class="icon-btn"
             onclick="Program.tutupDetail()"
@@ -355,16 +341,20 @@
           </button>
         </div>
         <div id="programDetailBody"></div>
-        <div class="form-actions-row" style="margin-top: 14px">
-          <button class="btn btn-white btn-sm" onclick="Program.tutupDetail()">
-            Tutup
-          </button>
-          <button class="btn btn-white btn-sm" id="btnEditDariDetail">
-            <i class="fa-solid fa-pen"></i> Edit
-          </button>
-          <button class="btn btn-red btn-sm" id="btnHapusDariDetail">
-            <i class="fa-solid fa-trash-can"></i> Hapus
-          </button>
+        <div class="osis-det-foot">
+          <div class="osis-det-foot-left">
+            <button class="btn btn-white btn-sm" onclick="Program.tutupDetail()">
+              <i class="fa-solid fa-xmark"></i> Tutup
+            </button>
+          </div>
+          <div class="osis-det-foot-right">
+            <button class="btn btn-white btn-sm" id="btnEditDariDetail">
+              <i class="fa-solid fa-pen"></i> Edit
+            </button>
+            <button class="btn btn-red btn-sm" id="btnHapusDariDetail">
+              <i class="fa-solid fa-trash-can"></i> Hapus
+            </button>
+          </div>
         </div>
       </div>
     </div>

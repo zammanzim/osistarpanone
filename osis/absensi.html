@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Absensi Pengurus — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../css/style.css?v=41" />
-    <link rel="stylesheet" href="../css/osis2.css?v=14" />
+    <link rel="stylesheet" href="../assets/css/shared/style.css?v=41" />
+    <link rel="stylesheet" href="../assets/css/shared/osis2.css?v=17" />
 <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
 <link rel="manifest" href="../manifest.webmanifest" />
-<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png" />
-<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -23,27 +23,27 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../css/osis-absensi.css?v=6" />
-    <script src="../js/supabase.min.js?v=10"></script>
-    <script src="../js/config.js?v=14"></script>
-    <script src="../js/db.js?v=36" defer></script>
-    <script src="../js/aktivitas.js?v=10" defer></script>
-    <script src="../js/app.js?v=16" defer></script>
-    <script src="../js/dropdown.js?v=3" defer></script>
-    <script src="../js/toast.js?v=10" defer></script>
-    <script src="../js/notice.js?v=10" defer></script>
-    <script src="../js/upload.js?v=10" defer></script>
-    <script src="../js/show-popup.js?v=15" defer></script>
-    <script src="../js/osis-auth.js?v=19" defer></script>
-    <script src="../js/osis-visitor.js?v=5" defer></script>
-    <script src="../js/osis-sidebar.js?v=45" defer></script>
-    <script src="../js/osis-header.js?v=18" defer></script>
-    <script src="../js/form-persist.js?v=10" defer></script>
-    <script src="../js/absensi.js?v=22" defer></script>
-    <script src="../js/vendor/qrcode.min.js?v=1"></script>
-    <script src="../js/vendor/jsQR.min.js?v=1"></script>
-    <script src="../js/absensi-qr.js?v=1" defer></script>
-  <script src="../js/pwa.js?v=11" defer></script>
+    <link rel="stylesheet" href="../assets/css/osis/absensi.css?v=7" />
+    <script src="../assets/js/vendor/supabase.min.js?v=10"></script>
+    <script src="../assets/js/core/config.js?v=14"></script>
+    <script src="../assets/js/core/db.js?v=39" defer></script>
+    <script src="../assets/js/services/aktivitas.js?v=10" defer></script>
+    <script src="../assets/js/core/app.js?v=16" defer></script>
+    <script src="../assets/js/shared/ui/dropdown.js?v=3" defer></script>
+    <script src="../assets/js/shared/ui/toast.js?v=10" defer></script>
+    <script src="../assets/js/shared/ui/notice.js?v=10" defer></script>
+    <script src="../assets/js/services/upload.js?v=10" defer></script>
+    <script src="../assets/js/shared/ui/show-popup.js?v=16" defer></script>
+    <script src="../assets/js/core/osis-auth.js?v=19" defer></script>
+    <script src="../assets/js/osis/shell/osis-visitor.js?v=5" defer></script>
+    <script src="../assets/js/osis/shell/osis-sidebar.js?v=47" defer></script>
+    <script src="../assets/js/osis/shell/osis-header.js?v=20" defer></script>
+    <script src="../assets/js/shared/utilities/form-persist.js?v=10" defer></script>
+    <script src="../assets/js/osis/modules/absensi.js?v=24" defer></script>
+    <script src="../assets/js/vendor/qrcode.min.js?v=1"></script>
+    <script src="../assets/js/vendor/jsQR.min.js?v=1"></script>
+    <script src="../assets/js/osis/modules/absensi-qr.js?v=2" defer></script>
+  <script src="../assets/js/pwa/pwa.js?v=11" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -161,6 +161,14 @@
           <button class="btn btn-white" id="btnAbsenQr" style="display: none">
             <i class="fa-solid fa-qrcode"></i> Absen QR
           </button>
+          <button
+            class="btn btn-white"
+            id="btnAturAbsensi"
+            style="display: none"
+            title="Atur Tahun Aktif Absensi"
+          >
+            <i class="fa-solid fa-sliders"></i> Tahun Aktif
+          </button>
         </div>
       </div>
 
@@ -214,6 +222,15 @@
               <span
                 ><i class="fa-solid fa-graduation-cap"></i> Periode Roster</span
               >
+              <button
+                type="button"
+                class="abs-panel-gear"
+                id="btnAturTahunPanel"
+                style="display: none"
+                title="Atur tahun aktif absensi"
+              >
+                <i class="fa-solid fa-sliders"></i> Atur
+              </button>
             </div>
             <div class="tahun-tabs" id="tahunTabs"></div>
           </div>
@@ -368,6 +385,82 @@
           <div class="qr-info" id="qrScanInfo">Siswa buka halaman <b>/absen</b> di HP-nya, tekan "Tampilkan Kartu", lalu QR-nya dipindai dari sini.</div>
           <div class="absen-sec"><i class="fa-solid fa-qrcode"></i> Hasil scan</div>
           <div class="qr-daftar" id="qrScanDaftar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP SETTING TAHUN AKTIF ABSENSI -->
+    <div class="kas-form" id="absensiSettingModal">
+      <div class="kas-form-inner">
+        <div class="abs-modal-head">
+          <div>
+            <div class="abs-modal-title">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Tahun Aktif Absensi</span>
+            </div>
+            <div class="abs-modal-sub" id="absCfgSub">
+              Atur tahun roster yang aktif untuk absensi angkatan ini.
+            </div>
+          </div>
+          <button
+            type="button"
+            class="icon-btn"
+            onclick="Absensi.tutupSetting()"
+            title="Tutup"
+            style="width: 34px; height: 34px; flex-shrink: 0"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="abs-cfg-box">
+          <div class="abs-cfg-sec">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>Tahun Aktif Angkatan Ini</span>
+            <span class="abs-cfg-badge" id="absCfgAngBadge"></span>
+          </div>
+          <p class="abs-cfg-help">
+            Centang tahun roster yang ingin ditampilkan di tab periode, Absen Langsung, dan Tambah Data.
+          </p>
+          <div class="abs-cfg-grid" id="absCfgTahunGrid"></div>
+
+          <div class="abs-cfg-add">
+            <input
+              type="number"
+              id="absCfgTambahInput"
+              class="admin-input"
+              min="2000"
+              max="2100"
+              step="1"
+              placeholder="Tambah tahun (mis. 2028)"
+            />
+            <button type="button" class="btn btn-white btn-sm" id="btnTambahTahunCfg">
+              <i class="fa-solid fa-plus"></i> Tambah
+            </button>
+          </div>
+
+          <div class="field" style="margin-top: 12px; margin-bottom: 0">
+            <label>Tahun Default Saat Halaman Dibuka</label>
+            <select id="absCfgDefault" class="admin-input"></select>
+          </div>
+        </div>
+
+        <div class="abs-cfg-box" style="margin-top: 12px">
+          <div class="abs-cfg-sec">
+            <i class="fa-solid fa-globe"></i>
+            <span>Periode Aktif Global (Master Database)</span>
+          </div>
+          <p class="abs-cfg-help">
+            Menentukan status aktif bawaan di tabel periode apabila angkatan belum memiliki pengaturan khusus.
+          </p>
+          <div class="abs-cfg-grid" id="absCfgPeriodeGrid"></div>
+        </div>
+
+        <div class="form-actions-row" style="margin-top: 14px">
+          <button type="button" class="btn btn-white" id="btnBatalAbsensiSetting">Batal</button>
+          <button type="button" class="btn btn-red" id="btnSimpanAbsensiSetting">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan
+          </button>
         </div>
       </div>
     </div>

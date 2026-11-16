@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tes &amp; Kuis — OSIS TARPAN ONE</title>
+    <link rel="stylesheet" href="../assets/css/shared/style.css?v=41" />
+    <link rel="stylesheet" href="../assets/css/shared/osis2.css?v=17" />
+    <meta name="theme-color" content="#e11d2e" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="../assets/icons/favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../assets/css/osis/tes.css?v=2" />
+    <script src="../assets/js/vendor/supabase.min.js?v=11"></script>
+    <script src="../assets/js/core/config.js?v=16"></script>
+    <script src="../assets/js/core/db.js?v=41" defer></script>
+    <script src="../assets/js/services/aktivitas.js?v=12" defer></script>
+    <script src="../assets/js/core/app.js?v=16" defer></script>
+    <script src="../assets/js/shared/ui/dropdown.js?v=3" defer></script>
+    <script src="../assets/js/shared/ui/toast.js?v=12" defer></script>
+    <script src="../assets/js/shared/ui/notice.js?v=12" defer></script>
+    <script src="../assets/js/services/upload.js?v=12" defer></script>
+    <script src="../assets/js/shared/ui/show-popup.js?v=15" defer></script>
+    <script src="../assets/js/core/osis-auth.js?v=22" defer></script>
+    <script src="../assets/js/osis/shell/osis-visitor.js?v=5" defer></script>
+    <script src="../assets/js/osis/shell/osis-sidebar.js?v=48" defer></script>
+    <script src="../assets/js/osis/shell/osis-header.js?v=20" defer></script>
+    <script src="../assets/js/shared/utilities/form-persist.js?v=12" defer></script>
+    <script src="../assets/js/osis/modules/tes.js?v=2" defer></script>
+    <script src="../assets/js/pwa/pwa.js?v=13" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="../index#/" class="brand">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo" /></div>
+        <div class="brand-text">
+          <h2>TES &amp; KUIS</h2>
+          <p>Evaluasi Internal OSIS</p>
+        </div>
+      </a>
+
+      <div class="top-nav-extra">
+        <a href="../index#/" class="btn btn-white btn-sm"
+          ><i class="fa-solid fa-house"></i> Beranda</a
+        >
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <div class="osis-wrap">
+      <!-- SEARCH + FILTER (mode daftar) -->
+      <div class="osis-top-search" id="tesTopSearch" data-osis-auto-count="1">
+        <div class="osis-sb-bar">
+          <div class="osis-sb-row">
+            <i class="fa-solid fa-magnifying-glass osis-sb-ico"></i>
+            <input
+              type="text"
+              id="tesFilterQ"
+              class="osis-sb-input"
+              placeholder="Cari judul tes, kategori, atau pembuat..."
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="osis-sb-clear"
+              data-osis-clear="auto"
+              title="Hapus pencarian"
+              hidden
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="osis-sb-divider" aria-hidden="true"></span>
+            <button type="button" class="osis-sb-filter-btn" aria-expanded="false">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Filter</span>
+              <span class="osis-sb-badge" hidden>0</span>
+              <i class="fa-solid fa-chevron-down osis-sb-chev"></i>
+            </button>
+          </div>
+        </div>
+        <div class="osis-sb-panel">
+          <div class="osis-sb-panel-head">
+            <span class="osis-sb-panel-title"
+              ><i class="fa-solid fa-filter"></i> Filter Tes</span
+            >
+            <div class="osis-sb-panel-acts">
+              <button
+                type="button"
+                class="btn btn-white btn-sm"
+                id="btnResetFilter"
+                data-osis-reset="auto"
+                title="Reset filter"
+              >
+                <i class="fa-solid fa-rotate-left"></i> Reset
+              </button>
+              <button type="button" class="osis-sb-close" title="Tutup filter">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="osis-sb-fields">
+            <div class="osis-sb-field grow">
+              <label>Status Tes</label>
+              <select id="tesFilterStatus" class="admin-input">
+                <option value="">Semua status</option>
+                <option value="aktif">Aktif</option>
+                <option value="draft">Draft</option>
+                <option value="ditutup">Ditutup</option>
+              </select>
+            </div>
+            <div class="osis-sb-field grow">
+              <label>Status Pengerjaan</label>
+              <select id="tesFilterSaya" class="admin-input">
+                <option value="">Semua</option>
+                <option value="belum">Belum dikerjakan</option>
+                <option value="sudah">Sudah selesai</option>
+                <option value="koreksi">Menunggu koreksi</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BANNER BUTUH MIGRASI -->
+      <div class="osis-panel tes-migrasi" id="tesMigrasiBanner" style="display: none">
+        <div style="display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap">
+          <div class="osis-avatar" style="width: 44px; height: 44px; font-size: 1.1rem">
+            <i class="fa-solid fa-database"></i>
+          </div>
+          <div style="flex: 1; min-width: 220px">
+            <h2 style="font-size: 1rem; font-weight: 900; margin-bottom: 4px">
+              Tabel Tes Belum Terpasang di Database
+            </h2>
+            <p style="font-size: 0.82rem; font-weight: 600; color: var(--gray); line-height: 1.5">
+              Jalankan file migrasi
+              <code>database/migrations/migrasi-tes.sql</code> di Supabase SQL
+              Editor dulu, lalu muat ulang halaman ini.
+            </p>
+          </div>
+          <button type="button" class="btn btn-red btn-sm" onclick="Tes.muatDaftar()">
+            <i class="fa-solid fa-rotate-right"></i> Cek Lagi
+          </button>
+        </div>
+      </div>
+
+      <!-- ================ VIEW 1: DAFTAR TES ================ -->
+      <div id="tesViewDaftar" class="tes-view">
+        <div class="tes-cols">
+          <div class="tes-side">
+            <div class="osis-hero">
+              <div class="osis-avatar">
+                <i class="fa-solid fa-clipboard-question"></i>
+              </div>
+              <div style="flex: 1; min-width: 180px">
+                <h1>TES &amp; KUIS OSIS</h1>
+                <p>
+                  Kerjakan kuis satu per satu, atau susun soal custom dengan
+                  berbagai tipe (PG, Pilih &gt;1, Benar/Salah, Isian, Essay, Skala).
+                </p>
+                <div class="osis-meta" id="tesMeta"></div>
+              </div>
+              <button
+                type="button"
+                class="btn btn-red"
+                id="btnBuatTes"
+                onclick="Tes.bukaBuilder(null)"
+                style="display: none"
+              >
+                <i class="fa-solid fa-plus"></i> Buat Tes
+              </button>
+            </div>
+          </div>
+          <div class="tes-main">
+            <div id="tesDaftarWrap">
+              <div class="loading-block">
+                <div class="spinner"></div>
+                Memuat daftar tes...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================ VIEW 2: MODE QUIZ (1 PERTANYAAN / LAYAR) ================ -->
+      <div id="tesViewQuiz" class="tes-view" style="display: none"></div>
+
+      <!-- ================ VIEW 3: BUILDER SOAL CUSTOM ================ -->
+      <div id="tesViewBuilder" class="tes-view" style="display: none"></div>
+
+      <!-- ================ VIEW 4: HASIL & KOREKSI ================ -->
+      <div id="tesViewHasil" class="tes-view" style="display: none"></div>
+    </div>
+  </body>
+</html>

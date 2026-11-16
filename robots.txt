@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /osis/
 Disallow: /login.html
-Disallow: /db/
+Disallow: /database/
 
 Sitemap: https://osistarpanone.my.id/sitemap.xml
 

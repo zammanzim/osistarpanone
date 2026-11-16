@@ -4,3 +4,4 @@ worker/.dev.vars
 .env.*
 opencode.json
 serve.json
+database/backups/

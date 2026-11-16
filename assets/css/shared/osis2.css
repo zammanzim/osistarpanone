@@ -1,0 +1,660 @@
+﻿/* =========================================================================
+   OSIS2 - CSS ADMIN SHARED (pengganti <style> inline per halaman)
+   Dipakai semua halaman di osis2/ via: <link rel="stylesheet" href="../css/osis2.css">
+   Tetap butuh ../css/style.css dulu (design system: var(--ink/red/yellow)).
+   Diambil dari pola bersama osis/*.html biar visual tetap sama, tapi rapi.
+   Style khusus per halaman (dash-*, agenda-*, kas-*, dsb) taruh di file
+   halaman masing-masing, JANGAN di sini.
+   ========================================================================= */
+
+.osis-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.osis-hero {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 4px 4px 0 var(--ink);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.osis-hero h1 { font-size: 1.25rem; font-weight: 900; line-height: 1.1; }
+.osis-hero p { font-size: 0.82rem; color: var(--gray); font-weight: 600; margin-top: 4px; }
+.osis-hero .osis-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+.osis-avatar {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  border: 3px solid var(--ink);
+  background: var(--yellow);
+  display: grid; place-items: center;
+  font-size: 1.4rem; font-weight: 900;
+  box-shadow: 2px 2px 0 var(--ink);
+  flex-shrink: 0; overflow: hidden;
+}
+.osis-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.osis-avatar.media-muat { display: grid; place-items: center; }
+
+.osis-clock { text-align: right; flex-shrink: 0; }
+.osis-clock b { display: block; font-size: 0.86rem; font-weight: 900; }
+.osis-clock .jam {
+  font-size: 1.3rem; font-weight: 900; color: var(--red);
+  font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; justify-content: flex-end; gap: 5px;
+}
+.osis-clock .jam small { font-size: 0.64rem; font-weight: 800; color: var(--gray); }
+
+.osis-badge {
+  font-size: 0.68rem; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  padding: 4px 10px; border-radius: 999px;
+}
+.osis-badge.red { background: var(--red); color: #fff; }
+
+/* ---- Helper umum admin (dipakai hampir semua halaman) ---- */
+.osis-panel {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 var(--ink);
+  min-width: 0;
+}
+.osis-empty { font-size: 0.8rem; font-weight: 600; color: var(--gray); padding: 10px 2px; }
+.osis-page-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.osis-page-head h2 { font-size: 1.1rem; font-weight: 900; }
+.osis-page-head .spacer { flex: 1; }
+
+/* ---- Angkatan Switcher / Info di More Menu (/osis/*) ---- */
+#osisMoreMenu:has(.ang-more-box[data-visible="1"]) {
+  min-width: 224px;
+}
+.ang-more-box {
+  order: -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px 10px;
+  margin-bottom: 2px;
+  border-bottom: 2px dashed rgba(26, 19, 20, 0.16);
+}
+.ang-more-lbl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray);
+}
+.ang-more-pill,
+.ang-more-select {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink);
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  padding: 7px 10px;
+  box-shadow: 2px 2px 0 var(--ink);
+  line-height: 1.2;
+}
+.ang-more-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--paper-2);
+}
+.ang-more-select {
+  background: var(--yellow);
+  cursor: pointer;
+  padding-right: 28px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23111' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 11px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.ang-more-select:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.ang-more-select:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* Sticky sidebar offset saat ada .osis-top-search (.osis-top-search ada di style.css) */
+@media (min-width: 900px) {
+  .osis-wrap:has(.osis-top-search) [class$="-side"] {
+    top: calc(var(--osis-nav-h, 76px) + 68px);
+  }
+}
+
+/* ---- Detail Popup System (seragam di seluruh /osis/*) ---- */
+.osis-det-mhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 2px dashed var(--line);
+}
+.osis-det-mtitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  min-width: 0;
+}
+.osis-det-mtitle > span {
+  overflow-wrap: anywhere;
+}
+.osis-det-mico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 2px solid var(--ink);
+  background: var(--yellow);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  box-shadow: 2px 2px 0 var(--ink);
+  flex-shrink: 0;
+}
+.osis-det-mico.red { background: #ffe4e6; color: var(--red-dark); }
+.osis-det-mico.green { background: #dcfce7; color: #166534; }
+.osis-det-mico.blue { background: #dbeafe; color: #1d4ed8; }
+.osis-det-mico.amber { background: #fef3c7; color: #b45309; }
+
+.osis-det-hero {
+  background: linear-gradient(135deg, #fffdf4 0%, var(--paper-2) 100%);
+  border: 2.5px solid var(--ink);
+  border-radius: 15px;
+  padding: 13px 14px;
+  box-shadow: 3px 3px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.osis-det-hero.tone-masuk {
+  background: linear-gradient(135deg, #f3fff5 0%, #dcfce7 100%);
+}
+.osis-det-hero.tone-keluar {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe4e6 100%);
+}
+.osis-det-hero.tone-blue {
+  background: linear-gradient(135deg, #f5f9ff 0%, #dbeafe 100%);
+}
+.osis-det-hero-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.osis-det-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.osis-det-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  line-height: 1.25;
+}
+.osis-det-chip.yellow { background: var(--yellow); }
+.osis-det-chip.blue { background: #e3ecff; color: #1d4ed8; }
+.osis-det-chip.green { background: #d6f5d6; color: #146314; }
+.osis-det-chip.red { background: #ffe9e9; color: var(--red-dark); }
+.osis-det-chip.ink { background: var(--ink); color: var(--yellow); }
+.osis-det-title {
+  font-size: 1.06rem;
+  font-weight: 900;
+  line-height: 1.28;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.osis-det-sub {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gray);
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.osis-det-amount {
+  font-size: 1.4rem;
+  font-weight: 900;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.osis-det-amount.masuk { color: #146314; }
+.osis-det-amount.keluar { color: var(--red-dark); }
+
+.osis-det-prog {
+  background: var(--white);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 9px 11px;
+  margin-top: 2px;
+}
+.osis-det-prog-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.osis-det-prog-top span {
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray);
+}
+.osis-det-prog-top b {
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.osis-det-prog-bar {
+  height: 12px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper-2);
+  overflow: hidden;
+}
+.osis-det-prog-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--red);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+.osis-det-prog-bar.done > span {
+  background: #16a34a;
+}
+
+.osis-det-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+@media (min-width: 540px) {
+  .osis-det-grid.cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.osis-det-kv {
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 9px 10px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.osis-det-kv.wide {
+  grid-column: 1 / -1;
+}
+.osis-det-kv-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.osis-det-kv-ico {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: 0.64rem;
+  flex-shrink: 0;
+}
+.osis-det-kv-ico.t-red { background: #ffe4e6; color: var(--red-dark); }
+.osis-det-kv-ico.t-blue { background: #dbeafe; color: #1d4ed8; }
+.osis-det-kv-ico.t-green { background: #dcfce7; color: #166534; }
+.osis-det-kv-ico.t-amber { background: #fef3c7; color: #b45309; }
+.osis-det-kv-ico.t-purple { background: #f3e8ff; color: #6d28d9; }
+.osis-det-kv-ico.t-ink { background: var(--ink); color: var(--yellow); }
+.osis-det-kv .k {
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.osis-det-kv .v {
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.osis-det-sec {
+  margin-top: 12px;
+}
+.osis-det-sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray);
+}
+.osis-det-sec-head i {
+  color: var(--red);
+  margin-right: 4px;
+}
+.osis-det-box {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  padding: 11px 13px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.62;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  box-shadow: 2px 2px 0 rgba(15, 10, 11, 0.12);
+}
+
+.osis-det-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  border: 2px solid var(--ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.45;
+  margin-top: 10px;
+}
+.osis-det-alert.ok { background: #ecfdf3; color: #14532d; }
+.osis-det-alert.warn { background: #fffbeb; color: #92400e; }
+.osis-det-alert i { margin-top: 2px; flex-shrink: 0; }
+
+.osis-det-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 2px dashed var(--line);
+}
+.osis-det-foot-left,
+.osis-det-foot-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.osis-det-foot-right {
+  margin-left: auto;
+}
+@media (max-width: 480px) {
+  .osis-det-grid {
+    gap: 7px;
+  }
+  .osis-det-kv {
+    padding: 8px 9px;
+  }
+  .osis-det-amount {
+    font-size: 1.24rem;
+  }
+  .osis-det-foot-right {
+    margin-left: 0;
+    justify-content: flex-end;
+    flex: 1 1 auto;
+  }
+}
+
+/* ============ ACCORDION PER ANGKATAN (Lintas Angkatan Read) ============ */
+.ang-acc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ang-acc {
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 4px 4px 0 var(--ink);
+  overflow: hidden;
+  min-width: 0;
+}
+.ang-acc.is-focus {
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.ang-acc-head {
+  width: 100%;
+  background: var(--paper);
+  border: 0;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  transition: background 0.12s ease;
+}
+.ang-acc.open > .ang-acc-head {
+  border-bottom: 2.5px solid var(--ink);
+  background: #fff9e6;
+}
+.ang-acc-head:hover {
+  background: var(--paper-2);
+}
+.ang-acc.open > .ang-acc-head:hover {
+  background: #fff3cc;
+}
+.ang-acc-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.ang-acc-ico {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid var(--ink);
+  background: var(--paper-2);
+  display: grid;
+  place-items: center;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+.ang-acc.is-focus .ang-acc-ico {
+  background: var(--yellow);
+}
+.ang-acc-name {
+  font-size: 0.94rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.ang-acc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--white);
+}
+.ang-acc-pill.aktif {
+  background: var(--yellow);
+  color: var(--ink);
+}
+.ang-acc-pill.arsip {
+  background: var(--paper-2);
+  color: var(--gray);
+}
+.ang-acc-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.ang-acc-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  background: var(--white);
+  font-size: 0.72rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.ang-acc-chev {
+  font-size: 0.82rem;
+  color: var(--ink);
+  transition: transform 0.16s ease;
+}
+.ang-acc.open > .ang-acc-head .ang-acc-chev {
+  transform: rotate(180deg);
+}
+.ang-acc-body {
+  display: none;
+  padding: 14px;
+  background: var(--white);
+}
+.ang-acc.open > .ang-acc-body {
+  display: block;
+}
+.ang-acc-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ang-acc-stack .info-row {
+  margin-bottom: 0;
+}
+.poster-feed-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ang-own-empty,
+.ang-other-tail,
+.ang-other-box {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+}
+.ang-other-bar {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0 2px;
+}
+.ang-other-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease;
+}
+.ang-other-toggle:hover {
+  background: var(--paper);
+}
+.ang-other-toggle:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.ang-other-toggle i.fa-layer-group {
+  color: var(--red);
+  font-size: 0.74rem;
+}
+.ang-other-chev {
+  font-size: 0.68rem;
+  color: var(--gray);
+  transition: transform 0.15s ease;
+}
+.ang-other-box.open .ang-other-chev {
+  transform: rotate(180deg);
+}
+.ang-other-box.open .ang-other-toggle {
+  background: var(--paper-2);
+}
+.ang-other-list {
+  margin-top: 12px;
+}
+@media (max-width: 520px) {
+  .ang-acc-head {
+    padding: 11px 12px;
+  }
+  .ang-acc-body {
+    padding: 10px;
+  }
+}
