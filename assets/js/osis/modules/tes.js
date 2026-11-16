@@ -1897,13 +1897,17 @@ const Tes = {
     }
   },
 
-  ringkasanAspekHtml(soal, pen) {
+  ekstrakAspek(pertanyaan) {
+    const m = String(pertanyaan || "").match(/^\[([^\]]{1,40})\]/);
+    return m ? m[1].trim() : "";
+  },
+
+  hitungAspek(soal, pen) {
     const map = new Map();
     (soal || []).forEach((s) => {
-      const m = String(s.pertanyaan || "").match(/^\[([^\]]{1,40})\]/);
-      if (!m) return;
-      const asp = m[1].trim();
-      const p = pen[String(s.id)] || {};
+      const asp = Tes.ekstrakAspek(s.pertanyaan);
+      if (!asp) return;
+      const p = (pen && pen[String(s.id)]) || {};
       const maks = Number(p.maks != null ? p.maks : (s.poin || 0));
       const dapat = Number(p.poin || 0);
       if (!map.has(asp)) map.set(asp, { nama: asp, skor: 0, maks: 0, jml: 0 });
@@ -1912,8 +1916,13 @@ const Tes = {
       row.maks += maks;
       row.jml += 1;
     });
-    if (map.size < 2) return "";
-    const cards = Array.from(map.values()).map((a) => {
+    return Array.from(map.values());
+  },
+
+  ringkasanAspekHtml(soal, pen) {
+    const aspek = Tes.hitungAspek(soal, pen);
+    if (aspek.length < 2) return "";
+    const cards = aspek.map((a) => {
       const pct = a.maks > 0 ? Math.round((a.skor / a.maks) * 100) : 0;
       return `<div class="tes-stat-card">
         <small>${escapeHtml(a.nama)} (${a.jml} soal)</small>
@@ -2025,6 +2034,8 @@ const Tes = {
           <small>Dikumpulkan ${Tes.fmtWaktu(hasil.selesai_at)} · Percobaan ke-${Number(hasil.percobaan_ke || 1)}</small>
         </div>
         <div class="tes-topbar-acts">
+          ${(modeKoreksi || Tes.bolehKelola() || (tampilNilai && tampilKunci))
+            ? `<button type="button" class="btn btn-white btn-sm" id="btnExportCsvOrang" onclick="Tes.exportCsvOrang()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>` : ""}
           ${!modeKoreksi && tes.status === "aktif" && cfg.boleh_ulang !== false
             ? `<button type="button" class="btn btn-red btn-sm" onclick="Tes.mulaiKerjakan(${tes.id})"><i class="fa-solid fa-rotate-right"></i> Kerjakan Ulang</button>` : ""}
           ${modeKoreksi
@@ -2134,9 +2145,14 @@ const Tes = {
           ${r.status === "menunggu_koreksi" ? "Perlu Koreksi" : "Selesai"}
         </span>
         <span class="tes-pill skor">${Tes.fmtAngka(r.skor_total)} / ${Tes.fmtAngka(r.skor_maks)}</span>
-        <button type="button" class="btn btn-red btn-sm" onclick="Tes.bukaKoreksi(${r.id})">
-          <i class="fa-solid fa-eye"></i> Detail / Koreksi
-        </button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button type="button" class="btn btn-white btn-sm" onclick="Tes.exportCsvOrang(${r.id}, this)" title="Export CSV peserta ini">
+            <i class="fa-solid fa-file-csv"></i> CSV
+          </button>
+          <button type="button" class="btn btn-red btn-sm" onclick="Tes.bukaKoreksi(${r.id})">
+            <i class="fa-solid fa-eye"></i> Detail / Koreksi
+          </button>
+        </div>
       </div>`).join("");
   },
 
@@ -2167,7 +2183,7 @@ const Tes = {
         </div>
         <div class="tes-topbar-acts">
           <button type="button" class="btn btn-white btn-sm" onclick="Tes.bukaBuilder(${tes.id})"><i class="fa-solid fa-pen"></i> Edit Soal</button>
-          ${total ? `<button type="button" class="btn btn-red btn-sm" onclick="Tes.exportCsv()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>` : ""}
+          ${total ? `<button type="button" class="btn btn-red btn-sm" id="btnExportCsv" onclick="Tes.exportCsv()"><i class="fa-solid fa-file-csv"></i> Export CSV</button>` : ""}
         </div>
       </div>
 
@@ -2208,27 +2224,227 @@ const Tes = {
     listWrap.innerHTML = Tes.rekapRowsHtml(filtered);
   },
 
-  exportCsv() {
-    if (!Tes.hasil || !Tes.hasil.list || !Tes.hasil.list.length) return;
+  slugFile(teks, fallback = "export") {
+    return String(teks || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || fallback;
+  },
+
+  unduhCsv(filename, rows) {
     const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = [
-      ["Nama", "Username", "Jabatan", "Status", "Skor Otomatis", "Skor Manual", "Skor Total", "Skor Maks", "Percobaan", "Waktu Selesai", "Catatan"],
-      ...Tes.hasil.list.map((r) => [
-        r.nama, r.username, r.jabatan, r.status,
-        r.skor_otomatis, r.skor_manual, r.skor_total, r.skor_maks,
-        r.percobaan_ke, r.selesai_at, r.catatan_koreksi,
-      ]),
-    ];
     const csv = "\uFEFF" + rows.map((row) => row.map(escCsv).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `rekap-tes-${Tes.hasil.tes.id || "export"}.csv`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
+
+  async exportCsvOrang(hasilId = null, btnEl = null) {
+    const btn = btnEl || document.getElementById("btnExportCsvOrang");
+    const oldHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ...';
+    }
+    try {
+      let detail = null;
+      if (!hasilId && Tes.hasil && Tes.hasil.detail) {
+        detail = Tes.hasil.detail;
+      } else if (hasilId) {
+        const hit = Tes.hasil && Array.isArray(Tes.hasil.list)
+          ? Tes.hasil.list.find((x) => String(x.id) === String(hasilId))
+          : null;
+        if (hit && hit.jawaban && typeof hit.jawaban === "object" && Array.isArray(Tes.hasil.soal) && Tes.hasil.soal.length) {
+          detail = {
+            tes: Tes.hasil.tes,
+            peserta: { id: hit.user_id, nama: hit.nama, username: hit.username, jabatan: hit.jabatan },
+            soal: Tes.hasil.soal,
+            hasil: hit,
+          };
+        } else {
+          detail = await getTesHasilDetail(hasilId);
+          if (hit && detail && detail.hasil) {
+            hit.jawaban = detail.hasil.jawaban || {};
+            hit.penilaian = detail.hasil.penilaian || {};
+          }
+        }
+      }
+      if (!detail || !detail.tes || !detail.hasil) {
+        throw new Error("Detail hasil tidak ditemukan.");
+      }
+
+      const { tes, peserta, soal, hasil } = detail;
+      const cfg = tes.pengaturan || {};
+      const tampilNilai = Tes.bolehKelola() || cfg.tampil_nilai !== false;
+      const tampilKunci = Tes.bolehKelola() || !!cfg.tampil_kunci;
+      const jwb = hasil.jawaban || {};
+      const pen = hasil.penilaian || {};
+      const maks = Number(hasil.skor_maks || 0);
+      const tot = hasil.skor_total != null ? Number(hasil.skor_total) : null;
+      const pct = (maks > 0 && tot !== null) ? `${Math.round((tot / maks) * 100)}%` : "-";
+      const namaP = (peserta && peserta.nama) || hasil.nama || "Peserta";
+      const userP = (peserta && peserta.username) || hasil.username || "-";
+      const jabP = (peserta && peserta.jabatan) || hasil.jabatan || "-";
+
+      const rows = [
+        ["Tes", tes.judul || "-"],
+        ["Nama", namaP],
+        ["Username", userP],
+        ["Jabatan", jabP],
+        ["Status", hasil.status === "menunggu_koreksi" ? "Menunggu Koreksi" : "Selesai"],
+        ["Skor Total", tampilNilai && tot !== null ? `${Tes.fmtAngka(tot)} / ${Tes.fmtAngka(maks)} (${pct})` : "-"],
+        ["Percobaan Ke", Number(hasil.percobaan_ke || 1)],
+        ["Waktu Selesai", Tes.fmtWaktu(hasil.selesai_at)],
+      ];
+      if (hasil.catatan_koreksi) {
+        rows.push(["Catatan Korektor", hasil.catatan_koreksi]);
+      }
+
+      const aspekRows = tampilNilai ? Tes.hitungAspek(soal, pen) : [];
+      if (aspekRows.length >= 2) {
+        rows.push([]);
+        rows.push(["Ringkasan Aspek", "Skor", "Maks", "Persentase"]);
+        aspekRows.forEach((a) => {
+          const apct = a.maks > 0 ? `${Math.round((a.skor / a.maks) * 100)}%` : "-";
+          rows.push([a.nama, Tes.fmtAngka(a.skor), Tes.fmtAngka(a.maks), apct]);
+        });
+      }
+
+      rows.push([]);
+      const qHead = ["No", "Aspek", "Tipe", "Pertanyaan", "Jawaban"];
+      if (tampilNilai) qHead.push("Poin", "Poin Maks");
+      if (tampilKunci) qHead.push("Kunci");
+      qHead.push("Catatan Soal");
+      rows.push(qHead);
+
+      (soal || []).forEach((s, idx) => {
+        const info = Tes.tipeInfo(s.tipe);
+        const asp = Tes.ekstrakAspek(s.pertanyaan) || "-";
+        const ans = Tes.formatJawabanTeks(s, jwb[String(s.id)]);
+        const p = pen[String(s.id)] || {};
+        const qRow = [idx + 1, asp, info.label, s.pertanyaan || "", ans];
+        if (tampilNilai) {
+          qRow.push(p.poin != null ? Tes.fmtAngka(p.poin) : "", Tes.fmtAngka(p.maks != null ? p.maks : (s.poin || 0)));
+        }
+        if (tampilKunci) {
+          qRow.push(Tes.formatKunciTeks(s));
+        }
+        qRow.push(p.catatan || "");
+        rows.push(qRow);
+      });
+
+      const fname = `jawaban-${Tes.slugFile(namaP, "peserta")}-${Tes.slugFile(tes.judul, "tes")}.csv`;
+      Tes.unduhCsv(fname, rows);
+      showToast(`Export CSV ${namaP} berhasil.`, "success");
+    } catch (err) {
+      showPopup("Gagal export CSV: " + (err.message || err), "error");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
+      }
+    }
+  },
+
+  async exportCsv() {
+    if (!Tes.hasil || !Tes.hasil.list || !Tes.hasil.list.length) return;
+    const btn = document.getElementById("btnExportCsv");
+    const list = Tes.hasil.list;
+    const tes = Tes.hasil.tes || {};
+    let soal = Array.isArray(Tes.hasil.soal) ? Tes.hasil.soal : [];
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyiapkan...';
+    }
+
+    try {
+      if (!soal.length && tes.id) {
+        const info = await bukaTes(tes.id, true);
+        if (info && Array.isArray(info.soal)) {
+          soal = info.soal;
+          Tes.hasil.soal = soal;
+        }
+      }
+
+      // Bila tes_hasil_list belum memuat jawaban/penilaian, ambil detail per peserta (batch 5)
+      const kurang = list.filter((r) => !r.jawaban || typeof r.jawaban !== "object");
+      for (let i = 0; i < kurang.length; i += 5) {
+        const batch = kurang.slice(i, i + 5);
+        await Promise.all(batch.map(async (r) => {
+          const d = await getTesHasilDetail(r.id);
+          if (d && d.hasil) {
+            r.jawaban = d.hasil.jawaban || {};
+            r.penilaian = d.hasil.penilaian || {};
+          }
+        }));
+      }
+
+      const aspekList = Tes.hitungAspek(soal, {}).map((a) => a.nama);
+      const pakaiAspek = aspekList.length >= 2;
+
+      const header = [
+        "No", "Nama", "Username", "Jabatan", "Status",
+        "Skor Otomatis", "Skor Manual", "Skor Total", "Skor Maks", "Persentase (%)",
+        "Percobaan", "Waktu Selesai", "Catatan Korektor",
+      ];
+      if (pakaiAspek) {
+        aspekList.forEach((asp) => header.push(`Skor ${asp}`));
+      }
+      soal.forEach((s, idx) => {
+        const teks = String(s.pertanyaan || ("Soal " + (idx + 1))).replace(/[\r\n]+/g, " ").trim();
+        header.push(`${idx + 1}. ${teks}`);
+        header.push(`${idx + 1}. Poin`);
+      });
+
+      const dataRows = list.map((r, rIdx) => {
+        const jwb = r.jawaban || {};
+        const pen = r.penilaian || {};
+        const maks = Number(r.skor_maks || 0);
+        const tot = Number(r.skor_total || 0);
+        const pct = maks > 0 ? Math.round((tot / maks) * 100) : "";
+
+        const row = [
+          rIdx + 1,
+          r.nama, r.username, r.jabatan, r.status,
+          r.skor_otomatis, r.skor_manual, r.skor_total, r.skor_maks, pct,
+          r.percobaan_ke, Tes.fmtWaktu(r.selesai_at), r.catatan_koreksi,
+        ];
+
+        if (pakaiAspek) {
+          const sumByName = new Map(Tes.hitungAspek(soal, pen).map((a) => [a.nama, a.skor]));
+          aspekList.forEach((a) => row.push(Tes.fmtAngka(sumByName.get(a) || 0)));
+        }
+
+        soal.forEach((s) => {
+          const val = jwb[String(s.id)];
+          const teksJawab = Tes.formatJawabanTeks(s, val);
+          const p = pen[String(s.id)] || {};
+          const poinJawab = p.poin != null ? Tes.fmtAngka(p.poin) : "";
+          row.push(teksJawab, poinJawab);
+        });
+
+        return row;
+      });
+
+      const slug = Tes.slugFile(tes.judul || ("tes-" + (tes.id || "export")), "export");
+      Tes.unduhCsv(`jawaban-${slug}.csv`, [header, ...dataRows]);
+      showToast(`Export CSV berhasil (${list.length} peserta, ${soal.length} soal).`, "success");
+    } catch (err) {
+      showPopup("Gagal export CSV: " + (err.message || err), "error");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-file-csv"></i> Export CSV';
+      }
+    }
   },
 };
 

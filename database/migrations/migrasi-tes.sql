@@ -403,7 +403,9 @@ BEGIN
         h.catatan_koreksi,
         h.percobaan_ke,
         h.mulai_at,
-        h.selesai_at
+        h.selesai_at,
+        h.jawaban,
+        h.penilaian
       FROM public.osis_tes_hasil h
       LEFT JOIN public.osis_users u ON u.id = h.user_id
       WHERE h.tes_id = p_tes_id
