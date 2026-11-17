@@ -4195,6 +4195,7 @@ function tesCekJson(data) {
     ERR_NO_AUTH: "Kamu tidak punya kendali atas tes ini.",
     ERR_NOT_FOUND: "Data tes tidak ditemukan.",
     ERR_TES_TUTUP: "Tes sedang tidak aktif / sudah ditutup.",
+    ERR_BATAS_WAKTU: "Batas waktu tes ini sudah berakhir.",
     ERR_SUDAH_MENGERJAKAN: "Kamu sudah mengumpulkan tes ini (tidak diizinkan ulang).",
     ERR_SOAL_INVALID: "Format daftar soal tidak valid.",
   };

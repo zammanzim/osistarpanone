@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OSIS - Profil Saya</title>
     <link rel="stylesheet" href="../assets/css/shared/style.css?v=41" />
-    <link rel="stylesheet" href="../assets/css/shared/osis2.css?v=15" />
+    <link rel="stylesheet" href="../assets/css/shared/osis2.css?v=17" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -23,10 +23,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../assets/css/osis/profil.css?v=3" />
+    <link rel="stylesheet" href="../assets/css/osis/profil.css?v=4" />
     <script src="../assets/js/vendor/supabase.min.js?v=10"></script>
     <script src="../assets/js/core/config.js?v=14"></script>
-    <script src="../assets/js/core/db.js?v=35" defer></script>
+    <script src="../assets/js/core/db.js?v=40" defer></script>
     <script src="../assets/js/services/aktivitas.js?v=10" defer></script>
     <script src="../assets/js/core/app.js?v=16" defer></script>
     <script src="../assets/js/shared/ui/dropdown.js?v=3" defer></script>
@@ -37,9 +37,9 @@
     <script src="../assets/js/core/osis-auth.js?v=19" defer></script>
     <script src="../assets/js/osis/shell/osis-visitor.js?v=5" defer></script>
     <script src="../assets/js/osis/shell/osis-sidebar.js?v=47" defer></script>
-    <script src="../assets/js/osis/shell/osis-header.js?v=18" defer></script>
+    <script src="../assets/js/osis/shell/osis-header.js?v=20" defer></script>
     <script src="../assets/js/shared/utilities/form-persist.js?v=10" defer></script>
-    <script src="../assets/js/osis/modules/profil.js?v=10" defer></script>
+    <script src="../assets/js/osis/modules/profil.js?v=11" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -59,75 +59,209 @@
     </header>
 
     <div class="osis-wrap">
-      <div class="profil-cols">
-      <div class="profil-side">
-
-      <div class="profil-hero">
-        <div class="profil-avatar">
-          <img id="profilImg" alt="Foto profil" />
-          <span id="profilPlaceholder">O</span>
+      <!-- HERO IDENTITAS FULL-WIDTH -->
+      <div class="osis-hero prof-hero">
+        <div class="prof-avatar-wrap">
+          <div class="prof-avatar">
+            <img id="profilImg" alt="Foto profil" />
+            <span id="profilPlaceholder">O</span>
+          </div>
+          <button type="button" class="prof-cam-btn" id="btnAvatarCam" title="Ganti foto profil">
+            <i class="fa-solid fa-camera"></i>
+          </button>
         </div>
-        <div style="flex: 1; min-width: 200px">
-          <h1 id="profilHeroNama">Memuat...</h1>
-          <div class="uname" id="profilHeroUser">@-</div>
-          <span class="jabatan" id="profilHeroJabatan">OSIS</span>
-          <p class="bio" id="profilHeroBio"></p>
+        <div class="prof-hero-info">
+          <div class="prof-kicker">
+            <i class="fa-solid fa-id-badge"></i> KARTU IDENTITAS PENGURUS
+          </div>
+          <div class="prof-hero-name-row">
+            <h1 id="profilHeroNama">Memuat...</h1>
+            <span class="prof-uname" id="profilHeroUser">@-</span>
+          </div>
+          <p class="prof-hero-bio" id="profilHeroBio">Memuat bio...</p>
+          <div class="osis-meta">
+            <span class="osis-badge prof-badge-jab" id="profilHeroJabatan">OSIS</span>
+            <span class="osis-badge prof-badge-role" id="profilHeroRole" style="display: none"></span>
+            <span class="osis-badge prof-badge-sekbid" id="profilHeroSekbid" style="display: none"></span>
+            <span class="osis-badge prof-badge-ang" id="profilHeroAngkatan" style="display: none"></span>
+          </div>
+        </div>
+        <div class="prof-hero-acts">
+          <a href="index" class="btn btn-white btn-sm"><i class="fa-solid fa-gauge"></i> Dashboard</a>
         </div>
       </div>
 
-      <div class="osis-panel">
-          <h3><i class="fa-solid fa-camera"></i> Foto Profil</h3>
-          <div class="profil-drop" id="profilDrop">
-            <div><i class="fa-solid fa-cloud-arrow-up"></i> Klik / seret foto ke sini</div>
-            <small id="profilFotoHint" style="display: none; color: var(--gray)">Foto baru siap — klik Simpan Profil biar permanen.</small>
-          </div>
-          <input type="file" id="profilFile" accept="image/*" style="display: none" />
-          <div class="profil-actions">
-            <button class="btn btn-white btn-sm" id="btnHapusFoto" style="display: none">
-              <i class="fa-solid fa-trash-can"></i> Hapus foto
+      <!-- WORKSPACE 2-KOLOM PROPORSIONAL -->
+      <div class="prof-cols">
+        <aside class="prof-side">
+          <!-- Dark Account & Permissions Summary Card -->
+          <div class="prof-dark-card">
+            <div class="prof-dark-head">
+              <span class="lbl"><i class="fa-solid fa-shield-halved"></i> Akun &amp; Hak Akses</span>
+              <span class="prof-role-pill" id="akunRolePill">Pengurus</span>
+            </div>
+
+            <div class="prof-meta-rows">
+              <div class="prof-meta-row">
+                <span>Email login</span>
+                <input type="text" id="akunEmail" class="prof-email-ro" readonly aria-label="Email login" />
+              </div>
+              <div class="prof-meta-row">
+                <span>Sekbid</span>
+                <b id="akunSekbid">-</b>
+              </div>
+              <div class="prof-meta-row">
+                <span>Angkatan</span>
+                <b id="akunAngkatan">-</b>
+              </div>
+            </div>
+
+            <div class="prof-hak-box">
+              <div class="prof-hak-top">
+                <span>Hak kelola halaman</span>
+                <small id="akunHakCnt">0</small>
+              </div>
+              <div class="hak-list" id="akunHak"></div>
+            </div>
+
+            <button type="button" class="btn btn-white btn-sm prof-logout-btn" id="btnLogoutProfil">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar dari akun
             </button>
           </div>
-        </div>
-      </div>
-      <div class="profil-main">
 
-        <div class="osis-panel">
-          <h3><i class="fa-solid fa-id-card"></i> Data Diri</h3>
-          <div class="field"><label>Nama lengkap</label><input type="text" id="profilNama" class="admin-input" maxlength="80" autocomplete="off" /></div>
-          <div class="field"><label>Jabatan</label><input type="text" id="profilJabatan" class="admin-input" readonly /></div>
-          <div class="field"><label>Bio</label><textarea id="profilBio" class="admin-input admin-textarea" maxlength="300" rows="3"></textarea></div>
-          <div class="profil-actions">
-            <button class="btn btn-red" id="btnSimpanProfil"><i class="fa-solid fa-floppy-disk"></i> Simpan Profil</button>
+          <!-- Panel Foto Profil -->
+          <div class="prof-panel">
+            <div class="prof-panel-head">
+              <span class="prof-ico amber"><i class="fa-solid fa-camera"></i></span>
+              <div class="prof-head-txt">
+                <h3>Foto Profil</h3>
+                <small>Klik atau seret gambar ke kotak</small>
+              </div>
+              <span class="prof-status-pill" id="profilFotoBadge">-</span>
+            </div>
+            <div class="profil-drop" id="profilDrop" role="button" tabindex="0" aria-label="Pilih foto profil">
+              <img id="profilDropPreview" alt="Pratinjau foto profil" />
+              <div class="prof-drop-prompt" id="profilDropPrompt">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>Klik atau seret foto ke sini</span>
+                <small>JPG / PNG / WebP · disarankan rasio 1:1</small>
+              </div>
+            </div>
+            <small id="profilFotoHint" class="prof-staged-hint" style="display: none"></small>
+            <input type="file" id="profilFile" accept="image/*" style="display: none" />
+            <div class="profil-actions">
+              <button type="button" class="btn btn-white btn-sm" id="btnPilihFoto">
+                <i class="fa-solid fa-image"></i> Pilih Foto
+              </button>
+              <button type="button" class="btn btn-red btn-sm" id="btnHapusFoto" style="display: none">
+                <i class="fa-solid fa-trash-can"></i> Hapus Foto
+              </button>
+            </div>
           </div>
-        </div>
+        </aside>
 
-        <div class="osis-panel">
-          <h3><i class="fa-solid fa-at"></i> Username</h3>
-          <div class="field"><label>Username login</label><input type="text" id="profilUsername" class="admin-input" minlength="3" maxlength="30" autocomplete="off" /></div>
-          <div class="profil-actions">
-            <button class="btn btn-red" id="btnSimpanUsername"><i class="fa-solid fa-check"></i> Simpan</button>
+        <main class="prof-main">
+          <!-- Data Diri -->
+          <div class="prof-panel">
+            <div class="prof-panel-head">
+              <span class="prof-ico blue"><i class="fa-solid fa-id-card"></i></span>
+              <div class="prof-head-txt">
+                <h3>Identitas &amp; Data Diri</h3>
+                <small>Nama, bio, dan foto profil tampil di kartu pengurus &amp; dashboard</small>
+              </div>
+            </div>
+            <div class="prof-form-grid">
+              <div class="field">
+                <label for="profilNama">Nama lengkap *</label>
+                <input type="text" id="profilNama" class="admin-input" maxlength="80" autocomplete="off" placeholder="Nama lengkap..." />
+              </div>
+              <div class="field">
+                <label for="profilJabatan">Jabatan <small class="prof-lbl-sub">(diatur super admin)</small></label>
+                <input type="text" id="profilJabatan" class="admin-input" readonly />
+              </div>
+            </div>
+            <div class="field">
+              <div class="prof-lbl-row">
+                <label for="profilBio">Bio singkat</label>
+                <span class="prof-char-cnt" id="profBioCount">0 / 300</span>
+              </div>
+              <textarea id="profilBio" class="admin-input admin-textarea" maxlength="300" rows="3" placeholder="Tulis bio, motto, atau catatan singkat tentang dirimu..."></textarea>
+            </div>
+            <div class="prof-card-foot">
+              <small class="prof-foot-note"><i class="fa-solid fa-circle-info"></i> Perubahan foto ikut disimpan lewat tombol ini.</small>
+              <button type="button" class="btn btn-red" id="btnSimpanProfil">
+                <i class="fa-solid fa-floppy-disk"></i> Simpan Profil
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="osis-panel">
-          <h3><i class="fa-solid fa-key"></i> Password</h3>
-          <div class="field"><label>Password lama</label><input type="password" id="profilPwLama" class="admin-input" autocomplete="current-password" /></div>
-          <div class="field"><label>Password baru (min. 6)</label><input type="password" id="profilPwBaru" class="admin-input" autocomplete="new-password" /></div>
-          <div class="field"><label>Konfirmasi password baru</label><input type="password" id="profilPwKonfirm" class="admin-input" autocomplete="new-password" /></div>
-          <div class="profil-actions">
-            <button class="btn btn-red" id="btnSimpanPassword"><i class="fa-solid fa-check"></i> Simpan</button>
+          <!-- Username -->
+          <div class="prof-panel">
+            <div class="prof-panel-head">
+              <span class="prof-ico yellow"><i class="fa-solid fa-at"></i></span>
+              <div class="prof-head-txt">
+                <h3>Username Akun</h3>
+                <small>Dipakai untuk login &amp; penaut otomatis roster anggota (3–30 karakter)</small>
+              </div>
+            </div>
+            <div class="prof-uname-row">
+              <div class="prof-uname-wrap">
+                <span class="prof-at-prefix" aria-hidden="true">@</span>
+                <input type="text" id="profilUsername" class="admin-input prof-uname-inp" minlength="3" maxlength="30" autocomplete="off" placeholder="username_kamu" />
+              </div>
+              <button type="button" class="btn btn-red" id="btnSimpanUsername">
+                <i class="fa-solid fa-check"></i> Simpan Username
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="osis-panel">
-          <h3><i class="fa-solid fa-circle-user"></i> Akun Saya</h3>
-          <div class="field"><label>Email login</label><input type="text" id="akunEmail" class="admin-input" readonly /></div>
-          <div class="field"><label>Hak kelola halaman</label><div class="hak-list" id="akunHak"></div></div>
-          <div class="profil-actions">
-            <button class="btn btn-white" id="btnLogoutProfil"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar dari akun</button>
+          <!-- Password -->
+          <div class="prof-panel">
+            <div class="prof-panel-head">
+              <span class="prof-ico red"><i class="fa-solid fa-key"></i></span>
+              <div class="prof-head-txt">
+                <h3>Keamanan &amp; Password</h3>
+                <small>Minimal 6 karakter · verifikasi terlebih dulu dengan password lama</small>
+              </div>
+            </div>
+            <div class="field">
+              <label for="profilPwLama">Password saat ini</label>
+              <div class="prof-pw-wrap">
+                <input type="password" id="profilPwLama" class="admin-input" autocomplete="current-password" placeholder="Masukkan password lama..." />
+                <button type="button" class="prof-pw-eye" data-pw-toggle="profilPwLama" title="Tampilkan password" aria-label="Tampilkan password">
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div class="prof-form-grid">
+              <div class="field">
+                <label for="profilPwBaru">Password baru (min. 6)</label>
+                <div class="prof-pw-wrap">
+                  <input type="password" id="profilPwBaru" class="admin-input" autocomplete="new-password" placeholder="Minimal 6 karakter..." />
+                  <button type="button" class="prof-pw-eye" data-pw-toggle="profilPwBaru" title="Tampilkan password" aria-label="Tampilkan password">
+                    <i class="fa-regular fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="profilPwKonfirm">Konfirmasi password baru</label>
+                <div class="prof-pw-wrap">
+                  <input type="password" id="profilPwKonfirm" class="admin-input" autocomplete="new-password" placeholder="Ulangi password baru..." />
+                  <button type="button" class="prof-pw-eye" data-pw-toggle="profilPwKonfirm" title="Tampilkan password" aria-label="Tampilkan password">
+                    <i class="fa-regular fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="prof-pw-feedback" id="profPwStatus" style="display: none"></div>
+            <div class="prof-card-foot">
+              <small class="prof-foot-note"><i class="fa-solid fa-lock"></i> Disimpan terenkripsi melalui Supabase Auth.</small>
+              <button type="button" class="btn btn-red" id="btnSimpanPassword">
+                <i class="fa-solid fa-check"></i> Ganti Password
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </main>
       </div>
     </div>
 

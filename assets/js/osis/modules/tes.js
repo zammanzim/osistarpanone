@@ -84,6 +84,75 @@ const Tes = {
     return j > 0 ? `${j}:${pad(m)}:${pad(d)}` : `${pad(m)}:${pad(d)}`;
   },
 
+  fmtCountdown(detik) {
+    const s = Math.max(0, Math.floor(detik || 0));
+    if (s >= 86400) {
+      const hari = Math.floor(s / 86400);
+      return `${hari}h ${Tes.fmtDurasi(s % 86400)}`;
+    }
+    return Tes.fmtDurasi(s);
+  },
+
+  hitungDurasiDetik(mulaiAt, selesaiAt) {
+    if (!mulaiAt || !selesaiAt) return null;
+    const m = new Date(mulaiAt).getTime();
+    const s = new Date(selesaiAt).getTime();
+    if (!Number.isFinite(m) || !Number.isFinite(s) || s < m) return null;
+    return Math.round((s - m) / 1000);
+  },
+
+  fmtDurasiPanjang(detik) {
+    if (detik === null || detik === undefined || !Number.isFinite(Number(detik))) return "-";
+    const s = Math.max(0, Math.floor(Number(detik)));
+    if (s === 0) return "0 detik";
+    const j = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const d = s % 60;
+    const parts = [];
+    if (j > 0) parts.push(`${j} jam`);
+    if (m > 0) parts.push(`${m} menit`);
+    if (d > 0) parts.push(`${d} detik`);
+    return parts.join(" ");
+  },
+
+  parseTutupAtMs(cfg) {
+    const raw = cfg && cfg.tutup_at ? String(cfg.tutup_at).trim() : "";
+    if (!raw) return null;
+    const ms = new Date(raw).getTime();
+    return Number.isFinite(ms) ? ms : null;
+  },
+
+  isBatasWaktuLewat(tes) {
+    const ms = Tes.parseTutupAtMs(tes && tes.pengaturan);
+    return ms !== null && Date.now() >= ms;
+  },
+
+  toDatetimeLocalVal(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (!Number.isFinite(d.getTime())) return "";
+    const pad = (x) => String(x).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  },
+
+  fromDatetimeLocalVal(val) {
+    const s = String(val || "").trim();
+    if (!s) return null;
+    const d = new Date(s);
+    return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+  },
+
+  getDeadlineMs(tes, startedAt) {
+    const cfg = (tes && tes.pengaturan) || {};
+    const durasi = Number(cfg.durasi_menit || 0);
+    const tutupMs = Tes.parseTutupAtMs(cfg);
+    const startMs = new Date(startedAt || Date.now()).getTime() || Date.now();
+    const dDurasi = durasi > 0 ? startMs + durasi * 60000 : Infinity;
+    const dTutup = tutupMs !== null ? tutupMs : Infinity;
+    const min = Math.min(dDurasi, dTutup);
+    return Number.isFinite(min) ? min : null;
+  },
+
   huruf(i) {
     const abjad = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     return i < abjad.length ? abjad[i] : String(i + 1);
@@ -378,6 +447,8 @@ const Tes = {
     const bisaItem = Tes.bolehKelolaItem(t);
     const h = t.saya_hasil;
     const durasi = Number(cfg.durasi_menit || 0);
+    const tutupMs = Tes.parseTutupAtMs(cfg);
+    const lewat = tutupMs !== null && Date.now() >= tutupMs;
     const bolehUlang = cfg.boleh_ulang !== false;
 
     let badgeSaya = "";
@@ -396,7 +467,7 @@ const Tes = {
     }
 
     let tombolUtama = "";
-    if (t.status === "aktif") {
+    if (t.status === "aktif" && !lewat) {
       if (!h) {
         tombolUtama = `<button type="button" class="btn btn-red btn-sm" onclick="Tes.mulaiKerjakan(${t.id})"><i class="fa-solid fa-play"></i> Mulai Tes</button>`;
       } else if (bolehUlang) {
@@ -410,6 +481,8 @@ const Tes = {
       tombolUtama = `<button type="button" class="btn btn-white btn-sm" onclick="Tes.bukaHasilSaya(${t.id}, ${h.id})"><i class="fa-solid fa-square-poll-vertical"></i> Lihat Hasil</button>`;
     } else if (t.status === "draft") {
       tombolUtama = `<span style="font-size:0.74rem;font-weight:700;color:var(--gray)">Masih draft (belum dibuka)</span>`;
+    } else if (t.status === "aktif" && lewat) {
+      tombolUtama = `<span style="font-size:0.74rem;font-weight:700;color:var(--gray)">Batas waktu tes sudah berakhir</span>`;
     } else {
       tombolUtama = `<span style="font-size:0.74rem;font-weight:700;color:var(--gray)">Tes ditutup</span>`;
     }
@@ -418,13 +491,21 @@ const Tes = {
       ? `<span class="tes-pill koreksi"><i class="fa-solid fa-pen-to-square"></i> ${t.menunggu_koreksi_count} Perlu Koreksi</span>`
       : "";
 
+    const durSaya = h ? Tes.hitungDurasiDetik(h.mulai_at, h.selesai_at) : null;
+    const statusCls = (t.status === "aktif" && lewat) ? "ditutup" : t.status;
+    const statusTxt = (t.status === "aktif" && lewat) ? "Waktu Habis" : (Tes.STATUS_LABEL[t.status] || t.status);
+    const metaWaktuParts = [];
+    if (durasi > 0) metaWaktuParts.push(`${durasi} menit`);
+    if (tutupMs !== null) metaWaktuParts.push(`Batas: ${Tes.fmtWaktu(cfg.tutup_at)}`);
+    const metaWaktuTxt = metaWaktuParts.length ? metaWaktuParts.join(" · ") : "Tanpa batas waktu";
+
     return `
       <div class="tes-card">
         <div class="tes-card-top">
           <h3 class="tes-card-title">${escapeHtml(t.judul || "Tanpa judul")}</h3>
           <div class="tes-badges">
             ${t.kategori ? `<span class="tes-pill kat">${escapeHtml(t.kategori)}</span>` : ""}
-            <span class="tes-pill ${escapeHtml(t.status)}">${escapeHtml(Tes.STATUS_LABEL[t.status] || t.status)}</span>
+            <span class="tes-pill ${escapeHtml(statusCls)}">${escapeHtml(statusTxt)}</span>
           </div>
         </div>
         ${t.deskripsi ? `<div class="tes-card-desc">${escapeHtml(t.deskripsi)}</div>` : ""}
@@ -432,7 +513,8 @@ const Tes = {
         <div class="tes-card-meta">
           <span><i class="fa-solid fa-list-ol"></i> ${Number(t.soal_count || 0)} soal</span>
           <span><i class="fa-solid fa-award"></i> ${Tes.fmtAngka(t.poin_maks || 0)} poin maks</span>
-          <span><i class="fa-regular fa-clock"></i> ${durasi > 0 ? durasi + " menit" : "Tanpa batas waktu"}</span>
+          <span><i class="fa-regular fa-clock"></i> ${escapeHtml(metaWaktuTxt)}</span>
+          ${durSaya !== null ? `<span><i class="fa-solid fa-stopwatch"></i> Durasi saya: ${escapeHtml(Tes.fmtDurasiPanjang(durSaya))}</span>` : ""}
           ${bisaItem ? `<span><i class="fa-solid fa-users"></i> ${Number(t.peserta_count || 0)} peserta</span>` : ""}
           ${t.pengunggah ? `<span><i class="fa-solid fa-user-pen"></i> ${escapeHtml(t.pengunggah)}</span>` : ""}
         </div>
@@ -452,12 +534,12 @@ const Tes = {
       const res = await bukaTes(tesId, false);
       if (!res || !res.tes) return;
       const cfg = res.tes.pengaturan || {};
-      if (res.tes.status === "aktif" && (!res.saya_hasil || cfg.boleh_ulang !== false)) {
+      if (res.tes.status === "aktif" && !Tes.isBatasWaktuLewat(res.tes) && (!res.saya_hasil || cfg.boleh_ulang !== false)) {
         await Tes.mulaiKerjakan(tesId, res);
       } else if (res.saya_hasil) {
         await Tes.bukaHasilSaya(tesId, res.saya_hasil.id);
       } else {
-        showToast("Tes sedang tidak aktif.", "info");
+        showToast("Tes sedang tidak aktif atau batas waktunya sudah berakhir.", "info");
       }
     } catch (err) {
       showToast(err.message || "Gagal membuka tes.", "error");
@@ -528,6 +610,14 @@ const Tes = {
         showToast("Tes ini belum dibuka atau sudah ditutup.", "error");
         return;
       }
+      const tutupMs = Tes.parseTutupAtMs(cfg);
+      const draft = Tes.bacaDraftQuiz(t.id);
+      if (tutupMs !== null && Date.now() >= tutupMs) {
+        if (!draft || Date.now() - tutupMs > 120000) {
+          showToast("Batas waktu tes ini sudah berakhir.", "error");
+          return;
+        }
+      }
       if (data.saya_hasil && cfg.boleh_ulang === false) {
         await Tes.bukaHasilSaya(tesId, data.saya_hasil.id);
         return;
@@ -538,7 +628,6 @@ const Tes = {
         return;
       }
 
-      const draft = Tes.bacaDraftQuiz(t.id);
       let soal = rawSoal.map((s) => {
         const copy = { ...s };
         if (cfg.acak_opsi && (copy.tipe === "pg" || copy.tipe === "multi") && Array.isArray(copy.opsi)) {
@@ -584,16 +673,17 @@ const Tes = {
   mulaiTimer() {
     Tes.hentiTimer();
     if (!Tes.quiz) return;
-    const durasi = Number((Tes.quiz.tes.pengaturan || {}).durasi_menit || 0);
-    if (!durasi || durasi <= 0) return;
+    const deadlineMs = Tes.getDeadlineMs(Tes.quiz.tes, Tes.quiz.startedAt);
+    if (deadlineMs === null) return;
 
     const cek = () => {
       if (!Tes.quiz || Tes.view !== "quiz") { Tes.hentiTimer(); return; }
-      const startMs = new Date(Tes.quiz.startedAt).getTime() || Date.now();
-      const sisa = Math.ceil((startMs + durasi * 60000 - Date.now()) / 1000);
+      const dMs = Tes.getDeadlineMs(Tes.quiz.tes, Tes.quiz.startedAt);
+      if (dMs === null) { Tes.hentiTimer(); return; }
+      const sisa = Math.ceil((dMs - Date.now()) / 1000);
       const pill = document.getElementById("tesTimerPill");
       if (pill) {
-        pill.innerHTML = `<i class="fa-regular fa-clock"></i> ${Tes.fmtDurasi(sisa)}`;
+        pill.innerHTML = `<i class="fa-regular fa-clock"></i> ${Tes.fmtCountdown(sisa)}`;
         pill.classList.toggle("danger", sisa <= 60);
       }
       if (sisa <= 0) {
@@ -622,8 +712,7 @@ const Tes = {
     const { tes, soal, idx } = Tes.quiz;
     const s = soal[idx];
     if (!s) return;
-    const cfg = tes.pengaturan || {};
-    const durasi = Number(cfg.durasi_menit || 0);
+    const deadlineMs = Tes.getDeadlineMs(tes, Tes.quiz.startedAt);
     const info = Tes.tipeInfo(s.tipe);
     const isRagu = !!Tes.quiz.ragu[String(s.id)];
     const dijawabCount = soal.filter((q) => Tes.soalTerjawab(q)).length;
@@ -721,7 +810,7 @@ const Tes = {
           <small>Pertanyaan ${idx + 1} dari ${soal.length} · ${dijawabCount} terjawab</small>
         </div>
         <div class="tes-topbar-acts">
-          ${durasi > 0 ? `<span class="tes-timer" id="tesTimerPill"><i class="fa-regular fa-clock"></i> ${durasi}:00</span>` : ""}
+          ${deadlineMs !== null ? `<span class="tes-timer" id="tesTimerPill"><i class="fa-regular fa-clock"></i> ${Tes.fmtCountdown(Math.ceil((deadlineMs - Date.now()) / 1000))}</span>` : ""}
         </div>
       </div>
 
@@ -1078,6 +1167,7 @@ const Tes = {
             status: data.tes.status || "draft",
             pengaturan: {
               durasi_menit: Number(cfg.durasi_menit || 0),
+              tutup_at: cfg.tutup_at || null,
               acak_soal: !!cfg.acak_soal,
               acak_opsi: !!cfg.acak_opsi,
               boleh_ulang: cfg.boleh_ulang !== false,
@@ -1104,6 +1194,7 @@ const Tes = {
           status: "draft",
           pengaturan: {
             durasi_menit: 0,
+            tutup_at: null,
             acak_soal: false,
             acak_opsi: false,
             boleh_ulang: true,
@@ -1189,10 +1280,24 @@ const Tes = {
                 oninput="Tes.setMetaTes('deskripsi', this.value)">${escapeHtml(tes.deskripsi)}</textarea>
             </div>
             <div class="field">
-              <label>Batas Waktu (menit, 0 = tanpa batas)</label>
-              <input type="number" min="0" max="600" class="admin-input"
+              <label>Durasi Pengerjaan (menit, 0 = bebas)</label>
+              <input type="number" min="0" max="1440" class="admin-input"
                 value="${Number(cfg.durasi_menit || 0)}"
-                oninput="Tes.setCfgTes('durasi_menit', Math.max(0, Math.min(600, parseInt(this.value || 0, 10) || 0)))">
+                oninput="Tes.setCfgTes('durasi_menit', Math.max(0, Math.min(1440, parseInt(this.value || 0, 10) || 0)))">
+            </div>
+            <div class="field">
+              <label>Batas Akhir (Tanggal &amp; Jam, opsional)</label>
+              <div class="tes-dt-row">
+                <input type="datetime-local" id="tesCfgTutupAt" class="admin-input"
+                  value="${escapeHtml(Tes.toDatetimeLocalVal(cfg.tutup_at))}"
+                  oninput="Tes.setCfgTutupAt(this.value)">
+                <button type="button" class="btn btn-white btn-sm" onclick="Tes.setCfgTutupAt('', true)" title="Kosongkan batas tanggal &amp; jam">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <small style="font-size:0.71rem;font-weight:600;color:var(--gray);line-height:1.4">
+                Bisa isi salah satu atau keduanya. Kalau dua-duanya diisi, waktu yang lebih dulu habis yang dipakai.
+              </small>
             </div>
             <div class="tes-switch-list">
               <label class="tes-switch">
@@ -1456,6 +1561,17 @@ const Tes = {
   setCfgTes(k, v) {
     if (!Tes.builder) return;
     Tes.builder.tes.pengaturan[k] = v;
+    Tes.tandaiBuilderKotor();
+  },
+
+  setCfgTutupAt(localVal, clearEl = false) {
+    if (!Tes.builder) return;
+    const iso = Tes.fromDatetimeLocalVal(localVal);
+    Tes.builder.tes.pengaturan.tutup_at = iso;
+    if (clearEl) {
+      const el = document.getElementById("tesCfgTutupAt");
+      if (el) el.value = "";
+    }
     Tes.tandaiBuilderKotor();
   },
 
@@ -1945,6 +2061,8 @@ const Tes = {
     const maks = Number(hasil.skor_maks || 0);
     const total = hasil.skor_total !== null && hasil.skor_total !== undefined ? Number(hasil.skor_total) : null;
     const persen = (maks > 0 && total !== null) ? Math.round((total / maks) * 100) : null;
+    const durDetik = Tes.hitungDurasiDetik(hasil.mulai_at, hasil.selesai_at);
+    const durTeks = Tes.fmtDurasiPanjang(durDetik);
 
     let skorCardHtml = "";
     if (!tampilNilai) {
@@ -2031,7 +2149,7 @@ const Tes = {
         </button>
         <div class="tes-topbar-title">
           <h2>${modeKoreksi ? `Koreksi: ${escapeHtml((peserta && peserta.nama) || "Peserta")}` : `Hasil: ${escapeHtml(tes.judul)}`}</h2>
-          <small>Dikumpulkan ${Tes.fmtWaktu(hasil.selesai_at)} · Percobaan ke-${Number(hasil.percobaan_ke || 1)}</small>
+          <small>Dikumpulkan ${Tes.fmtWaktu(hasil.selesai_at)} · Durasi: ${escapeHtml(durTeks)} · Percobaan ke-${Number(hasil.percobaan_ke || 1)}</small>
         </div>
         <div class="tes-topbar-acts">
           ${(modeKoreksi || Tes.bolehKelola() || (tampilNilai && tampilKunci))
@@ -2039,7 +2157,7 @@ const Tes = {
           ${!modeKoreksi && tes.status === "aktif" && cfg.boleh_ulang !== false
             ? `<button type="button" class="btn btn-red btn-sm" onclick="Tes.mulaiKerjakan(${tes.id})"><i class="fa-solid fa-rotate-right"></i> Kerjakan Ulang</button>` : ""}
           ${modeKoreksi
-            ? `<button type="button" class="btn btn-white btn-sm" onclick="Tes.konfirmResetHasil(${hasil.id}, ${tes.id})"><i class="fa-solid fa-rotate-left"></i> Reset Percobaan</button>` : ""}
+            ? `<button type="button" class="btn btn-white btn-sm" onclick="Tes.konfirmResetHasil(${hasil.id}, ${tes.id})"><i class="fa-solid fa-trash-can"></i> Hapus Hasil</button>` : ""}
         </div>
       </div>
 
@@ -2052,6 +2170,11 @@ const Tes = {
             ${peserta ? `<span class="tes-pill">${escapeHtml(peserta.nama || "-")}${peserta.jabatan ? " · " + escapeHtml(peserta.jabatan) : ""}</span>` : ""}
           </div>
           <h2 style="font-size:1.15rem;font-weight:900">${escapeHtml(tes.judul)}</h2>
+          <div class="tes-card-meta" style="margin-top:8px">
+            <span><i class="fa-solid fa-play"></i> Mulai: ${hasil.mulai_at ? Tes.fmtWaktu(hasil.mulai_at) : "-"}</span>
+            <span><i class="fa-solid fa-flag-checkered"></i> Selesai: ${Tes.fmtWaktu(hasil.selesai_at)}</span>
+            <span><i class="fa-solid fa-stopwatch"></i> Durasi: ${escapeHtml(durTeks)}</span>
+          </div>
           ${hasil.catatan_koreksi ? `<p style="font-size:0.84rem;font-weight:600;margin-top:6px"><i class="fa-solid fa-comment-dots" style="color:var(--red)"></i> Catatan: ${escapeHtml(hasil.catatan_koreksi)}</p>` : ""}
         </div>
         ${skorCardHtml}
@@ -2120,14 +2243,26 @@ const Tes = {
   },
 
   async konfirmResetHasil(hasilId, tesId) {
-    const yakin = await showPopup("Hapus hasil peserta ini agar yang bersangkutan bisa mengulang dari awal?", "confirm");
+    let nama = "";
+    try {
+      const hit = Tes.hasil && Array.isArray(Tes.hasil.list)
+        ? Tes.hasil.list.find((x) => String(x.id) === String(hasilId))
+        : null;
+      if (hit && hit.nama) nama = hit.nama;
+      else if (Tes.hasil && Tes.hasil.detail && Tes.hasil.detail.peserta) {
+        nama = Tes.hasil.detail.peserta.nama || "";
+      }
+    } catch {}
+    const label = nama ? ` "${nama}"` : " peserta ini";
+    const yakin = await showPopup(`Hapus hasil tes${label}? Seluruh jawabannya akan dihapus dan yang bersangkutan bisa mengulang dari awal.`, "confirm");
     if (!yakin) return;
     try {
       await hapusTesHasil(hasilId);
-      showToast("Hasil peserta berhasil direset.", "success");
+      try { catatAksi("hapus_tes_hasil", `${tesId}:${nama || hasilId}`); } catch {}
+      showToast("Hasil tes berhasil dihapus.", "success");
       await Tes.bukaRekap(tesId);
     } catch (err) {
-      showPopup("Gagal reset: " + (err.message || err), "error");
+      showPopup("Gagal hapus hasil: " + (err.message || err), "error");
     }
   },
 
@@ -2135,11 +2270,13 @@ const Tes = {
     if (!filtered.length) {
       return `<div class="osis-panel"><div class="osis-empty">Belum ada peserta yang cocok.</div></div>`;
     }
-    return filtered.map((r) => `
+    return filtered.map((r) => {
+      const dur = Tes.hitungDurasiDetik(r.mulai_at, r.selesai_at);
+      return `
       <div class="tes-peserta-row">
         <div class="tes-peserta-info">
           <b>${escapeHtml(r.nama || "-")}</b>
-          <small>@${escapeHtml(r.username || "-")}${r.jabatan ? " · " + escapeHtml(r.jabatan) : ""} · ${Tes.fmtWaktu(r.selesai_at)} · Percobaan ${Number(r.percobaan_ke || 1)}x</small>
+          <small>@${escapeHtml(r.username || "-")}${r.jabatan ? " · " + escapeHtml(r.jabatan) : ""} · ${Tes.fmtWaktu(r.selesai_at)} · Durasi: ${escapeHtml(Tes.fmtDurasiPanjang(dur))} · Percobaan ${Number(r.percobaan_ke || 1)}x</small>
         </div>
         <span class="tes-pill ${r.status === "menunggu_koreksi" ? "koreksi" : "aktif"}">
           ${r.status === "menunggu_koreksi" ? "Perlu Koreksi" : "Selesai"}
@@ -2152,8 +2289,12 @@ const Tes = {
           <button type="button" class="btn btn-red btn-sm" onclick="Tes.bukaKoreksi(${r.id})">
             <i class="fa-solid fa-eye"></i> Detail / Koreksi
           </button>
+          <button type="button" class="btn btn-white btn-sm" onclick="Tes.konfirmResetHasil(${r.id}, ${r.tes_id})" title="Hapus hasil tes peserta ini">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
         </div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
   },
 
   renderRekapView(wrap) {
@@ -2164,6 +2305,10 @@ const Tes = {
       ? (list.reduce((a, b) => a + Number(b.skor_total || 0), 0) / total)
       : 0;
     const maksSkor = total ? Math.max(...list.map((x) => Number(x.skor_total || 0))) : 0;
+    const durList = list.map((x) => Tes.hitungDurasiDetik(x.mulai_at, x.selesai_at)).filter((d) => d !== null);
+    const rataDurasi = durList.length
+      ? Tes.fmtDurasiPanjang(Math.round(durList.reduce((a, b) => a + b, 0) / durList.length))
+      : "-";
 
     const qLow = (q || "").trim().toLowerCase();
     const filtered = list.filter((r) => {
@@ -2191,6 +2336,7 @@ const Tes = {
         <div class="tes-stat-card"><small>Total Peserta</small><b>${total}</b></div>
         <div class="tes-stat-card"><small>Rata-rata Skor</small><b>${Tes.fmtAngka(rata)}</b></div>
         <div class="tes-stat-card"><small>Skor Tertinggi</small><b>${Tes.fmtAngka(maksSkor)}</b></div>
+        <div class="tes-stat-card"><small>Rata-rata Durasi</small><b style="font-size:1.05rem">${escapeHtml(rataDurasi)}</b></div>
         <div class="tes-stat-card"><small>Perlu Koreksi</small><b style="color:${perluKoreksi ? "var(--red)" : "inherit"}">${perluKoreksi}</b></div>
       </div>
 
@@ -2293,6 +2439,7 @@ const Tes = {
       const userP = (peserta && peserta.username) || hasil.username || "-";
       const jabP = (peserta && peserta.jabatan) || hasil.jabatan || "-";
 
+      const durDetik = Tes.hitungDurasiDetik(hasil.mulai_at, hasil.selesai_at);
       const rows = [
         ["Tes", tes.judul || "-"],
         ["Nama", namaP],
@@ -2301,7 +2448,10 @@ const Tes = {
         ["Status", hasil.status === "menunggu_koreksi" ? "Menunggu Koreksi" : "Selesai"],
         ["Skor Total", tampilNilai && tot !== null ? `${Tes.fmtAngka(tot)} / ${Tes.fmtAngka(maks)} (${pct})` : "-"],
         ["Percobaan Ke", Number(hasil.percobaan_ke || 1)],
+        ["Waktu Mulai", hasil.mulai_at ? Tes.fmtWaktu(hasil.mulai_at) : "-"],
         ["Waktu Selesai", Tes.fmtWaktu(hasil.selesai_at)],
+        ["Durasi Pengerjaan", Tes.fmtDurasiPanjang(durDetik)],
+        ["Durasi (Detik)", durDetik !== null ? durDetik : ""],
       ];
       if (hasil.catatan_koreksi) {
         rows.push(["Catatan Korektor", hasil.catatan_koreksi]);
@@ -2393,7 +2543,7 @@ const Tes = {
       const header = [
         "No", "Nama", "Username", "Jabatan", "Status",
         "Skor Otomatis", "Skor Manual", "Skor Total", "Skor Maks", "Persentase (%)",
-        "Percobaan", "Waktu Selesai", "Catatan Korektor",
+        "Percobaan", "Waktu Mulai", "Waktu Selesai", "Durasi Pengerjaan", "Durasi (Detik)", "Catatan Korektor",
       ];
       if (pakaiAspek) {
         aspekList.forEach((asp) => header.push(`Skor ${asp}`));
@@ -2411,11 +2561,17 @@ const Tes = {
         const tot = Number(r.skor_total || 0);
         const pct = maks > 0 ? Math.round((tot / maks) * 100) : "";
 
+        const durDetik = Tes.hitungDurasiDetik(r.mulai_at, r.selesai_at);
         const row = [
           rIdx + 1,
           r.nama, r.username, r.jabatan, r.status,
           r.skor_otomatis, r.skor_manual, r.skor_total, r.skor_maks, pct,
-          r.percobaan_ke, Tes.fmtWaktu(r.selesai_at), r.catatan_koreksi,
+          r.percobaan_ke,
+          r.mulai_at ? Tes.fmtWaktu(r.mulai_at) : "-",
+          Tes.fmtWaktu(r.selesai_at),
+          Tes.fmtDurasiPanjang(durDetik),
+          durDetik !== null ? durDetik : "",
+          r.catatan_koreksi,
         ];
 
         if (pakaiAspek) {

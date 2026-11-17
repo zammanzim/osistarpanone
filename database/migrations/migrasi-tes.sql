@@ -223,6 +223,7 @@ BEGIN
             END,
             'skor_maks', h.skor_maks,
             'percobaan_ke', h.percobaan_ke,
+            'mulai_at', h.mulai_at,
             'selesai_at', h.selesai_at
           )
           FROM public.osis_tes_hasil h
@@ -549,6 +550,7 @@ DECLARE
   v_status      text;
   v_cfg         jsonb;
   v_durasi      integer;
+  v_tutup_at    timestamptz;
   v_el          jsonb;
   v_ord         integer;
   v_soal_id     bigint;
@@ -587,11 +589,21 @@ BEGIN
 
   v_durasi := 0;
   IF COALESCE(p_pengaturan->>'durasi_menit', '') ~ '^\d+$' THEN
-    v_durasi := GREATEST(0, LEAST(600, (p_pengaturan->>'durasi_menit')::integer));
+    v_durasi := GREATEST(0, LEAST(1440, (p_pengaturan->>'durasi_menit')::integer));
+  END IF;
+
+  v_tutup_at := NULL;
+  IF NULLIF(btrim(COALESCE(p_pengaturan->>'tutup_at', '')), '') IS NOT NULL THEN
+    BEGIN
+      v_tutup_at := (p_pengaturan->>'tutup_at')::timestamptz;
+    EXCEPTION WHEN others THEN
+      v_tutup_at := NULL;
+    END;
   END IF;
 
   v_cfg := jsonb_build_object(
     'durasi_menit', v_durasi,
+    'tutup_at',     CASE WHEN v_tutup_at IS NOT NULL THEN to_char(v_tutup_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') ELSE NULL END,
     'acak_soal',    COALESCE((p_pengaturan->>'acak_soal')::boolean, false),
     'acak_opsi',    COALESCE((p_pengaturan->>'acak_opsi')::boolean, false),
     'boleh_ulang',  COALESCE((p_pengaturan->>'boleh_ulang')::boolean, true),
@@ -759,6 +771,8 @@ DECLARE
   v_kelola       boolean := false;
   v_boleh_ulang  boolean := true;
   v_tampil_nilai boolean := true;
+  v_tutup_at     timestamptz;
+  v_mulai_at     timestamptz;
   v_ada_hasil    boolean := false;
   v_soal         record;
   v_ans          jsonb;
@@ -801,6 +815,18 @@ BEGIN
   v_kelola := public.osis_bisa(p_user_id, 'tes');
   IF v_tes.status <> 'aktif' THEN
     RETURN jsonb_build_object('error', 'ERR_TES_TUTUP');
+  END IF;
+
+  v_tutup_at := NULL;
+  IF NULLIF(btrim(COALESCE(v_tes.pengaturan->>'tutup_at', '')), '') IS NOT NULL THEN
+    BEGIN
+      v_tutup_at := (v_tes.pengaturan->>'tutup_at')::timestamptz;
+    EXCEPTION WHEN others THEN
+      v_tutup_at := NULL;
+    END;
+  END IF;
+  IF v_tutup_at IS NOT NULL AND now() > v_tutup_at + interval '2 minutes' THEN
+    RETURN jsonb_build_object('error', 'ERR_BATAS_WAKTU');
   END IF;
 
   v_boleh_ulang := COALESCE((v_tes.pengaturan->>'boleh_ulang')::boolean, true);
@@ -1005,6 +1031,7 @@ BEGIN
   END LOOP;
 
   v_status_hasil := CASE WHEN v_has_manual THEN 'menunggu_koreksi' ELSE 'selesai' END;
+  v_mulai_at := CASE WHEN p_mulai_at IS NULL THEN NULL ELSE LEAST(p_mulai_at, now()) END;
 
   INSERT INTO public.osis_tes_hasil (
     tes_id, angkatan_id, user_id, jawaban, penilaian,
@@ -1015,7 +1042,7 @@ BEGIN
     p_tes_id, v_tes.angkatan_id, p_user_id, v_clean_jwb, v_penilaian,
     v_skor_auto, 0, v_skor_auto, v_skor_maks,
     v_status_hasil, '', NULL, 1,
-    p_mulai_at, now(), now()
+    v_mulai_at, now(), now()
   )
   ON CONFLICT (tes_id, user_id) DO UPDATE SET
     jawaban         = EXCLUDED.jawaban,

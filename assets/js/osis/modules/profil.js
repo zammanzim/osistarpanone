@@ -7,9 +7,9 @@
 
 const Profil = {
     userId: null,
-    fotoPath: "",     // path foto yang sudah tersimpan di DB
-    pendingFile: null,// File PP baru (staged, belum di-upload)
-    pendingUrl: null, // objectURL preview (buat revoke)
+    fotoPath: "",      // path foto yang sudah tersimpan di DB
+    pendingFile: null, // File PP baru (staged, belum di-upload)
+    pendingUrl: null,  // objectURL preview (buat revoke)
     fotoDihapus: false,
 
     init() {
@@ -26,11 +26,17 @@ const Profil = {
         document.getElementById("btnHapusFoto")?.addEventListener("click", () => Profil.hapusFotoStaged());
         document.getElementById("btnLogoutProfil")?.addEventListener("click", () => OsisAuth.confirmLogout());
 
-        // PP: klik atau drag & drop (kayak prestasi/agenda)
+        // PP: klik tombol kamera / pilih foto / area dropzone + drag & drop
         const drop = document.getElementById("profilDrop");
         const fileInput = document.getElementById("profilFile");
+        const bukaPilihFoto = () => fileInput && fileInput.click();
+        document.getElementById("btnAvatarCam")?.addEventListener("click", bukaPilihFoto);
+        document.getElementById("btnPilihFoto")?.addEventListener("click", bukaPilihFoto);
         if (drop && fileInput) {
-            drop.addEventListener("click", () => fileInput.click());
+            drop.addEventListener("click", bukaPilihFoto);
+            drop.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bukaPilihFoto(); }
+            });
             fileInput.addEventListener("change", (e) => {
                 Profil.handleFile(e.target.files && e.target.files[0]);
                 e.target.value = "";
@@ -47,20 +53,45 @@ const Profil = {
             });
         }
 
+        // Live preview Nama, Bio, dan counter karakter bio
+        document.getElementById("profilNama")?.addEventListener("input", () => Profil.syncLiveHero());
+        document.getElementById("profilBio")?.addEventListener("input", () => Profil.syncLiveHero());
+
+        // Toggle intip password & cek kesamaan password baru
+        document.querySelectorAll("[data-pw-toggle]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const target = document.getElementById(btn.dataset.pwToggle);
+                if (!target) return;
+                const isPw = target.type === "password";
+                target.type = isPw ? "text" : "password";
+                const ico = btn.querySelector("i");
+                if (ico) ico.className = isPw ? "fa-regular fa-eye-slash" : "fa-regular fa-eye";
+                btn.title = isPw ? "Sembunyikan password" : "Tampilkan password";
+            });
+        });
+        document.getElementById("profilPwBaru")?.addEventListener("input", () => Profil.syncPwFeedback());
+        document.getElementById("profilPwKonfirm")?.addEventListener("input", () => Profil.syncPwFeedback());
+
+        Profil.renderHero(u);
+        Profil.renderAkun(u);
+        Profil.syncBioCounter();
+        if (typeof OsisAuth.refreshAkses === "function") {
+            OsisAuth.refreshAkses().then(() => {
+                Profil.renderAkun();
+                Profil.renderHero();
+            }).catch(() => {});
+        }
         Profil.muat();
-    Profil.renderAkun();
     },
 
     async muat() {
         try {
             const fresh = await getOsisUserById(Profil.userId);
             if (!fresh) {
-                // sesi tidak valid lagi — paksa login ulang
                 OsisAuth.logout();
                 location.replace("../login");
                 return;
             }
-            // sync localStorage biar header & dashboard ikut update (tanpa password)
             const cur = OsisAuth.getUser() || {};
             const next = {
                 ...cur,
@@ -84,10 +115,16 @@ const Profil = {
             Profil.fotoDihapus = false;
             Profil._revokePendingUrl();
 
-            document.getElementById("profilNama").value = fresh.nama || "";
-            document.getElementById("profilBio").value = fresh.bio || "";
-            document.getElementById("profilUsername").value = fresh.username || "";
-            document.getElementById("profilJabatan").value = fresh.jabatan || "-";
+            const elNama = document.getElementById("profilNama");
+            const elBio = document.getElementById("profilBio");
+            const elUser = document.getElementById("profilUsername");
+            const elJab = document.getElementById("profilJabatan");
+            if (elNama) elNama.value = fresh.nama || "";
+            if (elBio) elBio.value = fresh.bio || "";
+            if (elUser) elUser.value = fresh.username || "";
+            if (elJab) elJab.value = fresh.jabatan || "-";
+
+            Profil.syncBioCounter();
             Profil.renderFoto();
             Profil.renderHero(fresh);
             Profil.renderAkun(fresh);
@@ -97,34 +134,130 @@ const Profil = {
         }
     },
 
-    renderHero(u) {        const namaEl = document.getElementById("profilHeroNama");
-        const userEl = document.getElementById("profilHeroUser");
-        const jabEl = document.getElementById("profilHeroJabatan");
-        const bioEl = document.getElementById("profilHeroBio");
-        if (namaEl) namaEl.textContent = u.nama || u.username || "OSIS";
-        if (userEl) userEl.textContent = "@" + (u.username || "-");
-        if (jabEl) jabEl.textContent = u.jabatan || "Anggota OSIS";
-        if (bioEl) {
-            bioEl.textContent = u.bio || "Belum ada bio.";
-            bioEl.style.opacity = u.bio ? "1" : "0.55";
+    syncBioCounter() {
+        const bioEl = document.getElementById("profilBio");
+        const cntEl = document.getElementById("profBioCount");
+        if (!bioEl || !cntEl) return;
+        const n = (bioEl.value || "").length;
+        cntEl.textContent = `${n} / 300`;
+        cntEl.classList.toggle("full", n >= 280);
+    },
+
+    syncLiveHero() {
+        Profil.syncBioCounter();
+        const cur = OsisAuth.getUser() || {};
+        const namaVal = (document.getElementById("profilNama")?.value || "").trim();
+        const bioVal = (document.getElementById("profilBio")?.value || "").trim();
+        Profil.renderHero({
+            ...cur,
+            nama: namaVal || cur.nama || cur.username || "OSIS",
+            bio: bioVal
+        });
+        const ph = document.getElementById("profilPlaceholder");
+        if (ph && ph.style.display !== "none") {
+            ph.textContent = String(namaVal || cur.username || "O").trim().charAt(0).toUpperCase() || "O";
         }
     },
 
-    // Panel "Akun Saya": email login (readonly) + daftar hak kelola.
+    syncPwFeedback() {
+        const baru = document.getElementById("profilPwBaru")?.value || "";
+        const konf = document.getElementById("profilPwKonfirm")?.value || "";
+        const el = document.getElementById("profPwStatus");
+        if (!el) return;
+        if (!baru && !konf) {
+            el.style.display = "none";
+            return;
+        }
+        el.style.display = "";
+        if (baru.length < 6) {
+            el.className = "prof-pw-feedback err";
+            el.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Password baru minimal 6 karakter (${baru.length}/6).`;
+        } else if (konf && baru !== konf) {
+            el.className = "prof-pw-feedback err";
+            el.innerHTML = `<i class="fa-solid fa-xmark"></i> Konfirmasi password belum sama.`;
+        } else if (konf && baru === konf) {
+            el.className = "prof-pw-feedback ok";
+            el.innerHTML = `<i class="fa-solid fa-check"></i> Password baru cocok &amp; siap disimpan.`;
+        } else {
+            el.style.display = "none";
+        }
+    },
+
+    renderHero(u) {
+        const user = u || OsisAuth.getUser() || {};
+        const a = (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) ? OsisAuth.getAkses() : null;
+        const namaEl = document.getElementById("profilHeroNama");
+        const userEl = document.getElementById("profilHeroUser");
+        const jabEl = document.getElementById("profilHeroJabatan");
+        const bioEl = document.getElementById("profilHeroBio");
+        const roleEl = document.getElementById("profilHeroRole");
+        const sekEl = document.getElementById("profilHeroSekbid");
+        const angEl = document.getElementById("profilHeroAngkatan");
+
+        if (namaEl) namaEl.textContent = user.nama || user.username || "OSIS";
+        if (userEl) userEl.textContent = "@" + (user.username || "-");
+        if (jabEl) jabEl.textContent = user.jabatan || "Anggota OSIS";
+        if (bioEl) {
+            bioEl.textContent = user.bio || "Belum ada bio.";
+            bioEl.style.opacity = user.bio ? "1" : "0.55";
+        }
+        if (roleEl) {
+            if (a && a.super) {
+                roleEl.style.display = "";
+                roleEl.className = "osis-badge prof-badge-role super";
+                roleEl.innerHTML = `<i class="fa-solid fa-crown"></i> Super Admin`;
+            } else {
+                roleEl.style.display = "none";
+            }
+        }
+        if (sekEl) {
+            const sek = a && a.sekbid_nama ? String(a.sekbid_nama).trim() : "";
+            sekEl.style.display = sek ? "" : "none";
+            if (sek) sekEl.innerHTML = `<i class="fa-solid fa-layer-group"></i> ${escapeHtml(sek)}`;
+        }
+        if (angEl) {
+            const ang = user.angkatan || (a && a.angkatan) || "";
+            angEl.style.display = ang ? "" : "none";
+            if (ang) angEl.innerHTML = `<i class="fa-solid fa-graduation-cap"></i> ${escapeHtml(ang)}`;
+        }
+    },
+
+    // Panel "Akun & Hak Akses": email login, sekbid, angkatan, + daftar hak kelola.
     renderAkun(u) {
         const user = u || OsisAuth.getUser() || {};
-        const em = document.getElementById("akunEmail");
-        if (em) em.value = user.auth_email || "";
-        const box = document.getElementById("akunHak");
-        if (!box) return;
         const a = (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) ? OsisAuth.getAkses() : null;
+
+        const em = document.getElementById("akunEmail");
+        if (em) em.value = user.auth_email || "-";
+
+        const sekEl = document.getElementById("akunSekbid");
+        if (sekEl) sekEl.textContent = (a && a.sekbid_nama) ? a.sekbid_nama : "-";
+
+        const angEl = document.getElementById("akunAngkatan");
+        if (angEl) {
+            const ang = user.angkatan || (a && a.angkatan) || "-";
+            angEl.textContent = ang + (a && a.lintas_angkatan ? " · Lintas" : "");
+        }
+
+        const rolePill = document.getElementById("akunRolePill");
+        if (rolePill) {
+            const isSuper = !!(a && a.super);
+            rolePill.textContent = isSuper ? "Super Admin" : "Pengurus";
+            rolePill.classList.toggle("super", isSuper);
+        }
+
+        const box = document.getElementById("akunHak");
+        const cntEl = document.getElementById("akunHakCnt");
+        if (!box) return;
         if (a && a.super) {
-            box.innerHTML = `<span class="hak-chip super"><i class="fa-solid fa-crown"></i> Super Admin — semua halaman</span>`;
+            if (cntEl) cntEl.textContent = "Penuh";
+            box.innerHTML = `<span class="hak-chip super"><i class="fa-solid fa-crown"></i> Semua Halaman</span>`;
             return;
         }
         const list = a && Array.isArray(a.halaman) ? a.halaman : [];
+        if (cntEl) cntEl.textContent = `${list.length} modul`;
         if (!list.length) {
-            box.innerHTML = `<span class="hak-chip">Anggota — tanpa hak kelola khusus</span>`;
+            box.innerHTML = `<span class="hak-chip muted">Tanpa hak kelola khusus (hanya lihat)</span>`;
             return;
         }
         box.innerHTML = list.map(h => `<span class="hak-chip">${escapeHtml(h)}</span>`).join("");
@@ -133,26 +266,70 @@ const Profil = {
     renderFoto() {
         const img = document.getElementById("profilImg");
         const ph = document.getElementById("profilPlaceholder");
+        const dropImg = document.getElementById("profilDropPreview");
+        const dropPrompt = document.getElementById("profilDropPrompt");
+        const badge = document.getElementById("profilFotoBadge");
         const hint = document.getElementById("profilFotoHint");
         if (!img) return;
+
         let src = "";
         if (Profil.pendingFile) src = Profil.pendingUrl || "";
         else if (!Profil.fotoDihapus && Profil.fotoPath) src = getFoto(Profil.fotoPath);
+
         if (src) {
             img.src = src;
             img.style.display = "block";
             if (ph) ph.style.display = "none";
+            if (dropImg) { dropImg.src = src; dropImg.style.display = "block"; }
+            if (dropPrompt) {
+                const span = dropPrompt.querySelector("span");
+                if (span) span.textContent = "Ketuk / seret untuk ganti foto";
+            }
         } else {
             img.removeAttribute("src");
             img.style.display = "none";
+            if (dropImg) { dropImg.removeAttribute("src"); dropImg.style.display = "none"; }
+            if (dropPrompt) {
+                const span = dropPrompt.querySelector("span");
+                if (span) span.textContent = "Klik atau seret foto ke sini";
+            }
             if (ph) {
                 ph.style.display = "grid";
                 const u = OsisAuth.getUser() || {};
-                const initial = String(u.nama || u.username || "O").trim().charAt(0).toUpperCase() || "O";
+                const namaVal = (document.getElementById("profilNama")?.value || "").trim();
+                const initial = String(namaVal || u.nama || u.username || "O").trim().charAt(0).toUpperCase() || "O";
                 ph.textContent = initial;
             }
         }
-        if (hint) hint.style.display = Profil.pendingFile ? "" : "none";
+
+        if (badge) {
+            if (Profil.pendingFile) {
+                badge.className = "prof-status-pill warn";
+                badge.textContent = "Siap diupload";
+            } else if (Profil.fotoDihapus && Profil.fotoPath) {
+                badge.className = "prof-status-pill del";
+                badge.textContent = "Akan dihapus";
+            } else if (Profil.fotoPath) {
+                badge.className = "prof-status-pill ok";
+                badge.textContent = "Tersimpan";
+            } else {
+                badge.className = "prof-status-pill";
+                badge.textContent = "Kosong";
+            }
+        }
+
+        if (hint) {
+            if (Profil.pendingFile) {
+                hint.style.display = "";
+                hint.innerHTML = `<i class="fa-solid fa-circle-info"></i> Foto baru siap — klik <b>Simpan Profil</b> biar tersimpan permanen.`;
+            } else if (Profil.fotoDihapus && Profil.fotoPath) {
+                hint.style.display = "";
+                hint.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Foto ditandai untuk dihapus — klik <b>Simpan Profil</b> untuk konfirmasi.`;
+            } else {
+                hint.style.display = "none";
+            }
+        }
+
         const delBtn = document.getElementById("btnHapusFoto");
         if (delBtn) delBtn.style.display = (Profil.pendingFile || (!Profil.fotoDihapus && Profil.fotoPath)) ? "" : "none";
     },
@@ -236,7 +413,6 @@ const Profil = {
         const fotoLama = Profil.fotoPath || "";
         try {
             let fotoBaru = Profil.fotoDihapus ? "" : fotoLama;
-            // upload PP baru kalau ada staged
             if (Profil.pendingFile) {
                 const f = Profil.pendingFile;
                 const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
@@ -245,7 +421,6 @@ const Profil = {
                 fotoBaru = path;
             }
             await updateOsisProfil(Profil.userId, nama, bio, fotoBaru);
-            // hapus file lama kalau keganti / dihapus
             if (fotoLama && fotoLama !== fotoBaru) {
                 try { await hapusFotoStorage(fotoLama); } catch {}
             }
@@ -296,7 +471,7 @@ const Profil = {
                 "ERR_NO_AUTH": "Sesi habis, login ulang ya"
             }), "error");
         } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan Username'; }
         }
     },
 
@@ -313,10 +488,6 @@ const Profil = {
         const btn = document.getElementById("btnSimpanPassword");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
         try {
-            // Password dipegang Supabase Auth (bcrypt). Verifikasi password lama
-            // dengan login ulang, lalu update via Auth API. Kolom plaintext lama
-            // sudah dimatikan (migrasi-auth-2-kunci.sql).
-            // Email diambil dari cache/baris terbaru (bisa <nama>@domain).
             let email = emailUntukOsis(u);
             if (!u.auth_email) {
                 try {
@@ -334,12 +505,13 @@ const Profil = {
             document.getElementById("profilPwLama").value = "";
             document.getElementById("profilPwBaru").value = "";
             document.getElementById("profilPwKonfirm").value = "";
+            Profil.syncPwFeedback();
             showToast("Password diganti! Login berikutnya pakai yang baru.", "success");
         } catch (err) {
             console.error(err);
             showToast("Gagal ganti password: " + String((err && err.message) || err), "error");
         } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Ganti Password'; }
         }
     }
 };
