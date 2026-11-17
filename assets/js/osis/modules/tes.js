@@ -391,9 +391,13 @@ const Tes = {
     const wrap = document.getElementById("tesDaftarWrap");
     if (!wrap) return;
     const kelola = Tes.bolehKelola();
-    const ownAll = (typeof OsisAngkatanUi !== "undefined" && OsisAngkatanUi.milikAktif)
-      ? OsisAngkatanUi.milikAktif(Tes.cache || [])
-      : (Tes.cache || []);
+    const allRows = Tes.cache || [];
+    const globalAll = allRows.filter((t) => !!t.global);
+    const scopedAll = allRows.filter((t) => !t.global);
+    const ownScoped = (typeof OsisAngkatanUi !== "undefined" && OsisAngkatanUi.milikAktif)
+      ? OsisAngkatanUi.milikAktif(scopedAll)
+      : scopedAll;
+    const ownAll = [...globalAll, ...ownScoped];
     Tes.renderMeta(ownAll);
 
     const q = (Tes.filter.q || "").trim().toLowerCase();
@@ -423,20 +427,40 @@ const Tes = {
 
     const renderCards = (items) => items.map((t) => Tes.kartuTesHtml(t)).join("");
     const hasF = !!(q || st || sy);
-    const emptyOwnHtml = !ownAll.length
-      ? `<div class="pesan-empty"><i class="fa-solid fa-clipboard-question"></i> Belum ada tes di angkatan ini.${kelola ? " Klik <b>Buat Tes</b> untuk memulai." : ""}</div>`
-      : `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok di angkatan ini. <a href="#" onclick="event.preventDefault();Tes.resetFilter()" style="color:var(--red);font-weight:800">Reset filter</a></div>`;
+    const globalData = data.filter((t) => !!t.global);
+    const scopedData = data.filter((t) => !t.global);
+    const emptyOwnHtml = globalData.length
+      ? ""
+      : (!ownScoped.length
+          ? `<div class="pesan-empty"><i class="fa-solid fa-clipboard-question"></i> Belum ada tes di angkatan ini.${kelola ? " Klik <b>Buat Tes</b> untuk memulai." : ""}</div>`
+          : `<div class="pesan-empty"><i class="fa-solid fa-magnifying-glass"></i> Tidak ada yang cocok di angkatan ini. <a href="#" onclick="event.preventDefault();Tes.resetFilter()" style="color:var(--red);font-weight:800">Reset filter</a></div>`);
 
     if (typeof OsisAngkatanUi !== "undefined" && OsisAngkatanUi.renderSplit) {
-      OsisAngkatanUi.renderSplit(wrap, data, {
-        key: "tes",
-        label: "tes",
-        bodyClass: "ang-acc-stack",
-        hasFilter: hasF,
-        emptyOwnHtml,
-        renderItems: renderCards,
-        onToggleOther: () => Tes.renderDaftar(),
-      });
+      if (globalData.length && !scopedData.length) {
+        wrap.innerHTML = `<div class="ang-acc-stack">${renderCards(globalData)}</div>`;
+      } else if (globalData.length) {
+        wrap.innerHTML = `<div class="ang-acc-stack">${renderCards(globalData)}</div><div id="tesScopedSplit"></div>`;
+        const splitEl = document.getElementById("tesScopedSplit");
+        OsisAngkatanUi.renderSplit(splitEl, scopedData, {
+          key: "tes",
+          label: "tes",
+          bodyClass: "ang-acc-stack",
+          hasFilter: hasF,
+          emptyOwnHtml,
+          renderItems: renderCards,
+          onToggleOther: () => Tes.renderDaftar(),
+        });
+      } else {
+        OsisAngkatanUi.renderSplit(wrap, scopedData, {
+          key: "tes",
+          label: "tes",
+          bodyClass: "ang-acc-stack",
+          hasFilter: hasF,
+          emptyOwnHtml,
+          renderItems: renderCards,
+          onToggleOther: () => Tes.renderDaftar(),
+        });
+      }
     } else {
       wrap.innerHTML = renderCards(data);
     }
@@ -512,6 +536,7 @@ const Tes = {
         <div class="tes-card-top">
           <h3 class="tes-card-title">${escapeHtml(t.judul || "Tanpa judul")}</h3>
           <div class="tes-badges">
+            ${t.global ? `<span class="tes-pill global"><i class="fa-solid fa-globe"></i> Global</span>` : `<span class="tes-pill"><i class="fa-solid fa-users-rectangle"></i> Angkatan</span>`}
             ${t.kategori ? `<span class="tes-pill kat">${escapeHtml(t.kategori)}</span>` : ""}
             <span class="tes-pill ${escapeHtml(statusCls)}">${escapeHtml(statusTxt)}</span>
           </div>
@@ -1189,6 +1214,7 @@ const Tes = {
           tes: {
             id: data.tes.id,
             angkatan_id: data.tes.angkatan_id,
+            global: !!data.tes.global,
             judul: data.tes.judul || "",
             deskripsi: data.tes.deskripsi || "",
             kategori: data.tes.kategori || "",
@@ -1216,6 +1242,7 @@ const Tes = {
         tes: {
           id: null,
           angkatan_id: typeof DbScope !== "undefined" ? DbScope.angkatanId() : null,
+          global: false,
           judul: "",
           deskripsi: "",
           kategori: "",
@@ -1300,6 +1327,13 @@ const Tes = {
                   <option value="ditutup" ${tes.status === "ditutup" ? "selected" : ""}>Ditutup</option>
                 </select>
               </div>
+            </div>
+            <div class="field">
+              <label>Sasaran Peserta</label>
+              <select class="admin-input" onchange="Tes.setMetaTes('global', this.value === '1')">
+                <option value="0" ${!tes.global ? "selected" : ""}>Angkatan Ini Saja</option>
+                <option value="1" ${tes.global ? "selected" : ""}>Global (Semua Angkatan)</option>
+              </select>
             </div>
             <div class="field">
               <label>Deskripsi / Petunjuk</label>
@@ -1858,6 +1892,7 @@ const Tes = {
       const res = await simpanTes({
         id: tes.id,
         angkatan_id: tes.angkatan_id,
+        global: !!tes.global,
         judul: tes.judul.trim(),
         deskripsi: tes.deskripsi || "",
         kategori: tes.kategori || "",

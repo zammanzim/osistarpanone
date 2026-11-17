@@ -4239,6 +4239,7 @@ async function simpanTes(f) {
     p_pengaturan: (f && f.pengaturan) || {},
     p_soal: f && "soal" in f ? f.soal : null,
     p_angkatan_id: DbScope.angkatanId(f && f.angkatan_id),
+    p_global: !!(f && f.global),
   });
   if (error) {
     if (tesButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI");

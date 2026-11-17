@@ -113,6 +113,7 @@
 .tes-pill.ditutup { background: #ffe4e6; color: var(--red-dark); }
 .tes-pill.koreksi { background: #fef3c7; color: #92400e; }
 .tes-pill.kat { background: #dbeafe; color: #1d4ed8; }
+.tes-pill.global { background: #ede9fe; color: #5b21b6; }
 .tes-pill.skor { background: var(--ink); color: var(--yellow); }
 
 .tes-card-meta {
