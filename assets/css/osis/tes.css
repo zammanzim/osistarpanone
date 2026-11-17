@@ -197,6 +197,10 @@
   font-variant-numeric: tabular-nums;
   box-shadow: 2px 2px 0 var(--ink);
 }
+.tes-timer.elapsed {
+  background: var(--paper-2);
+  color: var(--ink);
+}
 .tes-timer.danger {
   background: var(--red);
   color: #fff;

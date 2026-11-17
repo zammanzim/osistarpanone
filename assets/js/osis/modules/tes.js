@@ -446,13 +446,17 @@ const Tes = {
     const cfg = t.pengaturan || {};
     const bisaItem = Tes.bolehKelolaItem(t);
     const h = t.saya_hasil;
+    const draft = Tes.bacaDraftQuiz(t.id);
+    const adaDraft = !!(draft && draft.startedAt);
     const durasi = Number(cfg.durasi_menit || 0);
     const tutupMs = Tes.parseTutupAtMs(cfg);
     const lewat = tutupMs !== null && Date.now() >= tutupMs;
     const bolehUlang = cfg.boleh_ulang !== false;
 
     let badgeSaya = "";
-    if (h) {
+    if (adaDraft && t.status === "aktif" && !lewat) {
+      badgeSaya = `<span class="tes-pill koreksi"><i class="fa-solid fa-pause"></i> Sedang Dikerjakan</span>`;
+    } else if (h) {
       if (h.status === "menunggu_koreksi") {
         badgeSaya = `<span class="tes-pill koreksi"><i class="fa-solid fa-hourglass-half"></i> Menunggu Koreksi</span>`;
       } else if (h.skor_total !== null && h.skor_total !== undefined) {
@@ -468,7 +472,11 @@ const Tes = {
 
     let tombolUtama = "";
     if (t.status === "aktif" && !lewat) {
-      if (!h) {
+      if (adaDraft) {
+        tombolUtama = `
+          ${h ? `<button type="button" class="btn btn-white btn-sm" onclick="Tes.bukaHasilSaya(${t.id}, ${h.id})"><i class="fa-solid fa-square-poll-vertical"></i> Hasil Saya</button>` : ""}
+          <button type="button" class="btn btn-red btn-sm" onclick="Tes.mulaiKerjakan(${t.id})"><i class="fa-solid fa-play"></i> Lanjutkan Tes</button>`;
+      } else if (!h) {
         tombolUtama = `<button type="button" class="btn btn-red btn-sm" onclick="Tes.mulaiKerjakan(${t.id})"><i class="fa-solid fa-play"></i> Mulai Tes</button>`;
       } else if (bolehUlang) {
         tombolUtama = `
@@ -628,6 +636,18 @@ const Tes = {
         return;
       }
 
+      if (!draft || !draft.startedAt) {
+        const durasi = Number(cfg.durasi_menit || 0);
+        const infoParts = [`${rawSoal.length} soal`];
+        if (durasi > 0) infoParts.push(`durasi ${durasi} menit`);
+        if (tutupMs !== null) infoParts.push(`batas ${Tes.fmtWaktu(cfg.tutup_at)}`);
+        const yakin = await showPopup(
+          `Mulai tes "${t.judul}" sekarang? (${infoParts.join(", ")}. Waktu mulai dihitung setelah konfirmasi.)`,
+          "confirm"
+        );
+        if (!yakin) return;
+      }
+
       let soal = rawSoal.map((s) => {
         const copy = { ...s };
         if (cfg.acak_opsi && (copy.tipe === "pg" || copy.tipe === "multi") && Array.isArray(copy.opsi)) {
@@ -673,17 +693,22 @@ const Tes = {
   mulaiTimer() {
     Tes.hentiTimer();
     if (!Tes.quiz) return;
-    const deadlineMs = Tes.getDeadlineMs(Tes.quiz.tes, Tes.quiz.startedAt);
-    if (deadlineMs === null) return;
 
     const cek = () => {
       if (!Tes.quiz || Tes.view !== "quiz") { Tes.hentiTimer(); return; }
+      const startMs = new Date(Tes.quiz.startedAt).getTime() || Date.now();
+      const elapsedSec = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+      const elPill = document.getElementById("tesElapsedPill");
+      if (elPill) {
+        elPill.innerHTML = `<i class="fa-solid fa-stopwatch"></i> ${Tes.fmtCountdown(elapsedSec)}`;
+      }
+
       const dMs = Tes.getDeadlineMs(Tes.quiz.tes, Tes.quiz.startedAt);
-      if (dMs === null) { Tes.hentiTimer(); return; }
+      if (dMs === null) return;
       const sisa = Math.ceil((dMs - Date.now()) / 1000);
       const pill = document.getElementById("tesTimerPill");
       if (pill) {
-        pill.innerHTML = `<i class="fa-regular fa-clock"></i> ${Tes.fmtCountdown(sisa)}`;
+        pill.innerHTML = `<i class="fa-regular fa-clock"></i> Sisa ${Tes.fmtCountdown(sisa)}`;
         pill.classList.toggle("danger", sisa <= 60);
       }
       if (sisa <= 0) {
@@ -713,6 +738,8 @@ const Tes = {
     const s = soal[idx];
     if (!s) return;
     const deadlineMs = Tes.getDeadlineMs(tes, Tes.quiz.startedAt);
+    const startMs = new Date(Tes.quiz.startedAt).getTime() || Date.now();
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
     const info = Tes.tipeInfo(s.tipe);
     const isRagu = !!Tes.quiz.ragu[String(s.id)];
     const dijawabCount = soal.filter((q) => Tes.soalTerjawab(q)).length;
@@ -810,7 +837,8 @@ const Tes = {
           <small>Pertanyaan ${idx + 1} dari ${soal.length} · ${dijawabCount} terjawab</small>
         </div>
         <div class="tes-topbar-acts">
-          ${deadlineMs !== null ? `<span class="tes-timer" id="tesTimerPill"><i class="fa-regular fa-clock"></i> ${Tes.fmtCountdown(Math.ceil((deadlineMs - Date.now()) / 1000))}</span>` : ""}
+          <span class="tes-timer elapsed" id="tesElapsedPill" title="Durasi sejak mulai tes"><i class="fa-solid fa-stopwatch"></i> ${Tes.fmtCountdown(elapsedSec)}</span>
+          ${deadlineMs !== null ? `<span class="tes-timer" id="tesTimerPill" title="Sisa batas waktu"><i class="fa-regular fa-clock"></i> Sisa ${Tes.fmtCountdown(Math.ceil((deadlineMs - Date.now()) / 1000))}</span>` : ""}
         </div>
       </div>
 
