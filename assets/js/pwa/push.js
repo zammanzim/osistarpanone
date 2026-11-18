@@ -253,19 +253,19 @@
       "@media (max-width:700px){#pushBellBtn{display:none!important}}" +
       ".top-nav:has(#osisMoreMenu) #pushBellBtn{display:none!important}" +
       "#headerMorePush i{color:var(--red,#e11d2e)}" +
-      "#headerMoreBtn{position:relative}" +
-      "#osisMoreBtn{position:relative}" +
-      "#headerMoreBtn.ada-dot::after{content:'';position:absolute;top:6px;right:6px;" +
-      "width:11px;height:11px;border-radius:50%;background:var(--red,#e11d2e);" +
-      "border:2px solid #fff;animation:pushDotPing 1.6s ease-out infinite}" +
-      "#osisMoreBtn.ada-dot::after{content:'';position:absolute;top:6px;right:6px;" +
-      "width:11px;height:11px;border-radius:50%;background:var(--red,#e11d2e);" +
-      "border:2px solid #fff;animation:pushDotPing 1.6s ease-out infinite}" +
-      "@keyframes pushDotPing{0%{box-shadow:0 0 0 0 rgba(225,29,46,.55)}" +
-      "70%{box-shadow:0 0 0 7px rgba(225,29,46,0)}100%{box-shadow:0 0 0 0 rgba(225,29,46,0)}}" +
+      "#headerMoreBtn,#osisMoreBtn{position:relative}" +
+      "#headerMoreBtn.ada-dot::after,#osisMoreBtn.ada-dot::after{content:'';position:absolute;" +
+      "top:-5px;right:-5px;width:12px;height:12px;box-sizing:border-box;border-radius:50%;" +
+      "background:var(--red,#e11d2e);border:2px solid var(--ink,#1a1314);" +
+      "box-shadow:0 0 0 2px var(--white,#fff);pointer-events:none;" +
+      "animation:pushDotPop 1.8s ease-in-out infinite}" +
+      "@keyframes pushDotPop{0%,100%{transform:scale(1)}50%{transform:scale(1.16)}}" +
+      "@media (prefers-reduced-motion:reduce){#headerMoreBtn.ada-dot::after," +
+      "#osisMoreBtn.ada-dot::after{animation:none}}" +
       "#headerMorePush{position:relative}" +
       "#headerMorePush.ada-dot::after{content:'';width:9px;height:9px;flex-shrink:0;" +
-      "border-radius:50%;background:var(--red,#e11d2e);margin-left:auto}";
+      "border-radius:50%;background:var(--red,#e11d2e);border:1.5px solid var(--ink,#1a1314);" +
+      "margin-left:auto}";
     try {
       document.head.appendChild(st);
     } catch {}
@@ -509,6 +509,8 @@
     try {
       var b = document.getElementById("headerMoreBtn");
       if (b) b.classList.remove("ada-dot");
+      var bo = document.getElementById("osisMoreBtn");
+      if (bo) bo.classList.remove("ada-dot");
       if (itemMenu) itemMenu.classList.remove("ada-dot");
     } catch {}
   }
