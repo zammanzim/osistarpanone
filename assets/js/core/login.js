@@ -41,12 +41,26 @@ const Login = {
             if (e.key === "Enter") Login.daftar();
         });
 
-        // Link "daftar" dari halaman lain bisa pakai login#daftar.
-        try {
-            if (String(location.hash || "").toLowerCase() === "#daftar") Login.pilih("daftar");
-        } catch {}
+        document.querySelectorAll("[data-pw-toggle]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const inp = document.getElementById(btn.dataset.pwToggle);
+                if (!inp) return;
+                const show = inp.type === "password";
+                inp.type = show ? "text" : "password";
+                const ico = btn.querySelector("i");
+                if (ico) ico.className = show ? "fa-regular fa-eye-slash" : "fa-regular fa-eye";
+                btn.title = show ? "Sembunyikan password" : "Tampilkan password";
+                btn.setAttribute("aria-label", btn.title);
+            });
+        });
 
-        Login.aturTinggi();
+        // Link "daftar" dari halaman lain bisa pakai login#daftar.
+        let modeAwal = "masuk";
+        try {
+            if (String(location.hash || "").toLowerCase() === "#daftar") modeAwal = "daftar";
+        } catch {}
+        Login.pilih(modeAwal);
+        window.addEventListener("load", () => Login.aturTinggi());
         window.addEventListener("resize", () => Login.aturTinggi());
     },
 
@@ -65,9 +79,35 @@ const Login = {
 
     pilih(mode) {
         Login.bersihError();
+        const isDaftar = mode === "daftar";
         const slider = document.getElementById("mainSlider");
-        slider.classList.toggle("step-1", mode === "daftar");
+        if (slider) slider.classList.toggle("step-1", isDaftar);
+
+        document.querySelectorAll("[data-login-tab]").forEach((btn) => {
+            const on = btn.dataset.loginTab === (isDaftar ? "daftar" : "masuk");
+            btn.classList.toggle("active", on);
+            btn.setAttribute("aria-selected", on ? "true" : "false");
+        });
+
+        const titleEl = document.getElementById("loginTitle");
+        const subEl = document.getElementById("loginSub");
+        if (titleEl) titleEl.textContent = isDaftar ? "Daftar Akun Baru" : "Selamat Datang!";
+        if (subEl) {
+            subEl.textContent = isDaftar
+                ? "Buat akun siswa untuk akses aspirasi & fitur publik."
+                : "Masuk pakai username & password akunmu.";
+        }
+
+        const altBtn = document.getElementById("loginModeAlt");
+        if (altBtn) {
+            altBtn.innerHTML = isDaftar
+                ? 'Sudah punya akun? Masuk <i class="fa-solid fa-chevron-right"></i>'
+                : 'Belum punya akun? Daftar <i class="fa-solid fa-chevron-right"></i>';
+            altBtn.setAttribute("onclick", isDaftar ? "Login.pilih('masuk')" : "Login.pilih('daftar')");
+        }
+
         Login.aturTinggi();
+        try { requestAnimationFrame(() => Login.aturTinggi()); } catch {}
     },
 
     setSibuk(sibuk) {

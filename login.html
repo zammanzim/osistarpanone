@@ -14,62 +14,167 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE">
-    <link rel="stylesheet" href="assets/css/shared/style.css?v=40">
+    <link rel="stylesheet" href="assets/css/shared/style.css?v=41">
+    <link rel="stylesheet" href="assets/css/public/login.css?v=1">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="assets/js/vendor/supabase.min.js?v=10"></script>
     <script src="assets/js/core/config.js?v=14"></script>
-    <script src="assets/js/core/db.js?v=35" defer></script>
+    <script src="assets/js/core/db.js?v=40" defer></script>
     <script src="assets/js/services/aktivitas.js?v=10" defer></script>
-    <script src="assets/js/core/app.js?v=10" defer></script>
+    <script src="assets/js/core/app.js?v=16" defer></script>
     <script src="assets/js/shared/ui/dropdown.js?v=3" defer></script>
     <script src="assets/js/shared/ui/notice.js?v=10" defer></script>
     <script src="assets/js/core/osis-auth.js?v=19" defer></script>
-    <script src="assets/js/core/login.js?v=20" defer></script>
+    <script src="assets/js/core/login.js?v=21" defer></script>
     <script src="assets/js/pwa/pwa.js?v=11" defer></script>
 </head>
 <body class="login-body">
 
     <div class="login-wrap">
-        <div class="login-card">
-            <div class="login-logo">
-                <img data-foto="logo1" alt="Logo OSIS">
-            </div>
-            <h1>Masuk</h1>
-            <p class="login-sub">Login ke web OSIS</p>
-
-            <div class="slider-window">
-                <div class="slider-content" id="mainSlider">
-
-                    <!-- STEP 1: form masuk (OSIS / akun biasa, otomatis) -->
-                    <div class="slide-step">
-                        <label class="lbl">Username</label>
-                        <input type="text" id="loginUsername" class="admin-input" placeholder="Username" maxlength="30" autocomplete="username">
-                        <label class="lbl">Password</label>
-                        <input type="password" id="loginPassword" class="admin-input" placeholder="Password" autocomplete="current-password">
-                        <button class="btn btn-red btn-block" id="btnMasuk" onclick="Login.masuk()"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>
-                        <div class="login-or"><span>atau</span></div>
-                        <a class="login-back login-center" onclick="Login.pilih('daftar')"><i class="fa-solid fa-user-plus"></i> Belum punya akun? Daftar dulu sini</a>
+        <div class="login-shell">
+            <!-- PANEL KIRI: Identitas OSIS (compact header di HP, showcase di desktop) -->
+            <section class="login-brand" aria-label="Tentang OSIS TARPAN ONE">
+                <div class="login-stripes" aria-hidden="true"></div>
+                <div class="login-brand-inner">
+                    <div>
+                        <div class="login-brand-top">
+                            <div class="login-logo-box">
+                                <img data-foto="logo1" alt="Logo OSIS">
+                            </div>
+                            <div class="login-brand-copy">
+                                <span class="login-school-pill"><i class="fa-solid fa-graduation-cap"></i> SMK Tarhap 1 Cipatat</span>
+                                <h2>OSIS TARPAN ONE</h2>
+                            </div>
+                        </div>
+                        <p class="login-brand-desc">Satu pintu masuk resmi untuk pengurus OSIS maupun siswa SMK Taruna Harapan 1 Cipatat.</p>
                     </div>
 
-                    <!-- STEP 2: daftar akun biasa (tanpa hak OSIS) -->
-                    <div class="slide-step">
-                        <label class="lbl">Username</label>
-                        <input type="text" id="daftarUsername" class="admin-input" placeholder="Username (3-30 karakter)" maxlength="30" autocomplete="off">
-                        <label class="lbl">Nama</label>
-                        <input type="text" id="daftarNama" class="admin-input" placeholder="Nama kamu" maxlength="80" autocomplete="off">
-                        <label class="lbl">Password</label>
-                        <input type="password" id="daftarPassword" class="admin-input" placeholder="Password (min. 6 karakter)" autocomplete="new-password">
-                        <button class="btn btn-red btn-block" id="btnDaftar" onclick="Login.daftar()"><i class="fa-solid fa-user-plus"></i> Daftar</button>
-                        <a class="login-back login-center" onclick="Login.pilih('')"><i class="fa-solid fa-arrow-left"></i> Sudah punya akun? Masuk</a>
+                    <div class="login-perks">
+                        <div class="login-perk">
+                            <span class="login-perk-ico red"><i class="fa-solid fa-grip"></i></span>
+                            <div>
+                                <b>Dashboard Pengurus OSIS</b>
+                                <small>Kelola program, keuangan, absensi, agenda, &amp; arsip sesuai hak akses.</small>
+                            </div>
+                        </div>
+                        <div class="login-perk">
+                            <span class="login-perk-ico"><i class="fa-solid fa-comments"></i></span>
+                            <div>
+                                <b>Akun Siswa &amp; Fitur Publik</b>
+                                <small>Kirim aspirasi, pantau kegiatan, &amp; interaksi langsung dengan OSIS.</small>
+                            </div>
+                        </div>
+                        <div class="login-perk">
+                            <span class="login-perk-ico mint"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                            <div>
+                                <b>Deteksi Akun Otomatis</b>
+                                <small>Cukup masuk pakai username — diarahkan sesuai jenis akunmu.</small>
+                            </div>
+                        </div>
                     </div>
 
+                    <div class="login-brand-foot">
+                        osistarpanone.my.id · Portal Resmi OSIS
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="login-error" id="loginError"></div>
+            <!-- PANEL KANAN: Form Masuk / Daftar -->
+            <main class="login-card">
+                <div class="login-tabs" role="tablist" aria-label="Pilih mode masuk atau daftar">
+                    <button type="button" class="login-tab active" role="tab" aria-selected="true" data-login-tab="masuk" onclick="Login.pilih('masuk')">
+                        <i class="fa-solid fa-right-to-bracket"></i> Masuk
+                    </button>
+                    <button type="button" class="login-tab" role="tab" aria-selected="false" data-login-tab="daftar" onclick="Login.pilih('daftar')">
+                        <i class="fa-solid fa-user-plus"></i> Daftar Akun
+                    </button>
+                </div>
 
-            <a class="login-back login-center" href="index#/"><i class="fa-solid fa-house"></i> Kembali ke beranda</a>
+                <div class="login-form-head">
+                    <h1 id="loginTitle">Selamat Datang!</h1>
+                    <p class="login-sub" id="loginSub">Masuk pakai username &amp; password akunmu.</p>
+                </div>
+
+                <div class="slider-window">
+                    <div class="slider-content" id="mainSlider">
+
+                        <!-- STEP 1: form masuk (OSIS / akun biasa, otomatis) -->
+                        <div class="slide-step">
+                            <div class="login-field">
+                                <label class="lbl" for="loginUsername">Username</label>
+                                <div class="login-inp-wrap">
+                                    <i class="fa-solid fa-at login-inp-ico" aria-hidden="true"></i>
+                                    <input type="text" id="loginUsername" class="admin-input" placeholder="Masukkan username" maxlength="30" autocomplete="username">
+                                </div>
+                            </div>
+                            <div class="login-field">
+                                <label class="lbl" for="loginPassword">Password</label>
+                                <div class="login-inp-wrap has-eye">
+                                    <i class="fa-solid fa-lock login-inp-ico" aria-hidden="true"></i>
+                                    <input type="password" id="loginPassword" class="admin-input" placeholder="Masukkan password" autocomplete="current-password">
+                                    <button type="button" class="login-pw-eye" data-pw-toggle="loginPassword" title="Tampilkan password" aria-label="Tampilkan password">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-red btn-block login-submit" id="btnMasuk" onclick="Login.masuk()">
+                                <i class="fa-solid fa-right-to-bracket"></i> Masuk Sekarang
+                            </button>
+                            <div class="login-hint">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>Akun pengurus otomatis diarahkan ke dashboard OSIS, sedangkan akun siswa ke halaman publik.</span>
+                            </div>
+                        </div>
+
+                        <!-- STEP 2: daftar akun biasa (tanpa hak OSIS) -->
+                        <div class="slide-step">
+                            <div class="login-field">
+                                <label class="lbl" for="daftarUsername">Username</label>
+                                <div class="login-inp-wrap">
+                                    <i class="fa-solid fa-at login-inp-ico" aria-hidden="true"></i>
+                                    <input type="text" id="daftarUsername" class="admin-input" placeholder="Contoh: asep.rpl" maxlength="30" autocomplete="off">
+                                </div>
+                                <small class="login-field-hint">3–30 karakter: huruf, angka, titik, garis bawah (_), atau strip (-).</small>
+                            </div>
+                            <div class="login-field">
+                                <label class="lbl" for="daftarNama">Nama Lengkap</label>
+                                <div class="login-inp-wrap">
+                                    <i class="fa-solid fa-id-card login-inp-ico" aria-hidden="true"></i>
+                                    <input type="text" id="daftarNama" class="admin-input" placeholder="Nama lengkap kamu" maxlength="80" autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="login-field">
+                                <label class="lbl" for="daftarPassword">Password</label>
+                                <div class="login-inp-wrap has-eye">
+                                    <i class="fa-solid fa-lock login-inp-ico" aria-hidden="true"></i>
+                                    <input type="password" id="daftarPassword" class="admin-input" placeholder="Minimal 6 karakter" autocomplete="new-password">
+                                    <button type="button" class="login-pw-eye" data-pw-toggle="daftarPassword" title="Tampilkan password" aria-label="Tampilkan password">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-red btn-block login-submit" id="btnDaftar" onclick="Login.daftar()">
+                                <i class="fa-solid fa-user-plus"></i> Buat Akun Siswa
+                            </button>
+                            <div class="login-hint">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <span>Pendaftaran ini untuk akun siswa (fitur publik). Akun pengurus OSIS dibuatkan oleh admin.</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="login-error" id="loginError" role="alert"></div>
+
+                <div class="login-foot">
+                    <a class="login-back" href="index#/"><i class="fa-solid fa-arrow-left"></i> Kembali ke beranda</a>
+                    <button type="button" class="login-mode-switch" id="loginModeAlt" onclick="Login.pilih('daftar')">
+                        Belum punya akun? Daftar <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </main>
         </div>
     </div>
 
