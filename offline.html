@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>(function(){try{if(localStorage.getItem("tarpan_theme")==="dark"){document.documentElement.setAttribute("data-theme","dark");var f=function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#16131b");};f();document.addEventListener("DOMContentLoaded",f);}}catch(e){}})();</script>
     <title>Offline — OSIS TARPAN ONE</title>
     <meta name="theme-color" content="#e11d2e" />
     <style>
@@ -27,6 +28,18 @@
         box-shadow: 3px 3px 0 #1a1314;
       }
       .btn:active { transform: translate(2px, 2px); box-shadow: none; }
+      html[data-theme="dark"] body { background: #16131b; color: #f3ede8; }
+      html[data-theme="dark"] .off-card {
+        background: #211d28;
+        border-color: #564c63;
+        box-shadow: 5px 5px 0 #08070b;
+      }
+      html[data-theme="dark"] .off-card p { color: #aba0b4; }
+      html[data-theme="dark"] .btn {
+        background: #f02d3e;
+        border-color: #564c63;
+        box-shadow: 3px 3px 0 #08070b;
+      }
     </style>
   </head>
   <body>

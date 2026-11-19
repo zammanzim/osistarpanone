@@ -42,9 +42,9 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        background: var(--ink);
+        background: var(--inv-bg);
         color: #fff;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 12px;
         padding: 8px 12px;
         font-size: 0.82rem;
@@ -63,7 +63,7 @@
         font-size: 0.66rem;
         font-weight: 900;
         background: var(--yellow);
-        color: var(--ink);
+        color: var(--on-yellow);
         border-radius: 999px;
         padding: 3px 10px;
         white-space: nowrap;
@@ -74,11 +74,11 @@
         gap: 10px;
         align-items: center;
         background: var(--white);
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 12px;
         padding: 9px 10px;
         margin-bottom: 8px;
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
       }
       .ww-atur-anak {
         margin-left: 16px;
@@ -118,12 +118,12 @@
       .ww-drop-atas {
         box-shadow:
           0 -4px 0 var(--red),
-          2px 2px 0 var(--ink);
+          2px 2px 0 var(--sh);
       }
       .ww-drop-bawah {
         box-shadow:
           0 4px 0 var(--red),
-          2px 2px 0 var(--ink);
+          2px 2px 0 var(--sh);
       }
       #wwTurunanTeks{flex:1;min-width:0}
       /* Mode wawancara: bersih, satu pertanyaan */
@@ -161,11 +161,11 @@
         height: 26px;
         border-radius: 50%;
         background: var(--white);
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         display: grid;
         place-items: center;
         font-size: 0.68rem;
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
       }
       .ww-tanya .ww-bintang,
       .ww-qnomor .ww-bintang {
@@ -204,7 +204,7 @@
       }
       .ww-navbtn {
         position: relative;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 10px;
         background: linear-gradient(180deg, #ffffff, #efe7e0);
         font-family: inherit;
@@ -212,7 +212,7 @@
         font-size: 0.8rem;
         padding: 7px 0;
         cursor: pointer;
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
         color: var(--ink);
       }
       .ww-navbtn:active {
@@ -241,7 +241,7 @@
         background: #1a7f37;
         color: #fff;
         font-size: 0.62rem;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         place-items: center;
         line-height: 1;
       }
@@ -261,7 +261,7 @@
         display: inline-block;
         width: 13px;
         height: 13px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 4px;
         margin-right: 5px;
         vertical-align: -2px;
@@ -281,7 +281,7 @@
       }
       .ww-hasil-jawab {
         background: var(--paper-2);
-        border: 2px dashed var(--ink);
+        border: 2px dashed var(--bd);
         border-radius: 10px;
         padding: 10px 12px;
         font-size: 0.88rem;
@@ -297,9 +297,9 @@
       /* Kartu daftar calon */
       .ww-card {
         background: var(--white);
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 14px;
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
         padding: 12px 14px;
         margin-bottom: 10px;
         display: flex;
@@ -310,13 +310,14 @@
         width: 44px;
         height: 44px;
         border-radius: 12px;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         background: var(--yellow);
         display: grid;
         place-items: center;
         font-weight: 900;
         font-size: 1.2rem;
         flex-shrink: 0;
+        color: var(--on-yellow);
       }
       .ww-ava-lg {
         width: 56px;
@@ -371,7 +372,7 @@
         letter-spacing: 0.05em;
         padding: 3px 10px;
         border-radius: 999px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         white-space: nowrap;
       }
       .ww-st-belum {
@@ -380,7 +381,7 @@
       }
       .ww-st-jalan {
         background: var(--yellow);
-        color: var(--ink);
+        color: var(--on-yellow);
       }
       .ww-st-selesai {
         background: #d6f5d6;
@@ -428,13 +429,13 @@
         gap: 8px;
         align-items: flex-start;
         background: #fef4e2;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 12px;
         padding: 10px 12px;
         font-size: 0.8rem;
         font-weight: 600;
         margin-top: 12px;
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
       }
       .ww-banner i {
         color: var(--red);
@@ -442,7 +443,7 @@
       }
       .ww-bar {
         height: 10px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 999px;
         background: var(--paper-2);
         overflow: hidden;
@@ -497,17 +498,17 @@
         font-weight: 900;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 999px;
         padding: 4px 12px;
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
         white-space: nowrap;
       }
       .ww-stxt .dot {
         width: 9px;
         height: 9px;
         border-radius: 50%;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         flex-shrink: 0;
       }
       .ww-stxt-belum {
@@ -519,7 +520,7 @@
       }
       .ww-stxt-berlangsung {
         background: var(--yellow);
-        color: var(--ink);
+        color: var(--on-yellow);
       }
       .ww-stxt-berlangsung .dot {
         background: var(--red);
@@ -542,17 +543,17 @@
         gap: 6px;
         font-size: 0.72rem;
         font-weight: 800;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 999px;
         padding: 4px 12px;
         background: #d6f5d6;
         color: #146314;
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
         white-space: nowrap;
       }
       .ww-savetxt.simpan {
         background: var(--yellow);
-        color: var(--ink);
+        color: var(--on-yellow);
       }
       .ww-savetxt.gagal {
         background: var(--red);
@@ -588,7 +589,7 @@
       }
       /* Blok pertanyaan */
       .ww-pertanyaan {
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 14px;
         padding: 12px;
         margin-bottom: 10px;
@@ -607,7 +608,7 @@
         width: 28px;
         height: 28px;
         border-radius: 9px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         background: var(--red);
         color: #fff;
         display: grid;
@@ -619,7 +620,7 @@
       .ww-nomor-anak {
         background: var(--paper-2);
         color: var(--red);
-        border-color: var(--ink);
+        border-color: var(--bd);
       }
       .ww-anak {
         margin: 10px 0 0 12px;
@@ -637,10 +638,10 @@
       }
       .ww-dok-item {
         position: relative;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 12px;
         background: var(--white);
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
         overflow: hidden;
       }
       .ww-dok-item img,
@@ -649,7 +650,7 @@
         width: 100%;
         height: 130px;
         object-fit: cover;
-        background: var(--ink);
+        background: var(--inv-bg);
       }
       .ww-dok-item img {
         cursor: zoom-in;
@@ -673,8 +674,8 @@
         font-size: 0.62rem;
         font-weight: 900;
         background: var(--yellow);
-        color: var(--ink);
-        border: 2px solid var(--ink);
+        color: var(--on-yellow);
+        border: 2px solid var(--bd);
         border-radius: 999px;
         padding: 2px 8px;
       }
@@ -685,7 +686,7 @@
         background: var(--white);
       }
       .ww-dok-audio {
-        background: var(--ink);
+        background: var(--inv-bg);
         color: #fff;
         padding: 12px 10px 8px;
         display: flex;
@@ -728,13 +729,13 @@
         width: 42px;
         height: 42px;
         border-radius: 50%;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         background: var(--white);
         font-size: 1.3rem;
         font-weight: 900;
         line-height: 1;
         cursor: pointer;
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
         z-index: 2;
       }
       .ww-dok-prev:active,
@@ -794,7 +795,7 @@
       .ww-form-inner {
         width: min(600px, 100%);
         background: var(--white);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 18px;
         padding: 18px;
         box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
@@ -802,7 +803,7 @@
         overflow-y: auto;
       }
       .ww-kelola-grup {
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 12px;
         padding: 10px;
         margin-bottom: 10px;

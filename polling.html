@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){try{if(localStorage.getItem("tarpan_theme")==="dark"){document.documentElement.setAttribute("data-theme","dark");var f=function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#16131b");};f();document.addEventListener("DOMContentLoaded",f);}}catch(e){}})();</script>
     <title>Polling Waketos - OSIS TARPAN ONE</title>
     <meta name="description" content="Polling Wakil Ketua OSIS SMK Taruna Harapan 1 Cipatat. Satu perangkat satu suara, wajib masuk, hasil live.">
     <meta name="theme-color" content="#e11d2e">
@@ -13,12 +14,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE">
-    <link rel="stylesheet" href="assets/css/shared/style.css?v=40">
+    <link rel="stylesheet" href="assets/css/shared/style.css?v=43">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         .pol-wrap{max-width:880px;margin:0 auto;padding:18px;display:flex;flex-direction:column;gap:14px}
-        .pol-card{background:var(--white);border:3px solid var(--ink);border-radius:18px;padding:16px;box-shadow:4px 4px 0 var(--ink)}
+        .pol-card{background:var(--white);border:3px solid var(--bd);border-radius:18px;padding:16px;box-shadow:4px 4px 0 var(--sh)}
         .pol-card.accent-top{border-top:10px solid var(--red)}
         .pol-hero h1{font-size:1.35rem;font-weight:900;letter-spacing:-.02em;margin:6px 0 4px}
         .pol-desc{font-size:.84rem;font-weight:600;color:var(--gray);line-height:1.55;margin:0}
@@ -31,11 +32,11 @@
         .pol-gate-row .admin-input{flex:1;min-width:0}
         .pol-login-info{font-size:.82rem;font-weight:700;background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
         .pol-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
-        .pol-kartu{background:var(--white);border:3px solid var(--ink);border-radius:18px;overflow:hidden;box-shadow:4px 4px 0 var(--ink);display:flex;flex-direction:column;position:relative}
+        .pol-kartu{background:var(--white);border:3px solid var(--bd);border-radius:18px;overflow:hidden;box-shadow:4px 4px 0 var(--sh);display:flex;flex-direction:column;position:relative}
         .pol-kartu.pilihan{border-color:var(--red);box-shadow:4px 4px 0 var(--red)}
-        .pol-nomor{position:absolute;top:10px;left:10px;width:38px;height:38px;display:grid;place-items:center;background:var(--yellow);border:2.5px solid var(--ink);border-radius:12px;font-weight:900;font-size:1.05rem;box-shadow:2px 2px 0 var(--ink)}
-        .pol-foto{width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--paper);border-bottom:3px solid var(--ink)}
-        .pol-foto-ph{width:100%;aspect-ratio:1/1;display:grid;place-items:center;background:var(--paper);border-bottom:3px solid var(--ink);font-size:3rem;font-weight:900;color:var(--line)}
+        .pol-nomor{position:absolute;top:10px;left:10px;width:38px;height:38px;display:grid;place-items:center;background:var(--yellow);border:2.5px solid var(--bd);border-radius:12px;font-weight:900;font-size:1.05rem;box-shadow:2px 2px 0 var(--sh); color: var(--on-yellow);}
+        .pol-foto{width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--paper);border-bottom:3px solid var(--bd)}
+        .pol-foto-ph{width:100%;aspect-ratio:1/1;display:grid;place-items:center;background:var(--paper);border-bottom:3px solid var(--bd);font-size:3rem;font-weight:900;color:var(--line)}
         .pol-body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
         .pol-nama{font-size:1rem;font-weight:900}
         .pol-kelas{font-size:.72rem;font-weight:800;color:var(--gray)}
@@ -45,28 +46,29 @@
         .pol-vote-row{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:6px}
         .pol-vote-row .btn{flex:1;justify-content:center}
         .pol-suara{font-size:.74rem;font-weight:800;color:var(--gray);white-space:nowrap}
-        .pol-bar{height:10px;background:var(--paper);border:2px solid var(--ink);border-radius:999px;overflow:hidden;margin-top:4px}
+        .pol-bar{height:10px;background:var(--paper);border:2px solid var(--bd);border-radius:999px;overflow:hidden;margin-top:4px}
         .pol-bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--red),#ff7a45);border-radius:999px;transition:width .4s}
         .pol-hasil-row{padding:10px 0;border-bottom:2px dashed var(--line)}
         .pol-hasil-row:last-child{border-bottom:none}
         .pol-hasil-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:.84rem;font-weight:800}
         .pol-hasil-top .pct{color:var(--red);font-weight:900}
         .pol-admin .admin-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
-        .pol-seg{display:inline-flex;border:2.5px solid var(--ink);border-radius:12px;overflow:hidden}
+        .pol-seg{display:inline-flex;border:2.5px solid var(--bd);border-radius:12px;overflow:hidden}
         .pol-seg button{border:none;background:var(--white);font-family:inherit;font-size:.76rem;font-weight:900;padding:8px 14px;cursor:pointer}
-        .pol-seg button.on{background:var(--ink);color:#fff}
+        .pol-seg button.on{background:var(--inv-bg);color:#fff}
         .pol-seg button.on.buka{background:#146314}
         .pol-seg button.on.tutup{background:var(--red)}
         .pol-kelola{display:flex;flex-direction:column;gap:8px;margin-top:10px}
         .pol-kelola-item{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:.8rem;font-weight:700}
-        .pol-kelola-item img{width:44px;height:44px;object-fit:cover;border-radius:10px;border:2px solid var(--ink)}
+        .pol-kelola-item img{width:44px;height:44px;object-fit:cover;border-radius:10px;border:2px solid var(--bd)}
         .pol-kelola-item .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .pol-kelola-item button{border:2px solid var(--ink);background:var(--white);border-radius:9px;padding:6px 9px;cursor:pointer;font-size:.76rem;font-weight:800}
+        .pol-kelola-item button{border:2px solid var(--bd);background:var(--white);border-radius:9px;padding:6px 9px;cursor:pointer;font-size:.76rem;font-weight:800}
         .pol-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
         .pol-form-grid .full{grid-column:1/-1}
-        .pol-foto-prev{width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:2px solid var(--ink);margin-top:8px}
+        .pol-foto-prev{width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:2px solid var(--bd);margin-top:8px}
         @media (max-width:560px){.pol-gate-row{flex-direction:column}.pol-form-grid{grid-template-columns:1fr}}
     </style>
+    <link rel="stylesheet" href="assets/css/shared/dark.css?v=1" />
     <script src="assets/js/vendor/supabase.min.js?v=10"></script>
     <script src="assets/js/core/config.js?v=14"></script>
     <script src="assets/js/core/db.js?v=35" defer></script>
@@ -79,7 +81,7 @@
     <script src="assets/js/shared/ui/show-popup.js?v=15" defer></script>
     <script src="assets/js/core/osis-auth.js?v=19" defer></script>
     <script src="assets/js/public/polling.js?v=14" defer></script>
-    <script src="assets/js/pwa/pwa.js?v=11" defer></script>
+    <script src="assets/js/pwa/pwa.js?v=12" defer></script>
 </head>
 <body>
     <header class="top-nav">
@@ -91,7 +93,7 @@
             </div>
         </a>
         <div class="top-nav-extra">
-            <span class="status-badge" id="polStatusBadge" style="font-size:.64rem;font-weight:900;text-transform:uppercase;padding:6px 12px;border-radius:999px;border:2px solid var(--ink);background:#d6f5d6;color:#146314;">Polling</span>
+            <span class="status-badge" id="polStatusBadge" style="font-size:.64rem;font-weight:900;text-transform:uppercase;padding:6px 12px;border-radius:999px;border:2px solid var(--bd);background:#d6f5d6;color:#146314;">Polling</span>
             <div id="areaAuth"></div>
         </div>
     </header>

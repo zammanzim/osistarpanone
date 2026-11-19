@@ -20,6 +20,8 @@
   var LOGOUT_ID = "osisMoreLogout";
   var BERANDA_ID = "osisMoreBeranda";
   var VISITOR_ID = "osisMoreVisitor";
+  var THEME_ROW_ID = "osisMoreThemeRow";
+  var THEME_TOGGLE_ID = "osisMoreThemeToggle";
   var PENG_ID = "osisMorePengaturan";
   var CSS_ID = "osisMoreCss";
   var ANG_WRAP_ID = "osisAngkatanWrap";
@@ -55,15 +57,17 @@
       "header.top-nav:has(#osisSideBtn){justify-content:flex-start;gap:8px}" +
       "header.top-nav:has(#osisSideBtn) .top-nav-extra{margin-left:auto}" +
       ".top-nav-extra #areaAuth .icon-btn{display:none!important}" +
-      "#osisMoreVisitor span{display:inline-flex;align-items:center;gap:8px}" +
+      "#osisMoreVisitor span,#" + THEME_ROW_ID + " .more-lbl-ico{display:inline-flex;align-items:center;gap:8px}" +
       "@media (max-width:700px){" +
       ".top-nav-extra>a.btn{display:none!important}" +
       ".top-nav-extra #areaAuth .icon-btn{display:none!important}" +
       "#osisVisitorTrigger{display:none!important}" +
       "#" + BERANDA_ID + "{order:1}" +
       "#" + VISITOR_ID + "{order:2}" +
-      "#" + PENG_ID + "{order:3}" +
-      "#" + LOGOUT_ID + "{order:4}" +
+      "#" + THEME_ROW_ID + "{order:3}" +
+      "#" + PENG_ID + "{order:4}" +
+      "#headerMorePush{order:5}" +
+      "#" + LOGOUT_ID + "{order:6}" +
       "}";
     try {
       document.head.appendChild(st);
@@ -119,10 +123,33 @@
       '<div class="ang-more-box" id="' + ANG_WRAP_ID + '" style="display:none"></div>' +
       '<a href="../index#/" class="header-more-item" id="' + BERANDA_ID + '" style="display:none"><i class="fa-solid fa-house"></i> Beranda</a>' +
       '<button class="header-more-item" id="' + VISITOR_ID + '" style="display:none"><span><i class="fa-solid fa-eye"></i> Visitor</span><b id="osisMoreVisitorCount">-</b></button>' +
+      '<label class="header-more-item" id="' + THEME_ROW_ID + '"><span class="more-lbl-ico"><i class="fa-solid fa-moon"></i> Mode Gelap</span><span class="edit-toggle-wrap small"><input type="checkbox" id="' + THEME_TOGGLE_ID + '" autocomplete="off" /><span class="edit-slider"></span></span></label>' +
       '<a href="../index#/pengaturan" class="header-more-item" id="' + PENG_ID + '"><i class="fa-solid fa-gear"></i> Pengaturan</a>' +
       '<button class="header-more-item danger" id="' + LOGOUT_ID + '" style="display:none"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar</button>' +
       "</div>";
     extra.appendChild(wrap);
+    var temaEl = document.getElementById(THEME_TOGGLE_ID);
+    if (temaEl) {
+      try {
+        temaEl.checked = (window.TarpanTheme && TarpanTheme.isDark)
+          ? TarpanTheme.isDark()
+          : (document.documentElement.getAttribute("data-theme") === "dark");
+      } catch (e) {}
+      temaEl.addEventListener("change", function () {
+        var dark = !!temaEl.checked;
+        if (window.TarpanTheme && TarpanTheme.set) {
+          TarpanTheme.set(dark ? "dark" : "light");
+          return;
+        }
+        try { localStorage.setItem("tarpan_theme", dark ? "dark" : "light"); } catch (e) {}
+        if (dark) document.documentElement.setAttribute("data-theme", "dark");
+        else document.documentElement.removeAttribute("data-theme");
+        try {
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", dark ? "#16131b" : "#e11d2e");
+        } catch (e) {}
+      });
+    }
     var btn = document.getElementById(BTN_ID);
     if (btn) {
       btn.addEventListener("click", function (e) {

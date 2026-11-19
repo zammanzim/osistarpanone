@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    OSIS TARPAN ONE - NEW SITE
    Tema: Merah-Putih Enerjik
    ============================================================ */
@@ -8,6 +8,11 @@
   --red-dark: #b3121f;
   --red-deep: #7f0d16;
   --ink: #1a1314;
+  --bd: #1a1314;
+  --sh: #1a1314;
+  --inv-bg: #1a1314;
+  --inv-fg: #ffffff;
+  --on-yellow: #1a1314;
   --paper: #fffdfa;
   --paper-2: #f5efea;
   --yellow: #ffd11a;
@@ -17,7 +22,7 @@
   --gray: #6f6668;
   --line: #e8e0da;
   --shadow: 0 14px 34px rgba(26, 19, 20, 0.14);
-  --shadow-hard: 5px 5px 0 var(--ink);
+  --shadow-hard: 5px 5px 0 var(--sh);
   --radius: 22px;
 }
 
@@ -84,7 +89,7 @@ img {
   top: 0;
   z-index: 80;
   background: var(--white);
-  border-bottom: 3px solid var(--ink);
+  border-bottom: 3px solid var(--bd);
   padding: 12px 18px;
   display: flex;
   align-items: center;
@@ -153,14 +158,14 @@ img {
   gap: 7px;
   padding: 8px 14px;
   border-radius: 999px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--white);
   font-family: inherit;
   font-size: 0.8rem;
   font-weight: 900;
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
   transition:
     transform 0.12s,
     box-shadow 0.12s;
@@ -170,11 +175,11 @@ img {
 }
 .visitor-trigger:hover {
   transform: translate(-1.5px, -1.5px);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .visitor-trigger:active {
   transform: translate(1.5px, 1.5px);
-  box-shadow: 0 0 0 var(--ink);
+  box-shadow: 0 0 0 var(--sh);
 }
 
 /* Popup statistik pengunjung */
@@ -202,9 +207,9 @@ img {
 .visitor-popup {
   width: min(430px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
-  box-shadow: 8px 8px 0 var(--ink);
+  box-shadow: 8px 8px 0 var(--sh);
   padding: 22px;
   transform: scale(0.96) translateY(10px);
   transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
@@ -230,12 +235,12 @@ img {
 .visitor-pop-head button {
   width: 34px;
   height: 34px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 10px;
   background: var(--yellow);
   cursor: pointer;
   font-size: 0.95rem;
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .visitor-stats {
   display: grid;
@@ -247,7 +252,7 @@ img {
 }
 .vstat-card {
   background: var(--paper-2);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 14px 10px;
   text-align: center;
@@ -283,7 +288,7 @@ img {
   gap: 8px;
   margin: 18px 0 10px;
   padding-top: 14px;
-  border-top: 2.5px solid var(--ink);
+  border-top: 2.5px solid var(--bd);
 }
 .visitor-list-head h4 {
   font-size: 0.8rem;
@@ -304,13 +309,13 @@ img {
 /* Isi vitem dibikin padat — info tetap lengkap, makan tempat dikit */
 .vitem {
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 7px 10px;
 }
 .vitem:first-child {
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .vitem-head {
   display: flex;
@@ -382,9 +387,9 @@ img {
 .vitem-count {
   font-size: 0.66rem;
   font-weight: 900;
-  color: var(--white);
+  color: #fff;
   background: var(--red-dark);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 2px 9px;
   white-space: nowrap;
@@ -398,7 +403,7 @@ img {
 }
 .vtab {
   padding: 6px 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 999px;
   background: var(--white);
   font-family: inherit;
@@ -415,8 +420,8 @@ img {
 }
 .vtab.active {
   background: var(--red);
-  color: var(--white);
-  box-shadow: 2px 2px 0 var(--ink);
+  color: #fff;
+  box-shadow: 2px 2px 0 var(--sh);
 }
 /* Stat App vs Browser + filter + badge mode akses */
 /* Popup cuma selebar 430px, jadi 3 kolom x 2 baris (6 kartu) — 1 baris
@@ -453,7 +458,7 @@ img {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 999px;
   background: var(--white);
   font-family: inherit;
@@ -467,7 +472,7 @@ img {
   font-size: 0.7rem;
 }
 .vmode-filter.active {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
 }
 .vmode-filter.active i {
@@ -486,7 +491,7 @@ img {
   letter-spacing: 0.03em;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
 }
 .vmode i {
   font-size: 0.62rem;
@@ -540,13 +545,13 @@ img {
 /* Feed aktivitas di popup visitor */
 .aitem {
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 9px 12px;
 }
 .aitem:first-child {
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .aitem-head {
   display: flex;
@@ -602,7 +607,7 @@ img {
   max-width: 160px;
   padding: 7px 12px;
   border-radius: 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--yellow);
   font-size: 0.8rem;
   font-weight: 800;
@@ -610,8 +615,8 @@ img {
   white-space: nowrap;
   text-overflow: ellipsis;
   text-decoration: none;
-  color: inherit;
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  color: var(--on-yellow);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
   transition:
     transform 0.12s,
     box-shadow 0.12s,
@@ -623,11 +628,11 @@ a.user-chip {
 }
 a.user-chip:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3.5px 3.5px 0 var(--ink);
+  box-shadow: 3.5px 3.5px 0 var(--sh);
 }
 a.user-chip:active {
   transform: translate(1.5px, 1.5px);
-  box-shadow: 0 0 0 var(--ink);
+  box-shadow: 0 0 0 var(--sh);
 }
 .user-chip i {
   font-size: 0.9rem;
@@ -637,7 +642,7 @@ a.user-chip:active {
   height: 22px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
 }
 .user-chip.chip-guest {
   background: var(--white);
@@ -647,7 +652,7 @@ a.user-chip:active {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--white);
   font-size: 1.05rem;
   display: flex;
@@ -693,9 +698,9 @@ a.user-chip:active {
   background: repeating-linear-gradient(
     -45deg,
     var(--red) 0 22px,
-    var(--ink) 22px 44px,
+    var(--inv-bg) 22px 44px,
     var(--white) 44px 66px,
-    var(--ink) 66px 88px
+    var(--inv-bg) 66px 88px
   );
 }
 
@@ -723,8 +728,8 @@ a.user-chip:active {
   align-items: center;
   gap: 8px;
   background: var(--yellow);
-  border: 2.5px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  border: 2.5px solid var(--bd);
+  box-shadow: 3px 3px 0 var(--sh);
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 0.68rem;
@@ -733,6 +738,7 @@ a.user-chip:active {
   text-transform: uppercase;
   margin-bottom: 20px;
   transform: rotate(-2deg);
+  color: var(--on-yellow);
 }
 
 .hero h1 {
@@ -774,13 +780,13 @@ a.user-chip:active {
   flex-wrap: wrap;
 }
 .chip {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 8px 12px;
   font-size: 0.72rem;
   font-weight: 800;
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .chip b {
   color: var(--red);
@@ -791,11 +797,11 @@ a.user-chip:active {
    TICKER
    ============================================================ */
 .ticker {
-  background: var(--ink);
-  color: var(--white);
+  background: var(--inv-bg);
+  color: var(--inv-fg);
   overflow: hidden;
-  border-top: 3px solid var(--ink);
-  border-bottom: 3px solid var(--ink);
+  border-top: 3px solid var(--bd);
+  border-bottom: 3px solid var(--bd);
   padding: 11px 0;
   white-space: nowrap;
   position: relative;
@@ -873,7 +879,7 @@ a.user-chip:active {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 12px 20px;
   font-family: inherit;
@@ -898,20 +904,20 @@ a.user-chip:active {
 .btn-red {
   background: var(--red);
   color: #fff;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .btn-white {
   background: var(--white);
   color: var(--ink);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .btn-yellow {
   background: var(--yellow);
-  color: var(--ink);
-  box-shadow: 4px 4px 0 var(--ink);
+  color: var(--on-yellow);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .btn-dark {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
   box-shadow: 4px 4px 0 var(--red);
 }
@@ -930,50 +936,270 @@ a.user-chip:active {
    VISI MISI
    ============================================================ */
 .visimisi {
-  background: var(--paper-2);
-  border-top: 3px solid var(--ink);
+  background:
+    radial-gradient(rgba(26, 19, 20, 0.065) 1.5px, transparent 1.5px),
+    var(--paper-2);
+  background-size: 20px 20px, auto;
+  border-top: 3px solid var(--bd);
 }
 .visimisi .wrap {
   padding-top: 38px;
   padding-bottom: 44px;
 }
+.vm-sec-head {
+  align-items: flex-end;
+  gap: 12px;
+}
+.vm-head-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--white);
+  color: var(--ink);
+  border: 2.5px solid var(--bd);
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  box-shadow: 3px 3px 0 var(--sh);
+  white-space: nowrap;
+}
+.vm-head-pill i {
+  color: var(--red);
+}
+
+.vm-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
 
 .vm-card {
   background: var(--white);
-  border: 3px solid var(--ink);
-  border-radius: var(--radius);
+  border: 3px solid var(--bd);
+  border-radius: 22px;
   padding: 22px;
-  box-shadow: var(--shadow-hard);
-  margin-bottom: 18px;
+  box-shadow: 6px 6px 0 var(--sh);
+  min-width: 0;
 }
 .vm-card.visi {
-  background: var(--red);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(155deg, var(--red) 0%, #b31222 100%);
   color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
 }
-.vm-card h3 {
-  font-size: 1.1rem;
+.vm-visi-wm {
+  position: absolute;
+  right: -18px;
+  bottom: -22px;
+  font-size: 7.2rem;
+  color: rgba(255, 255, 255, 0.09);
+  transform: rotate(-14deg);
+  pointer-events: none;
+}
+.vm-visi-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.vm-visi-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.vm-visi-ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 2.5px solid var(--bd);
+  background: var(--yellow);
+  color: var(--on-yellow);
+  display: grid;
+  place-items: center;
+  font-size: 1.02rem;
+  box-shadow: 2.5px 2.5px 0 var(--sh);
+  flex-shrink: 0;
+}
+.vm-visi-kicker {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--yellow);
+}
+.vm-card.visi h3 {
+  font-size: 1.08rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  margin: 1px 0 0;
+}
+.vm-quote-mark {
+  font-size: 1.45rem;
+  color: rgba(255, 255, 255, 0.35);
+  line-height: 1;
+}
+.vm-visi-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.vm-visi-bar {
+  display: block;
+  width: 54px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--yellow);
+  border: 1.5px solid var(--bd);
+  color: var(--on-yellow);
+}
+.vm-card.visi .vm-visi-quote {
+  font-size: clamp(1rem, 1.4vw, 1.18rem);
+  line-height: 1.6;
+  font-weight: 700;
+  margin: 0;
+}
+.vm-visi-foot {
+  position: relative;
+  z-index: 1;
+  padding-top: 14px;
+  border-top: 2px dashed rgba(255, 255, 255, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.vm-pillars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.vm-pillar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 2px solid var(--bd);
+  background: rgba(26, 19, 20, 0.28);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.vm-pillar i {
+  color: var(--yellow);
+}
+.vm-visi-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 2.5px solid var(--bd);
+  background: var(--yellow);
+  color: var(--on-yellow);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 3px 3px 0 var(--sh);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.vm-visi-link:hover {
+  transform: translate(-1.5px, -1.5px);
+  box-shadow: 4.5px 4.5px 0 var(--sh);
+}
+.vm-visi-link:active {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: none;
+}
+
+.vm-misi-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.vm-misi-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-bottom: 10px;
+  background: var(--white);
+  border: 2.5px solid var(--bd);
+  border-radius: 14px;
+  padding: 9px 14px;
+  box-shadow: 3px 3px 0 var(--sh);
 }
-.vm-card p {
-  font-size: 0.9rem;
-  line-height: 1.6;
-  font-weight: 500;
+.vm-misi-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.84rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.vm-misi-kicker i {
+  color: var(--red);
+}
+.vm-misi-tag {
+  background: var(--inv-bg);
+  color: var(--yellow);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.misi-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .misi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
 }
 
 .misi-item {
+  background: var(--white);
+  border: 3px solid var(--bd);
+  border-radius: 18px;
+  padding: 16px 16px 15px;
+  box-shadow: 4px 4px 0 var(--sh);
   display: flex;
-  gap: 14px;
-  padding: 13px 0;
-  border-bottom: 2px dashed var(--line);
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
 }
-.misi-item:last-child {
-  border-bottom: none;
+.misi-item:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--sh);
+}
+.misi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
 }
 .misi-num {
   width: 34px;
@@ -983,23 +1209,41 @@ a.user-chip:active {
   background: var(--red);
   color: #fff;
   font-weight: 900;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--ink);
-  transform: rotate(-6deg);
+  border: 2px solid var(--bd);
+  box-shadow: 2px 2px 0 var(--sh);
+  transform: rotate(-5deg);
 }
+.misi-ico {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 2px solid var(--bd);
+  display: grid;
+  place-items: center;
+  font-size: 0.84rem;
+  flex-shrink: 0;
+}
+.misi-ico.m-blue { background: #dbeafe; color: #1d4ed8; }
+.misi-ico.m-amber { background: #fef3c7; color: #b45309; }
+.misi-ico.m-green { background: #dcfce7; color: #166534; }
+.misi-ico.m-red { background: #ffe4e6; color: var(--red-dark); }
 .misi-item h4 {
-  font-size: 0.88rem;
-  font-weight: 800;
-  margin-bottom: 3px;
+  font-size: 0.94rem;
+  font-weight: 900;
+  line-height: 1.25;
+  color: var(--ink);
+  margin: 0;
 }
 .misi-item p {
   font-size: 0.8rem;
   color: var(--gray);
-  line-height: 1.5;
+  line-height: 1.55;
   font-weight: 500;
+  margin: 0;
 }
 
 /* ============================================================
@@ -1074,9 +1318,9 @@ a.user-chip:active {
   letter-spacing: 0.1em;
   padding: 7px 16px;
   border-radius: 8px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   transform: rotate(-2deg);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .pembina-quote {
   margin-top: 24px;
@@ -1113,19 +1357,19 @@ a.user-chip:active {
   bottom: 16px;
   width: 3px;
   border-radius: 99px;
-  background: var(--ink);
+  background: var(--bd);
   opacity: 0.9;
 }
 
 .year-card {
   position: relative;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   overflow: hidden;
   aspect-ratio: 16 / 10;
   cursor: pointer;
   background: var(--paper-2);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   transition: transform 0.15s;
   -webkit-tap-highlight-color: transparent;
   animation: yearRise 0.45s both;
@@ -1195,8 +1439,8 @@ a.user-chip:active {
   font-weight: 800;
   white-space: nowrap;
   background: var(--yellow);
-  color: var(--ink);
-  border: 2px solid var(--ink);
+  color: var(--on-yellow);
+  border: 2px solid var(--bd);
   border-radius: 99px;
   padding: 4px 10px;
   box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
@@ -1206,7 +1450,7 @@ a.user-chip:active {
   font-size: 0.55rem;
 }
 .year-card:hover .year-more {
-  background: #fff;
+  background: var(--white);
 }
 .year-card .year-num {
   font-size: 1.35rem;
@@ -1221,7 +1465,7 @@ a.user-chip:active {
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
   border-radius: 99px;
   padding: 3px 10px;
@@ -1241,11 +1485,12 @@ a.user-chip:active {
   height: 16px;
   border-radius: 50%;
   background: var(--paper);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   z-index: 2;
 }
 .year-item.era-adiabi .year-dot {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .year-card .year-loading {
   position: absolute;
@@ -1269,7 +1514,7 @@ body.edit-mode #btnTambahAngkatan {
   left: 8px;
   width: 28px;
   height: 28px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 50%;
   background: var(--red);
   color: #fff;
@@ -1279,7 +1524,7 @@ body.edit-mode #btnTambahAngkatan {
   font-weight: 900;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   z-index: 3;
 }
 body.edit-mode .year-del-btn {
@@ -1320,7 +1565,7 @@ body.edit-mode .year-del-btn {
   /* Swipe horizontal milik modal; scroll vertikal tetap boleh */
   touch-action: pan-y;
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
   animation: popIn 0.22s;
@@ -1378,7 +1623,7 @@ body.edit-mode .year-del-btn {
   height: auto;
   max-height: none;
   object-fit: contain;
-  border-bottom: 3px solid var(--ink);
+  border-bottom: 3px solid var(--bd);
   background: var(--paper-2);
 }
 .struktur-modal-body {
@@ -1435,7 +1680,7 @@ body.edit-mode .year-del-btn {
 /* Detail struktur lama (ga kepake) */
 .struktur-box {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
   margin-top: 14px;
   overflow: hidden;
@@ -1474,7 +1719,7 @@ body.edit-mode .year-del-btn {
   padding: 14px;
 }
 .pimp-card {
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   overflow: hidden;
   background: var(--white);
@@ -1483,7 +1728,7 @@ body.edit-mode .year-del-btn {
   aspect-ratio: 1 / 1;
   background: var(--paper-2);
   overflow: hidden;
-  border-bottom: 2.5px solid var(--ink);
+  border-bottom: 2.5px solid var(--bd);
 }
 .pimp-card .pimp-photo img {
   width: 100%;
@@ -1535,7 +1780,7 @@ body.edit-mode .year-del-btn {
   gap: 7px;
 }
 .anggota-chip {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   overflow: hidden;
   background: var(--paper);
@@ -1548,7 +1793,7 @@ body.edit-mode .year-del-btn {
   position: relative;
   aspect-ratio: 1 / 1;
   background: var(--paper-2);
-  border-bottom: 2px solid var(--ink);
+  border-bottom: 2px solid var(--bd);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -1561,6 +1806,7 @@ body.edit-mode .year-del-btn {
 }
 .anggota-chip .anggota-photo.kosong {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .anggota-chip .anggota-inisial {
   font-size: 1.4rem;
@@ -1596,15 +1842,15 @@ body.edit-mode .year-del-btn {
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   font-size: 0.75rem;
   cursor: pointer;
   align-items: center;
   justify-content: center;
   padding: 0;
-  box-shadow: 1.5px 1.5px 0 var(--ink);
+  box-shadow: 1.5px 1.5px 0 var(--sh);
 }
 body.edit-mode .anggota-chip .anggota-cam {
   display: inline-flex;
@@ -1618,7 +1864,7 @@ body.edit-mode .anggota-chip .anggota-cam {
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: #e11d48;
   color: #fff;
   font-size: 0.68rem;
@@ -1626,7 +1872,7 @@ body.edit-mode .anggota-chip .anggota-cam {
   align-items: center;
   justify-content: center;
   padding: 0;
-  box-shadow: 1.5px 1.5px 0 var(--ink);
+  box-shadow: 1.5px 1.5px 0 var(--sh);
   z-index: 2;
 }
 body.edit-mode .anggota-chip .anggota-photo-del {
@@ -1648,7 +1894,7 @@ body.edit-mode .anggota-chip .anggota-photo-del {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: #e11d48;
   color: #fff;
   font-size: 14px;
@@ -1673,7 +1919,7 @@ body.edit-mode .anggota-chip .anggota-photo-del {
    PRESTASI
    ============================================================ */
 .prestasi {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
 }
 .prestasi .wrap {
@@ -1747,7 +1993,7 @@ body.edit-mode .anggota-chip .anggota-photo-del {
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 0 0 3px var(--ink);
+  box-shadow: 0 0 0 3px var(--sh);
 }
 .prestasi-banner .medal {
   font-size: 1.6rem;
@@ -1778,9 +2024,9 @@ body.edit-mode .anggota-chip .anggota-photo-del {
   font-size: 1.35rem;
   color: #fff;
   background: var(--red);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 50%;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   cursor: pointer;
   transition:
     transform 0.12s,
@@ -1788,11 +2034,11 @@ body.edit-mode .anggota-chip .anggota-photo-del {
 }
 .gal-fab:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
 }
 .gal-fab:active {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
+  box-shadow: 1px 1px 0 var(--sh);
 }
 @media (min-width: 1024px) {
   .gal-fab {
@@ -1854,10 +2100,10 @@ body.edit-mode .bento-meta .gal-del {
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   aspect-ratio: 4 / 3;
   background: var(--paper-2);
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
   cursor: pointer;
   transition: transform 0.15s;
   -webkit-tap-highlight-color: transparent;
@@ -1895,8 +2141,8 @@ body.edit-mode .bento-meta .gal-del {
   height: 52px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.94);
-  border: 3px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  border: 3px solid var(--bd);
+  box-shadow: 3px 3px 0 var(--sh);
   display: grid;
   place-items: center;
   font-size: 1.05rem;
@@ -1939,14 +2185,15 @@ body.edit-mode .bento-meta .gal-del {
   top: 8px;
   left: 8px;
   background: var(--yellow);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   font-size: 0.6rem;
   font-weight: 900;
   letter-spacing: 0.06em;
   padding: 3px 9px;
   border-radius: 8px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   pointer-events: none;
+  color: var(--on-yellow);
 }
 
 .bento-dots {
@@ -1960,7 +2207,7 @@ body.edit-mode .bento-meta .gal-del {
   height: 8px;
   border-radius: 99px;
   background: var(--line);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   transition: 0.25s;
 }
 .bento-dots .bdot.on {
@@ -2030,9 +2277,9 @@ body.edit-mode .bento-meta .gal-del {
 .orang-photo.tanpa-foto .orang-fallback {
   display: flex;
   border-style: solid;
-  border-color: var(--ink);
+  border-color: var(--bd);
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .orang-info {
   text-align: center;
@@ -2046,7 +2293,7 @@ body.edit-mode .bento-meta .gal-del {
   text-transform: uppercase;
   color: var(--red);
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 3px 10px;
   margin-bottom: 7px;
@@ -2079,12 +2326,12 @@ body.edit-mode .bento-meta .gal-del {
   content: "";
   flex: 1;
   height: 3px;
-  background: var(--ink);
+  background: var(--bd);
 }
 .grup-label .chip-num {
   background: var(--red);
   color: #fff;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 9px;
   font-size: 0.68rem;
   padding: 2px 8px;
@@ -2101,12 +2348,12 @@ body.edit-mode .bento-meta .gal-del {
   margin-bottom: 26px;
 }
 .rule-card {
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   background: var(--white);
   padding: 14px 10px;
   text-align: center;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .rule-card .rule-emoji {
   font-size: 1.5rem;
@@ -2127,7 +2374,7 @@ body.edit-mode .bento-meta .gal-del {
 
 .form-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
   box-shadow: var(--shadow-hard);
   padding: 20px;
@@ -2148,7 +2395,7 @@ body.edit-mode .bento-meta .gal-del {
   height: 10px;
   background: var(--red);
   border-radius: 3px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
 }
 
 .field {
@@ -2166,7 +2413,7 @@ body.edit-mode .bento-meta .gal-del {
 .field input,
 .field textarea {
   width: 100%;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 12px 14px;
   font-family: inherit;
@@ -2180,7 +2427,7 @@ body.edit-mode .bento-meta .gal-del {
 .field input:focus,
 .field textarea:focus {
   box-shadow: 3px 3px 0 var(--red);
-  background: #fff;
+  background: var(--white);
 }
 .field textarea {
   min-height: 130px;
@@ -2216,7 +2463,7 @@ body.edit-mode .bento-meta .gal-del {
   font-size: 0.82rem;
   font-weight: 700;
   margin-top: 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
 }
 .form-feedback.ok {
   display: block;
@@ -2234,7 +2481,7 @@ body.edit-mode .bento-meta .gal-del {
    ============================================================ */
 .rule-info {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
   box-shadow: var(--shadow-hard);
   padding: 16px;
@@ -2248,12 +2495,13 @@ body.edit-mode .bento-meta .gal-del {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   background: var(--yellow);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 9px;
   padding: 5px 11px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   transform: rotate(-1.5deg);
   margin-bottom: 14px;
+  color: var(--on-yellow);
 }
 .rule-info-list {
   display: grid;
@@ -2264,7 +2512,7 @@ body.edit-mode .bento-meta .gal-del {
   gap: 10px;
   align-items: flex-start;
   background: var(--paper-2);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 11px 12px;
 }
@@ -2275,7 +2523,7 @@ body.edit-mode .bento-meta .gal-del {
   display: grid;
   place-items: center;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 9px;
   font-size: 0.78rem;
 }
@@ -2308,7 +2556,7 @@ body.edit-mode .bento-meta .gal-del {
   margin-top: 12px;
   padding: 11px 12px;
   background: var(--paper-2);
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 14px;
 }
 .rule-note-ico {
@@ -2318,9 +2566,10 @@ body.edit-mode .bento-meta .gal-del {
   display: grid;
   place-items: center;
   background: var(--yellow);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 9px;
   font-size: 0.75rem;
+  color: var(--on-yellow);
 }
 .rule-note-body {
   flex: 1;
@@ -2386,7 +2635,7 @@ body.edit-mode .bento-meta .gal-del {
   gap: 3px;
   padding: 24px 14px 20px;
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
   box-shadow: var(--shadow-hard);
   text-decoration: none;
@@ -2401,7 +2650,7 @@ body.edit-mode .bento-meta .gal-del {
   width: 64px;
   height: 64px;
   border-radius: 18px;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 1.7rem;
@@ -2422,7 +2671,7 @@ body.edit-mode .bento-meta .gal-del {
 }
 .social-ico.sc-mail {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .social-name {
   font-size: 0.82rem;
@@ -2443,13 +2692,13 @@ body.edit-mode .bento-meta .gal-del {
   align-items: center;
   gap: 12px;
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 14px;
   padding: 10px 12px;
 }
 .lagu-item:first-child {
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 /* Request udah selesai diputar (ditandai super_admin): hijau */
 .lagu-item.selesai {
@@ -2500,18 +2749,18 @@ body.edit-mode .bento-meta .gal-del {
   flex-shrink: 0;
   width: 56px;
   height: 56px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
-  background: var(--ink);
+  background: var(--inv-bg);
   display: grid;
   place-items: center;
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
 }
 .lagu-kaset {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--white);
   display: grid;
   place-items: center;
@@ -2591,9 +2840,9 @@ body.edit-mode .bento-meta .gal-del {
   gap: 10px;
   width: 100%;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   padding: 12px 16px;
   font-size: 0.85rem;
   font-weight: 700;
@@ -2659,7 +2908,7 @@ body.edit-mode .bento-meta .gal-del {
   gap: 8px;
   max-width: 100%;
   padding: 8px 14px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 999px;
   font-family: Outfit, system-ui, sans-serif;
   font-size: 0.72rem;
@@ -2689,7 +2938,7 @@ body.edit-mode .bento-meta .gal-del {
 }
 .notice-yellow {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .notice-red {
   background: var(--red);
@@ -2725,9 +2974,9 @@ body.edit-mode .bento-meta .gal-del {
   display: flex;
   flex-direction: column;
   background: var(--paper);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   overflow: hidden;
 }
 .upload-head {
@@ -2737,11 +2986,12 @@ body.edit-mode .bento-meta .gal-del {
   gap: 8px;
   padding: 12px 14px;
   background: var(--yellow);
-  border-bottom: 3px solid var(--ink);
+  border-bottom: 3px solid var(--bd);
   font-weight: 900;
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  color: var(--on-yellow);
 }
 .upload-hint {
   margin: 0;
@@ -2757,11 +3007,11 @@ body.edit-mode .bento-meta .gal-del {
   gap: 10px;
 }
 .upload-row {
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 10px 12px;
   background: var(--white);
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
 }
 .upload-row[data-status="done"] {
   background: #d6f5d6;
@@ -2800,7 +3050,7 @@ body.edit-mode .bento-meta .gal-del {
 .upload-bar {
   height: 12px;
   margin-top: 8px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   background: var(--paper-2);
   overflow: hidden;
@@ -2844,9 +3094,9 @@ body.edit-mode .bento-meta .gal-del {
   gap: 10px;
   padding: 10px 12px;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   font-family: Outfit, system-ui, sans-serif;
   color: var(--ink);
   cursor: pointer;
@@ -2863,10 +3113,11 @@ body.edit-mode .bento-meta .gal-del {
   height: 38px;
   display: grid;
   place-items: center;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   background: var(--yellow);
   font-size: 1rem;
+  color: var(--on-yellow);
 }
 #uploadBar[data-status="error"] .uploadbar-ico {
   background: var(--red);
@@ -2899,7 +3150,7 @@ body.edit-mode .bento-meta .gal-del {
 .uploadbar-track {
   height: 10px;
   margin-top: 6px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   background: var(--paper-2);
   overflow: hidden;
@@ -2960,9 +3211,9 @@ body.edit-mode .bento-meta .gal-del {
   max-width: 100%;
   overflow-wrap: anywhere;
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
-  box-shadow: 8px 8px 0 var(--ink);
+  box-shadow: 8px 8px 0 var(--sh);
   padding: 26px 24px 22px;
   text-align: center;
   transform: translateY(16px) scale(0.97);
@@ -3008,17 +3259,17 @@ body.edit-mode .bento-meta .gal-del {
   height: 64px;
   margin: 0 auto 14px;
   border-radius: 50%;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 1.5rem;
   color: #fff;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .uni-icon.info,
 .uni-icon.warning {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .uni-icon.success {
   background: #2eaf4e;
@@ -3045,7 +3296,7 @@ body.edit-mode .bento-meta .gal-del {
   font-family: inherit;
   font-size: 0.88rem;
   font-weight: 800;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 10px 22px;
   cursor: pointer;
@@ -3066,18 +3317,18 @@ body.edit-mode .bento-meta .gal-del {
 }
 .uni-btn {
   background: var(--red);
-  color: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  color: #fff;
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .uni-btn-confirm {
   background: var(--red);
-  color: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  color: #fff;
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .uni-btn-cancel {
   background: var(--white);
   color: var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .uni-title {
   font-size: 1.05rem;
@@ -3103,7 +3354,7 @@ body.edit-mode .bento-meta .gal-del {
 }
 .uni-input {
   width: 100%;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 11px 14px;
   font-family: inherit;
@@ -3153,7 +3404,7 @@ body.edit-mode .bento-meta .gal-del {
   right: 14px;
   z-index: 90;
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(26, 19, 20, 0.25);
   display: flex;
@@ -3167,8 +3418,8 @@ body.edit-mode .bento-meta .gal-del {
   left: 0;
   background: var(--red);
   border-radius: 14px;
-  border: 2px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
+  border: 2px solid var(--bd);
+  box-shadow: 2px 2px 0 var(--sh);
   transition:
     transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
     width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
@@ -3216,9 +3467,9 @@ body.edit-mode .bento-meta .gal-del {
   margin: -32px 4px 0;
   align-self: flex-start;
   border-radius: 50%;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   font-size: 1.35rem;
   display: flex;
   flex-direction: column;
@@ -3227,7 +3478,7 @@ body.edit-mode .bento-meta .gal-del {
   gap: 2px;
   cursor: pointer;
   box-shadow:
-    3px 3px 0 var(--ink),
+    3px 3px 0 var(--sh),
     0 6px 18px rgba(255, 180, 0, 0.45);
   transition:
     transform 0.18s,
@@ -3238,7 +3489,7 @@ body.edit-mode .bento-meta .gal-del {
 .nav-more-btn:hover {
   transform: translate(-1px, -1px);
   box-shadow:
-    4px 4px 0 var(--ink),
+    4px 4px 0 var(--sh),
     0 8px 22px rgba(255, 180, 0, 0.55);
 }
 .nav-more-btn:active {
@@ -3257,7 +3508,7 @@ body.edit-mode .bento-meta .gal-del {
   left: 50%;
   transform: translateX(-50%);
   display: block;
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
   border-radius: 99px;
   padding: 2px 10px;
@@ -3275,7 +3526,7 @@ body.edit-mode .bento-meta .gal-del {
 }
 .nav-more-btn.active,
 .nav-more-btn[aria-expanded="true"] {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .nav-more-btn.is-in-sheet {
@@ -3294,7 +3545,7 @@ body.edit-mode .bento-meta .gal-del {
   border-radius: 50%;
   background: var(--red);
   border: 2.5px solid #fff;
-  box-shadow: 0 0 0 2px var(--ink);
+  box-shadow: 0 0 0 2px var(--sh);
   z-index: 2;
   pointer-events: none;
 }
@@ -3304,7 +3555,7 @@ body.edit-mode .bento-meta .gal-del {
   bottom: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
   font-size: 0.65rem;
   font-weight: 800;
@@ -3324,7 +3575,7 @@ body.edit-mode .bento-meta .gal-del {
   left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent;
-  border-top-color: var(--ink);
+  border-top-color: var(--bd);
 }
 /* Mode perhatian: goyang + ring pulse + tooltip bobbing + dot kedip */
 .nav-more-btn.attn {
@@ -3419,9 +3670,9 @@ body.edit-mode .bento-meta .gal-del {
   right: 14px;
   bottom: calc(100px + env(safe-area-inset-bottom, 0px));
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 22px;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   padding: 10px 12px 14px;
   transform: translateY(24px) scale(0.98);
   opacity: 0;
@@ -3440,7 +3691,7 @@ body.edit-mode .bento-meta .gal-del {
   height: 5px;
   border-radius: 99px;
   background: var(--line);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   margin: 0 auto 8px;
 }
 .nav-sheet-head {
@@ -3457,13 +3708,13 @@ body.edit-mode .bento-meta .gal-del {
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--paper-2);
   color: var(--ink);
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .nav-sheet-close:active {
   transform: translate(1px, 1px);
@@ -3479,12 +3730,12 @@ body.edit-mode .bento-meta .gal-del {
   align-items: center;
   gap: 10px;
   padding: 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   background: var(--paper-2);
   text-decoration: none;
   color: var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   transition:
     transform 0.12s,
     box-shadow 0.12s,
@@ -3506,7 +3757,7 @@ body.edit-mode .bento-meta .gal-del {
   height: 40px;
   flex-shrink: 0;
   border-radius: 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--white);
   color: var(--ink);
   display: grid;
@@ -3514,7 +3765,7 @@ body.edit-mode .bento-meta .gal-del {
   font-size: 1.05rem;
 }
 .nav-sheet-item.active .nsi-ico {
-  background: #fff;
+  background: var(--white);
   color: var(--red);
 }
 .nsi-text {
@@ -3544,7 +3795,7 @@ body.edit-mode .bento-meta .gal-del {
   margin-top: 18px;
   padding: 12px;
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 16px;
   box-shadow: var(--shadow-hard);
 }
@@ -3570,7 +3821,7 @@ body.edit-mode .bento-meta .gal-del {
   margin-top: 16px;
   padding: 14px;
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   box-shadow: var(--shadow-hard);
   flex-wrap: wrap;
@@ -3579,12 +3830,13 @@ body.edit-mode .bento-meta .gal-del {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   background: var(--yellow);
   display: grid;
   place-items: center;
   font-size: 1.25rem;
   flex-shrink: 0;
+  color: var(--on-yellow);
 }
 .vault-txt {
   flex: 1;
@@ -3603,7 +3855,7 @@ body.edit-mode .bento-meta .gal-del {
 .vault-badge {
   font-size: 0.62rem;
   font-weight: 900;
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
   border-radius: 999px;
   padding: 2px 9px;
@@ -3629,16 +3881,16 @@ body.edit-mode .bento-meta .gal-del {
   font-weight: 800;
   color: var(--red);
   text-decoration: none;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   background: var(--white);
   padding: 5px 12px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   width: fit-content;
 }
 .vault-link:active {
   transform: translate(1px, 1px);
-  box-shadow: 0 0 0 var(--ink);
+  box-shadow: 0 0 0 var(--sh);
 }
 .vault-link .fa-chevron-right {
   font-size: 0.62rem;
@@ -3686,7 +3938,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   margin-top: 12px;
   padding: 14px;
   background: var(--white);
-  border: 3px dashed var(--ink);
+  border: 3px dashed var(--bd);
   border-radius: 18px;
 }
 .vault-owner-head {
@@ -3702,11 +3954,11 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 10px 12px;
   margin-bottom: 8px;
-  background: #fff;
+  background: var(--white);
   flex-wrap: wrap;
 }
 .vault-req .nm {
@@ -3723,10 +3975,11 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   font-weight: 900;
   border-radius: 999px;
   padding: 2px 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
 }
 .vault-req .st.pending {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .vault-req .st.setuju {
   background: #d6f5d6;
@@ -3760,7 +4013,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 .vault-modal-inner {
   width: min(860px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 16px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
@@ -3852,7 +4105,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   .hero-logo img {
     padding: 16px;
     border-radius: 30px;
-    box-shadow: 10px 10px 0 var(--ink);
+    box-shadow: 10px 10px 0 var(--sh);
     transform: rotate(2deg);
     transition: transform 0.25s ease;
   }
@@ -3876,8 +4129,9 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 
   .vm-grid {
     display: grid;
-    grid-template-columns: 1fr 1.4fr;
-    gap: 24px;
+    grid-template-columns: minmax(310px, 0.92fr) minmax(0, 1.38fr);
+    gap: 22px;
+    align-items: stretch;
   }
   .vm-card {
     margin-bottom: 0;
@@ -4063,7 +4317,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 }
 .pesan-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
   box-shadow: var(--shadow-hard);
   padding: 22px 18px;
@@ -4082,13 +4336,14 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 }
 .pesan-count {
   background: var(--yellow);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 999px;
   padding: 2px 12px;
   font-size: 0.78rem;
   font-weight: 900;
   min-width: 34px;
   text-align: center;
+  color: var(--on-yellow);
 }
 .pesan-list {
   display: flex;
@@ -4100,13 +4355,13 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 }
 .pesan-item {
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 14px;
   padding: 12px 14px;
 }
 .pesan-item:first-child {
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .pesan-meta {
   display: flex;
@@ -4151,7 +4406,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   gap: 8px;
   align-items: flex-start;
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-left: 6px solid var(--yellow);
   border-radius: 10px;
   padding: 8px 10px;
@@ -4197,7 +4452,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   width: 26px;
   height: 26px;
   flex-shrink: 0;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 8px;
   background: var(--white);
   color: var(--red);
@@ -4214,7 +4469,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 }
 .hapus-btn:hover {
   background: var(--red);
-  color: var(--white);
+  color: #fff;
   transform: translateY(-1px);
 }
 .hapus-btn:active {
@@ -4238,13 +4493,13 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   display: inline-block;
   background: rgba(255, 255, 255, 0.94);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 5px 12px;
   font-size: 0.68rem;
   font-weight: 800;
   line-height: 1.4;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4264,7 +4519,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
    LOGIN (login)
    ============================================================ */
 .login-body {
-  background: var(--ink);
+  background: var(--inv-bg);
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -4278,7 +4533,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 }
 .login-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
   box-shadow: var(--shadow-hard);
   padding: 32px 26px;
@@ -4337,7 +4592,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 }
 .login-back:hover {
   color: var(--ink);
-  border-color: var(--ink);
+  border-color: var(--bd);
 }
 .login-center {
   display: flex;
@@ -4370,7 +4625,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 }
 .admin-input {
   width: 100%;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 10px 13px;
   font-family: inherit;
@@ -4379,7 +4634,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   outline: none;
 }
 .admin-input:focus {
-  background: #fff;
+  background: var(--white);
   box-shadow: 3px 3px 0 var(--red);
 }
 .admin-textarea {
@@ -4413,7 +4668,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   width: 68px;
   height: 68px;
   border-radius: 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   object-fit: cover;
   background: var(--paper-2);
 }
@@ -4453,8 +4708,8 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   aspect-ratio: 4 / 3;
   position: relative;
   border-radius: 14px;
-  border: 2.5px solid var(--ink);
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  border: 2.5px solid var(--bd);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
   background: var(--paper-2);
   overflow: hidden;
 }
@@ -4470,7 +4725,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
   border-color: var(--red);
   color: var(--red);
   transform: translate(1.5px, 1.5px);
-  box-shadow: 0 0 0 var(--ink);
+  box-shadow: 0 0 0 var(--sh);
 }
 .up-slot i {
   font-size: 1.4rem;
@@ -4478,7 +4733,7 @@ body.edit-mode #pelantikanGrid.mode-osis .item .foto-del-btn {
 }
 .up-slot:active {
   transform: translate(1.5px, 1.5px);
-  box-shadow: 0 0 0 var(--ink);
+  box-shadow: 0 0 0 var(--sh);
 }
 
 /* Judul & subjudul draft: editable tapi nyatu sama layout */
@@ -4519,7 +4774,7 @@ p[contenteditable]:empty::before {
   display: none !important;
   width: 32px;
   height: 32px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 10px;
   cursor: pointer;
   font-size: 0.8rem;
@@ -4582,10 +4837,10 @@ body.edit-mode #pelantikanGrid:not(.mode-osis) .item .foto-del-btn {
   cursor: pointer;
   user-select: none;
   padding: 6px 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   background: var(--white);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .edit-toggle-wrap input {
   display: none;
@@ -4594,7 +4849,7 @@ body.edit-mode #pelantikanGrid:not(.mode-osis) .item .foto-del-btn {
   width: 36px;
   height: 20px;
   background: var(--line);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   position: relative;
   transition: background 0.2s;
@@ -4606,7 +4861,7 @@ body.edit-mode #pelantikanGrid:not(.mode-osis) .item .foto-del-btn {
   width: 14px;
   height: 14px;
   background: var(--white);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   border-radius: 50%;
   transition: transform 0.2s;
 }
@@ -4651,15 +4906,15 @@ body.edit-mode .site-footer-motto:focus {
   right: 6px;
   width: 30px;
   height: 30px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 9px;
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   align-items: center;
   justify-content: center;
   font-size: 0.78rem;
   cursor: pointer;
-  box-shadow: 1.5px 1.5px 0 var(--ink);
+  box-shadow: 1.5px 1.5px 0 var(--sh);
   z-index: 2;
 }
 body.edit-mode .photo-edit-btn {
@@ -4678,7 +4933,7 @@ body.edit-mode .photo-edit-btn {
   right: 6px;
   width: 30px;
   height: 30px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 9px;
   background: #e11d48;
   color: #fff;
@@ -4686,7 +4941,7 @@ body.edit-mode .photo-edit-btn {
   justify-content: center;
   font-size: 0.78rem;
   cursor: pointer;
-  box-shadow: 1.5px 1.5px 0 var(--ink);
+  box-shadow: 1.5px 1.5px 0 var(--sh);
   z-index: 2;
   padding: 0;
 }
@@ -4703,7 +4958,7 @@ body.edit-mode .photo-del-btn {
   display: none;
   width: 100%;
   padding: 12px;
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 14px;
   background: var(--paper-2);
   font-family: inherit;
@@ -4727,7 +4982,7 @@ body.edit-mode .edit-add-btn {
   left: 6px;
   width: 26px;
   height: 26px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 8px;
   background: #ffe9e9;
   color: var(--red-dark);
@@ -4769,11 +5024,11 @@ body.edit-mode {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 170px;
+  min-width: 196px;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   padding: 6px;
   display: flex;
   flex-direction: column;
@@ -4843,7 +5098,7 @@ body.edit-mode {
 .header-more-item .edit-toggle-wrap.small {
   padding: 4px 8px;
   font-size: 0.68rem;
-  box-shadow: 1.5px 1.5px 0 var(--ink);
+  box-shadow: 1.5px 1.5px 0 var(--sh);
 }
 /* Header desktop (index): yang tampil di luar cuma visitor, Dashboard OSIS,
    user-chip, Edit. Sisanya (Pengaturan, Keluar, Notif, Install) masuk titik-tiga.
@@ -4855,7 +5110,7 @@ body.edit-mode {
 }
 /* Tombol logout + titik-tiga: bayangan bawaan kayak tombol header lain */
 .top-nav-extra .icon-btn {
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
 }
 /* Header (index + /osis): semua tombol luar gerak hover/active SERAGAM.
    Cakupan: Masuk/Beranda (.btn), visitor, user-chip (link/span),
@@ -4881,7 +5136,7 @@ body.edit-mode {
 .top-nav-extra #pushBellBtn:hover,
 .top-nav-extra #pwaInstallBtn:hover {
   transform: translate(-1.5px, -1.5px);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .top-nav-extra .btn:active,
 .top-nav-extra .visitor-trigger:active,
@@ -4892,7 +5147,7 @@ body.edit-mode {
 .top-nav-extra #pushBellBtn:active,
 .top-nav-extra #pwaInstallBtn:active {
   transform: translate(1.5px, 1.5px);
-  box-shadow: 0 0 0 var(--ink) !important;
+  box-shadow: 0 0 0 var(--sh) !important;
 }
 #headerMoreWrap.show {
   display: inline-flex !important;
@@ -4901,7 +5156,8 @@ body.edit-mode {
 .top-nav:has(#headerMoreMenu) #pwaInstallBtn {
   display: none !important;
 }
-#headerMoreVisitor span {
+#headerMoreVisitor span,
+.header-more-item .more-lbl-ico {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -4910,7 +5166,7 @@ body.edit-mode {
   #editToggleWrap {
     display: none !important;
   }
-  /* Visitor pindah ke titik-tiga (urutan: dash, visitor, edit, pengaturan, keluar) */
+  /* Visitor pindah ke titik-tiga (urutan: dash, visitor, edit, tema, pengaturan, notif, keluar, install) */
   #visitorTrigger {
     display: none !important;
   }
@@ -4923,17 +5179,20 @@ body.edit-mode {
   #headerMoreEditRow {
     order: 3;
   }
-  #headerMorePengaturan {
+  #headerMoreThemeRow {
     order: 4;
   }
-  #headerMorePush {
+  #headerMorePengaturan {
     order: 5;
   }
-  #headerMoreLogout {
+  #headerMorePush {
     order: 6;
   }
-  #headerMoreInstall {
+  #headerMoreLogout {
     order: 7;
+  }
+  #headerMoreInstall {
+    order: 8;
   }
 }
 /* kegiatan home: tombol hapus di kanan atas meta (jangan nutupin judul) */
@@ -4957,7 +5216,7 @@ body.edit-mode {
   flex: 1;
   min-width: 70px;
   padding: 6px 8px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   border-radius: 8px;
   font-family: inherit;
   font-size: 0.7rem;
@@ -5028,13 +5287,13 @@ body.edit-mode {
   max-width: 100%;
   background: var(--white);
   color: var(--ink);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 999px;
   padding: 7px 16px;
   font-size: 0.82rem;
   font-weight: 800;
   line-height: 1.4;
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
   pointer-events: auto;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -5062,13 +5321,13 @@ body.edit-mode {
   gap: 6px;
   max-width: calc(100% - 20px);
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 5px 5px 5px 11px;
   font-size: 0.66rem;
   font-weight: 800;
   white-space: nowrap;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .foto-hint i {
   color: var(--red);
@@ -5077,7 +5336,7 @@ body.edit-mode {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   color: var(--ink);
   font-size: 0.62rem;
@@ -5115,7 +5374,7 @@ body.edit-mode {
   .struktur-modal-body .struktur-foto {
     margin: 0;
     flex-shrink: 0;
-    border: 3px solid var(--ink);
+    border: 3px solid var(--bd);
     border-radius: 16px;
     overflow: hidden;
   }
@@ -5196,7 +5455,7 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
 .prestasi-form-box {
   width: min(480px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
   padding: 18px;
@@ -5209,7 +5468,7 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
   transform: scale(1) translateY(0);
 }
 .prestasi-drop {
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 14px;
   background: var(--paper-2);
   height: 180px;
@@ -5257,7 +5516,7 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
   right: 6px;
   width: 26px;
   height: 26px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 8px;
   background: #ffe9e9;
   color: var(--red-dark);
@@ -5267,7 +5526,7 @@ body.edit-mode .bento-badge[contenteditable="true"]:empty::before {
   font-size: 0.7rem;
   cursor: pointer;
   z-index: 3;
-  box-shadow: 1.5px 1.5px 0 var(--ink);
+  box-shadow: 1.5px 1.5px 0 var(--sh);
 }
 body.edit-mode .item .foto-del-btn,
 body.edit-mode .prestasi-card .foto-del-btn {
@@ -5280,11 +5539,11 @@ body.edit-mode .prestasi-card .foto-del-btn {
 /* agenda public di #sekbid */
 .agenda-sekbid {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 12px;
   margin-top: 10px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .agenda-sekbid-head {
   font-size: 0.82rem;
@@ -5351,7 +5610,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   aspect-ratio: 4 / 5;
   background: var(--paper-2);
   overflow: hidden;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
 }
 .sekbid-img {
@@ -5418,7 +5677,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   padding: 3px 11px;
   background: var(--red);
   color: #fff;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   font-size: 0.6rem;
   font-weight: 900;
@@ -5652,7 +5911,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   position: relative;
   width: min(170px, 52vw);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: var(--radius);
   padding: 12px;
   box-shadow: var(--shadow-hard);
@@ -5669,10 +5928,10 @@ body.edit-mode .prestasi-card .foto-del-btn {
   gap: 8px;
   align-items: flex-start;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 10px 11px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   overflow-wrap: anywhere;
   word-break: break-word;
   min-width: 0;
@@ -5747,17 +6006,17 @@ body.edit-mode .prestasi-card .foto-del-btn {
   justify-content: center;
   background: var(--red);
   color: #fff;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 8px;
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   transform: rotate(-4deg);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .logo-makna-card:active {
   transform: translate(1px, 1px);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 /* ---- Connector line mobile: garis tipis + dot di ujung logo ---- */
 /* card di ATAS logo: garis ke bawah */
@@ -5771,7 +6030,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   width: 2px;
   height: 14px;
   margin-left: -1px;
-  background: var(--ink);
+  background: var(--bd);
   opacity: 0.5;
   pointer-events: none;
 }
@@ -5787,7 +6046,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   margin-left: -4.5px;
   border-radius: 50%;
   background: var(--red);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   pointer-events: none;
 }
 /* card di BAWAH logo: garis ke atas */
@@ -5803,7 +6062,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   width: 2px;
   height: 14px;
   margin-left: -1px;
-  background: var(--ink);
+  background: var(--bd);
   opacity: 0.5;
   pointer-events: none;
 }
@@ -5821,7 +6080,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   margin-left: -4.5px;
   border-radius: 50%;
   background: var(--red);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   pointer-events: none;
 }
 
@@ -5848,7 +6107,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
     justify-self: center;
     padding: 22px;
     border-radius: 26px;
-    box-shadow: 6px 6px 0 var(--ink);
+    box-shadow: 6px 6px 0 var(--sh);
     transform: rotate(2deg);
     transition: transform 0.2s ease;
   }
@@ -5942,7 +6201,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
     margin: -5px -5px 0 0;
     border-radius: 50%;
     background: var(--red);
-    border: 2px solid var(--ink);
+    border: 2px solid var(--bd);
     pointer-events: none;
   }
   .logo-makna-card[data-area="bintang"]::before,
@@ -5958,7 +6217,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
     margin: -5px 0 0 -5px;
     border-radius: 50%;
     background: var(--red);
-    border: 2px solid var(--ink);
+    border: 2px solid var(--bd);
     pointer-events: none;
   }
   /* Connector vertikal card tengah-atas/bawah + dot */
@@ -5985,7 +6244,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
     margin-left: -5px;
     border-radius: 50%;
     background: var(--red);
-    border: 2px solid var(--ink);
+    border: 2px solid var(--bd);
     pointer-events: none;
   }
   .logo-makna-card[data-area="obor"]::after,
@@ -6017,7 +6276,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
     margin-left: -5px;
     border-radius: 50%;
     background: var(--red);
-    border: 2px solid var(--ink);
+    border: 2px solid var(--bd);
     pointer-events: none;
   }
   /* Hover: garis + dot lebih tegas */
@@ -6035,6 +6294,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   }
   .logo-makna-card:hover::before {
     background: var(--yellow);
+    color: var(--on-yellow);
   }
 }
 
@@ -6091,14 +6351,14 @@ body.edit-mode .prestasi-card .foto-del-btn {
   flex: 1;
   min-width: 0;
   padding: 12px 14px;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 14px;
   background: var(--white);
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 800;
   color: var(--ink);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   outline: none;
   cursor: pointer;
 }
@@ -6122,10 +6382,10 @@ body.edit-mode .prestasi-card .foto-del-btn {
 .pg-card {
   position: relative;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 10px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   text-align: center;
   min-width: 0;
 }
@@ -6142,13 +6402,13 @@ body.edit-mode .prestasi-card .foto-del-btn {
   justify-content: center;
   background: var(--red);
   color: #fff;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 8px;
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   transform: rotate(-4deg);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 
 .pg-periode {
@@ -6159,15 +6419,15 @@ body.edit-mode .prestasi-card .foto-del-btn {
   align-items: center;
   gap: 4px;
   background: var(--yellow);
-  color: var(--ink);
-  border: 2px solid var(--ink);
+  color: var(--on-yellow);
+  border: 2px solid var(--bd);
   border-radius: 8px;
   font-size: 0.58rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   padding: 5px 8px;
   transform: rotate(3deg);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   white-space: nowrap;
 }
 
@@ -6175,7 +6435,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   width: 100%;
   aspect-ratio: 3 / 3.4;
   margin: 0 0 10px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   overflow: hidden;
   background: var(--yellow);
@@ -6183,6 +6443,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--on-yellow);
 }
 
 .pg-foto img {
@@ -6263,7 +6524,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 
 .pg-bio-item {
   background: var(--paper-2);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   border-radius: 10px;
   padding: 6px 8px;
   min-width: 0;
@@ -6314,14 +6575,14 @@ body.edit-mode .prestasi-card .foto-del-btn {
   gap: 8px;
   background: var(--red);
   color: #fff;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 999px;
   font-family: inherit;
   font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.05em;
   cursor: pointer;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   transition:
     transform 0.12s,
     box-shadow 0.12s;
@@ -6356,7 +6617,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
     background 0.12s;
 }
 .struktur-nav:hover {
-  background: #fff;
+  background: var(--white);
   color: var(--red);
 }
 .struktur-nav:active {
@@ -6377,7 +6638,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   border-radius: 9px;
   border: 2px solid #fff;
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   font-size: 0.8rem;
   cursor: pointer;
   line-height: 1;
@@ -6396,7 +6657,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 
 #pengurusModal.pg-editing [data-f]:focus {
   outline-style: solid;
-  background: #fff;
+  background: var(--white);
 }
 
 .pg-edit-cam {
@@ -6407,14 +6668,15 @@ body.edit-mode .prestasi-card .foto-del-btn {
   height: 40px;
   border-radius: 50%;
   background: var(--yellow);
-  border: 2.5px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
+  border: 2.5px solid var(--bd);
+  box-shadow: 2px 2px 0 var(--sh);
   font-size: 1rem;
   cursor: pointer;
   display: none;
   place-items: center;
   z-index: 3;
   overflow: hidden;
+  color: var(--on-yellow);
 }
 
 .pg-edit-cam input[type="file"] {
@@ -6440,8 +6702,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
   border-radius: 50%;
   background: #e11d48;
   color: #fff;
-  border: 2.5px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
+  border: 2.5px solid var(--bd);
+  box-shadow: 2px 2px 0 var(--sh);
   font-size: 1rem;
   cursor: pointer;
   display: none;
@@ -6464,9 +6726,9 @@ body.edit-mode .prestasi-card .foto-del-btn {
   padding: 7px 14px;
   background: var(--white);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   min-width: 0;
   overflow: hidden;
 }
@@ -6565,18 +6827,18 @@ body.edit-mode .prestasi-card .foto-del-btn {
   justify-content: center;
   background: var(--red);
   color: #fff;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 900;
   transform: rotate(-4deg);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 
 .pg-pop-foto {
   width: 100%;
   aspect-ratio: 3 / 3.5;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   overflow: hidden;
   background: var(--yellow);
@@ -6584,7 +6846,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
+  color: var(--on-yellow);
 }
 
 .pg-pop-foto img {
@@ -6653,12 +6916,12 @@ body.edit-mode .prestasi-card .foto-del-btn {
   padding: 7px 10px;
   background: var(--white);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 800;
   text-decoration: none;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6726,7 +6989,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 
 .pg-pop-tile {
   background: var(--paper);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 8px 10px;
   display: flex;
@@ -6779,11 +7042,11 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 
 .pg-pop-vm-card {
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 12px;
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   min-width: 0;
 }
 
@@ -6873,7 +7136,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 14px;
   padding: 12px 14px;
   margin-top: 12px;
@@ -6922,7 +7185,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 .poster-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   box-shadow: var(--shadow-hard);
   overflow: hidden;
@@ -6937,7 +7200,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--red);
   color: #fff;
   display: grid;
@@ -6965,7 +7228,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--white);
   color: var(--red);
   display: grid;
@@ -6982,8 +7245,8 @@ body.edit-mode .prestasi-card .foto-del-btn {
   height: auto;
   object-fit: cover;
   background: var(--paper-2);
-  border-top: 3px solid var(--ink);
-  border-bottom: 3px solid var(--ink);
+  border-top: 3px solid var(--bd);
+  border-bottom: 3px solid var(--bd);
   cursor: zoom-in;
 }
 /* Thumbnail loading generik SEMUA gambar: bungkus <img> dengan .media-muat
@@ -7174,13 +7437,13 @@ body.edit-mode .prestasi-card .foto-del-btn {
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   margin-left: auto;
   margin-right: 8px;
   font-size: 0.85rem;
@@ -7213,7 +7476,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 .navatur-box {
   width: min(520px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
   max-height: 90vh;
@@ -7233,10 +7496,11 @@ body.edit-mode .prestasi-card .foto-del-btn {
   justify-content: space-between;
   gap: 8px;
   padding: 14px 16px;
-  border-bottom: 3px solid var(--ink);
+  border-bottom: 3px solid var(--bd);
   background: var(--yellow);
   font-size: 0.95rem;
   font-weight: 900;
+  color: var(--on-yellow);
 }
 .navatur-head b {
   display: flex;
@@ -7265,10 +7529,10 @@ body.edit-mode .prestasi-card .foto-del-btn {
   margin-top: 6px;
 }
 .navatur-row {
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   background: var(--white);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   padding: 8px;
   display: flex;
   align-items: center;
@@ -7300,7 +7564,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   white-space: nowrap;
 }
 .navatur-tambah {
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 12px;
   background: transparent;
   padding: 9px 10px;
@@ -7326,7 +7590,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 .navatur-foot {
   padding: 12px 16px;
-  border-top: 3px solid var(--ink);
+  border-top: 3px solid var(--bd);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -7347,7 +7611,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 .side-btn {
   width: 30px;
   height: 30px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 9px;
   background: var(--white);
   cursor: pointer;
@@ -7370,9 +7634,10 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 .side-btn.edt {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .side-form {
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 12px;
   padding: 10px;
   display: flex;
@@ -7389,7 +7654,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 .side-form input[type="text"],
 .side-form select {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 9px;
   padding: 7px 9px;
   font-size: 0.78rem;
@@ -7397,7 +7662,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   font-family: inherit;
   width: 100%;
   box-sizing: border-box;
-  background: #fff;
+  background: var(--white);
 }
 .side-icons {
   display: flex;
@@ -7407,9 +7672,9 @@ body.edit-mode .prestasi-card .foto-del-btn {
 .side-icons button {
   width: 32px;
   height: 32px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 9px;
-  background: #fff;
+  background: var(--white);
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -7417,7 +7682,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   color: var(--red);
 }
 .side-icons button.on {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
 }
 .side-form-act {
@@ -7426,7 +7691,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 .side-add {
   flex: 1;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 10px;
   background: var(--red);
   color: #fff;
@@ -7434,7 +7699,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   font-size: 0.76rem;
   padding: 8px;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   font-family: inherit;
 }
 .side-add:active {
@@ -7442,9 +7707,9 @@ body.edit-mode .prestasi-card .foto-del-btn {
   box-shadow: none;
 }
 .side-cancel {
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 10px;
-  background: #fff;
+  background: var(--white);
   font-weight: 900;
   font-size: 0.76rem;
   padding: 8px 10px;
@@ -7494,7 +7759,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 10px 13px;
   font-family: inherit;
@@ -7508,15 +7773,15 @@ body.edit-mode .prestasi-card .foto-del-btn {
   line-height: 1.3;
 }
 .dd-btn:hover {
-  background: #fff;
+  background: var(--white);
 }
 .dd-btn:focus-visible {
-  background: #fff;
+  background: var(--white);
   box-shadow: 3px 3px 0 var(--red);
 }
 .dd.buka .dd-btn {
-  background: #fff;
-  box-shadow: 3px 3px 0 var(--ink);
+  background: var(--white);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .dd-teks {
   flex: 1;
@@ -7548,10 +7813,10 @@ body.edit-mode .prestasi-card .foto-del-btn {
   left: 0;
   right: 0;
   min-width: 100%;
-  background: #fff;
-  border: 2.5px solid var(--ink);
+  background: var(--white);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   z-index: 90;
   overflow: hidden;
   display: flex;
@@ -7632,7 +7897,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 /* Satu bahasa fokus: ikon cari ikut merah + bar bawah merah */
 .dd-cari:focus-within {
-  background: #fff;
+  background: var(--white);
   border-bottom-color: var(--red);
 }
 .dd-cari:focus-within i {
@@ -7676,6 +7941,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 .dd-opt.pilih {
   background: var(--yellow);
   font-weight: 800;
+  color: var(--on-yellow);
 }
 .dd-opt.pilih i {
   font-size: 0.75rem;
@@ -7689,7 +7955,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   margin-top: 6px;
   padding: 6px 10px;
   border-radius: 9px;
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
   font-size: 0.68rem;
   font-weight: 900;
@@ -7721,15 +7987,15 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 .osis-sb-bar {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 16px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   transition: box-shadow 0.14s ease, transform 0.14s ease, background 0.14s ease;
 }
 .osis-sb-bar:focus-within,
 .osis-top-search.open .osis-sb-bar {
-  box-shadow: 5px 5px 0 var(--ink);
-  background: #fff;
+  box-shadow: 5px 5px 0 var(--sh);
+  background: var(--white);
 }
 .osis-sb-row {
   display: flex;
@@ -7764,7 +8030,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   color: var(--ink);
   display: grid;
@@ -7775,6 +8041,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 .osis-sb-clear:hover {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .osis-sb-divider {
   width: 2px;
@@ -7787,7 +8054,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 11px;
   background: var(--paper);
   color: var(--ink);
@@ -7807,7 +8074,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   background: #fff3bf;
 }
 .osis-top-search.open .osis-sb-filter-btn {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .osis-sb-badge {
@@ -7819,7 +8086,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   border-radius: 999px;
   background: var(--red);
   color: #fff;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   font-size: 0.64rem;
   font-weight: 900;
   line-height: 1;
@@ -7842,10 +8109,10 @@ body.edit-mode .prestasi-card .foto-del-btn {
   top: calc(100% + 8px);
   z-index: 66;
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 13px 14px;
-  box-shadow: 6px 6px 0 var(--ink);
+  box-shadow: 6px 6px 0 var(--sh);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -7898,7 +8165,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper);
   color: var(--ink);
   display: grid;
@@ -7908,6 +8175,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 .osis-sb-close:hover {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .osis-sb-fields {
   display: flex;
@@ -7946,7 +8214,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   align-items: center;
   gap: 6px;
   padding: 3px 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   background: #fff3bf;
   color: var(--ink);
@@ -7957,6 +8225,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 }
 .osis-sb-panel .filter-chip:hover {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .osis-sb-panel .filter-chip i {
   color: var(--red-dark);
@@ -7994,7 +8263,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   align-items: center;
   gap: 5px;
   padding: 6px 11px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   background: var(--paper);
   color: var(--ink);
@@ -8010,7 +8279,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
 .osis-sb-pill.on,
 .osis-sb-pill.active,
 .osis-sb-pill[aria-pressed="true"] {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .osis-sb-check {
@@ -8018,7 +8287,7 @@ body.edit-mode .prestasi-card .foto-del-btn {
   align-items: center;
   gap: 7px;
   padding: 7px 11px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   background: var(--paper);
   font-size: 0.76rem;

@@ -6,6 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
+    <script>(function(){try{if(localStorage.getItem("tarpan_theme")==="dark"){document.documentElement.setAttribute("data-theme","dark");var f=function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#16131b");};f();document.addEventListener("DOMContentLoaded",f);}}catch(e){}})();</script>
     <title>OSIS TARPAN ONE - SMK Taruna Harapan 1 Cipatat</title>
     <meta
       name="description"
@@ -135,8 +136,9 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="assets/css/shared/style.css?v=41" />
+    <link rel="stylesheet" href="assets/css/shared/style.css?v=43" />
     <link rel="stylesheet" href="assets/css/public/feed.css?v=3" />
+    <link rel="stylesheet" href="assets/css/public/suara-musik.css?v=2" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -158,14 +160,14 @@
         align-items: center;
         gap: 6px;
         padding: 8px 14px;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 999px;
         background: var(--white);
         font-size: 0.78rem;
         font-weight: 800;
         text-decoration: none;
         color: var(--ink);
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
         transition:
           transform 0.12s,
           box-shadow 0.12s,
@@ -175,7 +177,7 @@
       }
       .osis-nav-link:hover {
         transform: translate(-1.5px, -1.5px);
-        box-shadow: 4px 4px 0 var(--ink);
+        box-shadow: 4px 4px 0 var(--sh);
       }
       .osis-nav-link:active {
         transform: translate(1.5px, 1.5px);
@@ -219,7 +221,7 @@
       /* padding-bottom = clearance buat bottom-nav floating, jadi ga ada
          ruang kosong paper di bawah footer (footer gelap nempel ke bawah viewport) */
       .site-footer {
-        background: var(--ink);
+        background: var(--inv-bg);
         color: #fff;
         border-radius: 26px 26px 0 0;
         margin-top: 28px;
@@ -235,9 +237,9 @@
         background: repeating-linear-gradient(
           -45deg,
           var(--red) 0 14px,
-          var(--ink) 14px 28px,
+          var(--inv-bg) 14px 28px,
           var(--white) 28px 42px,
-          var(--ink) 42px 56px
+          var(--inv-bg) 42px 56px
         );
       }
       .site-footer-inner {
@@ -424,10 +426,10 @@
       }
       .infv-hero {
         background: linear-gradient(135deg, var(--red) 0%, #b90e22 100%);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 20px;
         padding: 22px;
-        box-shadow: 5px 5px 0 var(--ink);
+        box-shadow: 5px 5px 0 var(--sh);
         color: #fff;
         position: relative;
         overflow: hidden;
@@ -502,9 +504,9 @@
       }
       .infv-sorotan-wrap {
         background: var(--white);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 18px;
-        box-shadow: 4px 4px 0 var(--ink);
+        box-shadow: 4px 4px 0 var(--sh);
         padding: 14px;
       }
       .infv-sorotan-head {
@@ -530,7 +532,7 @@
       .infv-spot {
         scroll-snap-align: start;
         flex: 0 0 min(300px, 82vw);
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 14px;
         background: #fffdf4;
         border-top: 8px solid var(--yellow);
@@ -538,7 +540,7 @@
         cursor: pointer;
         text-align: left;
         font-family: inherit;
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
         color: var(--ink);
       }
       .infv-spot b {
@@ -567,7 +569,7 @@
         font-weight: 800;
         padding: 6px 11px;
         border-radius: 10px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         background: var(--paper);
         color: var(--ink);
         cursor: pointer;
@@ -576,13 +578,13 @@
         background: var(--paper-2);
       }
       .infv-chips button.on {
-        background: var(--ink);
+        background: var(--inv-bg);
         color: var(--yellow);
       }
       .infv-urut {
         width: 100%;
         min-height: 38px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 10px;
         background: var(--paper);
         font-family: inherit;
@@ -619,24 +621,25 @@
         align-items: center;
         gap: 7px;
         background: var(--yellow);
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 999px;
-        box-shadow: 2.5px 2.5px 0 var(--ink);
+        box-shadow: 2.5px 2.5px 0 var(--sh);
         padding: 6px 14px;
         font-size: 0.7rem;
         font-weight: 900;
         letter-spacing: 0.02em;
         white-space: nowrap;
+        color: var(--on-yellow);
       }
       .infv-daysep > span i {
         color: var(--red);
       }
       .infv-card {
         background: var(--white);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 18px;
         padding: 20px;
-        box-shadow: 4px 4px 0 var(--ink);
+        box-shadow: 4px 4px 0 var(--sh);
         display: flex;
         flex-direction: column;
         gap: 12px;
@@ -644,7 +647,7 @@
       }
       .infv-card:hover {
         transform: translate(-2px, -2px);
-        box-shadow: 6px 6px 0 var(--ink);
+        box-shadow: 6px 6px 0 var(--sh);
       }
       .infv-card.pin {
         border-top: 8px solid var(--yellow);
@@ -677,7 +680,7 @@
         letter-spacing: 0.04em;
         padding: 5px 11px;
         border-radius: 999px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
       }
       .infv-badge.k-pengumuman {
         background: #eaf2ff;
@@ -702,10 +705,10 @@
         font-size: 0.66rem;
         font-weight: 900;
         background: var(--yellow);
-        color: var(--ink);
+        color: var(--on-yellow);
         padding: 5px 11px;
         border-radius: 999px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
       }
       .infv-tgl {
         font-size: 0.72rem;
@@ -750,7 +753,7 @@
         height: 32px;
         border-radius: 10px;
         background: var(--white);
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         display: grid;
         place-items: center;
         font-size: 0.78rem;
@@ -823,7 +826,7 @@
         height: 32px;
         border-radius: 50%;
         background: var(--paper-2);
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         display: grid;
         place-items: center;
         font-size: 0.74rem;
@@ -848,7 +851,7 @@
       }
       .infv-fokusbar {
         background: var(--paper);
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 14px;
         padding: 10px 14px;
         display: flex;
@@ -961,7 +964,7 @@
         justify-content: center;
         gap: 8px;
         font-family: inherit;
-        border: 2.5px dashed var(--ink);
+        border: 2.5px dashed var(--bd);
         border-radius: 12px;
         background: var(--paper-2);
         padding: 12px;
@@ -993,6 +996,7 @@
         }
       }
     </style>
+    <link rel="stylesheet" href="assets/css/shared/dark.css?v=1" />
     <script src="assets/js/vendor/supabase.min.js?v=10"></script>
     <script src="assets/js/core/config.js?v=14"></script>
     <script src="assets/js/core/db.js?v=38" defer></script>
@@ -1010,18 +1014,19 @@
     <script src="assets/js/public/kegiatan.js?v=16" defer></script>
     <script src="assets/js/public/sekbid.js?v=11" defer></script>
     <script src="assets/js/public/pengurus.js?v=11" defer></script>
-    <script src="assets/js/public/aspirasi.js?v=13" defer></script>
-    <script src="assets/js/public/lagu.js?v=14" defer></script>
+    <script src="assets/js/public/aspirasi.js?v=14" defer></script>
+    <script src="assets/js/public/lagu.js?v=15" defer></script>
     <script src="assets/js/public/galeri.js?v=17" defer></script>
     <script src="assets/js/public/feed.js?v=8" defer></script>
     <script src="assets/js/public/arsip.js?v=21" defer></script>
     <script src="assets/js/public/informasi-view.js?v=4" defer></script>
     <script src="assets/js/core/osis-auth.js?v=19" defer></script>
-    <script src="assets/js/shared/utilities/site-edit.js?v=20" defer></script>
+    <script src="assets/js/shared/utilities/site-edit.js?v=21" defer></script>
     <script src="assets/js/shared/ui/bottomnav.js?v=10" defer></script>
     <script src="assets/js/shared/ui/nav-atur.js?v=13" defer></script>
-    <script src="assets/js/pwa/pwa.js?v=11" defer></script>
-    <script src="assets/js/shared/utilities/pengaturan.js?v=1" defer></script>
+    <script src="assets/js/shared/utilities/theme.js?v=1" defer></script>
+    <script src="assets/js/pwa/pwa.js?v=12" defer></script>
+    <script src="assets/js/shared/utilities/pengaturan.js?v=2" defer></script>
   </head>
   <body>
     <!-- ===== TOP NAV ===== -->
@@ -1080,6 +1085,19 @@
             <i class="fa-solid fa-ellipsis-vertical"></i>
           </button>
           <div class="header-more-menu" id="headerMoreMenu">
+            <label
+              class="header-more-item"
+              id="headerMoreThemeRow"
+            >
+              <span class="more-lbl-ico"><i class="fa-solid fa-moon" id="headerMoreThemeIcon"></i> Mode Gelap</span>
+              <span class="edit-toggle-wrap small"
+                ><input
+                  type="checkbox"
+                  id="headerMoreThemeToggle"
+                  onchange="HeaderMore.onThemeToggle(this.checked)"
+                  autocomplete="off" /><span class="edit-slider"></span
+              ></span>
+            </label>
             <a
               href="#/pengaturan"
               class="header-more-item"
@@ -1201,67 +1219,104 @@
       <!-- VISI MISI -->
       <section class="visimisi">
         <div class="wrap">
-          <div class="sec-head">
+          <div class="sec-head vm-sec-head">
             <div>
               <div class="sec-tag">Identitas Kami</div>
-              <h2 class="sec-title">Visi & <span class="red">Misi</span></h2>
+              <h2 class="sec-title">Visi &amp; <span class="red">Misi</span></h2>
             </div>
+            <span class="vm-head-pill"><i class="fa-solid fa-compass"></i> 1 Visi · 4 Misi Utama</span>
           </div>
 
           <div class="vm-grid">
             <div class="vm-card visi">
-              <h3><i class="fa-solid fa-shield-halved"></i> Visi</h3>
-              <p data-edit-key="visi_text">
-                Menjadikan OSIS sebagai laboratorium kepemimpinan siswa yang
-                berintegritas, beretika mulia, dan berdampak positif bagi
-                sekolah dan masyarakat.
-              </p>
+              <i class="fa-solid fa-shield-halved vm-visi-wm" aria-hidden="true"></i>
+              <div class="vm-visi-top">
+                <div class="vm-visi-brand">
+                  <span class="vm-visi-ico"><i class="fa-solid fa-shield-halved"></i></span>
+                  <div>
+                    <span class="vm-visi-kicker">Arah &amp; Tujuan</span>
+                    <h3>Visi Kami</h3>
+                  </div>
+                </div>
+                <span class="vm-quote-mark" aria-hidden="true"><i class="fa-solid fa-quote-right"></i></span>
+              </div>
+
+              <div class="vm-visi-body">
+                <span class="vm-visi-bar" aria-hidden="true"></span>
+                <p class="vm-visi-quote" data-edit-key="visi_text">
+                  Menjadikan OSIS sebagai laboratorium kepemimpinan siswa yang
+                  berintegritas, beretika mulia, dan berdampak positif bagi
+                  sekolah dan masyarakat.
+                </p>
+              </div>
+
+              <div class="vm-visi-foot">
+                <div class="vm-pillars">
+                  <span class="vm-pillar"><i class="fa-solid fa-check"></i> Integritas</span>
+                  <span class="vm-pillar"><i class="fa-solid fa-star"></i> Etika Mulia</span>
+                  <span class="vm-pillar"><i class="fa-solid fa-bolt"></i> Dampak Nyata</span>
+                </div>
+                <a class="vm-visi-link" href="#/sekbid">Jelajahi Program Sekbid <i class="fa-solid fa-arrow-right"></i></a>
+              </div>
             </div>
 
-            <div class="vm-card">
-              <h3><i class="fa-solid fa-bullseye"></i> Misi</h3>
-              <div class="misi-item">
-                <div class="misi-num">1</div>
-                <div>
+            <div class="vm-misi-wrap">
+              <div class="vm-misi-bar">
+                <span class="vm-misi-kicker"><i class="fa-solid fa-bullseye"></i> Misi Organisasi</span>
+                <span class="vm-misi-tag">4 Pilar Gerak</span>
+              </div>
+
+              <div class="misi-grid">
+                <article class="misi-item">
+                  <div class="misi-top">
+                    <span class="misi-num">01</span>
+                    <span class="misi-ico m-blue" aria-hidden="true"><i class="fa-solid fa-crown"></i></span>
+                  </div>
                   <h4 data-edit-key="misi_1_title">Pembinaan Kepemimpinan</h4>
                   <p data-edit-key="misi_1_desc">
                     Menjadikan OSIS sebagai sarana pembinaan kepemimpinan siswa
                     yang berlandaskan integritas dan etika mulia.
                   </p>
-                </div>
-              </div>
-              <div class="misi-item">
-                <div class="misi-num">2</div>
-                <div>
+                </article>
+
+                <article class="misi-item">
+                  <div class="misi-top">
+                    <span class="misi-num">02</span>
+                    <span class="misi-ico m-amber" aria-hidden="true"><i class="fa-solid fa-award"></i></span>
+                  </div>
                   <h4 data-edit-key="misi_2_title">
-                    Tanggung Jawab & Disiplin
+                    Tanggung Jawab &amp; Disiplin
                   </h4>
                   <p data-edit-key="misi_2_desc">
                     Menumbuhkan sikap tanggung jawab, kedisiplinan, dan
                     keteladanan dalam setiap peran dan aktivitas OSIS.
                   </p>
-                </div>
-              </div>
-              <div class="misi-item">
-                <div class="misi-num">3</div>
-                <div>
+                </article>
+
+                <article class="misi-item">
+                  <div class="misi-top">
+                    <span class="misi-num">03</span>
+                    <span class="misi-ico m-green" aria-hidden="true"><i class="fa-solid fa-sliders"></i></span>
+                  </div>
                   <h4 data-edit-key="misi_3_title">Tata Kelola Adaptif</h4>
                   <p data-edit-key="misi_3_desc">
                     Mewujudkan tata kelola OSIS yang adaptif, tertib
                     administrasi, dan menjunjung keterbukaan di setiap
                     prosesnya.
                   </p>
-                </div>
-              </div>
-              <div class="misi-item">
-                <div class="misi-num">4</div>
-                <div>
+                </article>
+
+                <article class="misi-item">
+                  <div class="misi-top">
+                    <span class="misi-num">04</span>
+                    <span class="misi-ico m-red" aria-hidden="true"><i class="fa-solid fa-lightbulb"></i></span>
+                  </div>
                   <h4 data-edit-key="misi_4_title">Program Kerja Inovatif</h4>
                   <p data-edit-key="misi_4_desc">
                     Menghadirkan program kerja yang inovatif, solutif, dan
                     berdampak nyata bagi warga sekolah serta masyarakat.
                   </p>
-                </div>
+                </article>
               </div>
             </div>
           </div>
@@ -1762,103 +1817,131 @@
             </h2>
             <p class="sec-sub">
               Punya kritik, saran, atau ide seru untuk SMK Taruna Harapan 1?
-              Suarakan langsung di bawah ini dengan aman!
+              Suarakan langsung dengan aman &amp; sopan!
             </p>
           </div>
-        </div>
-
-        <div class="rule-strip">
-          <div class="rule-card">
-            <div class="rule-emoji"><i class="fa-solid fa-lock"></i></div>
-            <h5>100% Terjaga</h5>
-            <p>Identitas di-keep rahasia oleh OSIS</p>
-          </div>
-          <div class="rule-card">
-            <div class="rule-emoji"><i class="fa-solid fa-pen-nib"></i></div>
-            <h5>Etika Bahasa</h5>
-            <p>Wajib pakai kalimat yang sopan</p>
-          </div>
-          <div class="rule-card">
-            <div class="rule-emoji"><i class="fa-solid fa-ban"></i></div>
-            <h5>Sistem Bersih</h5>
-            <p>Semua pesan dibaca, dilarang spam</p>
+          <div class="sm-head-pills">
+            <span class="sm-stat-pill mint" id="aspStatusBadge"><i class="fa-solid fa-unlock"></i> Kotak Dibuka</span>
+            <span class="sm-stat-pill yellow"><i class="fa-solid fa-comments"></i> <b id="aspHeroCount">0</b> Suara</span>
           </div>
         </div>
 
-        <div class="aspirasi-grid">
-          <div class="form-card">
-            <div class="form-head" id="headFormAspirasi">
-              Formulir Suara Tarpan
+        <div class="asp-rules">
+          <div class="asp-rule-card">
+            <span class="asp-rule-ico r-red"><i class="fa-solid fa-lock"></i></span>
+            <div>
+              <h5>100% Terjaga</h5>
+              <p>Identitas di-keep aman &amp; opsi private tersedia</p>
             </div>
+          </div>
+          <div class="asp-rule-card">
+            <span class="asp-rule-ico r-blue"><i class="fa-solid fa-pen-nib"></i></span>
+            <div>
+              <h5>Etika Bahasa</h5>
+              <p>Wajib gunakan kalimat yang sopan &amp; membangun</p>
+            </div>
+          </div>
+          <div class="asp-rule-card">
+            <span class="asp-rule-ico r-amber"><i class="fa-solid fa-shield-halved"></i></span>
+            <div>
+              <h5>Sistem Bersih</h5>
+              <p>Semua suara dibaca pengurus, dilarang spam</p>
+            </div>
+          </div>
+        </div>
 
-            <div class="field">
-              <label>Nama Lengkap</label>
-              <input
-                type="text"
-                id="namaSiswa"
-                placeholder="Nama lengkap (opsional, boleh anonim)"
-              />
-            </div>
-            <div class="field">
-              <label>Kelas</label>
-              <input
-                type="text"
-                id="kelasSiswa"
-                placeholder="Contoh: XII RPL 1 (opsional)"
-              />
-            </div>
-            <div class="field">
-              <label>Isi Aspirasi</label>
-              <textarea
-                id="isiAspirasi"
-                placeholder="Tulis kritik, saran, atau ide kreatifmu di sini secara jelas & detail..."
-              ></textarea>
-            </div>
-            <div class="field">
-              <label
-                class="aspirasi-private"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-                  font-size: 0.78rem;
-                  font-weight: 700;
-                  cursor: pointer;
-                "
-                ><input
-                  type="checkbox"
-                  id="isPrivateAspirasi"
-                  style="width: 16px; height: 16px; accent-color: var(--red)"
-                />
-                <i class="fa-solid fa-lock" style="color: var(--red)"></i>
-                Private — hanya OSIS yang bisa lihat</label
-              >
-            </div>
+        <div class="sm-cols">
+          <div class="sm-form-col">
+            <div class="form-card" id="aspFormCard">
+              <div class="sm-form-head">
+                <span class="sm-form-head-ico red"><i class="fa-solid fa-pen-to-square"></i></span>
+                <div>
+                  <div class="sm-form-head-title" id="headFormAspirasi">Formulir Suara Tarpan</div>
+                  <span class="sm-form-head-sub">Bisa pakai nama asli atau biarkan anonim</span>
+                </div>
+              </div>
 
-            <div class="form-actions-row">
-              <button
-                class="btn btn-red"
-                id="btnKirimAspirasi"
-                onclick="Aspirasi.kirim()"
-              >
-                <i class="fa-solid fa-paper-plane"></i> Kirim Suara Tarpan
-              </button>
-              <button
-                class="btn btn-white"
-                id="btnBatalEditAspirasi"
-                onclick="Aspirasi.batalEdit()"
-                style="display: none"
-              >
-                <i class="fa-solid fa-xmark"></i> Batal
-              </button>
+              <div class="sm-field-grid">
+                <div class="field">
+                  <label for="namaSiswa">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    id="namaSiswa"
+                    placeholder="Nama (opsional / anonim)"
+                  />
+                </div>
+                <div class="field">
+                  <label for="kelasSiswa">Kelas</label>
+                  <input
+                    type="text"
+                    id="kelasSiswa"
+                    placeholder="Cth: XII RPL 1 (opsional)"
+                  />
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="sm-lbl-row">
+                  <label for="isiAspirasi">Isi Aspirasi *</label>
+                  <span class="sm-char-cnt" id="aspCharCnt">0 karakter</span>
+                </div>
+                <textarea
+                  id="isiAspirasi"
+                  placeholder="Tulis kritik, saran, atau ide kreatifmu di sini secara jelas & detail..."
+                ></textarea>
+              </div>
+
+              <div class="field">
+                <label class="asp-priv-box" for="isPrivateAspirasi">
+                  <input type="checkbox" id="isPrivateAspirasi" />
+                  <div class="asp-priv-copy">
+                    <b><i class="fa-solid fa-lock"></i> Kirim sebagai Private</b>
+                    <small>Hanya pengurus OSIS yang bisa baca (tidak tampil di daftar publik)</small>
+                  </div>
+                </label>
+              </div>
+
+              <div class="form-actions-row">
+                <button
+                  type="button"
+                  class="btn btn-red"
+                  id="btnKirimAspirasi"
+                  onclick="Aspirasi.kirim()"
+                >
+                  <i class="fa-solid fa-paper-plane"></i> Kirim Suara Tarpan
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-white"
+                  id="btnBatalEditAspirasi"
+                  onclick="Aspirasi.batalEdit()"
+                  style="display: none"
+                >
+                  <i class="fa-solid fa-xmark"></i> Batal
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="pesan-card">
+          <div class="pesan-card sm-feed-card">
             <div class="pesan-head">
               <h4><i class="fa-solid fa-comments"></i> Suara yang Masuk</h4>
               <span class="pesan-count" id="jumPesan">0</span>
             </div>
+
+            <div class="sm-list-tools">
+              <div class="sm-search-wrap">
+                <i class="fa-solid fa-magnifying-glass sm-search-ico" aria-hidden="true"></i>
+                <input type="text" id="aspSearchQ" class="sm-search-inp" placeholder="Cari isi aspirasi, nama, atau kelas..." autocomplete="off" />
+                <button type="button" class="sm-search-clr" id="aspClearQ" title="Hapus pencarian" style="display: none"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <div class="sm-filter-pills" id="aspFilterPills">
+                <button type="button" class="sm-pill active" data-asp-filter="semua">Semua</button>
+                <button type="button" class="sm-pill" data-asp-filter="dibalas">Sudah Dibalas</button>
+                <button type="button" class="sm-pill" data-asp-filter="private" id="aspFilterPrivate" style="display: none"><i class="fa-solid fa-lock"></i> Private</button>
+              </div>
+            </div>
+
             <div class="pesan-list" id="daftarPesan">
               <div class="pesan-empty">
                 <i class="fa-solid fa-spinner fa-spin"></i> Memuat suara...
@@ -1982,20 +2065,23 @@
             <div class="sec-tag">Radio Tarpan</div>
             <h2 class="sec-title">Request <span class="red">Lagu</span></h2>
             <p class="sec-sub">
-              Request lagu favoritmu buat diputar pas jam istirahat!
+              Request lagu favoritmu buat diputar bareng pas jam istirahat!
             </p>
+          </div>
+          <div class="sm-head-pills">
+            <span class="sm-stat-pill live"><span class="sm-live-dot"></span> Jam Istirahat</span>
+            <span class="sm-stat-pill yellow"><i class="fa-solid fa-music"></i> <b id="laguHeroTotal">0</b> Request</span>
+            <span class="sm-stat-pill mint"><i class="fa-solid fa-circle-check"></i> <b id="laguHeroDone">0</b> Diputar</span>
           </div>
         </div>
 
-        <div class="rule-info">
+        <div class="lagu-rules-box">
           <div class="rule-info-head">
-            <i class="fa-solid fa-circle-info"></i> Aturan
+            <i class="fa-solid fa-circle-info"></i> Aturan Radio
           </div>
           <div class="rule-info-list">
             <div class="rule-info-item">
-              <span class="rule-info-ico"
-                ><i class="fa-solid fa-hand"></i
-              ></span>
+              <span class="rule-info-ico"><i class="fa-solid fa-hand"></i></span>
               <div>
                 <h5 data-edit-key="musik_rule_1_title">Lagu Harus Sopan</h5>
                 <p data-edit-key="musik_rule_1_desc">
@@ -2006,9 +2092,7 @@
               </div>
             </div>
             <div class="rule-info-item">
-              <span class="rule-info-ico"
-                ><i class="fa-solid fa-shuffle"></i
-              ></span>
+              <span class="rule-info-ico"><i class="fa-solid fa-shuffle"></i></span>
               <div>
                 <h5 data-edit-key="musik_rule_2_title">Pemilihan Lagu</h5>
                 <p data-edit-key="musik_rule_2_desc">
@@ -2017,9 +2101,7 @@
               </div>
             </div>
             <div class="rule-info-item">
-              <span class="rule-info-ico"
-                ><i class="fa-solid fa-hourglass-half"></i
-              ></span>
+              <span class="rule-info-ico"><i class="fa-solid fa-hourglass-half"></i></span>
               <div>
                 <h5 data-edit-key="musik_rule_3_title">Masa Expired</h5>
                 <p data-edit-key="musik_rule_3_desc">
@@ -2029,83 +2111,112 @@
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="rule-note">
-          <div class="rule-note-ico"><i class="fa-solid fa-note-sticky"></i></div>
-          <div class="rule-note-body">
-            <span class="rule-note-tag" data-edit-key="musik_rule_note_tag"
-              >Catatan</span
-            >
-            <p data-edit-key="musik_rule_note">
-              Mohon maaf kalo lagu yang direquest ga selalu bisa diputer, kuota
-              jam istirahat terbatas.
-            </p>
-          </div>
-        </div>
-
-        <div class="kontak-grid">
-          <div class="form-card">
-            <div class="form-head" id="headFormLagu">Form Request Lagu</div>
-
-            <div class="field">
-              <label>Judul Lagu</label>
-              <input
-                type="text"
-                id="judulLagu"
-                placeholder="Judul lagu yang mau diputar (wajib)"
-              />
-            </div>
-            <div class="field">
-              <label>Penyanyi / Band</label>
-              <input
-                type="text"
-                id="penyanyiLagu"
-                placeholder="Siapa yang nyanyiin? (wajib)"
-              />
-            </div>
-            <div class="field">
-              <label>Kata-kata yang mau disampaikan</label>
-              <textarea
-                id="kataLagu"
-                placeholder="Tulis pesan, salam, atau kata-kata buat teman... (opsional)"
-                maxlength="300"
-                rows="3"
-              ></textarea>
-            </div>
-            <div class="field">
-              <label>Nama (Opsional)</label>
-              <input
-                type="text"
-                id="namaPengirim"
-                placeholder="Nama kamu biar di-announce (opsional)"
-              />
-            </div>
-
-            <div class="form-actions-row">
-              <button
-                class="btn btn-red"
-                id="btnKirimLagu"
-                onclick="Lagu.kirim()"
-              >
-                <i class="fa-solid fa-music"></i> Kirim Request Lagu
-              </button>
-              <button
-                class="btn btn-white"
-                id="btnBatalEditLagu"
-                onclick="Lagu.batalEdit()"
-                style="display: none"
-              >
-                <i class="fa-solid fa-xmark"></i> Batal
-              </button>
+          <div class="lagu-rule-note">
+            <div class="rule-note-ico"><i class="fa-solid fa-note-sticky"></i></div>
+            <div class="rule-note-body">
+              <span class="rule-note-tag" data-edit-key="musik_rule_note_tag">Catatan</span>
+              <p data-edit-key="musik_rule_note">
+                Mohon maaf kalo lagu yang direquest ga selalu bisa diputer, kuota
+                jam istirahat terbatas.
+              </p>
             </div>
           </div>
+        </div>
 
-          <div class="pesan-card">
+        <div class="sm-cols">
+          <div class="sm-form-col">
+            <div class="form-card" id="laguFormCard">
+              <div class="sm-form-head">
+                <span class="sm-form-head-ico"><i class="fa-solid fa-music"></i></span>
+                <div>
+                  <div class="sm-form-head-title" id="headFormLagu">Form Request Lagu</div>
+                  <span class="sm-form-head-sub">1 request / hari per perangkat — cek antrean di sebelah</span>
+                </div>
+              </div>
+
+              <div class="sm-field-grid">
+                <div class="field">
+                  <label for="judulLagu">Judul Lagu *</label>
+                  <input
+                    type="text"
+                    id="judulLagu"
+                    placeholder="Judul lagu (wajib)"
+                  />
+                </div>
+                <div class="field">
+                  <label for="penyanyiLagu">Penyanyi / Band *</label>
+                  <input
+                    type="text"
+                    id="penyanyiLagu"
+                    placeholder="Penyanyi / band (wajib)"
+                  />
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="sm-lbl-row">
+                  <label for="kataLagu">Kata-kata / Titip Salam</label>
+                  <span class="sm-char-cnt" id="laguCharCnt">0 / 300</span>
+                </div>
+                <textarea
+                  id="kataLagu"
+                  placeholder="Tulis pesan, salam, atau kata-kata buat teman... (opsional)"
+                  maxlength="300"
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <div class="field">
+                <label for="namaPengirim">Nama Pengirim (Opsional)</label>
+                <input
+                  type="text"
+                  id="namaPengirim"
+                  placeholder="Nama kamu biar di-announce (opsional)"
+                />
+              </div>
+
+              <div class="form-actions-row">
+                <button
+                  type="button"
+                  class="btn btn-red"
+                  id="btnKirimLagu"
+                  onclick="Lagu.kirim()"
+                >
+                  <i class="fa-solid fa-music"></i> Kirim Request Lagu
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-white"
+                  id="btnBatalEditLagu"
+                  onclick="Lagu.batalEdit()"
+                  style="display: none"
+                >
+                  <i class="fa-solid fa-xmark"></i> Batal
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pesan-card sm-feed-card">
             <div class="pesan-head">
               <h4><i class="fa-solid fa-headphones"></i> Playlist Request</h4>
               <span class="pesan-count" id="jumLagu">0</span>
             </div>
+
+            <div class="sm-list-tools">
+              <div class="sm-search-wrap">
+                <i class="fa-solid fa-magnifying-glass sm-search-ico" aria-hidden="true"></i>
+                <input type="text" id="laguSearchQ" class="sm-search-inp" placeholder="Cari judul lagu, penyanyi, atau pengirim..." autocomplete="off" />
+                <button type="button" class="sm-search-clr" id="laguClearQ" title="Hapus pencarian" style="display: none"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <div class="sm-filter-pills" id="laguFilterPills">
+                <button type="button" class="sm-pill active" data-lagu-filter="semua">Semua</button>
+                <button type="button" class="sm-pill" data-lagu-filter="antrean">Antrean</button>
+                <button type="button" class="sm-pill" data-lagu-filter="selesai">Sudah Diputar</button>
+              </div>
+            </div>
+
             <div class="pesan-list" id="daftarLagu">
               <div class="pesan-empty">
                 <i class="fa-solid fa-spinner fa-spin"></i> Memuat playlist...

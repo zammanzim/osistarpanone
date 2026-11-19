@@ -18,10 +18,10 @@
    ============================================================ */
 .jep-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
   padding: 16px;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
 }
 .jep-card.accent-top {
   border-top: 10px solid var(--red);
@@ -80,10 +80,10 @@
   cursor: pointer;
   font-family: inherit;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 11px 13px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   transition:
     transform 0.12s,
     box-shadow 0.12s,
@@ -92,7 +92,7 @@
 }
 .jep-mode:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
 }
 .jep-mode:active {
   transform: translate(2px, 2px);
@@ -162,14 +162,14 @@
 .jep-answer {
   position: relative;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 14px 10px;
   font-family: inherit;
   font-size: 1rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   transition:
     transform 0.12s,
     box-shadow 0.12s,
@@ -178,7 +178,8 @@
 .jep-answer:hover {
   background: var(--yellow);
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
+  color: var(--on-yellow);
 }
 .jep-answer:active {
   transform: translate(2px, 2px);
@@ -226,7 +227,7 @@
 }
 .jep-stat {
   background: var(--paper-2);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 10px 6px;
   text-align: center;
@@ -262,7 +263,7 @@
 .jep-input {
   flex: 1;
   min-width: 0;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 11px 13px;
   font-family: inherit;
@@ -308,7 +309,7 @@
 }
 .jep-kbd {
   font-family: inherit;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-bottom-width: 3px;
   border-radius: 6px;
   padding: 0 5px;

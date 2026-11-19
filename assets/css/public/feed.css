@@ -33,7 +33,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 999px;
   background: var(--white);
   font-family: inherit;
@@ -41,11 +41,11 @@
   font-weight: 900;
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 
 .feed-chip.on {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
 }
 
@@ -61,7 +61,7 @@
   letter-spacing: 0.04em;
   padding: 4px 10px;
   border-radius: 999px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   white-space: nowrap;
 }
 
@@ -82,7 +82,7 @@
   justify-content: center;
   gap: 6px;
   padding: 10px 6px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   background: var(--white);
   font-family: inherit;
@@ -93,7 +93,7 @@
 }
 
 .feed-kat-pick-btn.on {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
   box-shadow: 2px 2px 0 var(--red);
 }
@@ -101,9 +101,9 @@
 /* ---- kartu postingan ---- */
 .feed-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   overflow: hidden;
 }
 
@@ -122,9 +122,10 @@
   place-items: center;
   border-radius: 50%;
   background: var(--yellow);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   font-size: 1rem;
   font-weight: 900;
+  color: var(--on-yellow);
 }
 
 .feed-who {
@@ -155,13 +156,13 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   background: #ffe9e9;
   color: var(--red-dark);
   font-size: 0.75rem;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 
 .feed-del:active {
@@ -172,9 +173,9 @@
 /* ---- media ---- */
 .feed-media {
   position: relative;
-  background: var(--ink);
-  border-top: 3px solid var(--ink);
-  border-bottom: 3px solid var(--ink);
+  background: var(--inv-bg);
+  border-top: 3px solid var(--bd);
+  border-bottom: 3px solid var(--bd);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -186,7 +187,7 @@
   display: block;
   width: 100%;
   height: auto;
-  background: var(--ink);
+  background: var(--inv-bg);
 }
 
 .feed-media video {
@@ -204,7 +205,7 @@
   place-items: center;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   color: var(--ink);
   font-size: 1.4rem;
   pointer-events: none;
@@ -225,7 +226,7 @@
   place-items: center;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   color: var(--ink);
   font-size: 0.9rem;
   cursor: pointer;
@@ -337,7 +338,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   font-size: 0.7rem;
   font-weight: 900;
 }
@@ -386,7 +387,7 @@
 .feed-komen-form input {
   flex: 1;
   min-width: 0;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 999px;
   background: var(--white);
   font-family: inherit;
@@ -408,12 +409,12 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--red);
   color: #fff;
   font-size: 0.85rem;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 
 .feed-komen-form button:active {
@@ -439,8 +440,8 @@
 }
 
 @keyframes feedFlash {
-  0%, 60% { box-shadow: 5px 5px 0 var(--ink), 0 0 0 4px var(--red); }
-  100% { box-shadow: 5px 5px 0 var(--ink); }
+  0%, 60% { box-shadow: 5px 5px 0 var(--sh), 0 0 0 4px var(--red); }
+  100% { box-shadow: 5px 5px 0 var(--sh); }
 }
 
 /* ---- status scroll ---- */
@@ -466,7 +467,7 @@
 
 #feedPreviewImg,
 #feedPreviewVid {
-  background: var(--ink);
+  background: var(--inv-bg);
 }
 
 .feed-filemeta {

@@ -11,10 +11,31 @@ const Lagu = {
     habis: false,  // true kalau server udah ngasih semua (fetch < ambil)
     lagiMuat: false,
     total: 0,      // jumlah asli di server (Postgres ngitung, bukan yang ke-load)
+    q: "",
+    filter: "semua", // semua | antrean | selesai
 
     async init() {
         if (Lagu.terinisialisasi) return;
         Lagu.terinisialisasi = true;
+        document.getElementById("kataLagu")?.addEventListener("input", () => Lagu.syncChar());
+        document.getElementById("laguSearchQ")?.addEventListener("input", (e) => {
+            Lagu.q = e.target.value || "";
+            Lagu.render();
+        });
+        document.getElementById("laguClearQ")?.addEventListener("click", () => {
+            const inp = document.getElementById("laguSearchQ");
+            if (inp) { inp.value = ""; inp.focus(); }
+            Lagu.q = "";
+            Lagu.render();
+        });
+        document.getElementById("laguFilterPills")?.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-lagu-filter]");
+            if (!btn) return;
+            Lagu.filter = btn.dataset.laguFilter || "semua";
+            Lagu.render();
+        });
+        Lagu.syncChar();
+
         // Render cache dulu (wajib saat offline), sisanya jalan background.
         try { Lagu.muatDaftar(); } catch {}
         if (typeof OsisAuth.refreshAkses === "function") {
@@ -44,14 +65,48 @@ const Lagu = {
         }
     },
 
+    syncChar() {
+        const kata = document.getElementById("kataLagu");
+        const cnt = document.getElementById("laguCharCnt");
+        if (!cnt) return;
+        const n = (kata && kata.value ? kata.value : "").length;
+        cnt.textContent = `${n} / 300`;
+        cnt.classList.toggle("full", n >= 280);
+    },
+
+    syncTools() {
+        const clr = document.getElementById("laguClearQ");
+        if (clr) clr.style.display = String(Lagu.q || "").trim() ? "" : "none";
+        document.querySelectorAll("#laguFilterPills [data-lagu-filter]").forEach(btn => {
+            btn.classList.toggle("active", (btn.dataset.laguFilter || "semua") === Lagu.filter);
+        });
+    },
+
+    resetFilter() {
+        const inp = document.getElementById("laguSearchQ");
+        if (inp) inp.value = "";
+        Lagu.q = "";
+        Lagu.filter = "semua";
+        Lagu.render();
+    },
+
     // ============ PLAYLIST — SWR ============
     // Badge jumlah: pakai total server, bukan panjang array yang ke-load.
-    // Kalau total belum kebaca (offline / count gagal), mundur ke jumlah lokal.
-    perbaruiJumlah() {
+    perbaruiJumlah(filteredCount, totalLoaded, hasFilter) {
         const jum = document.getElementById("jumLagu");
-        if (!jum) return;
-        const lokal = (Lagu.cache || []).length;
+        const heroTot = document.getElementById("laguHeroTotal");
+        const heroDone = document.getElementById("laguHeroDone");
+        const all = Lagu.cache || [];
+        const lokal = all.length;
         const n = Lagu.total > 0 ? Lagu.total : lokal;
+        if (heroTot) heroTot.textContent = String(n);
+        if (heroDone) heroDone.textContent = String(all.filter(l => !!l.selesai).length);
+        if (!jum) return;
+        if (hasFilter) {
+            jum.textContent = `${filteredCount}/${totalLoaded}`;
+            jum.removeAttribute("title");
+            return;
+        }
         jum.textContent = n;
         if (Lagu.total > lokal) {
             jum.title = `Total di server: ${Lagu.total}. Menampilkan ${lokal} terbaru.`;
@@ -60,113 +115,133 @@ const Lagu = {
         }
     },
 
-    // Total dari server (1 query ringan, Postgres yang ngitung).
-    // Gagal = diamkan — badge tetep pakai jumlah lokal.
     muatTotal() {
         if (typeof getLaguCount !== "function") return Promise.resolve(Lagu.total);
         return getLaguCount().then(n => {
             Lagu.total = parseInt(n, 10) || 0;
-            Lagu.perbaruiJumlah();
+            const hasFilter = !!(String(Lagu.q || "").trim() || Lagu.filter !== "semua");
+            if (!hasFilter) Lagu.perbaruiJumlah();
+            else {
+                const heroTot = document.getElementById("laguHeroTotal");
+                if (heroTot) heroTot.textContent = String(Lagu.total > 0 ? Lagu.total : (Lagu.cache || []).length);
+            }
             return Lagu.total;
         }).catch(() => Lagu.total);
+    },
+
+    render(dataArg) {
+        const list = document.getElementById("daftarLagu");
+        if (!list) return;
+        if (dataArg !== undefined) Lagu.cache = dataArg || [];
+        const data = Lagu.cache || [];
+        Lagu.syncTools();
+
+        const q = String(Lagu.q || "").trim().toLowerCase();
+        const filtered = data.filter(l => {
+            if (Lagu.filter === "antrean" && l.selesai) return false;
+            if (Lagu.filter === "selesai" && !l.selesai) return false;
+            if (q && ![l.judul, l.penyanyi, l.pesan, l.nama, l.balasan].some(v => String(v || "").toLowerCase().includes(q))) {
+                return false;
+            }
+            return true;
+        });
+        const hasFilter = !!(q || Lagu.filter !== "semua");
+        Lagu.perbaruiJumlah(filtered.length, data.length, hasFilter);
+
+        const sisa = Lagu.total > 0 ? Lagu.total - data.length : -1;
+        const pagingHtml = (!Lagu.habis && (sisa > 0 || (sisa < 0 && data.length >= Lagu.langkah)))
+            ? `<div id="muatLaguWrap" style="text-align:center;padding:12px 0 4px"><button type="button" class="btn btn-white btn-sm" id="btnMuatLagu" onclick="Lagu.muatLagi()"><i class="fa-solid fa-angles-down"></i> Muat lebih banyak${sisa > 0 ? ` (${sisa} lagi)` : ""}</button></div>`
+            : "";
+
+        if (!data.length) {
+            list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-headphones"></i> Playlist masih kosong. Jadilah request pertama!</div>`;
+            return;
+        }
+        if (!filtered.length) {
+            list.innerHTML = `<div class="pesan-empty" style="text-align:center;padding:20px 12px">
+                <i class="fa-solid fa-magnifying-glass"></i> Tidak ada lagu yang cocok dengan pencarian/filter ini.
+                <div style="margin-top:10px"><button type="button" class="btn btn-white btn-sm" onclick="Lagu.resetFilter()"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button></div>
+            </div>` + pagingHtml;
+            return;
+        }
+
+        const deviceId = getDeviceId();
+        const batasHapus = Date.now() - 3600000;
+        const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
+        const isSuper = !!(isOsis && typeof OsisAuth.isSuper === "function" && OsisAuth.isSuper());
+        const groups = [];
+        let curKey = null;
+        let curGroup = null;
+        filtered.forEach(l => {
+            const key = new Date(l.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+            if (key !== curKey) {
+                curKey = key;
+                const display = new Date(l.created_at).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+                curGroup = { key, display, items: [] };
+                groups.push(curGroup);
+            }
+            curGroup.items.push(l);
+        });
+
+        list.innerHTML = groups.map(g => {
+            const sep = `<div class="pesan-date-sep"><span>${g.display}</span><span class="pesan-date-line"></span></div>`;
+            const items = g.items.map(l => {
+                const own = l.device_id === deviceId && new Date(l.created_at).getTime() > batasHapus;
+                const editMode = document.body.classList.contains("edit-mode");
+                const canKelola = isOsis
+                    ? (editMode && OsisAuth.bisa && OsisAuth.bisa("lagu"))
+                    : own;
+                const canBalas = isOsis && (isSuper || (OsisAuth.bisa && OsisAuth.bisa("lagu")));
+                const selesai = !!l.selesai;
+                const tombolSelesai = isSuper
+                    ? (selesai
+                        ? `<button type="button" class="hapus-btn selesai-btn on" onclick="Lagu.tandaiSelesai(${l.id}, false)" title="Batalkan tanda selesai"><i class="fa-solid fa-rotate-left"></i></button>`
+                        : `<button type="button" class="hapus-btn selesai-btn" onclick="Lagu.tandaiSelesai(${l.id}, true)" title="Tandai selesai (udah diputar)"><i class="fa-solid fa-check"></i></button>`)
+                    : "";
+                const balasan = String(l.balasan || "").trim();
+                const balasHtml = balasan
+                    ? `<div class="pesan-balas"><i class="fa-solid fa-reply"></i><div><b>${escapeHtml(l.dibalas_oleh || "OSIS")}</b><p data-balas-teks="${l.id}" contenteditable="false" data-ph="Tulis balasan...">${escapeHtml(balasan)}</p></div></div>`
+                    : "";
+                const statusBadge = selesai
+                    ? `<span class="lagu-badge-selesai"><i class="fa-solid fa-circle-check"></i> Selesai</span>`
+                    : `<span class="lagu-badge-queue"><i class="fa-solid fa-clock"></i> Antrean</span>`;
+                return `
+            <div class="lagu-item${selesai ? " selesai" : ""}" data-balas-id="${l.id}">
+                <div class="lagu-cover"><div class="lagu-kaset"><i class="fa-solid fa-music"></i></div></div>
+                <div class="lagu-body">
+                    <div class="lagu-title">${escapeHtml(l.judul)} ${statusBadge}</div>
+                    <div class="lagu-artis"><i class="fa-solid fa-microphone-lines"></i> <span>${escapeHtml(l.penyanyi || "-")}</span></div>
+                    ${l.pesan ? `<div class="lagu-pesan"><i class="fa-solid fa-quote-left"></i>${escapeHtml(l.pesan)}</div>` : ""}
+                    ${balasHtml}
+                    <div class="lagu-meta">
+                        <span><i class="fa-solid fa-user"></i> ${escapeHtml(l.nama || "Anonim")}</span>
+                        <span class="pesan-waktu">${Lagu.formatWaktu(l.created_at)}</span>
+                        ${tombolSelesai}
+                        ${canBalas ? `<button type="button" class="hapus-btn" onclick="Lagu.balas(${l.id})" title="Balas request"><i class="fa-solid fa-reply"></i></button>` : ""}
+                        ${canKelola ? `<button type="button" class="hapus-btn" onclick="Lagu.edit(${l.id})" title="${isOsis ? "Edit (OSIS)" : "Edit request-ku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
+                        ${canKelola ? `<button type="button" class="hapus-btn" onclick="Lagu.hapus(${l.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus request-ku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
+                    </div>
+                </div>
+            </div>`;
+            }).join("");
+            return sep + items;
+        }).join("") + pagingHtml;
     },
 
     async muatDaftar() {
         const list = document.getElementById("daftarLagu");
         if (!list) return;
 
-        const render = (data) => {
-            Lagu.cache = data || [];
-            Lagu.perbaruiJumlah();
-            if (!data || data.length === 0) {
-                list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-headphones"></i> Playlist masih kosong. Jadilah request pertama!</div>`;
-                return;
-            }
-            const deviceId = getDeviceId();
-            const batasHapus = Date.now() - 3600000;
-            const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
-            const isSuper = !!(isOsis && typeof OsisAuth.isSuper === "function" && OsisAuth.isSuper());
-            const groups = [];
-            let curKey = null;
-            let curGroup = null;
-            data.forEach(l => {
-                const key = new Date(l.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
-                if (key !== curKey) {
-                    curKey = key;
-                    const display = new Date(l.created_at).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
-                    curGroup = { key, display, items: [] };
-                    groups.push(curGroup);
-                }
-                curGroup.items.push(l);
-            });
-            list.innerHTML = groups.map(g => {
-                const sep = `<div class="pesan-date-sep"><span>${g.display}</span><span class="pesan-date-line"></span></div>`;
-                const items = g.items.map(l => {
-                    const own = l.device_id === deviceId && new Date(l.created_at).getTime() > batasHapus;
-                    // Admin (OSIS): tombol edit/hapus cuma muncul pas edit mode aktif
-                    // DAN punya kendali halaman lagu.
-                    // Pengunjung biasa: tetap seperti dulu (request sendiri <1 jam).
-                    const editMode = document.body.classList.contains("edit-mode");
-                    const canKelola = isOsis
-                        ? (editMode && OsisAuth.bisa && OsisAuth.bisa("lagu"))
-                        : own;
-                    // Balas: super_admin + admin yang dikasih hak lagu (tanpa edit mode).
-                    const canBalas = isOsis && (isSuper || (OsisAuth.bisa && OsisAuth.bisa("lagu")));
-                    // Super admin: bisa nandain lagu udah selesai (hijau).
-                    // Tombol check selalu tampil buat super (tanpa edit mode)
-                    // biar gampang nandain pas lagi muter lagu.
-                    const selesai = !!l.selesai;
-                    const tombolSelesai = isSuper
-                        ? (selesai
-                            ? `<button class="hapus-btn selesai-btn on" onclick="Lagu.tandaiSelesai(${l.id}, false)" title="Batalkan tanda selesai"><i class="fa-solid fa-rotate-left"></i></button>`
-                            : `<button class="hapus-btn selesai-btn" onclick="Lagu.tandaiSelesai(${l.id}, true)" title="Tandai selesai (udah diputar)"><i class="fa-solid fa-check"></i></button>`)
-                        : "";
-                    const balasan = String(l.balasan || "").trim();
-                    const balasHtml = balasan
-                        ? `<div class="pesan-balas"><i class="fa-solid fa-reply"></i><div><b>${escapeHtml(l.dibalas_oleh || "OSIS")}</b><p data-balas-teks="${l.id}" contenteditable="false" data-ph="Tulis balasan...">${escapeHtml(balasan)}</p></div></div>`
-                        : "";
-                    return `
-                <div class="lagu-item${selesai ? " selesai" : ""}" data-balas-id="${l.id}">
-                    <div class="lagu-cover"><div class="lagu-kaset"><i class="fa-solid fa-music"></i></div></div>
-                    <div class="lagu-body">
-                        <div class="lagu-title">${escapeHtml(l.judul)}${selesai ? ` <span class="lagu-badge-selesai"><i class="fa-solid fa-circle-check"></i> Selesai</span>` : ""}</div>
-                        <div class="lagu-artis">${escapeHtml(l.penyanyi || "-")}</div>
-                        ${l.pesan ? `<div class="lagu-pesan">${escapeHtml(l.pesan)}</div>` : ""}
-                        ${balasHtml}
-                        <div class="lagu-meta">
-                            <span><i class="fa-solid fa-user"></i> ${escapeHtml(l.nama || "Anonim")}</span>
-                            <span class="pesan-waktu">${Lagu.formatWaktu(l.created_at)}</span>
-                            ${tombolSelesai}
-                            ${canBalas ? `<button class="hapus-btn" onclick="Lagu.balas(${l.id})" title="Balas request"><i class="fa-solid fa-reply"></i></button>` : ""}
-                            ${canKelola ? `<button class="hapus-btn" onclick="Lagu.edit(${l.id})" title="${isOsis ? "Edit (OSIS)" : "Edit request-ku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
-                            ${canKelola ? `<button class="hapus-btn" onclick="Lagu.hapus(${l.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus request-ku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
-                        </div>
-                    </div>
-                </div>`;
-                }).join("");
-                return sep + items;
-            }).join("");
-            // Paging: kasih tombol selama masih ada yang belum ke-load.
-            // Total dari server lebih akurat daripada "fetch penuh atau nggak".
-            const sisa = Lagu.total > 0 ? Lagu.total - data.length : -1;
-            if (!Lagu.habis && (sisa > 0 || (sisa < 0 && data.length >= Lagu.langkah))) {
-                const teks = sisa > 0 ? ` (${sisa} lagi)` : "";
-                list.innerHTML += `<div id="muatLaguWrap" style="text-align:center;padding:12px 0 4px"><button class="btn btn-white btn-sm" id="btnMuatLagu" onclick="Lagu.muatLagi()"><i class="fa-solid fa-angles-down"></i> Muat lebih banyak${teks}</button></div>`;
-            }
-        };
-
         const cached = Cache.get("lagu");
         if (cached) {
-            render(cached);
-            // Segarkan baris + total bareng (total dipakai badge & label tombol).
+            Lagu.render(cached);
             const totalSebelum = Lagu.total;
             Promise.all([getRequestLagu(Lagu.ambil), Lagu.muatTotal()])
                 .then(([fresh, totalBaru]) => {
                     Lagu.habis = (fresh || []).length < Lagu.ambil;
                     const bedaBaris = JSON.stringify(fresh) !== JSON.stringify(cached);
                     if (bedaBaris) Cache.set("lagu", fresh);
-                    // Total juga berubah -> render ulang biar label tombol ikut.
-                    if (bedaBaris || totalBaru !== totalSebelum) render(fresh);
+                    if (bedaBaris || totalBaru !== totalSebelum) Lagu.render(fresh);
                 })
                 .catch(() => {});
             return;
@@ -176,7 +251,7 @@ const Lagu = {
             const [data] = await Promise.all([getRequestLagu(Lagu.ambil), Lagu.muatTotal()]);
             Lagu.habis = (data || []).length < Lagu.ambil;
             Cache.set("lagu", data);
-            render(data);
+            Lagu.render(data);
         } catch (err) {
             console.error(err);
             list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat playlist. Cek koneksi.</div>`;
@@ -193,7 +268,7 @@ const Lagu = {
         }
         Lagu.lagiMuat = true;
         Lagu.ambil += Lagu.langkah;
-        Cache.del("lagu"); // paksa jalur network biar 1x fetch
+        Cache.del("lagu");
         try {
             await Lagu.muatDaftar();
         } catch (err) {
@@ -216,7 +291,6 @@ const Lagu = {
     },
 
     async kirim() {
-        // Mode edit: tombol kirim berubah jadi simpan perubahan
         if (Lagu.editingId) {
             await Lagu.simpanEdit();
             return;
@@ -242,6 +316,7 @@ const Lagu = {
             document.getElementById("penyanyiLagu").value = "";
             document.getElementById("kataLagu").value = "";
             document.getElementById("namaPengirim").value = "";
+            Lagu.syncChar();
         };
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
             try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
@@ -260,6 +335,7 @@ const Lagu = {
             document.getElementById("penyanyiLagu").value = "";
             document.getElementById("kataLagu").value = "";
             document.getElementById("namaPengirim").value = "";
+            Lagu.syncChar();
             Cache.del("lagu");
             Lagu.muatDaftar();
         } catch (err) {
@@ -498,6 +574,8 @@ const Lagu = {
         document.getElementById("penyanyiLagu").value = item.penyanyi || "";
         document.getElementById("kataLagu").value = item.pesan || "";
         document.getElementById("namaPengirim").value = item.nama || "";
+        Lagu.syncChar();
+        document.getElementById("laguFormCard")?.classList.add("is-editing");
         const btn = document.getElementById("btnKirimLagu");
         if (btn) btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan';
         const batal = document.getElementById("btnBatalEditLagu");
@@ -513,6 +591,8 @@ const Lagu = {
         const penyanyi = document.getElementById("penyanyiLagu"); if (penyanyi) penyanyi.value = "";
         const kata = document.getElementById("kataLagu"); if (kata) kata.value = "";
         const nama = document.getElementById("namaPengirim"); if (nama) nama.value = "";
+        Lagu.syncChar();
+        document.getElementById("laguFormCard")?.classList.remove("is-editing");
         const btn = document.getElementById("btnKirimLagu");
         if (btn) btn.innerHTML = '<i class="fa-solid fa-music"></i> Kirim Request Lagu';
         const batal = document.getElementById("btnBatalEditLagu");

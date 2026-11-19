@@ -3,7 +3,7 @@
 /* ===== Hero Full-Width ===== */
 .angg-hero .angg-hero-ico {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .angg-kicker {
   display: inline-flex;
@@ -24,7 +24,7 @@
 }
 .osis-badge.angg-badge-periode {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .osis-badge.angg-link-badge {
   text-decoration: none;
@@ -35,20 +35,20 @@
 .osis-badge.angg-link-badge:hover {
   background: var(--paper-2);
   transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 
 /* ===== Filter Controls inside Top Search Drawer ===== */
 .angg-status-chips {
   display: inline-flex;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   overflow: hidden;
   background: var(--paper);
 }
 .angg-chip {
   border: none;
-  border-right: 2px solid var(--ink);
+  border-right: 2px solid var(--bd);
   background: transparent;
   padding: 7px 11px;
   font-family: inherit;
@@ -65,7 +65,7 @@
   background: var(--paper-2);
 }
 .angg-chip.active {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .filter-tahun-wrap {
@@ -91,9 +91,9 @@
 }
 
 .angg-total-hero {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
   padding: 16px 18px;
   box-shadow: 5px 5px 0 var(--red);
@@ -122,7 +122,7 @@
 }
 .angg-periode-pill {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   border: 2px solid #fff;
   border-radius: 999px;
   padding: 2px 10px;
@@ -193,10 +193,10 @@
 }
 .stat-card {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 12px 13px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -213,11 +213,11 @@ button.stat-card.angg-stat-btn {
 button.stat-card.angg-stat-btn:hover {
   background: var(--paper);
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 button.stat-card.angg-stat-btn:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--ink);
+  box-shadow: 1px 1px 0 var(--sh);
 }
 button.stat-card.angg-stat-btn.active {
   background: #fff9db;
@@ -232,7 +232,7 @@ button.stat-card.angg-stat-btn.active {
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 0.78rem;
@@ -324,10 +324,10 @@ button.stat-card.angg-stat-btn.active {
 /* ===== Rail Kiri Panels ===== */
 .angg-panel {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 13px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   min-width: 0;
 }
 .angg-panel-head {
@@ -349,7 +349,7 @@ button.stat-card.angg-stat-btn.active {
   margin-right: 4px;
 }
 .angg-pill-cnt {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
   border-radius: 999px;
   padding: 2px 8px;
@@ -373,7 +373,7 @@ button.stat-card.angg-stat-btn.active {
   font-weight: 900;
   padding: 4px 9px;
   border-radius: 999px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;
@@ -383,7 +383,7 @@ button.stat-card.angg-stat-btn.active {
   background: var(--paper-2);
 }
 .angg-tchip.active {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 
@@ -412,14 +412,14 @@ button.stat-card.angg-stat-btn.active {
 }
 .angg-bar-btn:hover {
   background: var(--paper-2);
-  border-color: var(--ink);
+  border-color: var(--bd);
   transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .angg-bar-btn.active {
   background: #fff3bf;
-  border-color: var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
+  border-color: var(--bd);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .angg-bar-top {
   display: flex;
@@ -446,7 +446,7 @@ button.stat-card.angg-stat-btn.active {
   height: 6px;
   border-radius: 999px;
   background: var(--white);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   overflow: hidden;
 }
 .angg-bar-track > span {
@@ -471,7 +471,7 @@ button.stat-card.angg-stat-btn.active {
   font-weight: 900;
   padding: 5px 10px;
   border-radius: 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;
@@ -483,10 +483,10 @@ button.stat-card.angg-stat-btn.active {
 .angg-per-pill:hover {
   background: var(--paper-2);
   transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .angg-per-pill.active {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .angg-per-pill small {
@@ -497,10 +497,10 @@ button.stat-card.angg-stat-btn.active {
 /* ===== Main Roster Card ===== */
 .angg-list-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 14px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -543,7 +543,7 @@ button.stat-card.angg-stat-btn.active {
 .angg-count-pill {
   background: var(--paper-2);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 2px 10px;
   font-size: 0.68rem;
@@ -552,14 +552,14 @@ button.stat-card.angg-stat-btn.active {
 }
 .angg-view-tog {
   display: inline-flex;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   overflow: hidden;
   background: var(--paper);
 }
 .angg-vbtn {
   border: none;
-  border-right: 1.5px solid var(--ink);
+  border-right: 1.5px solid var(--bd);
   background: transparent;
   width: 32px;
   height: 28px;
@@ -573,7 +573,7 @@ button.stat-card.angg-stat-btn.active {
   border-right: none;
 }
 .angg-vbtn.active {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 
@@ -593,10 +593,10 @@ button.stat-card.angg-stat-btn.active {
   gap: 11px;
   width: 100%;
   background: var(--paper);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 15px;
   padding: 10px 12px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease;
   color: var(--ink);
@@ -604,11 +604,11 @@ button.stat-card.angg-stat-btn.active {
 .angg-item:hover {
   background: var(--white);
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .angg-item:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--ink);
+  box-shadow: 1px 1px 0 var(--sh);
 }
 .angg-item.saya {
   background: #f2fbf4;
@@ -617,9 +617,9 @@ button.stat-card.angg-stat-btn.active {
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   display: grid;
   place-items: center;
   font-size: 0.96rem;
@@ -658,7 +658,7 @@ button.stat-card.angg-stat-btn.active {
   border-radius: 999px;
   background: #146314;
   color: #fff;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
 }
 .angg-pills {
   display: flex;
@@ -672,7 +672,7 @@ button.stat-card.angg-stat-btn.active {
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   background: var(--white);
   font-size: 0.66rem;
   font-weight: 800;
@@ -738,7 +738,7 @@ button.stat-card.angg-stat-btn.active {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--gray);
-  border-bottom: 2.5px solid var(--ink);
+  border-bottom: 2.5px solid var(--bd);
   padding-bottom: 8px;
 }
 .angg-row {
@@ -761,7 +761,7 @@ button.stat-card.angg-stat-btn.active {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   display: grid;
   place-items: center;
@@ -837,7 +837,7 @@ button.stat-card.angg-stat-btn.active {
 .angg-popup-inner {
   width: min(500px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 18px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
@@ -853,14 +853,14 @@ button.stat-card.angg-stat-btn.active {
   width: 48px;
   height: 48px;
   border-radius: 13px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   display: grid;
   place-items: center;
   font-size: 1.15rem;
   font-weight: 900;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   flex-shrink: 0;
 }
 .angg-det-ava.linked {

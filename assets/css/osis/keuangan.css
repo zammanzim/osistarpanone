@@ -3,7 +3,7 @@
 /* ===== Hero Full-Width ===== */
 .kas-hero .kas-hero-ico {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .kas-kicker {
   display: inline-flex;
@@ -46,9 +46,9 @@
 }
 
 .saldo-hero {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
   padding: 16px 18px;
   box-shadow: 5px 5px 0 var(--red);
@@ -77,7 +77,7 @@
 }
 .saldo-status-pill {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   border: 2px solid #fff;
   border-radius: 999px;
   padding: 2px 10px;
@@ -161,10 +161,10 @@
 }
 .stat-card {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 13px 14px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -179,7 +179,7 @@
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 0.82rem;
@@ -244,10 +244,10 @@
 /* ===== Rail Analitik (Rekap & Top Kategori) ===== */
 .kas-panel {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 13px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   min-width: 0;
 }
 .kas-panel-head {
@@ -269,7 +269,7 @@
   margin-right: 4px;
 }
 .kas-pill-cnt {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
   border-radius: 999px;
   padding: 2px 8px;
@@ -302,7 +302,7 @@
   font-weight: 900;
   padding: 1px 7px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -335,7 +335,7 @@
 }
 .bar {
   height: 8px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   border-radius: 999px;
   background: var(--white);
   overflow: hidden;
@@ -371,14 +371,14 @@
 }
 .kat-item:hover {
   background: var(--paper-2);
-  border-color: var(--ink);
+  border-color: var(--bd);
   transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .kat-item.on {
   background: #fff3bf;
-  border-color: var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  border-color: var(--bd);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .kat-item-top {
   display: flex;
@@ -409,7 +409,7 @@
 }
 .kat-bar {
   height: 6px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   border-radius: 999px;
   background: var(--white);
   overflow: hidden;
@@ -436,14 +436,14 @@
 /* ===== Filter Pills & Counter ===== */
 .jenis-filter-pills {
   display: inline-flex;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   overflow: hidden;
   background: var(--paper);
 }
 .jenis-filter-pills button {
   border: none;
-  border-right: 2px solid var(--ink);
+  border-right: 2px solid var(--bd);
   background: transparent;
   padding: 7px 11px;
   font-family: inherit;
@@ -460,7 +460,7 @@
   background: var(--paper-2);
 }
 .jenis-filter-pills button.on {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .filter-count-info {
@@ -472,10 +472,10 @@
 /* ===== Ledger & Tabel Transaksi ===== */
 .kas-ledger-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 14px 16px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   min-width: 0;
 }
 .kas-ledger-head {
@@ -486,7 +486,7 @@
   gap: 10px;
   margin-bottom: 12px;
   padding-bottom: 10px;
-  border-bottom: 2.5px solid var(--ink);
+  border-bottom: 2.5px solid var(--bd);
 }
 .kas-ledger-head h3 {
   font-size: 0.86rem;
@@ -509,7 +509,7 @@
 }
 .kas-loaded-pill {
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 3px 10px;
   font-size: 0.7rem;
@@ -543,7 +543,7 @@ table.kas-tabel th {
   letter-spacing: 0.06em;
   color: var(--gray);
   padding: 8px 10px;
-  border-bottom: 2px solid var(--ink);
+  border-bottom: 2px solid var(--bd);
   white-space: nowrap;
 }
 table.kas-tabel th.num,
@@ -610,7 +610,7 @@ table.kas-tabel tbody tr:hover td {
   display: inline-block;
   padding: 3px 9px;
   border-radius: 9px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   background: var(--paper-2);
   font-size: 0.7rem;
   font-weight: 800;
@@ -622,7 +622,7 @@ table.kas-tabel tbody tr:hover td {
   text-transform: uppercase;
   padding: 3px 9px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   white-space: nowrap;
 }
 .jenis.masuk {
@@ -663,11 +663,11 @@ table.kas-tabel tbody tr:hover td {
     gap: 10px;
   }
   table.kas-tabel tbody tr {
-    border: 2.5px solid var(--ink);
+    border: 2.5px solid var(--bd);
     border-radius: 14px;
     padding: 11px 12px;
     background: var(--paper);
-    box-shadow: 3px 3px 0 var(--ink);
+    box-shadow: 3px 3px 0 var(--sh);
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 6px 8px;
@@ -729,7 +729,7 @@ table.kas-tabel tbody tr:hover td {
       .kas-form-inner {
         width: min(520px, 100%);
         background: var(--white);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 18px;
         padding: 18px;
         box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
@@ -748,7 +748,7 @@ table.kas-tabel tbody tr:hover td {
       }
       .jenis-toggle button {
         padding: 11px;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 12px;
         background: var(--white);
         font-family: inherit;
@@ -759,15 +759,15 @@ table.kas-tabel tbody tr:hover td {
       .jenis-toggle button.on-masuk {
         background: #d6f5d6;
         color: #146314;
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
       }
       .jenis-toggle button.on-keluar {
         background: #ffe9e9;
         color: var(--red-dark);
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
       }
       .kas-drop {
-        border: 2.5px dashed var(--ink);
+        border: 2.5px dashed var(--bd);
         border-radius: 14px;
         background: var(--paper-2);
         height: 110px;
@@ -813,7 +813,7 @@ table.kas-tabel tbody tr:hover td {
         opacity: 0.8;
       }
       .bukti-box {
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 12px;
         overflow: hidden;
         background: var(--paper-2);
@@ -838,14 +838,14 @@ table.kas-tabel tbody tr:hover td {
         align-items: center;
         gap: 6px;
         padding: 8px 14px;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 999px;
         background: var(--white);
         font-size: 0.78rem;
         font-weight: 800;
         text-decoration: none;
         color: var(--ink);
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
         transition:
           transform 0.12s,
           box-shadow 0.12s,
@@ -855,7 +855,7 @@ table.kas-tabel tbody tr:hover td {
       }
       .osis-nav-link:hover {
         transform: translate(-1px, -1px);
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
       }
       .osis-nav-link:active {
         transform: translate(1px, 1px);

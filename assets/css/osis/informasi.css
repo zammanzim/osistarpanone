@@ -3,7 +3,7 @@
 /* ===== Hero Full-Width ===== */
 .info-hero .info-hero-ico {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .info-hero-kicker {
   display: inline-flex;
@@ -30,14 +30,14 @@
 /* ===== Filter Controls inside Top Search Drawer ===== */
 .info-filter-chips {
   display: inline-flex;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   overflow: hidden;
   background: var(--paper);
 }
 .info-chip {
   border: none;
-  border-right: 2px solid var(--ink);
+  border-right: 2px solid var(--bd);
   background: transparent;
   padding: 7px 11px;
   font-family: inherit;
@@ -54,7 +54,7 @@
   background: var(--paper-2);
 }
 .info-chip.active {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .filter-sort-wrap {
@@ -121,10 +121,10 @@
 /* ===== Rail Kiri: Spotlight & Info Berjadwal ===== */
 .info-side-panel {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 13px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   min-width: 0;
 }
 .info-side-head {
@@ -146,7 +146,7 @@
   margin-right: 4px;
 }
 .info-pill-cnt {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
   border-radius: 999px;
   padding: 2px 8px;
@@ -156,9 +156,9 @@
 }
 
 .info-spot-box {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 12px 13px;
   box-shadow: 3px 3px 0 var(--red);
@@ -172,7 +172,7 @@
   gap: 5px;
   align-self: flex-start;
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.62rem;
@@ -232,9 +232,9 @@
 }
 .info-jrow:hover {
   background: var(--paper-2);
-  border-color: var(--ink);
+  border-color: var(--bd);
   transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .info-jrow-main {
   min-width: 0;
@@ -267,10 +267,10 @@
 /* ===== Main Feed Container ===== */
 .info-feed-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 14px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -307,7 +307,7 @@
 .info-count-pill {
   background: var(--paper-2);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 2px 10px;
   font-size: 0.68rem;
@@ -323,16 +323,16 @@
 }
 .info-row {
   background: var(--paper);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 15px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   overflow: hidden;
   transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease;
 }
 .info-row:hover {
   background: var(--white);
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .info-row-main {
   display: flex;
@@ -362,9 +362,9 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   font-size: 0.62rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -380,7 +380,7 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   background: #fef4e2;
   color: var(--ink);
   font-size: 0.64rem;
@@ -434,7 +434,7 @@
   gap: 5px;
   padding: 3px 8px;
   border-radius: 8px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   background: var(--white);
   font-size: 0.66rem;
   font-weight: 800;
@@ -489,9 +489,9 @@
 }
 .info-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   padding: 22px;
   overflow: hidden;
 }
@@ -524,7 +524,8 @@
   height: 9px;
   border-radius: 50%;
   background: var(--yellow);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
+  color: var(--on-yellow);
 }
 .info-judul {
   font-size: clamp(1.5rem, 3vw, 2rem);
@@ -547,17 +548,18 @@
   height: 5px;
   border-radius: 99px;
   background: var(--yellow);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   margin-top: 10px;
+  color: var(--on-yellow);
 }
 .info-kepada {
   display: flex;
   align-items: center;
   gap: 10px;
   background: #fef4e2;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 13px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   padding: 10px 14px;
   font-size: 0.86rem;
   font-weight: 600;
@@ -568,9 +570,9 @@
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   display: grid;
   place-items: center;
   font-size: 0.9rem;
@@ -589,9 +591,9 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   background: var(--paper);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 15px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   margin-top: 14px;
   overflow: hidden;
 }
@@ -609,7 +611,7 @@
   width: 36px;
   height: 36px;
   border-radius: 11px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 1rem;
@@ -646,7 +648,7 @@
   height: 36px;
   border-radius: 10px;
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   color: var(--ink);
   display: grid;
   place-items: center;
@@ -689,7 +691,7 @@
 .info-form-box {
   width: min(920px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
   padding: 18px;
@@ -714,7 +716,7 @@
 }
 .info-form-grp {
   background: var(--paper);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 13px;
   padding: 11px 12px;
   display: flex;
@@ -771,7 +773,7 @@
 .info-preview-card {
   padding: 15px;
   border-radius: 16px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .info-preview-card .info-judul {
   font-size: 1.25rem;

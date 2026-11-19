@@ -519,76 +519,76 @@ const OsisSidebar = {
                 #osisSideBtn { flex-shrink: 0; }
                 .osis-sidebar-bg { position: fixed; inset: 0; background: rgba(15,10,11,.55); z-index: 290; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility .2s ease; }
                 .osis-sidebar-bg.open { opacity: 1; visibility: visible; pointer-events: auto; }
-                .osis-sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: min(300px, 86vw); background: var(--white); border-right: 3px solid var(--ink); z-index: 295; transform: translateX(-105%); transition: transform .25s cubic-bezier(.34,1.2,.64,1), width .22s ease; display: flex; flex-direction: column; }
+                .osis-sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: min(300px, 86vw); background: var(--white); border-right: 3px solid var(--bd); z-index: 295; transform: translateX(-105%); transition: transform .25s cubic-bezier(.34,1.2,.64,1), width .22s ease; display: flex; flex-direction: column; }
                 .osis-sidebar.open { transform: none; }
-                .osis-sidebar-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 2.5px solid var(--ink); background: var(--white); }
+                .osis-sidebar-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 2.5px solid var(--bd); background: var(--white); }
                 .osis-side-head-logo { height: 46px; flex-shrink: 0; }
                 .osis-side-head-logo img { height: 100%; width: auto; object-fit: contain; display: block; }
                 .osis-sidebar-head .t { flex: 1; min-width: 0; }
                 .osis-sidebar-head h2 { font-size: .95rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 .osis-side-subrow { display: flex; align-items: center; gap: 6px; margin-top: 3px; min-width: 0; }
                 .osis-sidebar-head p { font-size: .58rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--red); white-space: nowrap; }
-                .osis-side-ang { display: inline-block; max-width: 112px; padding: 1px 6px; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--yellow); color: var(--ink); font-size: .56rem; font-weight: 900; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
-                .osis-side-stripes { height: 5px; flex-shrink: 0; border-bottom: 2.5px solid var(--ink); background: repeating-linear-gradient(-45deg, var(--red) 0 10px, var(--ink) 10px 20px, var(--yellow) 20px 30px, var(--ink) 30px 40px); }
+                .osis-side-ang { display: inline-block; max-width: 112px; padding: 1px 6px; border: 1.5px solid var(--bd); border-radius: 999px; background: var(--yellow); color: var(--on-yellow); font-size: .56rem; font-weight: 900; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+                .osis-side-stripes { height: 5px; flex-shrink: 0; border-bottom: 2.5px solid var(--bd); background: repeating-linear-gradient(-45deg, var(--red) 0 10px, var(--inv-bg) 10px 20px, var(--yellow) 20px 30px, var(--inv-bg) 30px 40px); color: var(--on-yellow); }
                 .osis-top-judul { display: none; }
                 .osis-sidebar nav { flex: 1; overflow-y: auto; padding: 12px 12px 18px; display: flex; flex-direction: column; gap: 4px; }
-                .osis-side-dash { display: flex; align-items: center; gap: 11px; padding: 9px 11px; margin-bottom: 8px; border: 2.5px solid var(--ink); border-radius: 14px; background: var(--white); color: var(--ink); text-decoration: none; box-shadow: 3px 3px 0 var(--ink); transition: transform .12s, box-shadow .12s, background .12s; }
-                .osis-side-dash:hover { background: #fffbeb; transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
-                .osis-side-dash:active { transform: translate(1.5px, 1.5px); box-shadow: 1px 1px 0 var(--ink); }
+                .osis-side-dash { display: flex; align-items: center; gap: 11px; padding: 9px 11px; margin-bottom: 8px; border: 2.5px solid var(--bd); border-radius: 14px; background: var(--white); color: var(--ink); text-decoration: none; box-shadow: 3px 3px 0 var(--sh); transition: transform .12s, box-shadow .12s, background .12s; }
+                .osis-side-dash:hover { background: #fffbeb; transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--sh); }
+                .osis-side-dash:active { transform: translate(1.5px, 1.5px); box-shadow: 1px 1px 0 var(--sh); }
                 .osis-side-dash.active { background: var(--red); color: #fff; }
-                .osis-side-dash .dic { width: 34px; height: 34px; border-radius: 10px; border: 2px solid var(--ink); background: var(--yellow); color: var(--ink); display: grid; place-items: center; font-size: .95rem; flex-shrink: 0; box-shadow: 2px 2px 0 var(--ink); }
+                .osis-side-dash .dic { width: 34px; height: 34px; border-radius: 10px; border: 2px solid var(--bd); background: var(--yellow); color: var(--on-yellow); display: grid; place-items: center; font-size: .95rem; flex-shrink: 0; box-shadow: 2px 2px 0 var(--sh); }
                 .osis-side-dash .dt { flex: 1; min-width: 0; }
                 .osis-side-dash .dt b { display: block; font-size: .9rem; font-weight: 900; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 .osis-side-dash .dt small { display: block; font-size: .64rem; font-weight: 700; color: var(--gray); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 .osis-side-dash.active .dt small { color: rgba(255,255,255,.86); }
-                .osis-side-dash .darr { width: 22px; height: 22px; border-radius: 999px; background: var(--paper-2); border: 1.5px solid var(--ink); display: grid; place-items: center; font-size: .62rem; color: var(--ink); flex-shrink: 0; }
-                .osis-side-dash.active .darr { background: var(--yellow); }
-                .osis-pop-box { margin-bottom: 6px; padding: 10px; border: 2.5px solid var(--ink); border-radius: 16px; background-color: var(--paper-2); background-image: radial-gradient(rgba(26,19,20,.09) 1.1px, transparent 1.1px); background-size: 10px 10px; box-shadow: 3px 3px 0 var(--ink); }
+                .osis-side-dash .darr { width: 22px; height: 22px; border-radius: 999px; background: var(--paper-2); border: 1.5px solid var(--bd); display: grid; place-items: center; font-size: .62rem; color: var(--ink); flex-shrink: 0; }
+                .osis-side-dash.active .darr { background: var(--yellow); color: var(--on-yellow); }
+                .osis-pop-box { margin-bottom: 6px; padding: 10px; border: 2.5px solid var(--bd); border-radius: 16px; background-color: var(--paper-2); background-image: radial-gradient(rgba(26,19,20,.09) 1.1px, transparent 1.1px); background-size: 10px 10px; box-shadow: 3px 3px 0 var(--sh); }
                 .osis-pop-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
                 .osis-pop-title { display: inline-flex; align-items: center; gap: 6px; font-size: .66rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
                 .osis-pop-title i { color: var(--red); font-size: .76rem; }
-                .osis-pop-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--yellow); color: var(--ink); font-size: .54rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+                .osis-pop-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border: 1.5px solid var(--bd); border-radius: 999px; background: var(--yellow); color: var(--on-yellow); font-size: .54rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
                 .osis-pop-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
-                .osis-pop-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 9px; border: 2px solid var(--ink); border-radius: 12px; background: var(--white); color: var(--ink); text-decoration: none; box-shadow: 2px 2px 0 var(--ink); transition: transform .12s, box-shadow .12s, background .12s; min-width: 0; }
-                .osis-pop-tile:hover { background: var(--yellow); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+                .osis-pop-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 9px; border: 2px solid var(--bd); border-radius: 12px; background: var(--white); color: var(--ink); text-decoration: none; box-shadow: 2px 2px 0 var(--sh); transition: transform .12s, box-shadow .12s, background .12s; min-width: 0; }
+                .osis-pop-tile:hover { background: var(--yellow); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--sh); color: var(--on-yellow); }
                 .osis-pop-tile:active { transform: translate(1px, 1px); box-shadow: none; }
-                .osis-pop-tile.active { background: var(--red); color: #fff; box-shadow: 2px 2px 0 var(--ink); }
-                .osis-pop-tile .pic { width: 26px; height: 26px; border-radius: 8px; border: 1.5px solid var(--ink); background: var(--paper-2); color: var(--red); display: grid; place-items: center; font-size: .8rem; flex-shrink: 0; transition: background .12s, color .12s; }
+                .osis-pop-tile.active { background: var(--red); color: #fff; box-shadow: 2px 2px 0 var(--sh); }
+                .osis-pop-tile .pic { width: 26px; height: 26px; border-radius: 8px; border: 1.5px solid var(--bd); background: var(--paper-2); color: var(--red); display: grid; place-items: center; font-size: .8rem; flex-shrink: 0; transition: background .12s, color .12s; }
                 .osis-pop-tile:hover .pic { background: var(--white); color: var(--ink); }
-                .osis-pop-tile.active .pic { background: var(--yellow); color: var(--ink); }
+                .osis-pop-tile.active .pic { background: var(--yellow); color: var(--on-yellow); }
                 .osis-pop-tile .plbl { font-size: .75rem; font-weight: 800; line-height: 1.18; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
                 .osis-pop-tile:last-child:nth-child(odd) { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 9px; }
                 .osis-side-sec { display: flex; align-items: center; gap: 7px; font-size: .64rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--gray); padding: 12px 4px 4px; margin-top: 6px; border-top: 2px dashed var(--line); }
                 .osis-side-sec.first { margin-top: 2px; border-top: none; padding-top: 6px; }
-                .osis-side-sec .sec-ico { width: 19px; height: 19px; border-radius: 6px; border: 1.5px solid var(--ink); background: var(--sec-bg, var(--paper-2)); color: var(--sec-fg, var(--ink)); display: grid; place-items: center; font-size: .56rem; flex-shrink: 0; }
+                .osis-side-sec .sec-ico { width: 19px; height: 19px; border-radius: 6px; border: 1.5px solid var(--bd); background: var(--sec-bg, var(--paper-2)); color: var(--sec-fg, var(--ink)); display: grid; place-items: center; font-size: .56rem; flex-shrink: 0; }
                 .osis-side-sec .sec-lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); opacity: .78; }
                 .osis-side-sec .sec-cnt { padding: 1px 7px; border-radius: 999px; background: var(--paper-2); border: 1.5px solid rgba(26,19,20,.16); font-size: .56rem; font-weight: 900; color: var(--gray); letter-spacing: 0; }
                 .osis-sidebar-link { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border: 2px solid transparent; border-radius: 12px; background: transparent; font-size: .85rem; font-weight: 800; text-decoration: none; color: var(--ink); box-shadow: none; transition: background .12s, border-color .12s, transform .12s, box-shadow .12s; }
                 .osis-sidebar-link:hover { background: var(--paper-2); border-color: rgba(26,19,20,.2); }
                 .osis-sidebar-link:active { transform: translate(1px, 1px); }
-                .osis-sidebar-link.active { background: var(--red); color: #fff; border-color: var(--ink); box-shadow: 2.5px 2.5px 0 var(--ink); }
+                .osis-sidebar-link.active { background: var(--red); color: #fff; border-color: var(--bd); box-shadow: 2.5px 2.5px 0 var(--sh); }
                 .osis-sidebar-link .sic { width: 28px; height: 28px; border-radius: 9px; border: 1.5px solid rgba(26,19,20,.14); background: var(--paper-2); display: grid; place-items: center; flex-shrink: 0; color: var(--red); font-size: .84rem; transition: background .12s, border-color .12s, color .12s; }
-                .osis-sidebar-link:hover .sic { background: var(--yellow); border-color: var(--ink); color: var(--ink); }
-                .osis-sidebar-link.active .sic { background: var(--yellow); border-color: var(--ink); color: var(--ink); }
-                .osis-sidebar-foot { padding: 10px 12px 12px; border-top: 3px solid var(--ink); background: var(--paper); display: flex; flex-direction: column; gap: 8px; }
-                .osis-side-atur { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 9px 12px; border: 2.5px solid var(--ink); border-radius: 12px; background: var(--paper-2); font-size: .78rem; font-weight: 900; color: var(--ink); cursor: pointer; box-shadow: 2px 2px 0 var(--ink); font-family: inherit; }
+                .osis-sidebar-link:hover .sic { background: var(--yellow); border-color: var(--bd); color: var(--on-yellow); }
+                .osis-sidebar-link.active .sic { background: var(--yellow); border-color: var(--bd); color: var(--on-yellow); }
+                .osis-sidebar-foot { padding: 10px 12px 12px; border-top: 3px solid var(--bd); background: var(--paper); display: flex; flex-direction: column; gap: 8px; }
+                .osis-side-atur { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 9px 12px; border: 2.5px solid var(--bd); border-radius: 12px; background: var(--paper-2); font-size: .78rem; font-weight: 900; color: var(--ink); cursor: pointer; box-shadow: 2px 2px 0 var(--sh); font-family: inherit; }
                 .osis-side-atur:active { transform: translate(1px,1px); box-shadow: none; }
                 .osis-side-atur.done { background: var(--green); color: #fff; }
-                .osis-side-atur.kotor::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--yellow); border: 2px solid var(--ink); }
+                .osis-side-atur.kotor::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--yellow); border: 2px solid var(--bd); color: var(--on-yellow); }
                 .side-edit-row { display: flex; align-items: center; gap: 8px; padding: 7px 6px 7px 10px; border-radius: 12px; cursor: pointer; }
                 .side-edit-row:hover { background: rgba(26, 19, 20, .06); }
                 .side-edit-row .sic { width: 22px; text-align: center; color: var(--red); flex-shrink: 0; font-size: .95rem; }
                 .side-edit-teks { flex: 1; min-width: 0; }
                 .side-edit-teks b { display: block; font-size: .82rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
                 .side-edit-teks small { display: block; font-size: .64rem; font-weight: 700; color: var(--gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                .side-chip-super { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 6px; background: var(--yellow); color: var(--ink); font-size: .5rem; margin-left: 6px; vertical-align: 2px; }
+                .side-chip-super { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 6px; background: var(--yellow); color: var(--on-yellow); font-size: .5rem; margin-left: 6px; vertical-align: 2px; }
                 .side-star { width: 28px; height: 28px; flex-shrink: 0; border: 1.5px solid transparent; border-radius: 8px; background: transparent; color: #b8afb1; display: grid; place-items: center; cursor: pointer; font-size: .76rem; transition: background .12s, color .12s, border-color .12s; }
                 .side-star:hover { background: rgba(26, 19, 20, .08); color: var(--ink); }
-                .side-star.on { background: var(--yellow); color: var(--ink); border-color: var(--ink); box-shadow: 1.5px 1.5px 0 var(--ink); }
+                .side-star.on { background: var(--yellow); color: var(--on-yellow); border-color: var(--bd); box-shadow: 1.5px 1.5px 0 var(--sh); }
                 .side-grip { color: var(--gray); flex-shrink: 0; padding: 8px 6px; border-radius: 8px; cursor: grab; touch-action: none; user-select: none; }
                 .side-grip:hover { background: rgba(26, 19, 20, .08); color: var(--ink); }
                 .side-drag { opacity: .45; background: var(--paper-2); }
-                .side-hantu { background: var(--white); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); overflow: hidden; }
+                .side-hantu { background: var(--white); border: 2.5px solid var(--bd); border-radius: 12px; box-shadow: 3px 3px 0 var(--sh); overflow: hidden; }
                 .side-hantu.side-edit-sec { padding: 10px 12px; }
                 .side-drop-atas { box-shadow: 0 -4px 0 var(--red); }
                 .side-drop-bawah { box-shadow: 0 4px 0 var(--red); }
@@ -603,11 +603,11 @@ const OsisSidebar = {
                 .side-add-big:hover { filter: brightness(.95); }
                 .side-tools { display: flex; gap: 8px; margin-bottom: 4px; }
                 .side-tools .side-add-big { flex: 1; width: auto; margin-bottom: 0; }
-                .side-info { width: 46px; flex-shrink: 0; border: 2.5px solid var(--ink); border-radius: 12px; background: var(--paper-2); color: var(--ink); font-size: .85rem; cursor: pointer; box-shadow: 2px 2px 0 var(--ink); font-family: inherit; }
+                .side-info { width: 46px; flex-shrink: 0; border: 2.5px solid var(--bd); border-radius: 12px; background: var(--paper-2); color: var(--ink); font-size: .85rem; cursor: pointer; box-shadow: 2px 2px 0 var(--sh); font-family: inherit; }
                 .side-info:active { transform: translate(1px, 1px); box-shadow: none; }
                 .side-atur-baris { display: flex; gap: 8px; }
                 .side-atur-baris .osis-side-atur { flex: 1; width: auto; }
-                .osis-side-undo { width: 46px; flex-shrink: 0; border: 2.5px solid var(--ink); border-radius: 12px; background: var(--paper-2); color: var(--ink); font-size: .85rem; cursor: pointer; box-shadow: 2px 2px 0 var(--ink); font-family: inherit; }
+                .osis-side-undo { width: 46px; flex-shrink: 0; border: 2.5px solid var(--bd); border-radius: 12px; background: var(--paper-2); color: var(--ink); font-size: .85rem; cursor: pointer; box-shadow: 2px 2px 0 var(--sh); font-family: inherit; }
                 .osis-side-undo:active:not(:disabled) { transform: translate(1px,1px); box-shadow: none; }
                 .osis-side-undo:disabled { opacity: .35; cursor: default; box-shadow: none; }
                 .side-edit-pen { color: var(--gray); flex-shrink: 0; padding: 8px 6px; border-radius: 8px; cursor: pointer; }
@@ -618,15 +618,15 @@ const OsisSidebar = {
                 .uni-box.uni-tall .uni-form-container { flex: 1; min-height: 0; overflow-y: auto; padding: 0 18px 4px; margin-bottom: 8px; }
                 .uni-box.uni-tall .uni-actions { flex-shrink: 0; margin: 0 18px 16px; }
                 .uni-ikon-baris { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-                .uni-ikon-prev { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; border: 2.5px solid var(--ink); border-radius: 12px; background: var(--paper); font-size: 1.05rem; color: var(--ink); }
-                .uni-ikon-toggle { display: inline-flex; align-items: center; gap: 7px; border: 2.5px solid var(--ink); border-radius: 10px; background: var(--white); font-family: inherit; font-size: .74rem; font-weight: 900; color: var(--ink); padding: 9px 12px; cursor: pointer; }
+                .uni-ikon-prev { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; border: 2.5px solid var(--bd); border-radius: 12px; background: var(--paper); font-size: 1.05rem; color: var(--ink); }
+                .uni-ikon-toggle { display: inline-flex; align-items: center; gap: 7px; border: 2.5px solid var(--bd); border-radius: 10px; background: var(--white); font-family: inherit; font-size: .74rem; font-weight: 900; color: var(--ink); padding: 9px 12px; cursor: pointer; }
                 .uni-ikon-toggle:hover { background: var(--paper-2); }
                 .uni-ikon-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding: 8px; background: var(--paper-2); border-radius: 12px; }
                 .uni-ikon-grid[hidden] { display: none; }
                 .uni-ikon-chip { width: 36px; height: 36px; border: none; border-radius: 10px; background: var(--white); cursor: pointer; display: grid; place-items: center; font-size: .82rem; color: var(--ink); }
                 .uni-ikon-chip:hover { filter: brightness(.94); }
-                .uni-ikon-chip.on { background: var(--ink); color: var(--yellow); }
-                .uni-hapus { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 14px; padding: 10px; border: 2.5px solid var(--ink); border-radius: 12px; background: #ffe9e9; color: var(--red-dark); font-family: inherit; font-size: .78rem; font-weight: 900; cursor: pointer; }
+                .uni-ikon-chip.on { background: var(--inv-bg); color: var(--yellow); }
+                .uni-hapus { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 14px; padding: 10px; border: 2.5px solid var(--bd); border-radius: 12px; background: #ffe9e9; color: var(--red-dark); font-family: inherit; font-size: .78rem; font-weight: 900; cursor: pointer; }
                 .uni-hapus:hover { background: #ffdcdc; }
                 .uni-hint { margin: 6px 0 0; font-size: .68rem; color: var(--gray); line-height: 1.35; }
                 @media (min-width: 900px) {

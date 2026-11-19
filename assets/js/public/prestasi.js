@@ -149,12 +149,16 @@ const Prestasi = {
         const isEdit = (typeof OsisAuth !== "undefined" && OsisAuth.bisa && OsisAuth.bisa("prestasi"));
         const coverUrl = cover ? getFoto(cover) : "";
         const isVid = typeof isVideoPath === "function" && isVideoPath(cover);
-        const media = !coverUrl ? "" : isVid
-            ? `<video src="${coverUrl}" alt="" muted playsinline preload="metadata" disablepictureinpicture onloadeddata="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" onclick="Prestasi.bukaPopup(${item.id})"></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>`
-            : `<img src="${coverUrl}" alt="${tag || "Prestasi"}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'" onclick="Prestasi.bukaPopup(${item.id})">`;
+        const oc = `onclick="Prestasi.bukaPopup(${item.id})"`;
+        const media = !coverUrl ? `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`
+            : (typeof thumbBentoPath === "function")
+            ? thumbBentoPath(cover, tag || "Prestasi", oc)
+            : (isVid
+                ? `<video src="${coverUrl}" alt="" muted playsinline preload="metadata" disablepictureinpicture onloadeddata="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" ${oc}></video><span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`
+                : `<img src="${coverUrl}" alt="${tag || "Prestasi"}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'" ${oc}><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`);
         return `
             <div class="prestasi-card${isVid ? " is-video" : ""}" data-prestasi-id="${item.id}" style="position:relative">
-                <div class="media-muat media-muat-tinggi">${media}<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></div>
+                <div class="media-muat media-muat-tinggi">${media}</div>
                 ${tag || isEdit ? `<span class="prestasi-tag" data-prestasi-tag="${item.id}" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false">${tag || (isEdit ? "Tag" : "")}</span>` : ""}
                 <button class="foto-del-btn" onclick="event.stopPropagation(); Prestasi.hapus(${item.id})" title="Hapus foto"><i class="fa-solid fa-trash-can"></i></button>
             </div>`;

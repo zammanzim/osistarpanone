@@ -30,8 +30,8 @@
     st.id = "ctxCss";
     st.textContent = [
       ".ctx{position:fixed;z-index:99999;background:var(--white,#fff);",
-      "border:2.5px solid var(--ink,#1a1314);border-radius:14px;",
-      "box-shadow:5px 5px 0 var(--ink,#1a1314);padding:6px;min-width:190px;",
+      "border:2.5px solid var(--bd,#1a1314);border-radius:14px;",
+      "box-shadow:5px 5px 0 var(--sh,#1a1314);padding:6px;min-width:190px;",
       "display:flex;flex-direction:column;gap:2px;margin:0;",
       "opacity:0;visibility:hidden;transform:scale(.92);transform-origin:top left;",
       "transition:opacity .1s ease-in,transform .1s ease-in,visibility 0s linear .1s}",

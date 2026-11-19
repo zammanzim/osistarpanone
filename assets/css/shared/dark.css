@@ -1,0 +1,544 @@
+/* =========================================================================
+   OSIS TARPAN ONE — Dark Mode Theme (Warm Obsidian Neo-Brutalism)
+   Aktif hanya jika html[data-theme="dark"] terpasang (default tetap terang).
+   QR code (.qr-kotak, .abs-qr) dibiarkan putih agar kamera selalu mudah scan.
+   ========================================================================= */
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --red: #f02d3e;
+  --red-dark: #ff6b7a;
+  --red-deep: #9f1220;
+  --ink: #f3ede8;
+  --bd: #564c63;
+  --sh: #08070b;
+  --inv-bg: #0f0d13;
+  --inv-fg: #f3ede8;
+  --on-yellow: #1a1314;
+  --paper: #16131b;
+  --paper-2: #2b2633;
+  --yellow: #ffd11a;
+  --green: #38d97c;
+  --green-bg: #143222;
+  --white: #211d28;
+  --gray: #aba0b4;
+  --line: #393244;
+  --shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  --shadow-hard: 5px 5px 0 var(--sh);
+}
+
+/* ---- Native controls ---- */
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color: var(--ink);
+}
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: var(--gray);
+  opacity: 0.78;
+}
+html[data-theme="dark"] select option {
+  background: #211d28;
+  color: #f3ede8;
+}
+
+/* ---- Switch, header-more & sidebar shell polish ---- */
+html[data-theme="dark"] .edit-slider::after {
+  background: #ffffff;
+  border-color: #08070b;
+}
+html[data-theme="dark"] #headerMoreThemeRow i,
+html[data-theme="dark"] #osisMoreThemeRow i {
+  color: var(--yellow);
+}
+html[data-theme="dark"] .vitem-count {
+  background: var(--red);
+  color: #fff;
+}
+html[data-theme="dark"] .toast-success i {
+  color: var(--green);
+}
+html[data-theme="dark"] .toast-info i {
+  color: var(--yellow);
+}
+html[data-theme="dark"] .notice-dark {
+  background: #0d0b10;
+  color: #ffd43b;
+  border-color: var(--bd);
+}
+html[data-theme="dark"] .notice-green {
+  background: #143222;
+  color: #7ce8a8;
+}
+html[data-theme="dark"] .nav-sheet-item.active .nsi-ico {
+  background: var(--white);
+  color: var(--red);
+}
+html[data-theme="dark"] .pembina-section {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.03) 0 14px,
+      transparent 14px 28px
+    ),
+    radial-gradient(circle at 10% 25%, rgba(240, 45, 62, 0.14), transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(255, 209, 26, 0.1), transparent 50%),
+    var(--white);
+}
+html[data-theme="dark"] .osis-pop-box {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.1px, transparent 1.1px);
+}
+html[data-theme="dark"] .ang-more-box {
+  border-bottom-color: rgba(255, 255, 255, 0.16);
+}
+html[data-theme="dark"] .osis-side-dash:hover {
+  background: var(--paper-2);
+}
+html[data-theme="dark"] .osis-sidebar-link:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+html[data-theme="dark"] .osis-sidebar-link .sic,
+html[data-theme="dark"] .osis-side-sec .sec-cnt {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+html[data-theme="dark"] .side-edit-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+html[data-theme="dark"] .side-star:hover,
+html[data-theme="dark"] .side-grip:hover,
+html[data-theme="dark"] .side-grup-grip:hover,
+html[data-theme="dark"] .side-sec-pen:hover,
+html[data-theme="dark"] .side-edit-pen:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+}
+html[data-theme="dark"] .uni-hapus {
+  background: #3a1922;
+  color: #ff8c99;
+}
+html[data-theme="dark"] .uni-hapus:hover {
+  background: #4b202b;
+}
+html[data-theme="dark"] .info-row-foot {
+  background: rgba(255, 255, 255, 0.05);
+}
+html[data-theme="dark"] .vid-play i,
+html[data-theme="dark"] .foto-oleh,
+html[data-theme="dark"] .feed-play,
+html[data-theme="dark"] .feed-mute {
+  background: rgba(22, 19, 27, 0.88);
+  color: var(--ink);
+}
+
+/* ---- Hardcoded dark reading text on cards ---- */
+html[data-theme="dark"] .agenda-desk,
+html[data-theme="dark"] .info-row-subjudul,
+html[data-theme="dark"] .info-row-snippet,
+html[data-theme="dark"] .info-sub,
+html[data-theme="dark"] .info-kepada,
+html[data-theme="dark"] .info-text,
+html[data-theme="dark"] .not-text,
+html[data-theme="dark"] .not-orang,
+html[data-theme="dark"] .infv-ringkas,
+html[data-theme="dark"] .infv-isi,
+html[data-theme="dark"] [data-view="musik"] .lagu-artis {
+  color: #dcd4df;
+}
+html[data-theme="dark"] [data-view="musik"] .lagu-pesan {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+}
+html[data-theme="dark"] .login-body {
+  background:
+    radial-gradient(circle at 12% 16%, rgba(255, 204, 0, 0.14) 0, transparent 34%),
+    radial-gradient(circle at 88% 84%, rgba(225, 29, 46, 0.14) 0, transparent 36%),
+    radial-gradient(rgba(255, 255, 255, 0.07) 1.5px, transparent 1.5px),
+    var(--paper);
+  background-size: auto, auto, 22px 22px, auto;
+}
+
+/* ---- Warm cream / amber surfaces ---- */
+html[data-theme="dark"] .infv-spot,
+html[data-theme="dark"] .infv-card.pin,
+html[data-theme="dark"] .lagu-rule-note,
+html[data-theme="dark"] .sm-form-col .form-card.is-editing,
+html[data-theme="dark"] .tes-migrasi,
+html[data-theme="dark"] .tes-koreksi-box,
+html[data-theme="dark"] .ww-banner,
+html[data-theme="dark"] .info-to-pill,
+html[data-theme="dark"] .info-kepada,
+html[data-theme="dark"] .not-orang,
+html[data-theme="dark"] .tb-milik-mini,
+html[data-theme="dark"] .uk-tarif-scope,
+html[data-theme="dark"] .uk-week.cicil,
+html[data-theme="dark"] .uk-dot.cicil,
+html[data-theme="dark"] button.stat-card.angg-stat-btn.active,
+html[data-theme="dark"] .angg-bar-btn.active,
+html[data-theme="dark"] .kat-item.on,
+html[data-theme="dark"] .tb-roster-item.on,
+html[data-theme="dark"] .osis-sb-filter-btn.has-active,
+html[data-theme="dark"] .osis-sb-panel .filter-chip,
+html[data-theme="dark"] .prog-ico,
+html[data-theme="dark"] .osis-hero .osis-avatar {
+  background: #2e271c;
+  color: var(--ink);
+}
+html[data-theme="dark"] .stat-ico.yellow,
+html[data-theme="dark"] .stat-grid.mode-hadir .stat-card:nth-child(3) .stat-ico,
+html[data-theme="dark"] .agenda-sekbid-tag.sb-t0,
+html[data-theme="dark"] .agenda-status.rencana,
+html[data-theme="dark"] .angg-pill.kelas,
+html[data-theme="dark"] .prof-ico.amber,
+html[data-theme="dark"] .prof-status-pill.warn,
+html[data-theme="dark"] .prof-staged-hint,
+html[data-theme="dark"] .tes-pill.koreksi,
+html[data-theme="dark"] .tb-head-status.warn,
+html[data-theme="dark"] .uk-roster-badge.cicil,
+html[data-theme="dark"] .uk-badge.cicil,
+html[data-theme="dark"] .asp-rule-ico.r-amber,
+html[data-theme="dark"] .misi-ico.m-amber,
+html[data-theme="dark"] .osis-det-mico.amber,
+html[data-theme="dark"] .osis-det-kv-ico.t-amber,
+html[data-theme="dark"] .osis-det-alert.warn,
+html[data-theme="dark"] .feed-kat-kocak,
+html[data-theme="dark"] .hw-chip.kuning {
+  background: #362a16;
+  color: #ffd666;
+}
+html[data-theme="dark"] .prog-ico,
+html[data-theme="dark"] .osis-hero .osis-avatar {
+  color: #ffd666;
+}
+html[data-theme="dark"] .stat-card.izin b,
+html[data-theme="dark"] .stat-grid.mode-hadir .stat-card:nth-child(3) b {
+  color: #ffd666;
+}
+html[data-theme="dark"] .status-badge[style*="#fff3bf"] {
+  background: #362a16 !important;
+  color: #ffd666 !important;
+}
+
+/* ---- Neutral hover, focus, & libur tiles ---- */
+html[data-theme="dark"] .profil-drop:hover,
+html[data-theme="dark"] .profil-drop.dragover,
+html[data-theme="dark"] .tes-opsi-btn:hover,
+html[data-theme="dark"] table.kas-tabel tbody tr:hover td,
+html[data-theme="dark"] .tes-navbtn,
+html[data-theme="dark"] .ww-navbtn,
+html[data-theme="dark"] .ww-nav-legend .sw-biasa,
+html[data-theme="dark"] .uk-cfg-pill.libur,
+html[data-theme="dark"] .uk-badge.libur,
+html[data-theme="dark"] .uk-dot.libur,
+html[data-theme="dark"] .uk-libur-btn.on {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+html[data-theme="dark"] .infv-card.editing [contenteditable="true"]:focus {
+  background: #321d24;
+}
+html[data-theme="dark"] .uk-week.libur {
+  background: repeating-linear-gradient(
+    -45deg,
+    #24202b,
+    #24202b 6px,
+    #2d2836 6px,
+    #2d2836 12px
+  );
+  color: var(--gray);
+}
+
+/* ---- Hero & detail surface gradients ---- */
+html[data-theme="dark"] .dash-panel.panel-info {
+  background: linear-gradient(180deg, #2d251b 0%, var(--white) 90px);
+}
+html[data-theme="dark"] .osis-det-hero,
+html[data-theme="dark"] .tes-hasil-hero {
+  background: linear-gradient(135deg, #2c251d 0%, var(--paper-2) 100%);
+}
+html[data-theme="dark"] .osis-det-hero.tone-masuk {
+  background: linear-gradient(135deg, #152b1f 0%, #1c3a29 100%);
+}
+html[data-theme="dark"] .osis-det-hero.tone-keluar {
+  background: linear-gradient(135deg, #321820 0%, #401d27 100%);
+}
+html[data-theme="dark"] .osis-det-hero.tone-blue {
+  background: linear-gradient(135deg, #172338 0%, #1d2f4d 100%);
+}
+
+/* ---- Mint / green pastel surfaces & readable accents ---- */
+html[data-theme="dark"] .angg-item.saya,
+html[data-theme="dark"] .angg-row.saya,
+html[data-theme="dark"] .uk-person.saya,
+html[data-theme="dark"] .absen-item.done,
+html[data-theme="dark"] .tb-item.pilih,
+html[data-theme="dark"] .not-keputusan,
+html[data-theme="dark"] .tes-rev-kunci,
+html[data-theme="dark"] .osis-det-alert.ok,
+html[data-theme="dark"] .upload-row[data-status="done"],
+html[data-theme="dark"] .pol-open,
+html[data-theme="dark"] .jep-answer.correct,
+html[data-theme="dark"] .jep-feedback.good {
+  background: #143222;
+  color: var(--ink);
+}
+html[data-theme="dark"] .pol-open,
+html[data-theme="dark"] .jep-answer.correct,
+html[data-theme="dark"] .jep-feedback.good,
+html[data-theme="dark"] .tes-rev-kunci,
+html[data-theme="dark"] .osis-det-alert.ok,
+html[data-theme="dark"] .upload-row[data-status="done"] .upload-row-head > i,
+html[data-theme="dark"] .not-keputusan > i,
+html[data-theme="dark"] .not-keputusan b,
+html[data-theme="dark"] .abs-ok .tanda,
+html[data-theme="dark"] .stat-ico.green,
+html[data-theme="dark"] .stat-grid.mode-hadir .stat-card:nth-child(1) .stat-ico,
+html[data-theme="dark"] .stat-grid.mode-hadir .stat-card:nth-child(1) b,
+html[data-theme="dark"] .stat-card.sakit b,
+html[data-theme="dark"] .stat-card.lunas b,
+html[data-theme="dark"] .stat-card.masuk b,
+html[data-theme="dark"] .stat-card.selisih.positif b,
+html[data-theme="dark"] .stat-card.sudah b,
+html[data-theme="dark"] .logs-stat.online b,
+html[data-theme="dark"] .vstat-card.online b,
+html[data-theme="dark"] .vhalaman.on,
+html[data-theme="dark"] .form-feedback.ok,
+html[data-theme="dark"] #notifHasil.ok,
+html[data-theme="dark"] .info-meta-chip.tmp i,
+html[data-theme="dark"] .rekap-nums .m,
+html[data-theme="dark"] .kat-item-amt.masuk,
+html[data-theme="dark"] .nominal.masuk,
+html[data-theme="dark"] .tb-roster-amt,
+html[data-theme="dark"] .uk-hist-main b,
+html[data-theme="dark"] .uk-auto-preview,
+html[data-theme="dark"] .osis-det-amount.masuk {
+  color: #7ce8a8;
+}
+html[data-theme="dark"] .abs-ok .tanda,
+html[data-theme="dark"] .stat-ico.green,
+html[data-theme="dark"] .stat-grid.mode-hadir .stat-card:nth-child(1) .stat-ico,
+html[data-theme="dark"] .tipe-tabs button.on-hadir,
+html[data-theme="dark"] .jenis.sakit,
+html[data-theme="dark"] .jenis.hadir,
+html[data-theme="dark"] .hadir-num,
+html[data-theme="dark"] .qr-item .dot,
+html[data-theme="dark"] .aks-check.on,
+html[data-theme="dark"] .agenda-sekbid-tag.sb-t2,
+html[data-theme="dark"] .agenda-status.selesai,
+html[data-theme="dark"] .tl-status.selesai,
+html[data-theme="dark"] .angg-item.linked .angg-ava,
+html[data-theme="dark"] .angg-row.linked .ava,
+html[data-theme="dark"] .angg-pill.user-ok,
+html[data-theme="dark"] .uname,
+html[data-theme="dark"] .angg-det-ava.linked,
+html[data-theme="dark"] .dok-ico.xls,
+html[data-theme="dark"] .tag.green,
+html[data-theme="dark"] .ig-green,
+html[data-theme="dark"] .ng-green,
+html[data-theme="dark"] .osis-badge.surplus,
+html[data-theme="dark"] .rekap-net.plus,
+html[data-theme="dark"] .saldo-status-pill.surplus,
+html[data-theme="dark"] .jenis.masuk,
+html[data-theme="dark"] .jenis-toggle button.on-masuk,
+html[data-theme="dark"] .logs-card h3 .cnt,
+html[data-theme="dark"] .osis-badge.prof-badge-ang,
+html[data-theme="dark"] .prof-status-pill.ok,
+html[data-theme="dark"] .prof-pw-feedback.ok,
+html[data-theme="dark"] .prog-tag.selesai,
+html[data-theme="dark"] .tb-roster-badge.lunas,
+html[data-theme="dark"] .tb-meta-pill.ok,
+html[data-theme="dark"] .cek-btn.on,
+html[data-theme="dark"] .tb-dipilih,
+html[data-theme="dark"] .uk-roster-badge.lunas,
+html[data-theme="dark"] .uk-person.lunas .uk-ava,
+html[data-theme="dark"] .uk-badge.lunas,
+html[data-theme="dark"] .uk-dot.lunas,
+html[data-theme="dark"] .uk-week.lunas,
+html[data-theme="dark"] .uk-libur-btn .tag,
+html[data-theme="dark"] .tes-pill.aktif,
+html[data-theme="dark"] .tes-bs-btn.benar.selected,
+html[data-theme="dark"] .tes-key-pick.on,
+html[data-theme="dark"] .ww-st-selesai,
+html[data-theme="dark"] .ww-stxt-selesai,
+html[data-theme="dark"] .ww-savetxt,
+html[data-theme="dark"] .hw-chip.hijau,
+html[data-theme="dark"] .misi-ico.m-green,
+html[data-theme="dark"] .infv-badge.k-libur,
+html[data-theme="dark"] .sm-stat-pill.mint,
+html[data-theme="dark"] .sm-replied-pill,
+html[data-theme="dark"] .osis-det-mico.green,
+html[data-theme="dark"] .osis-det-chip.green,
+html[data-theme="dark"] .osis-det-kv-ico.t-green,
+html[data-theme="dark"] .vault-req .st.setuju,
+html[data-theme="dark"] .gal-save {
+  background: #143222;
+  color: #7ce8a8;
+}
+html[data-theme="dark"] #polStatusBadge[style*="#d6f5d6"],
+html[data-theme="dark"] #polStatusBadge[style*="214, 245, 214"] {
+  background: #143222 !important;
+  color: #7ce8a8 !important;
+}
+html[data-theme="dark"] #polStatusBadge[style*="#ffe1e4"],
+html[data-theme="dark"] #polStatusBadge[style*="255, 225, 228"] {
+  background: #3a1922 !important;
+  color: #ff8c99 !important;
+}
+
+/* ---- Red / rose pastel surfaces ---- */
+html[data-theme="dark"] .abs-ok .tanda.gagal,
+html[data-theme="dark"] .stat-ico.red,
+html[data-theme="dark"] .tipe-tabs button.on-tidak,
+html[data-theme="dark"] .abs-chip:hover,
+html[data-theme="dark"] .jenis.alpha,
+html[data-theme="dark"] .qr-item.gagal,
+html[data-theme="dark"] .agenda-chip:hover,
+html[data-theme="dark"] .agenda-preview-item .agenda-preview-del,
+html[data-theme="dark"] .agenda-sekbid-tag.sb-t3,
+html[data-theme="dark"] .agenda-status.belum_tindaklanjut,
+html[data-theme="dark"] .tl-status.belum,
+html[data-theme="dark"] .notulensi-preview-del,
+html[data-theme="dark"] .tl-del,
+html[data-theme="dark"] .angg-item.unlinked .angg-ava,
+html[data-theme="dark"] .angg-det-ava.unlinked,
+html[data-theme="dark"] .dok-chip:hover,
+html[data-theme="dark"] .dok-ico.pdf,
+html[data-theme="dark"] .dok-kat-pill,
+html[data-theme="dark"] .kmb-cell.out,
+html[data-theme="dark"] .osis-badge.defisit,
+html[data-theme="dark"] .rekap-net.minus,
+html[data-theme="dark"] .saldo-status-pill.defisit,
+html[data-theme="dark"] .jenis.keluar,
+html[data-theme="dark"] .jenis-toggle button.on-keluar,
+html[data-theme="dark"] .prof-ico.red,
+html[data-theme="dark"] .prof-status-pill.del,
+html[data-theme="dark"] .prof-pw-feedback.err,
+html[data-theme="dark"] .prog-tag.batal,
+html[data-theme="dark"] .tb-roster-badge.belum,
+html[data-theme="dark"] .tb-meta-pill.warn,
+html[data-theme="dark"] .uk-roster-badge.nunggak,
+html[data-theme="dark"] .uk-person.nunggak .uk-ava,
+html[data-theme="dark"] .uk-badge.nunggak,
+html[data-theme="dark"] .uk-dot.belum,
+html[data-theme="dark"] .uk-week.belum,
+html[data-theme="dark"] .tes-pill.ditutup,
+html[data-theme="dark"] .tes-bs-btn.salah.selected,
+html[data-theme="dark"] .login-shell .login-error,
+html[data-theme="dark"] .feed-kat-aib,
+html[data-theme="dark"] .feed-del,
+html[data-theme="dark"] .hw-chip.merah,
+html[data-theme="dark"] .hw-ka-x:hover,
+html[data-theme="dark"] .hw-detail.hw-tidak_lolos .hw-detail-head,
+html[data-theme="dark"] .jep-answer.wrong,
+html[data-theme="dark"] .jep-feedback.bad,
+html[data-theme="dark"] .pol-closed,
+html[data-theme="dark"] .misi-ico.m-red,
+html[data-theme="dark"] .infv-badge.k-penting,
+html[data-theme="dark"] .sm-stat-pill.red,
+html[data-theme="dark"] .asp-rule-ico.r-red,
+html[data-theme="dark"] .sm-form-head-ico.red,
+html[data-theme="dark"] .asp-priv-box:has(input:checked),
+html[data-theme="dark"] .sm-priv-pill,
+html[data-theme="dark"] .osis-det-mico.red,
+html[data-theme="dark"] .osis-det-chip.red,
+html[data-theme="dark"] .osis-det-kv-ico.t-red,
+html[data-theme="dark"] .form-feedback.err,
+html[data-theme="dark"] .upload-row[data-status="error"],
+html[data-theme="dark"] #uploadBar[data-status="error"],
+html[data-theme="dark"] .gal-del,
+html[data-theme="dark"] .edit-del-btn,
+html[data-theme="dark"] .item .foto-del-btn,
+html[data-theme="dark"] .prestasi-card .foto-del-btn,
+html[data-theme="dark"] .side-btn.del {
+  background: #3a1922;
+  color: #ff8c99;
+}
+html[data-theme="dark"] .asp-priv-box:has(input:checked) {
+  color: var(--ink);
+}
+
+/* ---- Blue / cyan pastel surfaces ---- */
+html[data-theme="dark"] .stat-ico.blue,
+html[data-theme="dark"] .stat-grid.mode-hadir .stat-card:nth-child(2) .stat-ico,
+html[data-theme="dark"] .agenda-sekbid-tag.sb-t1,
+html[data-theme="dark"] .agenda-meta .a-chip.foto-badge,
+html[data-theme="dark"] .angg-pill.jab,
+html[data-theme="dark"] .dok-ico.doc,
+html[data-theme="dark"] .ig-blue,
+html[data-theme="dark"] .ng-blue,
+html[data-theme="dark"] .osis-badge.info-badge-jadwal,
+html[data-theme="dark"] .info-pin-pill.jadwal,
+html[data-theme="dark"] .kas-mini-tag.bukti,
+html[data-theme="dark"] .osis-badge.prof-badge-sekbid,
+html[data-theme="dark"] .prof-ico.blue,
+html[data-theme="dark"] .prog-tag.berjalan,
+html[data-theme="dark"] .tes-pill.kat,
+html[data-theme="dark"] .feed-kat-serius,
+html[data-theme="dark"] .misi-ico.m-blue,
+html[data-theme="dark"] .infv-badge.k-pengumuman,
+html[data-theme="dark"] .asp-rule-ico.r-blue,
+html[data-theme="dark"] .vmode.app,
+html[data-theme="dark"] .osis-det-mico.blue,
+html[data-theme="dark"] .osis-det-chip.blue,
+html[data-theme="dark"] .osis-det-kv-ico.t-blue {
+  background: #182742;
+  color: #8ab8ff;
+}
+html[data-theme="dark"] .stat-grid.mode-hadir .stat-card:nth-child(2) b,
+html[data-theme="dark"] .agenda-meta .a-chip.foto-badge i,
+html[data-theme="dark"] .tes-rev-bahas,
+html[data-theme="dark"] .vstat-card.app b {
+  color: #8ab8ff;
+}
+html[data-theme="dark"] .uk-roster-badge.dimuka,
+html[data-theme="dark"] .uk-badge.dimuka,
+html[data-theme="dark"] .uk-dot.dimuka,
+html[data-theme="dark"] .uk-week.dimuka {
+  background: #142c3b;
+  color: #7ad0ff;
+}
+
+/* ---- Purple, orange, & pink pastel surfaces ---- */
+html[data-theme="dark"] .agenda-sekbid-tag.sb-t4,
+html[data-theme="dark"] .dok-ico.img,
+html[data-theme="dark"] .osis-det-kv-ico.t-purple {
+  background: #2b1e42;
+  color: #c4a5ff;
+}
+html[data-theme="dark"] .agenda-sekbid-tag.sb-t5,
+html[data-theme="dark"] .ig-orange,
+html[data-theme="dark"] .ng-orange,
+html[data-theme="dark"] .vmode.browser,
+html[data-theme="dark"] .infv-badge.k-acara,
+html[data-theme="dark"] .dok-ico.ppt {
+  background: #362214;
+  color: #ffaf66;
+}
+html[data-theme="dark"] .vstat-card.browser b,
+html[data-theme="dark"] .info-meta-chip.bawa i {
+  color: #ffaf66;
+}
+html[data-theme="dark"] .ig-pink,
+html[data-theme="dark"] .ng-pink {
+  background: #3a1829;
+  color: #ff85b3;
+}
+
+/* ---- Bright yellow cards/buttons (contrast guard) ---- */
+html[data-theme="dark"] .tes-navbtn.ragu,
+html[data-theme="dark"] .ww-atur-row.penting,
+html[data-theme="dark"] .ww-nv-anak,
+html[data-theme="dark"] .ww-nav-legend .sw-anak,
+html[data-theme="dark"] .tes-sw.aktif {
+  background: linear-gradient(180deg, #ffe45c, #ffc81a);
+  color: var(--on-yellow);
+}
+html[data-theme="dark"] .tes-sw.aktif {
+  background: var(--yellow);
+  color: var(--on-yellow);
+}
+html[data-theme="dark"] .osis-panel.ww-card-penting {
+  background: #332914;
+  border-color: var(--yellow);
+  color: var(--ink);
+}

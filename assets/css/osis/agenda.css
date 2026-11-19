@@ -3,7 +3,7 @@
 /* ===== Hero ===== */
 .agenda-hero .agenda-hero-ico {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .agenda-kicker {
   display: inline-flex;
@@ -30,10 +30,10 @@
 }
 .stat-card {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 13px 14px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   min-width: 0;
 }
 .stat-head {
@@ -45,7 +45,7 @@
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 0.82rem;
@@ -125,10 +125,10 @@
   align-items: center;
   gap: 8px;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 7px 11px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   cursor: pointer;
   font-family: inherit;
   color: var(--ink);
@@ -144,13 +144,14 @@
 }
 .sekbid-rail-btn.active {
   background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
+  color: var(--on-yellow);
 }
 .sekbid-rail-ico {
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   color: var(--red);
   display: grid;
@@ -190,7 +191,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   background: var(--red);
   flex-shrink: 0;
   display: none;
@@ -202,10 +203,10 @@
 @media (min-width: 960px) {
   .sekbid-panel {
     background: var(--white);
-    border: 3px solid var(--ink);
+    border: 3px solid var(--bd);
     border-radius: 18px;
     padding: 12px;
-    box-shadow: 4px 4px 0 var(--ink);
+    box-shadow: 4px 4px 0 var(--sh);
   }
   .sekbid-panel-head {
     display: flex;
@@ -226,7 +227,7 @@
     margin-right: 4px;
   }
   .sekbid-total-pill {
-    background: var(--ink);
+    background: var(--inv-bg);
     color: var(--yellow);
     border-radius: 999px;
     padding: 2px 8px;
@@ -250,11 +251,11 @@
   }
   .sekbid-rail-btn:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 2px 2px 0 var(--ink);
+    box-shadow: 2px 2px 0 var(--sh);
   }
   .sekbid-rail-btn.active {
     border-width: 2.5px;
-    box-shadow: 3px 3px 0 var(--ink);
+    box-shadow: 3px 3px 0 var(--sh);
     transform: translate(-1px, -1px);
   }
   .sekbid-rail-txt {
@@ -272,11 +273,11 @@
 }
 .agenda-view-toggle {
   display: inline-flex;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   overflow: hidden;
   background: var(--paper-2);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -292,11 +293,11 @@
   font-size: 0.85rem;
 }
 .agenda-view-btn + .agenda-view-btn {
-  border-left: 2px solid var(--ink);
+  border-left: 2px solid var(--bd);
 }
 .agenda-view-btn.active {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 
 /* ===== Bar Info Hasil & Chip Filter Aktif ===== */
@@ -333,10 +334,10 @@
   font-weight: 800;
   background: var(--white);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 3px 10px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   cursor: pointer;
 }
 .agenda-chip:hover {
@@ -363,9 +364,9 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   padding: 9px 13px;
   font-size: 0.82rem;
@@ -390,16 +391,16 @@
 .agenda-grup-count {
   background: var(--red);
   color: #fff;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 800;
   padding: 2px 10px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .agenda-hari-head .agenda-grup-count {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   border-color: var(--yellow);
   box-shadow: none;
 }
@@ -451,10 +452,10 @@
 /* ===== Kartu Agenda ===== */
 .agenda-card {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 13px 14px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -467,7 +468,7 @@
 @media (hover: hover) {
   .agenda-card:hover {
     transform: translate(-1.5px, -1.5px);
-    box-shadow: 5px 5px 0 var(--ink);
+    box-shadow: 5px 5px 0 var(--sh);
   }
 }
 .agenda-card-top {
@@ -481,7 +482,7 @@
   align-items: center;
   gap: 5px;
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   font-size: 0.63rem;
   font-weight: 900;
@@ -540,7 +541,7 @@
   display: block;
   width: 100%;
   height: 88px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   overflow: hidden;
   background: var(--paper-2);
@@ -608,7 +609,7 @@
   align-items: center;
   gap: 4px;
   background: var(--paper-2);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.66rem;
@@ -725,7 +726,7 @@
   width: 90px;
   height: 90px;
   object-fit: cover;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   display: block;
 }
@@ -742,9 +743,9 @@
   display: grid;
   place-items: center;
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 8px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   color: var(--ink);
   font-size: 0.82rem;
   cursor: pointer;
@@ -760,9 +761,9 @@
   right: 0;
   min-width: 136px;
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   padding: 4px;
   display: flex;
   flex-direction: column;
@@ -837,7 +838,7 @@
 }
 .agenda-empty-card {
   background: var(--white);
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 16px;
   padding: 26px 18px;
   text-align: center;
@@ -894,7 +895,7 @@
 .agenda-form-inner {
   width: min(460px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 18px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
@@ -907,7 +908,7 @@
   transform: scale(1) translateY(0);
 }
 .agenda-drop {
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 14px;
   background: var(--paper-2);
   height: 120px;
@@ -952,7 +953,7 @@
   width: 90px;
   height: 90px;
   object-fit: cover;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   display: block;
 }
@@ -962,7 +963,7 @@
   right: -6px;
   width: 22px;
   height: 22px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 50%;
   background: #ffe9e9;
   color: var(--red-dark);
@@ -970,7 +971,7 @@
   place-items: center;
   font-size: 0.6rem;
   cursor: pointer;
-  box-shadow: 1px 1px 0 var(--ink);
+  box-shadow: 1px 1px 0 var(--sh);
   line-height: 1;
 }
 .agenda-preview-item .agenda-preview-del:active {
@@ -1003,7 +1004,7 @@
 .agenda-detail-inner {
   width: min(580px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 18px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
@@ -1017,10 +1018,10 @@
 }
 .agenda-detail-stage {
   position: relative;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   overflow: hidden;
-  background: var(--ink);
+  background: var(--inv-bg);
 }
 .agenda-detail-stage img {
   width: 100%;
@@ -1036,7 +1037,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--white);
   color: var(--ink);
   display: grid;
@@ -1069,7 +1070,7 @@
   width: 64px;
   height: 64px;
   object-fit: cover;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   cursor: pointer;
   flex-shrink: 0;

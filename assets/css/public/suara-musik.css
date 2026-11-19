@@ -1,0 +1,567 @@
+/* public/suara-musik.css -- redesign view #/aspirasi & #/musik (neo-brutalism) */
+
+/* ===== Public Section Head & Status Pills (#/aspirasi & #/musik) ===== */
+[data-view="aspirasi"] .sec-head,
+[data-view="musik"] .sec-head {
+  flex-wrap: wrap;
+}
+.sm-head-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sm-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 2.5px solid var(--bd);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-size: 0.74rem;
+  font-weight: 900;
+  box-shadow: 2.5px 2.5px 0 var(--sh);
+  white-space: nowrap;
+}
+.sm-stat-pill.yellow {
+  background: var(--yellow);
+  color: var(--on-yellow);
+}
+.sm-stat-pill.mint {
+  background: #dcfce7;
+  color: #14532d;
+}
+.sm-stat-pill.red {
+  background: #ffe4e6;
+  color: var(--red-dark);
+}
+.sm-stat-pill.live {
+  background: var(--inv-bg);
+  color: var(--yellow);
+}
+.sm-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4cd97b;
+  box-shadow: 0 0 0 2px rgba(76, 217, 123, 0.35);
+}
+
+/* ===== Rules Strip: Aspirasi ===== */
+.asp-rules {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+@media (min-width: 680px) {
+  .asp-rules {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+.asp-rule-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  background: var(--white);
+  border: 2.5px solid var(--bd);
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 var(--sh);
+  min-width: 0;
+}
+.asp-rule-ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  border: 2px solid var(--bd);
+  display: grid;
+  place-items: center;
+  font-size: 0.96rem;
+  flex-shrink: 0;
+}
+.asp-rule-ico.r-red { background: #ffe4e6; color: var(--red-dark); }
+.asp-rule-ico.r-blue { background: #dbeafe; color: #1d4ed8; }
+.asp-rule-ico.r-amber { background: #fef3c7; color: #b45309; }
+.asp-rule-card h5 {
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+.asp-rule-card p {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gray);
+  margin: 2px 0 0;
+  line-height: 1.38;
+}
+
+/* ===== Unified Rules + Note Panel: Request Lagu ===== */
+.lagu-rules-box {
+  background: var(--white);
+  border: 3px solid var(--bd);
+  border-radius: 20px;
+  box-shadow: 4px 4px 0 var(--sh);
+  padding: 16px;
+  margin-bottom: 18px;
+}
+.lagu-rules-box .rule-info-head {
+  margin-bottom: 12px;
+}
+.lagu-rules-box .rule-info-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+@media (min-width: 760px) {
+  .lagu-rules-box .rule-info-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.lagu-rules-box .rule-info-item {
+  flex-direction: row;
+  align-items: flex-start;
+  background: var(--paper);
+  border: 2px solid var(--bd);
+  border-radius: 14px;
+  padding: 11px 12px;
+}
+.lagu-rules-box .rule-info-item h5 {
+  font-size: 0.76rem;
+}
+.lagu-rules-box .rule-info-item p {
+  font-size: 0.72rem;
+}
+.lagu-rule-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #fffbeb;
+  border: 2px dashed var(--bd);
+  border-radius: 13px;
+}
+.lagu-rule-note .rule-note-ico {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+}
+.lagu-rule-note p {
+  font-size: 0.73rem;
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 2px 0 0;
+}
+
+/* ===== Workspace 2-Kolom Proporsional (Aspirasi & Request Lagu) ===== */
+.sm-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+@media (min-width: 960px) {
+  .sm-cols {
+    grid-template-columns: minmax(340px, 0.92fr) minmax(0, 1.08fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .sm-form-col {
+    position: sticky;
+    top: calc(var(--osis-nav-h, 76px) + 16px);
+  }
+}
+
+.sm-form-col .form-card {
+  margin-top: 0;
+  border-radius: 20px;
+  box-shadow: 5px 5px 0 var(--sh);
+  transition: background 0.16s ease, box-shadow 0.16s ease;
+}
+.sm-form-col .form-card.is-editing {
+  background: #fffdf0;
+  box-shadow: 5px 5px 0 var(--red);
+}
+.sm-form-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 2px dashed var(--line);
+}
+.sm-form-head-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 2px solid var(--bd);
+  background: var(--yellow);
+  color: var(--on-yellow);
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  box-shadow: 2px 2px 0 var(--sh);
+  flex-shrink: 0;
+}
+.sm-form-head-ico.red {
+  background: #ffe4e6;
+  color: var(--red-dark);
+}
+.sm-form-head-title {
+  font-size: 0.92rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  margin: 0;
+}
+.sm-form-head-sub {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gray);
+  margin-top: 1px;
+}
+
+.sm-field-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+@media (min-width: 560px) {
+  .sm-field-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.sm-field-grid .field {
+  margin-bottom: 0;
+}
+.sm-lbl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.sm-lbl-row label {
+  margin-bottom: 0;
+}
+.sm-char-cnt {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--gray);
+  font-variant-numeric: tabular-nums;
+}
+.sm-char-cnt.full {
+  color: var(--red-dark);
+}
+
+/* Toggle Private Aspirasi */
+.asp-priv-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2.5px solid var(--bd);
+  border-radius: 13px;
+  background: var(--paper);
+  cursor: pointer;
+  transition: background 0.14s ease, box-shadow 0.14s ease;
+}
+.asp-priv-box:has(input:checked) {
+  background: #ffe9eb;
+  box-shadow: 3px 3px 0 var(--red);
+}
+.asp-priv-box input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--red);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.asp-priv-copy {
+  min-width: 0;
+  flex: 1;
+}
+.asp-priv-copy b {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: var(--ink);
+}
+.asp-priv-copy b i {
+  color: var(--red);
+}
+.asp-priv-copy small {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--gray);
+  margin-top: 1px;
+}
+
+/* ===== Feed Card & Search/Filter Toolbar ===== */
+.sm-feed-card {
+  border-radius: 20px;
+  box-shadow: 5px 5px 0 var(--sh);
+  padding: 18px;
+}
+.sm-feed-card .pesan-head {
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 2px dashed var(--line);
+}
+.sm-feed-card .pesan-head h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.94rem;
+}
+.sm-feed-card .pesan-head h4 i {
+  color: var(--red);
+}
+
+.sm-list-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+.sm-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.sm-search-ico {
+  position: absolute;
+  left: 12px;
+  font-size: 0.82rem;
+  color: var(--gray);
+  pointer-events: none;
+}
+.sm-search-inp {
+  width: 100%;
+  border: 2.5px solid var(--bd);
+  border-radius: 12px;
+  padding: 8px 34px 8px 35px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--paper);
+  outline: none;
+  transition: background 0.14s ease, box-shadow 0.14s ease;
+}
+.sm-search-inp:focus {
+  background: var(--white);
+  box-shadow: 3px 3px 0 var(--yellow);
+}
+.sm-search-clr {
+  position: absolute;
+  right: 7px;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gray);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.sm-search-clr:hover {
+  color: var(--ink);
+  background: var(--paper-2);
+}
+
+.sm-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sm-pill {
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 2px solid var(--bd);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.sm-pill:hover {
+  background: var(--paper-2);
+}
+.sm-pill.active {
+  background: var(--inv-bg);
+  color: var(--yellow);
+}
+
+.sm-feed-card .pesan-list {
+  max-height: none;
+  overflow-y: visible;
+  padding-right: 0;
+}
+@media (min-width: 960px) {
+  .sm-feed-card .pesan-list {
+    max-height: 760px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+}
+
+/* ===== Item Pesan Aspirasi Enhanced ===== */
+[data-view="aspirasi"] .pesan-item {
+  border: 2.5px solid var(--bd);
+  border-radius: 16px;
+  padding: 13px 14px;
+  background: var(--paper);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease;
+}
+[data-view="aspirasi"] .pesan-item:first-child {
+  background: var(--white);
+  box-shadow: 3px 3px 0 var(--sh);
+}
+[data-view="aspirasi"] .pesan-item:hover {
+  background: var(--white);
+}
+[data-view="aspirasi"] .pesan-meta {
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.sm-ava {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid var(--bd);
+  background: var(--yellow);
+  color: var(--on-yellow);
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.sm-priv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1.5px solid var(--bd);
+  background: #ffe4e6;
+  color: var(--red-dark);
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.sm-replied-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1.5px solid var(--bd);
+  background: #dcfce7;
+  color: #14532d;
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* ===== Item Playlist Lagu Enhanced ===== */
+[data-view="musik"] .lagu-item {
+  align-items: flex-start;
+  gap: 12px;
+  border: 2.5px solid var(--bd);
+  border-radius: 16px;
+  padding: 12px 13px;
+  background: var(--paper);
+}
+[data-view="musik"] .lagu-item:first-child {
+  background: var(--white);
+  box-shadow: 3px 3px 0 var(--sh);
+}
+[data-view="musik"] .lagu-item.selesai {
+  background: var(--green-bg);
+  border-color: var(--green);
+}
+[data-view="musik"] .lagu-cover {
+  margin-top: 2px;
+}
+[data-view="musik"] .lagu-title {
+  white-space: normal;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.94rem;
+}
+.lagu-badge-queue {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1.5px solid var(--bd);
+  background: var(--yellow);
+  color: var(--on-yellow);
+  white-space: nowrap;
+}
+[data-view="musik"] .lagu-artis {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  color: #4b4345;
+  font-weight: 700;
+}
+[data-view="musik"] .lagu-artis i {
+  font-size: 0.7rem;
+  color: var(--red);
+}
+[data-view="musik"] .lagu-pesan {
+  margin-top: 7px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1.5px dashed var(--line);
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+[data-view="musik"] .lagu-pesan i {
+  color: var(--red);
+  margin-right: 5px;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 560px) {
+  .sm-feed-card {
+    padding: 14px;
+  }
+  [data-view="musik"] .lagu-cover {
+    width: 48px;
+    height: 48px;
+  }
+  [data-view="musik"] .lagu-kaset {
+    width: 30px;
+    height: 30px;
+  }
+}

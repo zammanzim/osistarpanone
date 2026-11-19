@@ -264,6 +264,19 @@
     } catch (e) {}
   }
 
+  // ---- 6) Manajemen tema — muat assets/js/shared/utilities/theme.js ----
+  function muatTheme() {
+    try {
+      if (window.TarpanTheme || document.querySelector('script[data-theme-js]')) return;
+      var dalamSub = location.pathname.split("/").filter(Boolean).length > 1;
+      var s = document.createElement("script");
+      s.src = (dalamSub ? "../" : "") + "assets/js/shared/utilities/theme.js";
+      s.defer = true;
+      s.setAttribute("data-theme-js", "1");
+      document.head.appendChild(s);
+    } catch (e) {}
+  }
+
   // Pesan dari SW (Background Sync) — teruskan ke Outbox bila sudah termuat.
   try {
     if ("serviceWorker" in navigator) {
@@ -282,6 +295,7 @@
     muatOutbox();
     muatPush();
     muatContextMenu();
+    muatTheme();
   });
 
   // Buat HeaderMore (titik-tiga mobile): kapan menu boleh tampil.

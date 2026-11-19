@@ -1,6 +1,6 @@
 /* osis-logs.css -- layout dasar dari osis2.css, style khusus modul logs di sini. */
 .osis-hero .osis-avatar {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
 }
       .logs-stats {
@@ -15,10 +15,10 @@
       }
       .logs-stat {
         background: var(--white);
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 14px;
         padding: 10px 8px;
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
         text-align: center;
         min-width: 0;
       }
@@ -38,10 +38,10 @@
       .logs-stat.online b { color: #146314; }
       .logs-card {
         background: var(--white);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 18px;
         padding: 14px 16px;
-        box-shadow: 4px 4px 0 var(--ink);
+        box-shadow: 4px 4px 0 var(--sh);
       }
       .logs-card h3 {
         font-size: 0.82rem;
@@ -58,7 +58,7 @@
         margin-left: auto;
         background: #d6f5d6;
         color: #146314;
-        border: 1.5px solid var(--ink);
+        border: 1.5px solid var(--bd);
         border-radius: 999px;
         padding: 1px 10px;
         font-size: 0.68rem;
@@ -75,7 +75,7 @@
         font-size: 0.72rem;
         font-weight: 800;
         background: var(--paper-2);
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 999px;
         padding: 4px 12px 4px 8px;
       }
@@ -87,10 +87,10 @@
       }
       .logs-item {
         background: var(--white);
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 14px;
         padding: 10px 12px;
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
         margin-bottom: 8px;
       }
       .logs-item-head {
@@ -130,7 +130,7 @@
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        background: var(--ink);
+        background: var(--inv-bg);
         color: #fff;
         border-radius: 999px;
         padding: 3px 10px;

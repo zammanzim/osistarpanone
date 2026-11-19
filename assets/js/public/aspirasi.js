@@ -11,10 +11,32 @@ const Aspirasi = {
     habis: false,
     loading: false,
     editingId: null,
+    q: "",
+    filter: "semua", // semua | dibalas | private
 
     async init() {
         if (Aspirasi.terinisialisasi) return;
         Aspirasi.terinisialisasi = true;
+        document.getElementById("isiAspirasi")?.addEventListener("input", () => Aspirasi.syncChar());
+        document.getElementById("aspSearchQ")?.addEventListener("input", (e) => {
+            Aspirasi.q = e.target.value || "";
+            Aspirasi.render();
+        });
+        document.getElementById("aspClearQ")?.addEventListener("click", () => {
+            const inp = document.getElementById("aspSearchQ");
+            if (inp) { inp.value = ""; inp.focus(); }
+            Aspirasi.q = "";
+            Aspirasi.render();
+        });
+        document.getElementById("aspFilterPills")?.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-asp-filter]");
+            if (!btn) return;
+            Aspirasi.filter = btn.dataset.aspFilter || "semua";
+            Aspirasi.render();
+        });
+        Aspirasi.syncChar();
+        Aspirasi.syncStatusBadge();
+
         // Render cache dulu (wajib saat offline), sisanya jalan background.
         try { Aspirasi.muatPesan(true); } catch {}
         if (typeof OsisAuth.refreshAkses === "function") {
@@ -23,6 +45,7 @@ const Aspirasi = {
         try {
             Aspirasi.status = await cekStatusAspirasi();
         } catch { Aspirasi.status = "BUKA"; }
+        Aspirasi.syncStatusBadge();
         if (Aspirasi.status === "TUTUP") Aspirasi.kunciFormulir();
         try { Aspirasi.muatPesan(true); } catch {}
         // Autosave balasan inline (blur) + ESC buat batal
@@ -109,20 +132,72 @@ const Aspirasi = {
         }
     },
 
+    syncChar() {
+        const isi = document.getElementById("isiAspirasi");
+        const cnt = document.getElementById("aspCharCnt");
+        if (!cnt) return;
+        const n = (isi && isi.value ? isi.value : "").length;
+        cnt.textContent = `${n} karakter`;
+    },
+
+    syncStatusBadge() {
+        const el = document.getElementById("aspStatusBadge");
+        if (!el) return;
+        const tutup = Aspirasi.status === "TUTUP";
+        el.className = "sm-stat-pill " + (tutup ? "red" : "mint");
+        el.innerHTML = tutup
+            ? `<i class="fa-solid fa-lock"></i> Sedang Ditutup`
+            : `<i class="fa-solid fa-unlock"></i> Kotak Dibuka`;
+    },
+
+    syncTools(isOsis) {
+        const privPill = document.getElementById("aspFilterPrivate");
+        if (privPill) privPill.style.display = isOsis ? "" : "none";
+        if (!isOsis && Aspirasi.filter === "private") Aspirasi.filter = "semua";
+        const clr = document.getElementById("aspClearQ");
+        if (clr) clr.style.display = String(Aspirasi.q || "").trim() ? "" : "none";
+        document.querySelectorAll("#aspFilterPills [data-asp-filter]").forEach(btn => {
+            btn.classList.toggle("active", (btn.dataset.aspFilter || "semua") === Aspirasi.filter);
+        });
+    },
+
+    resetFilter() {
+        const inp = document.getElementById("aspSearchQ");
+        if (inp) inp.value = "";
+        Aspirasi.q = "";
+        Aspirasi.filter = "semua";
+        Aspirasi.render();
+    },
+
     render() {
         const list = document.getElementById("daftarPesan");
         if (!list) return;
         const data = Aspirasi.cache || [];
         const isOsis = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()?.mode === "osis");
+        Aspirasi.syncTools(isOsis);
+
         const visible = isOsis ? data : (data || []).filter(p => !p.is_private);
+        const q = String(Aspirasi.q || "").trim().toLowerCase();
+        const filtered = visible.filter(p => {
+            if (Aspirasi.filter === "dibalas" && !String(p.balasan || "").trim()) return false;
+            if (Aspirasi.filter === "private" && !p.is_private) return false;
+            if (q && ![p.isi, p.nama, p.kelas, p.balasan].some(v => String(v || "").toLowerCase().includes(q))) {
+                return false;
+            }
+            return true;
+        });
+
+        const hasFilter = !!(q || Aspirasi.filter !== "semua");
+        const heroCnt = document.getElementById("aspHeroCount");
+        if (heroCnt) heroCnt.textContent = String(visible.length);
         const jum = document.getElementById("jumPesan");
-        if (jum) jum.textContent = visible.length;
-        // sentinel infinite-scroll + tombol manual (fallback tanpa IO)
+        if (jum) jum.textContent = hasFilter ? `${filtered.length}/${visible.length}` : String(visible.length);
+
         const kaki = data.length
             ? `<div style="text-align:center; padding:12px 4px">`
                 + (Aspirasi.habis
                     ? `<small style="color:var(--gray); font-weight:700">— Semua suara sudah dimuat —</small>`
-                    : `<button class="btn btn-white btn-sm" onclick="Aspirasi.muatPesan(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
+                    : `<button type="button" class="btn btn-white btn-sm" onclick="Aspirasi.muatPesan(false)"><i class="fa-solid fa-angles-down"></i> Muat lagi</button>`)
                 + `</div><div id="aspSentinel" style="height:8px"></div>`
             : "";
         const arm = () => {
@@ -137,13 +212,21 @@ const Aspirasi = {
             arm();
             return;
         }
+        if (!filtered.length) {
+            list.innerHTML = `<div class="pesan-empty" style="text-align:center;padding:20px 12px">
+                <i class="fa-solid fa-magnifying-glass"></i> Tidak ada suara yang cocok dengan filter ini.
+                <div style="margin-top:10px"><button type="button" class="btn btn-white btn-sm" onclick="Aspirasi.resetFilter()"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button></div>
+            </div>` + kaki;
+            arm();
+            return;
+        }
         {
             const deviceId = getDeviceId();
             const batasHapus = Date.now() - 3600000;
             const groups = [];
             let curKey = null;
             let curGroup = null;
-            visible.forEach(p => {
+            filtered.forEach(p => {
                 const key = new Date(p.created_at).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
                 if (key !== curKey) {
                     curKey = key;
@@ -157,32 +240,31 @@ const Aspirasi = {
                 const sep = `<div class="pesan-date-sep"><span>${g.display}</span><span class="pesan-date-line"></span></div>`;
                 const items = g.items.map(p => {
                     const own = p.device_id === deviceId && new Date(p.created_at).getTime() > batasHapus;
-                    // Admin (OSIS): tombol edit/hapus cuma muncul pas edit mode aktif
-                    // DAN punya kendali halaman aspirasi.
-                    // Pengunjung biasa: tetap seperti dulu (pesan sendiri <1 jam).
                     const editMode = document.body.classList.contains("edit-mode");
                     const canKelola = isOsis
                         ? (editMode && OsisAuth.bisa && OsisAuth.bisa("aspirasi"))
                         : own;
-                    // Balas: super_admin + admin yang dikasih hak aspirasi.
-                    // Tanpa edit mode (kayak tombol selesai di lagu) biar
-                    // gampang bales kapan aja.
                     const canBalas = isOsis && (OsisAuth.isSuper() || (OsisAuth.bisa && OsisAuth.bisa("aspirasi")));
-                    const lock = p.is_private ? `<span title="Private — hanya OSIS" style="color:var(--red);font-size:0.7rem"><i class="fa-solid fa-lock"></i> Private</span>` : "";
+                    const namaTxt = String(p.nama || "Anonim").trim() || "Anonim";
+                    const initChar = namaTxt.charAt(0).toUpperCase() || "A";
+                    const lock = p.is_private ? `<span class="sm-priv-pill" title="Private — hanya OSIS"><i class="fa-solid fa-lock"></i> Private</span>` : "";
                     const balasan = String(p.balasan || "").trim();
+                    const repliedPill = balasan ? `<span class="sm-replied-pill"><i class="fa-solid fa-check"></i> Dibalas</span>` : "";
                     const balasHtml = balasan
                         ? `<div class="pesan-balas"><i class="fa-solid fa-reply"></i><div><b>${escapeHtml(p.dibalas_oleh || "OSIS")}</b><p data-balas-teks="${p.id}" contenteditable="false" data-ph="Tulis balasan...">${escapeHtml(balasan)}</p></div></div>`
                         : "";
                     return `
                 <div class="pesan-item" data-balas-id="${p.id}" style="${p.is_private ? "border-style:dashed" : ""}">
                     <div class="pesan-meta">
-                        <span class="pesan-nama"><i class="fa-solid fa-user"></i> ${escapeHtml(p.nama || "Anonim")}</span>
+                        <span class="sm-ava">${escapeHtml(initChar)}</span>
+                        <span class="pesan-nama">${escapeHtml(namaTxt)}</span>
                         <span class="pesan-kelas">${escapeHtml(p.kelas || "-")}</span>
                         ${lock}
+                        ${repliedPill}
                         <span class="pesan-waktu">${Aspirasi.formatWaktu(p.created_at)}</span>
-                        ${canBalas ? `<button class="hapus-btn" onclick="Aspirasi.balas(${p.id})" title="Balas pesan"><i class="fa-solid fa-reply"></i></button>` : ""}
-                        ${canKelola ? `<button class="hapus-btn" onclick="Aspirasi.edit(${p.id})" title="${isOsis ? "Edit (OSIS)" : "Edit pesanku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
-                        ${canKelola ? `<button class="hapus-btn" onclick="Aspirasi.hapus(${p.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus pesanku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
+                        ${canBalas ? `<button type="button" class="hapus-btn" onclick="Aspirasi.balas(${p.id})" title="Balas pesan"><i class="fa-solid fa-reply"></i></button>` : ""}
+                        ${canKelola ? `<button type="button" class="hapus-btn" onclick="Aspirasi.edit(${p.id})" title="${isOsis ? "Edit (OSIS)" : "Edit pesanku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
+                        ${canKelola ? `<button type="button" class="hapus-btn" onclick="Aspirasi.hapus(${p.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus pesanku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
                     </div>
                     <p class="pesan-isi">${escapeHtml(p.isi)}</p>
                     ${balasHtml}
@@ -201,6 +283,7 @@ const Aspirasi = {
     },
 
     kunciFormulir() {
+        Aspirasi.syncStatusBadge();
         const nama = document.getElementById("namaSiswa");
         const kelas = document.getElementById("kelasSiswa");
         const isi = document.getElementById("isiAspirasi");
@@ -248,6 +331,7 @@ const Aspirasi = {
             document.getElementById("kelasSiswa").value = "";
             document.getElementById("isiAspirasi").value = "";
             const cb = document.getElementById("isPrivateAspirasi"); if (cb) cb.checked = false;
+            Aspirasi.syncChar();
         };
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
             try { await Outbox.enqueue(__spec()); } catch (e) { showToast(e.message, "error"); return; }
@@ -266,6 +350,7 @@ const Aspirasi = {
             document.getElementById("kelasSiswa").value = "";
             document.getElementById("isiAspirasi").value = "";
             const cb = document.getElementById("isPrivateAspirasi"); if (cb) cb.checked = false;
+            Aspirasi.syncChar();
             Cache.del("aspirasi");
             Aspirasi.muatPesan(true);
         } catch (err) {
@@ -475,6 +560,8 @@ const Aspirasi = {
         document.getElementById("namaSiswa").value = item.nama || "";
         document.getElementById("kelasSiswa").value = item.kelas || "";
         document.getElementById("isiAspirasi").value = item.isi || "";
+        Aspirasi.syncChar();
+        document.getElementById("aspFormCard")?.classList.add("is-editing");
         // Status private tidak ikut diubah, jadi kunci biar jelas
         const cb = document.getElementById("isPrivateAspirasi");
         if (cb) { cb.checked = !!item.is_private; cb.disabled = true; }
@@ -492,6 +579,8 @@ const Aspirasi = {
         const nama = document.getElementById("namaSiswa"); if (nama) nama.value = "";
         const kelas = document.getElementById("kelasSiswa"); if (kelas) kelas.value = "";
         const isi = document.getElementById("isiAspirasi"); if (isi) isi.value = "";
+        Aspirasi.syncChar();
+        document.getElementById("aspFormCard")?.classList.remove("is-editing");
         const cb = document.getElementById("isPrivateAspirasi"); if (cb) { cb.checked = false; cb.disabled = false; }
         const btn = document.getElementById("btnKirimAspirasi");
         if (btn) btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Suara Tarpan';

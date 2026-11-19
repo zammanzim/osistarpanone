@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>(function(){try{if(localStorage.getItem("tarpan_theme")==="dark"){document.documentElement.setAttribute("data-theme","dark");var f=function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#16131b");};f();document.addEventListener("DOMContentLoaded",f);}}catch(e){}})();</script>
     <title>Changelog — OSIS TARPAN ONE</title>
     <meta
       name="description"
@@ -25,7 +26,7 @@
     />
     <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
     <link rel="canonical" href="https://osistarpanone.my.id/changelog.html" />
-    <link rel="stylesheet" href="assets/css/shared/style.css?v=41" />
+    <link rel="stylesheet" href="assets/css/shared/style.css?v=43" />
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
@@ -45,10 +46,10 @@
       }
       .cl-card {
         background: var(--white);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 18px;
         padding: 16px;
-        box-shadow: 4px 4px 0 var(--ink);
+        box-shadow: 4px 4px 0 var(--sh);
       }
       .cl-card.accent-top {
         border-top: 10px solid var(--red);
@@ -91,7 +92,7 @@
       .cl-seg {
         display: inline-flex;
         flex-wrap: wrap;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 10px;
         overflow: hidden;
         background: var(--paper);
@@ -107,7 +108,7 @@
         color: var(--ink);
       }
       .cl-seg button.on {
-        background: var(--ink);
+        background: var(--inv-bg);
         color: var(--yellow);
       }
       .cl-top {
@@ -119,7 +120,7 @@
       .cl-ver {
         font-size: 1rem;
         font-weight: 900;
-        background: var(--ink);
+        background: var(--inv-bg);
         color: #fff;
         border-radius: 10px;
         padding: 3px 10px;
@@ -132,7 +133,7 @@
         font-weight: 900;
         border-radius: 999px;
         padding: 4px 10px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
       }
       .cl-major {
         background: var(--red);
@@ -153,7 +154,7 @@
 
       .cl-minor {
         background: var(--yellow);
-        color: var(--ink);
+        color: var(--on-yellow);
       }
       .cl-patch {
         background: var(--paper);
@@ -222,6 +223,7 @@
         font-size: 0.72rem;
       }
     </style>
+    <link rel="stylesheet" href="assets/css/shared/dark.css?v=1" />
     <script src="assets/js/vendor/supabase.min.js?v=10"></script>
     <script src="assets/js/core/config.js?v=14"></script>
     <script src="assets/js/core/db.js?v=35" defer></script>
@@ -233,7 +235,7 @@
     <script src="assets/js/shared/ui/show-popup.js?v=15" defer></script>
     <script src="assets/js/core/osis-auth.js?v=19" defer></script>
     <script src="assets/js/public/changelog.js?v=5" defer></script>
-    <script src="assets/js/pwa/pwa.js?v=11" defer></script>
+    <script src="assets/js/pwa/pwa.js?v=12" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -253,9 +255,9 @@
             text-transform: uppercase;
             padding: 6px 12px;
             border-radius: 999px;
-            border: 2px solid var(--ink);
+            border: 2px solid var(--bd);
             background: var(--yellow);
-            color: var(--ink);
+            color: var(--on-yellow);
           "
           >Changelog</span
         >

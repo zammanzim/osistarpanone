@@ -86,6 +86,9 @@ function getFoto(pathFoto) {
 function pathThumb(path) {
   const key = String(path || "").replace(/^\/+/, "");
   const i = key.lastIndexOf(".");
+  if (isVideoPath(key)) {
+    return (i < 0 ? key : key.slice(0, i)) + "-thumb.jpg";
+  }
   if (i < 0) return key + "-thumb";
   return key.slice(0, i) + "-thumb" + key.slice(i);
 }
@@ -157,15 +160,44 @@ function thumbBento(src, alt, extra = "") {
   return `<img src="${src}" alt="${esc}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'">` +
     `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
 }
+// Fallback video lama yang belum punya -thumb.jpg: ganti <img> jadi <video>.
+function thumbVideoFallback(img) {
+  if (!img) return;
+  const src = img.dataset.videoSrc;
+  const wrap = img.closest ? img.closest(".media-muat") : null;
+  if (!src) {
+    if (wrap) wrap.classList.add("sudah-muat");
+    img.style.display = "none";
+    return;
+  }
+  const v = document.createElement("video");
+  v.src = src;
+  v.muted = true;
+  v.playsInline = true;
+  v.preload = "metadata";
+  v.disablePictureInPicture = true;
+  const oc = img.getAttribute("onclick");
+  if (oc) v.setAttribute("onclick", oc);
+  const done = () => { if (wrap) wrap.classList.add("sudah-muat"); };
+  v.addEventListener("loadeddata", done, { once: true });
+  v.addEventListener("error", done, { once: true });
+  img.replaceWith(v);
+}
+
 // Varian hemat buat grid: load thumb (-thumb.jpg, ratusan px) dulu,
-// gagal (data lama belum ada thumb) -> fallback ke full. Video -> biasa.
+// gagal (data lama belum ada thumb) -> fallback ke full (atau <video>).
 function thumbBentoPath(path, alt, extra = "") {
   const full = getFoto(path);
-  if (!path || isVideoPath(full)) return thumbBento(full, alt, extra);
+  if (!path) return thumbBento(full, alt, extra);
   const thumb = getThumb(path);
   if (!thumb || thumb === full) return thumbBento(full, alt, extra);
   const esc = (typeof escapeHtml === "function" ? escapeHtml(String(alt || "")) : String(alt || ""));
-  return `<img src="${thumb}" alt="${esc}" loading="lazy" data-full="${full}" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src=this.dataset.full;}else{this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'}">` +
+  if (isVideoPath(full)) {
+    return `<img src="${thumb}" alt="${esc}" loading="lazy" data-video-src="${full}" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="if(typeof thumbVideoFallback==='function')thumbVideoFallback(this);else{this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'}" ${extra}>` +
+      `<span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>` +
+      `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
+  }
+  return `<img src="${thumb}" alt="${esc}" loading="lazy" data-full="${full}" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src=this.dataset.full;}else{this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'}" ${extra}>` +
     `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
 }
 
@@ -4430,10 +4462,58 @@ async function compressImage(file, maxMB = 0.95, maxDim = 1920) {
 }
 
 // Thumb kecil buat grid (default sisi panjang 400px, q 0.68 -> ~30-60KB).
-// Return File thumb atau null (bukan gambar / gagal / aslinya sudah kecil).
+async function buatThumbVideo(file, maxDim = 400, quality = 0.68) {
+  const url = URL.createObjectURL(file);
+  const v = document.createElement("video");
+  v.muted = true;
+  v.playsInline = true;
+  v.preload = "auto";
+  try {
+    const siap = await new Promise((res) => {
+      let selesai = false;
+      const tutup = (ok) => { if (!selesai) { selesai = true; res(ok); } };
+      const timer = setTimeout(() => tutup(false), 6000);
+      v.onloadeddata = () => {
+        const target = (v.duration && isFinite(v.duration) && v.duration > 0.2) ? Math.min(0.5, v.duration * 0.1) : 0;
+        if (target > 0) {
+          v.onseeked = () => { clearTimeout(timer); tutup(true); };
+          try { v.currentTime = target; } catch { clearTimeout(timer); tutup(true); }
+        } else {
+          clearTimeout(timer);
+          tutup(true);
+        }
+      };
+      v.onerror = () => { clearTimeout(timer); tutup(false); };
+      v.src = url;
+    });
+    if (!siap || !v.videoWidth || !v.videoHeight) return null;
+    const scale = Math.min(1, maxDim / Math.max(v.videoWidth, v.videoHeight));
+    const w = Math.max(1, Math.round(v.videoWidth * scale));
+    const h = Math.max(1, Math.round(v.videoHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext("2d").drawImage(v, 0, 0, w, h);
+    const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", quality));
+    if (!blob) return null;
+    return new File([blob], String(file.name || "video").replace(/\.[^.]+$/, "-thumb.jpg"), {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+  } catch {
+    return null;
+  } finally {
+    try { URL.revokeObjectURL(url); } catch {}
+    try { v.removeAttribute("src"); v.load(); } catch {}
+  }
+}
+
+// Return File thumb atau null (bukan media / gagal / foto aslinya sudah kecil).
 async function buatThumb(file, maxDim = 400, quality = 0.68) {
   try {
-    if (!file || !file.type || !String(file.type).startsWith("image/")) return null;
+    if (!file || !file.type) return null;
+    if (String(file.type).startsWith("video/")) return await buatThumbVideo(file, maxDim, quality);
+    if (!String(file.type).startsWith("image/")) return null;
     const url = URL.createObjectURL(file);
     let img = null;
     try {

@@ -15,9 +15,9 @@
       }
       .stat-card {
         background: var(--white);
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 14px;
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
         padding: 12px;
         text-align: center;
       }
@@ -68,12 +68,12 @@
       .prog-grup-count {
         background: var(--red);
         color: #fff;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 999px;
         font-size: 0.68rem;
         font-weight: 800;
         padding: 2px 10px;
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
       }
       .prog-grid {
         display: flex;
@@ -82,10 +82,10 @@
       }
       .prog-item {
         background: var(--white);
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 14px;
         padding: 12px 14px;
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
         display: flex;
         gap: 12px;
         align-items: flex-start;
@@ -94,7 +94,7 @@
         width: 44px;
         height: 44px;
         border-radius: 12px;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         display: grid;
         place-items: center;
         font-size: 1.1rem;
@@ -124,7 +124,7 @@
       }
       .prog-bar {
         height: 10px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 999px;
         background: var(--paper-2);
         overflow: hidden;
@@ -157,10 +157,10 @@
         font-weight: 900;
         padding: 2px 8px;
         border-radius: 999px;
-        border: 1.5px solid var(--ink);
+        border: 1.5px solid var(--bd);
         white-space: nowrap;
       }
-      .prog-tag.rencana { background: var(--yellow); }
+      .prog-tag.rencana { background: var(--yellow); color: var(--on-yellow); }
       .prog-tag.berjalan { background: #e3ecff; color: #1d4ed8; }
       .prog-tag.selesai { background: #d6f5d6; color: #146314; }
       .prog-tag.batal { background: #ffe9e9; color: var(--red-dark); }
@@ -189,7 +189,7 @@
       .program-form-inner {
         width: min(520px, 100%);
         background: var(--white);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 18px;
         padding: 18px;
         box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);

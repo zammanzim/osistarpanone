@@ -18,10 +18,10 @@
 
 .osis-hero {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 18px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   display: flex;
   gap: 16px;
   align-items: center;
@@ -34,12 +34,13 @@
 .osis-avatar {
   width: 56px; height: 56px;
   border-radius: 14px;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   background: var(--yellow);
   display: grid; place-items: center;
   font-size: 1.4rem; font-weight: 900;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   flex-shrink: 0; overflow: hidden;
+ color: var(--on-yellow);
 }
 .osis-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .osis-avatar.media-muat { display: grid; place-items: center; }
@@ -57,7 +58,7 @@
   font-size: 0.68rem; font-weight: 800;
   letter-spacing: 0.06em; text-transform: uppercase;
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   padding: 4px 10px; border-radius: 999px;
 }
 .osis-badge.red { background: var(--red); color: #fff; }
@@ -65,10 +66,10 @@
 /* ---- Helper umum admin (dipakai hampir semua halaman) ---- */
 .osis-panel {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 16px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   min-width: 0;
 }
 .osis-empty { font-size: 0.8rem; font-weight: 600; color: var(--gray); padding: 10px 2px; }
@@ -106,10 +107,10 @@
   font-size: 0.78rem;
   font-weight: 800;
   color: var(--ink);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 10px;
   padding: 7px 10px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   line-height: 1.2;
 }
 .ang-more-pill {
@@ -129,10 +130,11 @@
   background-position: right 10px center;
   background-size: 11px;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
+  color: var(--on-yellow);
 }
 .ang-more-select:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .ang-more-select:focus-visible {
   outline: 2px solid var(--red);
@@ -173,13 +175,13 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   display: grid;
   place-items: center;
   font-size: 0.9rem;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   flex-shrink: 0;
 }
 .osis-det-mico.red { background: #ffe4e6; color: var(--red-dark); }
@@ -189,10 +191,10 @@
 
 .osis-det-hero {
   background: linear-gradient(135deg, #fffdf4 0%, var(--paper-2) 100%);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 15px;
   padding: 13px 14px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -227,16 +229,16 @@
   letter-spacing: 0.04em;
   padding: 3px 9px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   background: var(--white);
   color: var(--ink);
   line-height: 1.25;
 }
-.osis-det-chip.yellow { background: var(--yellow); }
+.osis-det-chip.yellow { background: var(--yellow); color: var(--on-yellow); }
 .osis-det-chip.blue { background: #e3ecff; color: #1d4ed8; }
 .osis-det-chip.green { background: #d6f5d6; color: #146314; }
 .osis-det-chip.red { background: #ffe9e9; color: var(--red-dark); }
-.osis-det-chip.ink { background: var(--ink); color: var(--yellow); }
+.osis-det-chip.ink { background: var(--inv-bg); color: var(--yellow); }
 .osis-det-title {
   font-size: 1.06rem;
   font-weight: 900;
@@ -264,7 +266,7 @@
 
 .osis-det-prog {
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 9px 11px;
   margin-top: 2px;
@@ -291,7 +293,7 @@
 }
 .osis-det-prog-bar {
   height: 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   background: var(--paper-2);
   overflow: hidden;
@@ -320,7 +322,7 @@
 }
 .osis-det-kv {
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 9px 10px;
   min-width: 0;
@@ -341,7 +343,7 @@
   width: 22px;
   height: 22px;
   border-radius: 7px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   background: var(--white);
   color: var(--ink);
   display: grid;
@@ -354,7 +356,7 @@
 .osis-det-kv-ico.t-green { background: #dcfce7; color: #166534; }
 .osis-det-kv-ico.t-amber { background: #fef3c7; color: #b45309; }
 .osis-det-kv-ico.t-purple { background: #f3e8ff; color: #6d28d9; }
-.osis-det-kv-ico.t-ink { background: var(--ink); color: var(--yellow); }
+.osis-det-kv-ico.t-ink { background: var(--inv-bg); color: var(--yellow); }
 .osis-det-kv .k {
   font-size: 0.62rem;
   font-weight: 900;
@@ -394,7 +396,7 @@
 }
 .osis-det-box {
   background: var(--paper);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 13px;
   padding: 11px 13px;
   font-size: 0.84rem;
@@ -412,7 +414,7 @@
   gap: 9px;
   padding: 9px 11px;
   border-radius: 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   font-size: 0.76rem;
   font-weight: 700;
   line-height: 1.45;
@@ -467,14 +469,14 @@
 }
 .ang-acc {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 18px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   overflow: hidden;
   min-width: 0;
 }
 .ang-acc.is-focus {
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
 }
 .ang-acc-head {
   width: 100%;
@@ -492,7 +494,7 @@
   transition: background 0.12s ease;
 }
 .ang-acc.open > .ang-acc-head {
-  border-bottom: 2.5px solid var(--ink);
+  border-bottom: 2.5px solid var(--bd);
   background: #fff9e6;
 }
 .ang-acc-head:hover {
@@ -512,7 +514,7 @@
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   display: grid;
   place-items: center;
@@ -521,6 +523,7 @@
 }
 .ang-acc.is-focus .ang-acc-ico {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .ang-acc-name {
   font-size: 0.94rem;
@@ -533,7 +536,7 @@
   gap: 4px;
   padding: 2px 9px;
   border-radius: 999px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   font-size: 0.66rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -542,7 +545,7 @@
 }
 .ang-acc-pill.aktif {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .ang-acc-pill.arsip {
   background: var(--paper-2);
@@ -561,7 +564,7 @@
   min-width: 28px;
   padding: 2px 9px;
   border-radius: 999px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--white);
   font-size: 0.72rem;
   font-weight: 900;
@@ -614,14 +617,14 @@
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   background: var(--white);
   color: var(--ink);
   font: inherit;
   font-size: 0.76rem;
   font-weight: 800;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease;
 }
@@ -630,7 +633,7 @@
 }
 .ang-other-toggle:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--ink);
+  box-shadow: 1px 1px 0 var(--sh);
 }
 .ang-other-toggle i.fa-layer-group {
   color: var(--red);

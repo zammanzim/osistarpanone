@@ -3,7 +3,7 @@
 /* ===== Hero Full-Width ===== */
 .uk-hero .uk-hero-ico {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .uk-kicker {
   display: inline-flex;
@@ -36,12 +36,13 @@
   font-weight: 800;
   padding: 4px 10px;
   border-radius: 999px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   color: var(--ink);
 }
 .uk-cfg-pill.tarif {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .uk-cfg-pill.libur {
   background: #f1efec;
@@ -62,9 +63,9 @@
 }
 
 .uk-total-hero {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
   padding: 16px 18px;
   box-shadow: 5px 5px 0 var(--red);
@@ -93,7 +94,7 @@
 }
 .uk-lunas-pill {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   border: 2px solid #fff;
   border-radius: 999px;
   padding: 2px 10px;
@@ -164,10 +165,10 @@
 }
 .stat-card {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 12px 13px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -182,7 +183,7 @@
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 0.78rem;
@@ -274,10 +275,10 @@
 /* ===== Rail Kiri Panel ===== */
 .uk-panel {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 13px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   min-width: 0;
 }
 .uk-panel-head {
@@ -299,7 +300,7 @@
   margin-right: 4px;
 }
 .uk-pill-cnt {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
   border-radius: 999px;
   padding: 2px 8px;
@@ -363,9 +364,9 @@
 }
 .uk-roster-item:hover {
   background: var(--paper-2);
-  border-color: var(--ink);
+  border-color: var(--bd);
   transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .uk-roster-name {
   font-size: 0.77rem;
@@ -403,7 +404,7 @@
   border-radius: 999px;
   font-size: 0.58rem;
   font-weight: 900;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
 }
 .uk-roster-badge.lunas {
   background: #def5e3;
@@ -425,14 +426,14 @@
 /* ===== Status & Sort Controls inside Top Search Drawer ===== */
 .uk-chips {
   display: inline-flex;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   overflow: hidden;
   background: var(--paper);
 }
 .uk-chip {
   border: none;
-  border-right: 2px solid var(--ink);
+  border-right: 2px solid var(--bd);
   background: transparent;
   padding: 7px 11px;
   font-family: inherit;
@@ -449,7 +450,7 @@
   background: var(--paper-2);
 }
 .uk-chip.active {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .filter-tahun-wrap {
@@ -468,7 +469,7 @@
 .uk-count-pill {
   background: var(--paper-2);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 2px 9px;
   font-size: 0.68rem;
@@ -478,10 +479,10 @@
 
 .uk-list-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 14px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -533,10 +534,10 @@
   width: 100%;
   text-align: left;
   background: var(--paper);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 15px;
   padding: 10px 12px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
   color: var(--ink);
@@ -544,11 +545,11 @@
 .uk-person:hover {
   background: var(--white);
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .uk-person:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--ink);
+  box-shadow: 1px 1px 0 var(--sh);
 }
 .uk-person.saya {
   background: #f2fbf4;
@@ -558,13 +559,14 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--yellow);
   display: grid;
   place-items: center;
   font-size: 0.95rem;
   font-weight: 900;
   flex-shrink: 0;
+  color: var(--on-yellow);
 }
 .uk-person.lunas .uk-ava {
   background: #d6f5d6;
@@ -598,7 +600,7 @@
   border-radius: 999px;
   background: var(--green);
   color: #fff;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
 }
 .uk-sub {
   font-size: 0.7rem;
@@ -619,7 +621,7 @@
   flex: 1;
   height: 9px;
   border-radius: 999px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--white);
   overflow: hidden;
 }
@@ -634,6 +636,7 @@
 }
 .uk-person.cicil .uk-pbar > span {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .uk-ptext {
   font-size: 0.68rem;
@@ -660,7 +663,7 @@
   text-transform: uppercase;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   white-space: nowrap;
 }
 .uk-badge.lunas {
@@ -687,9 +690,9 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   display: inline-grid;
   place-items: center;
   font-size: 0.82rem;
@@ -697,7 +700,7 @@
   flex-shrink: 0;
 }
 .uk-quick-add:hover {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .uk-chev {
@@ -759,7 +762,7 @@
 .kas-form-inner {
   width: min(520px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 18px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
@@ -812,7 +815,7 @@
 }
 .uk-det-box {
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 8px 10px;
 }
@@ -861,7 +864,7 @@
   width: 10px;
   height: 10px;
   border-radius: 3px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   display: inline-block;
 }
 .uk-dot.lunas { background: #d6f5d6; }
@@ -887,7 +890,7 @@
   gap: 8px;
 }
 .uk-week {
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 13px;
   padding: 8px 9px;
   background: var(--white);
@@ -904,7 +907,7 @@
 }
 .uk-week.clickable:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .uk-week.lunas {
   background: #d6f5d6;
@@ -943,11 +946,11 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 0.62rem;
-  background: #fff;
+  background: var(--white);
   flex-shrink: 0;
 }
 .uk-week.lunas .uk-week-ico {
@@ -962,7 +965,7 @@
 }
 .uk-week.cicil .uk-week-ico {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .uk-week.belum .uk-week-ico {
   background: var(--red);
@@ -989,7 +992,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   background: var(--paper);
 }
@@ -1021,7 +1024,7 @@
   align-items: center;
   gap: 8px;
   background: #d6f5d6;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 9px 12px;
   font-size: 0.84rem;
@@ -1066,7 +1069,7 @@
   width: 100%;
   text-align: left;
   padding: 8px 11px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   background: var(--white);
   font-family: inherit;
@@ -1081,13 +1084,13 @@
 .tb-item .dot {
   width: 20px;
   height: 20px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-size: 0.64rem;
   flex-shrink: 0;
-  background: #fff;
+  background: var(--white);
 }
 .tb-item.pilih {
   background: #d6f5d6;
@@ -1106,7 +1109,7 @@
   margin-top: 8px;
 }
 .uk-nom-chip {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   background: var(--paper-2);
   color: var(--ink);
@@ -1118,11 +1121,12 @@
 }
 .uk-nom-chip:hover {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .uk-auto-preview {
   margin-top: 10px;
   padding: 10px 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   background: #e7f8ec;
   font-size: 0.76rem;
@@ -1151,7 +1155,7 @@
   justify-content: space-between;
   gap: 6px;
   padding: 7px 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 11px;
   background: var(--white);
   font-family: inherit;
@@ -1173,16 +1177,16 @@
   border-radius: 999px;
   background: #d6f5d6;
   color: #146314;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
 }
 .uk-libur-btn.on .tag {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .uk-tarif-scope {
   margin-top: 8px;
   padding: 10px 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   background: #fff9db;
   font-size: 0.74rem;

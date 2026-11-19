@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>(function(){try{if(localStorage.getItem("tarpan_theme")==="dark"){document.documentElement.setAttribute("data-theme","dark");var f=function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#16131b");};f();document.addEventListener("DOMContentLoaded",f);}}catch(e){}})();</script>
     <title>Absen QR — OSIS TARPAN ONE</title>
     <meta
       name="description"
@@ -24,7 +25,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="assets/css/shared/style.css?v=41" />
+    <link rel="stylesheet" href="assets/css/shared/style.css?v=43" />
     <style>
       .abs-wrap {
         max-width: 560px;
@@ -36,10 +37,10 @@
       }
       .abs-card {
         background: var(--white);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 20px;
         padding: 18px;
-        box-shadow: 5px 5px 0 var(--ink);
+        box-shadow: 5px 5px 0 var(--sh);
       }
       .abs-head {
         display: flex;
@@ -51,13 +52,14 @@
         width: 48px;
         height: 48px;
         border-radius: 14px;
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         background: var(--yellow);
         display: grid;
         place-items: center;
         font-size: 1.3rem;
-        box-shadow: 2px 2px 0 var(--ink);
+        box-shadow: 2px 2px 0 var(--sh);
         flex-shrink: 0;
+        color: var(--on-yellow);
       }
       .abs-head h1 {
         font-size: 1.15rem;
@@ -105,19 +107,20 @@
         width: 40px;
         height: 40px;
         border-radius: 12px;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         background: var(--yellow);
         display: grid;
         place-items: center;
         font-weight: 900;
         font-size: 0.95rem;
         flex-shrink: 0;
+        color: var(--on-yellow);
       }
       .abs-qr {
         background: #fff;
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 18px;
-        box-shadow: 4px 4px 0 var(--ink);
+        box-shadow: 4px 4px 0 var(--sh);
         padding: 14px;
         display: flex;
         justify-content: center;
@@ -153,13 +156,13 @@
         height: 72px;
         margin: 0 auto 12px;
         border-radius: 50%;
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         background: #d6f5d6;
         color: #146314;
         display: grid;
         place-items: center;
         font-size: 2rem;
-        box-shadow: 3px 3px 0 var(--ink);
+        box-shadow: 3px 3px 0 var(--sh);
       }
       .abs-ok .tanda.gagal {
         background: #ffe9e9;
@@ -206,6 +209,7 @@
         color: var(--gray);
       }
     </style>
+    <link rel="stylesheet" href="assets/css/shared/dark.css?v=1" />
     <script src="assets/js/vendor/supabase.min.js?v=10"></script>
     <script src="assets/js/core/config.js?v=14"></script>
     <script src="assets/js/core/db.js?v=37" defer></script>
@@ -216,7 +220,7 @@
     <script src="assets/js/core/osis-auth.js?v=19" defer></script>
     <script src="assets/js/vendor/qrcode.min.js?v=1"></script>
     <script src="assets/js/public/absen-siswa.js?v=1" defer></script>
-    <script src="assets/js/pwa/pwa.js?v=11" defer></script>
+    <script src="assets/js/pwa/pwa.js?v=12" defer></script>
   </head>
   <body>
     <header class="top-nav">

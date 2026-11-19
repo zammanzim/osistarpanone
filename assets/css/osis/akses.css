@@ -23,7 +23,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 10px;
   padding: 7px 10px;
   font-size: 0.74rem;
@@ -49,20 +49,21 @@
   padding: 11px 13px;
   margin-bottom: 8px;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   cursor: pointer;
   font-family: inherit;
   color: var(--ink);
 }
 .aks-row:active {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
+  box-shadow: 1px 1px 0 var(--sh);
 }
 /* Penanda akun super admin (dipakai halaman Akun OSIS) */
 .aks-row.aks-super {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .aks-row.aks-super .ava {
   background: var(--white);
@@ -71,13 +72,14 @@
   width: 38px;
   height: 38px;
   border-radius: 12px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--yellow);
   display: grid;
   place-items: center;
   font-weight: 900;
   font-size: 1rem;
   flex-shrink: 0;
+  color: var(--on-yellow);
 }
 .aks-row .nm {
   display: block;
@@ -102,9 +104,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 8px 12px;
   font-size: 0.8rem;
@@ -123,7 +125,7 @@
   font-size: 0.66rem;
   font-weight: 900;
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   border-radius: 999px;
   padding: 3px 10px;
   white-space: nowrap;
@@ -153,7 +155,7 @@
 .aks-form-inner {
   width: min(560px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 18px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);

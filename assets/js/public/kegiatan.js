@@ -260,7 +260,7 @@ const Kegiatan = {
             ? `<span class="bento-badge" contenteditable="${isEdit ? "true" : "false"}" spellcheck="false" data-ph="BADGE">${badge}</span>`
             : "";
         const media = (typeof thumbBento === "function")
-          ? thumbBento(getFoto(path), judul)
+          ? (typeof thumbBentoPath === "function") ? thumbBentoPath(path, judul) : thumbBento(getFoto(path), judul)
           : `<img src="${getFoto(path)}" alt="${judul}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
         return `<div class="item media-muat" data-foto-idx="${idx}">${media}${badgeHtml}<button class="foto-del-btn" onclick="event.stopPropagation(); Kegiatan.hapusFoto(${item.id}, ${idx})" title="Hapus foto/video"><i class="fa-solid fa-trash-can"></i></button></div>`;
       })
@@ -384,7 +384,7 @@ const Kegiatan = {
         .map((f) => {
           const p = typeof f === "string" ? f : f.path;
           const media = (typeof thumbBento === "function")
-            ? thumbBento(getFoto(p), "")
+            ? (typeof thumbBentoPath === "function") ? thumbBentoPath(p, "") : thumbBento(getFoto(p), "")
             : `<img src="${getFoto(p)}" alt="">`;
           return `<div class="item media-muat">${media}</div>`;
         })

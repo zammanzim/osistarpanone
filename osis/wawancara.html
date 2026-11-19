@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>(function(){try{if(localStorage.getItem("tarpan_theme")==="dark"){document.documentElement.setAttribute("data-theme","dark");var f=function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#16131b");};f();document.addEventListener("DOMContentLoaded",f);}}catch(e){}})();</script>
     <title>Wawancara Calon OSIS — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../assets/css/shared/style.css?v=41" />
+    <link rel="stylesheet" href="../assets/css/shared/style.css?v=43" />
     <link rel="stylesheet" href="../assets/css/shared/osis2.css?v=15" />
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
@@ -32,6 +33,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
     <link rel="stylesheet" href="../assets/css/osis/wawancara.css?v=5" />
+    <link rel="stylesheet" href="../assets/css/shared/dark.css?v=1" />
     <script src="../assets/js/vendor/supabase.min.js?v=11"></script>
     <script src="../assets/js/core/config.js?v=16"></script>
     <script src="../assets/js/core/db.js?v=35" defer></script>
@@ -45,10 +47,10 @@
     <script src="../assets/js/core/osis-auth.js?v=21" defer></script>
     <script src="../assets/js/osis/shell/osis-visitor.js?v=5" defer></script>
     <script src="../assets/js/osis/shell/osis-sidebar.js?v=47" defer></script>
-    <script src="../assets/js/osis/shell/osis-header.js?v=18" defer></script>
+    <script src="../assets/js/osis/shell/osis-header.js?v=21" defer></script>
     <script src="../assets/js/shared/utilities/form-persist.js?v=12" defer></script>
     <script src="../assets/js/osis/modules/wawancara.js?v=24" defer></script>
-    <script src="../assets/js/pwa/pwa.js?v=13" defer></script>
+    <script src="../assets/js/pwa/pwa.js?v=12" defer></script>
   </head>
   <body>
     <header class="top-nav">
@@ -303,7 +305,7 @@
           Sama untuk semua calon. Hapus utama = turunan + jawaban sesi ikut terhapus.
         </p>
         <div id="wwTanyaList"></div>
-        <div id="wwSalinWrap" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; padding: 10px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 12px">
+        <div id="wwSalinWrap" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; padding: 10px; background: var(--paper-2); border: 2px solid var(--bd); border-radius: 12px">
           <span style="font-size: 0.78rem; font-weight: 800"><i class="fa-solid fa-copy" style="color: var(--red)"></i> Salin dari angkatan:</span>
           <select id="wwSalinDari" class="admin-input" style="flex: 1; min-width: 150px; padding: 6px 10px; font-size: 0.8rem"></select>
           <button type="button" class="btn btn-white btn-sm" id="btnWwSalin" onclick="Wawancara.salinPertanyaan()">

@@ -3,7 +3,7 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v218";
+const VERSI = "tarpan-v223";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 
@@ -21,6 +21,7 @@ const APP_SHELL = [
   "./offline.html",
   "./manifest.webmanifest",
   "./assets/css/shared/style.css",
+  "./assets/css/shared/dark.css",
   "./assets/css/public/feed.css",
   "./assets/css/shared/osis2.css",
   "./assets/css/osis/absensi.css",
@@ -44,6 +45,7 @@ const APP_SHELL = [
   "./assets/css/osis/wawancara.css",
   "./assets/css/public/hasil-wawancara.css",
   "./assets/css/public/login.css",
+  "./assets/css/public/suara-musik.css",
   "./osis/absensi.html",
   "./osis/agenda.html",
   "./osis/akses.html",
@@ -118,6 +120,7 @@ const APP_SHELL = [
   "./assets/js/pwa/push.js",
   "./assets/js/pwa/outbox.js",
   "./assets/js/shared/utilities/pengaturan.js",
+  "./assets/js/shared/utilities/theme.js",
   "./assets/js/public/pengurus.js",
   "./assets/js/osis/modules/program.js",
   "./assets/js/public/sekbid.js",
@@ -286,6 +289,9 @@ async function basiDulu(request, namaCache) {
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
+  // Video/audio & Range request (206 Partial Content): biarkan browser stream langsung
+  // tanpa lewat SW/Cache API (Cache.put menolak 206 & bikin buffering lambat).
+  if (req.headers.has("range") || req.destination === "video" || req.destination === "audio") return;
   const url = new URL(req.url);
 
   // 1) Navigasi halaman (termasuk hash-route SPA) - network dulu, fallback cache/offline.
@@ -332,7 +338,7 @@ self.addEventListener("fetch", (e) => {
       const cached = await cache.match(req);
       try {
         const res = await fetch(req);
-        if (res && (res.ok || res.type === "opaque"))
+        if (res && res.status !== 206 && (res.ok || res.type === "opaque"))
           cache.put(req, res.clone());
         return res;
       } catch {

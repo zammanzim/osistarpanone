@@ -1039,6 +1039,16 @@ const HeaderMore = {
         SiteEdit.toggle(checked);
         HeaderMore.close();
     },
+    onThemeToggle(checked) {
+        if (window.TarpanTheme && TarpanTheme.set) {
+            TarpanTheme.set(checked ? "dark" : "light");
+        } else {
+            const val = checked ? "dark" : "light";
+            try { localStorage.setItem("tarpan_theme", val); } catch {}
+            if (checked) document.documentElement.setAttribute("data-theme", "dark");
+            else document.documentElement.removeAttribute("data-theme");
+        }
+    },
     async logout() {
         HeaderMore.close();
         // Samakan dengan tombol keluar di header (akun biasa = hapus akun).
@@ -1075,17 +1085,8 @@ const HeaderMore = {
             } catch (e) {}
             var itemInstall = document.getElementById("headerMoreInstall");
             if (itemInstall) itemInstall.style.display = pwaSiap ? "" : "none";
-            // Dot notif (pengganti popup): tamu mobile tetap dapat titik-tiga
-            // selama jatah dot masih ada + belum mutusin (permission default).
-            // Key LS sama dengan js/push.js: push_aktif / push_popup_v1.
-            var pushBaru = false;
-            try {
-              pushBaru = ("Notification" in window) && ("PushManager" in window) &&
-                Notification.permission === "default" &&
-                !localStorage.getItem("push_aktif") &&
-                !localStorage.getItem("push_popup_v1");
-            } catch (e) {}
-            const showWrap = narrow ? (isLogged || pwaSiap || pushBaru) : true;
+            // Titik-tiga selalu tampil di desktop & mobile (ada Mode Gelap & Pengaturan untuk semua pengguna).
+            const showWrap = true;
             wrap.classList.toggle("show", showWrap);
             wrap.style.display = showWrap ? "" : "none";
         }
@@ -1104,6 +1105,12 @@ const HeaderMore = {
         if (moreEdit) {
             const main = document.getElementById("editToggle");
             moreEdit.checked = !!(main && main.checked);
+        }
+        const moreTheme = document.getElementById("headerMoreThemeToggle");
+        if (moreTheme) {
+            moreTheme.checked = (window.TarpanTheme && TarpanTheme.isDark)
+                ? TarpanTheme.isDark()
+                : document.documentElement.getAttribute("data-theme") === "dark";
         }
     }
 };

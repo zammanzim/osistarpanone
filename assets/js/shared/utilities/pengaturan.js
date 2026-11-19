@@ -126,6 +126,21 @@ const Pengaturan = {
             }
         };
         // Tampilan
+        on("setTemaGelap", "change", function (e) {
+            try {
+                const dark = !!e.target.checked;
+                if (typeof TarpanTheme !== "undefined" && TarpanTheme.set) {
+                    TarpanTheme.set(dark ? "dark" : "light");
+                } else {
+                    try { localStorage.setItem("tarpan_theme", dark ? "dark" : "light"); } catch (err2) {}
+                    if (dark) document.documentElement.setAttribute("data-theme", "dark");
+                    else document.documentElement.removeAttribute("data-theme");
+                }
+                Pengaturan.toast(dark ? "Mode gelap aktif." : "Mode terang aktif.");
+            } catch (err) {
+                Pengaturan.toast("Gagal simpan tema: " + err.message, "error");
+            }
+        });
         on("setSuara", "change", function (e) {
             try {
                 if (typeof Feed !== "undefined" && Feed.suaraSet) Feed.suaraSet(e.target.checked);
@@ -243,10 +258,19 @@ const Pengaturan = {
     // ---- 2. TAMPILAN ------------------------------------------------------------
     sekTampilan() {
         let suara = false;
+        let isDark = false;
         try {
             suara = (typeof Feed !== "undefined" && Feed.suaraMau) ? !!Feed.suaraMau() : (localStorage.getItem("feed_suara") === "1");
         } catch (e) {}
+        try {
+            isDark = (typeof TarpanTheme !== "undefined" && TarpanTheme.isDark) ? !!TarpanTheme.isDark() : (localStorage.getItem("tarpan_theme") === "dark");
+        } catch (e) {}
         return Pengaturan.judul("fa-palette", "Tampilan & Personalisasi") +
+            Pengaturan.baris(
+                "Mode gelap",
+                "Ubah tampilan ke tema gelap untuk semua halaman.",
+                Pengaturan.toggle("setTemaGelap", isDark, "Mode gelap"),
+            ) +
             Pengaturan.baris(
                 "Suara video feed",
                 "Video berikutnya ikut bersuara (kalau browser mengizinkan).",

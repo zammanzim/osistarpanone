@@ -22,7 +22,7 @@
 
 .osis-hero {
   border-radius: 20px;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   flex-direction: column;
   gap: 14px;
   align-items: stretch;
@@ -41,7 +41,7 @@
   height: 62px;
   border-radius: 16px;
   font-size: 1.45rem;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 
 .osis-hero-text {
@@ -85,7 +85,7 @@
 
 .osis-clock {
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 8px 12px;
 }
@@ -141,14 +141,14 @@
 .hak-chip {
   font-size: 0.65rem;
   font-weight: 800;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 2px 9px;
   background: var(--green-bg);
   color: var(--green);
 }
 .hak-chip.super {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .hak-note,
@@ -180,11 +180,11 @@
   font-weight: 800;
   padding: 7px 12px;
   border-radius: 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper);
   color: var(--ink);
   text-decoration: none;
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
   transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
 }
 .q-chip i {
@@ -194,24 +194,26 @@
 .q-chip:hover {
   background: var(--yellow);
   transform: translate(-1px, -1px);
-  box-shadow: 3.5px 3.5px 0 var(--ink);
+  box-shadow: 3.5px 3.5px 0 var(--sh);
+  color: var(--on-yellow);
 }
 .q-chip:active {
   transform: translate(1px, 1px);
-  box-shadow: 0 0 0 var(--ink);
+  box-shadow: 0 0 0 var(--sh);
 }
 
 /* ===== KARTU RINGKASAN PRIBADI SAYA ===== */
 .personal-bento {
   background: var(--yellow);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
   padding: 16px;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
+  color: var(--on-yellow);
 }
 .pb-head {
   display: flex;
@@ -227,7 +229,7 @@
   font-size: 0.68rem;
   font-weight: 800;
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 2px 9px;
   text-transform: none;
@@ -245,10 +247,10 @@
 }
 .pb-card {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 15px;
   padding: 13px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   text-decoration: none;
   color: inherit;
   display: flex;
@@ -259,13 +261,13 @@
 }
 .pb-card:hover {
   transform: translate(-1.5px, -1.5px);
-  box-shadow: 4.5px 4.5px 0 var(--ink);
+  box-shadow: 4.5px 4.5px 0 var(--sh);
 }
 .pb-icon {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   color: var(--red);
   display: grid;
@@ -293,7 +295,7 @@
   font-weight: 900;
   background: var(--green-bg);
   color: var(--green);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   padding: 1px 6px;
   border-radius: 999px;
 }
@@ -326,10 +328,10 @@
 
 .dash-stat {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 14px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   text-decoration: none;
   color: inherit;
   display: flex;
@@ -340,11 +342,11 @@
 }
 .dash-stat:hover {
   transform: translate(-1.5px, -1.5px);
-  box-shadow: 5.5px 5.5px 0 var(--ink);
+  box-shadow: 5.5px 5.5px 0 var(--sh);
 }
 .dash-stat:active {
   transform: translate(1.5px, 1.5px);
-  box-shadow: 0 0 0 var(--ink);
+  box-shadow: 0 0 0 var(--sh);
 }
 .dash-stat.stat-kas {
   background: #edf9f0;
@@ -405,10 +407,10 @@
 
 .dash-panel {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
   padding: 16px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -440,9 +442,9 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   display: grid;
   place-items: center;
   font-size: 0.78rem;
@@ -464,13 +466,14 @@
 .go-pill {
   background: var(--paper-2);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 3px 10px;
   transition: background 0.12s;
 }
 .go-pill:hover {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .pane-foot {
   margin-top: auto;
@@ -482,7 +485,7 @@
 .bento-tabs {
   display: inline-flex;
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 2px;
   gap: 2px;
@@ -502,8 +505,8 @@
   gap: 5px;
 }
 .btab.active {
-  background: var(--ink);
-  color: var(--white);
+  background: var(--inv-bg);
+  color: #fff;
 }
 .btab-badge {
   font-size: 0.6rem;
@@ -520,11 +523,11 @@
   text-decoration: none;
   color: inherit;
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 14px;
   padding: 11px 13px;
   margin-bottom: 9px;
-  box-shadow: 2.5px 2.5px 0 var(--ink);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
   transition: transform 0.12s, box-shadow 0.12s;
 }
 .info-bento-item:last-child {
@@ -532,7 +535,7 @@
 }
 .info-bento-item:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3.5px 3.5px 0 var(--ink);
+  box-shadow: 3.5px 3.5px 0 var(--sh);
 }
 .ibi-top {
   display: flex;
@@ -571,7 +574,7 @@
   font-size: 0.64rem;
   font-weight: 700;
   background: var(--paper-2);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   border-radius: 999px;
   padding: 1px 8px;
   display: inline-flex;
@@ -591,7 +594,7 @@
 }
 .ps-box {
   background: var(--paper-2);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 7px 8px;
   text-align: center;
@@ -644,7 +647,7 @@
   margin-bottom: 10px;
 }
 .kmb-cell {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   padding: 7px 10px;
   font-size: 0.7rem;
@@ -685,7 +688,7 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   display: grid;
   place-items: center;
@@ -716,7 +719,7 @@
   font-weight: 900;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   white-space: nowrap;
 }
 .tag.red {
@@ -725,7 +728,7 @@
 }
 .tag.yellow {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .tag.green {
   background: #d6f5d6;
@@ -738,7 +741,7 @@
 
 .dash-bar {
   height: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   background: var(--paper-2);
   overflow: hidden;
@@ -769,10 +772,11 @@
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--yellow);
   flex-shrink: 0;
   margin-top: 3px;
+  color: var(--on-yellow);
 }
 .tl-item .tb {
   flex: 1;
@@ -818,7 +822,8 @@
 }
 #visitorOverlay .vstat-card.now {
   background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
+  color: var(--on-yellow);
 }
 #visitorOverlay .vstat-card.now b {
   color: var(--ink);

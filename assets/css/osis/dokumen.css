@@ -2,7 +2,7 @@
 
 .dok-hero .dok-hero-ico {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .dok-kicker {
   display: inline-flex;
@@ -29,10 +29,10 @@
 }
 .stat-card {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 13px 14px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   min-width: 0;
 }
 .stat-head {
@@ -44,7 +44,7 @@
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 0.82rem;
@@ -124,10 +124,10 @@
   align-items: center;
   gap: 8px;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 7px 11px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   cursor: pointer;
   font-family: inherit;
   color: var(--ink);
@@ -143,13 +143,14 @@
 }
 .folder-card.active {
   background: var(--yellow);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
+  color: var(--on-yellow);
 }
 .folder-card .fic {
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   color: var(--red);
   display: grid;
@@ -172,22 +173,22 @@
   padding: 2px 7px;
   border-radius: 999px;
   background: var(--paper-2);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 .folder-card.active small {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 
 @media (min-width: 960px) {
   .folder-panel {
     background: var(--white);
-    border: 3px solid var(--ink);
+    border: 3px solid var(--bd);
     border-radius: 18px;
     padding: 12px;
-    box-shadow: 4px 4px 0 var(--ink);
+    box-shadow: 4px 4px 0 var(--sh);
   }
   .folder-panel-head {
     display: flex;
@@ -208,7 +209,7 @@
     margin-right: 4px;
   }
   .folder-total-pill {
-    background: var(--ink);
+    background: var(--inv-bg);
     color: var(--yellow);
     border-radius: 999px;
     padding: 2px 8px;
@@ -229,11 +230,11 @@
   }
   .folder-card:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 2px 2px 0 var(--ink);
+    box-shadow: 2px 2px 0 var(--sh);
   }
   .folder-card.active {
     border-width: 2.5px;
-    box-shadow: 3px 3px 0 var(--ink);
+    box-shadow: 3px 3px 0 var(--sh);
     transform: translate(-1px, -1px);
   }
   .folder-card b {
@@ -254,11 +255,11 @@
 }
 .dok-view-toggle {
   display: inline-flex;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   overflow: hidden;
   background: var(--paper-2);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -274,11 +275,11 @@
   font-size: 0.85rem;
 }
 .dok-view-btn + .dok-view-btn {
-  border-left: 2px solid var(--ink);
+  border-left: 2px solid var(--bd);
 }
 .dok-view-btn.active {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 
 /* ===== Bar Info Hasil & Chip Filter Aktif ===== */
@@ -315,10 +316,10 @@
   font-weight: 800;
   background: var(--white);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 3px 10px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   cursor: pointer;
 }
 .dok-chip:hover {
@@ -363,9 +364,9 @@
 
 .dok-item {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -375,7 +376,7 @@
 @media (hover: hover) {
   .dok-item:hover {
     transform: translate(-1.5px, -1.5px);
-    box-shadow: 5px 5px 0 var(--ink);
+    box-shadow: 5px 5px 0 var(--sh);
   }
 }
 .dok-card-hit {
@@ -402,7 +403,7 @@
   width: 48px;
   height: 48px;
   border-radius: 13px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 1.25rem;
@@ -414,7 +415,7 @@
 .dok-ico.doc { background: #e3ecff; color: #1d4ed8; }
 .dok-ico.xls { background: #d6f5d6; color: #146314; }
 .dok-ico.ppt { background: #ffe9d6; color: #c25700; }
-.dok-ico.zip { background: var(--yellow); color: var(--ink); }
+.dok-ico.zip { background: var(--yellow); color: var(--on-yellow); }
 .dok-ico.img { background: #efe3ff; color: #6d28d9; }
 
 .dok-ext-pill {
@@ -422,7 +423,7 @@
   bottom: -6px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
   font-size: 0.52rem;
   font-weight: 900;
@@ -456,7 +457,7 @@
   letter-spacing: 0.04em;
   border-radius: 999px;
   padding: 2px 8px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   white-space: nowrap;
 }
 .dok-kat-pill {
@@ -469,7 +470,7 @@
 }
 .dok-tag-contoh {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 
 .dok-body h4 {
@@ -539,7 +540,7 @@
   padding: 6px 10px;
   font-size: 0.72rem;
   border-radius: 10px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 
 /* Mode List (desktop >= 640px jadi baris horizontal kompak) */
@@ -573,7 +574,7 @@
 
 .dok-empty-box {
   background: var(--white);
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 18px;
   padding: 32px 18px;
   text-align: center;
@@ -582,14 +583,14 @@
   width: 54px;
   height: 54px;
   border-radius: 14px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   display: grid;
   place-items: center;
   font-size: 1.45rem;
   margin: 0 auto 10px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .dok-empty-box b {
   font-size: 0.96rem;
@@ -625,7 +626,7 @@
 .dokumen-form-inner {
   width: min(520px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 18px;
   box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
@@ -638,7 +639,7 @@
   transform: scale(1) translateY(0);
 }
 .dok-drop {
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 14px;
   background: var(--paper-2);
   min-height: 144px;
@@ -679,7 +680,7 @@
   align-items: center;
   gap: 10px;
   background: var(--paper);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   padding: 10px 12px;
   font-size: 0.8rem;
@@ -707,7 +708,7 @@
   align-items: flex-start;
 }
 .dok-preview-box {
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
   overflow: hidden;
   background: var(--paper-2);
@@ -722,7 +723,7 @@
   object-fit: contain;
 }
 .dok-preview-empty {
-  border: 2px dashed var(--ink);
+  border: 2px dashed var(--bd);
   border-radius: 14px;
   background: var(--paper-2);
   padding: 18px 14px;

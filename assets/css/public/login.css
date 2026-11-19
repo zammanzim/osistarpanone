@@ -23,9 +23,9 @@ body.login-body {
 .login-shell {
   width: min(860px, 100%);
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 22px;
-  box-shadow: 7px 7px 0 var(--ink);
+  box-shadow: 7px 7px 0 var(--sh);
   overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -39,19 +39,19 @@ body.login-body {
 
 /* ===== Panel Brand Kiri (Gelap di Desktop, Header Ringkas di Mobile) ===== */
 .login-brand {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border-bottom: 3px solid var(--ink);
+  border-bottom: 3px solid var(--bd);
 }
 
 @media (min-width: 840px) {
   .login-brand {
     border-bottom: 0;
-    border-right: 3px solid var(--ink);
+    border-right: 3px solid var(--bd);
   }
 }
 
@@ -60,11 +60,12 @@ body.login-body {
   background: repeating-linear-gradient(
     -45deg,
     var(--red) 0 14px,
-    var(--ink) 14px 28px,
+    var(--inv-bg) 14px 28px,
     var(--yellow) 28px 42px,
-    var(--ink) 42px 56px
+    var(--inv-bg) 42px 56px
   );
   border-bottom: 2px solid rgba(255, 255, 255, 0.14);
+  color: var(--on-yellow);
 }
 
 .login-brand-inner {
@@ -136,7 +137,7 @@ body.login-body {
   align-items: center;
   gap: 5px;
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   border-radius: 999px;
   padding: 2px 9px;
   font-size: 0.6rem;
@@ -186,7 +187,7 @@ body.login-body {
   height: 30px;
   border-radius: 9px;
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   display: grid;
   place-items: center;
   font-size: 0.82rem;
@@ -260,7 +261,7 @@ body.login-body {
 .login-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 13px;
   overflow: hidden;
   background: var(--paper);
@@ -269,7 +270,7 @@ body.login-body {
 
 .login-tab {
   border: none;
-  border-right: 2px solid var(--ink);
+  border-right: 2px solid var(--bd);
   background: transparent;
   padding: 9px 10px;
   font-family: inherit;
@@ -293,7 +294,7 @@ body.login-body {
 }
 
 .login-tab.active {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 
@@ -413,13 +414,13 @@ body.login-body {
   margin-top: 12px;
   padding: 9px 12px;
   border-radius: 12px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: #ffe4e6;
   color: var(--red-dark);
   font-size: 0.78rem;
   font-weight: 800;
   line-height: 1.4;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   min-height: 0;
   text-align: left;
 }

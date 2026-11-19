@@ -49,7 +49,7 @@
 }
 .hw-chip.kuning {
   background: #fff3bf;
-  border-color: var(--ink);
+  border-color: var(--bd);
   color: var(--ink);
 }
 .hw-hero-act {
@@ -62,9 +62,9 @@
 /* ---------- TOOLBAR ---------- */
 .hw-toolbar {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   padding: 12px;
   display: flex;
   align-items: center;
@@ -112,9 +112,9 @@
 .hw-card {
   position: relative;
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -142,11 +142,12 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 13px;
   background: var(--yellow);
   font-size: 1.25rem;
   font-weight: 900;
+  color: var(--on-yellow);
 }
 .hw-ava-lg {
   width: 64px;
@@ -186,7 +187,7 @@
   align-items: center;
   gap: 6px;
   background: var(--paper);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 5px 6px 5px 12px;
   font-size: 0.78rem;
@@ -200,7 +201,7 @@
   display: grid;
   place-items: center;
   padding: 0;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 50%;
   background: var(--white);
   color: var(--red);
@@ -251,9 +252,9 @@
 }
 .hw-detail {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 22px;
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -266,7 +267,7 @@
   gap: 14px;
   flex-wrap: wrap;
   padding: 18px;
-  border-bottom: 3px solid var(--ink);
+  border-bottom: 3px solid var(--bd);
   background: var(--paper-2);
 }
 .hw-detail.hw-lolos .hw-detail-head {
@@ -281,7 +282,7 @@
   font-size: 1.7rem;
   border-radius: 18px;
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .hw-detail-name {
   flex: 1;
@@ -307,7 +308,7 @@
 }
 .hw-detail-kelas {
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 3px 11px;
   color: var(--ink);
@@ -321,7 +322,7 @@
   gap: 8px;
   margin: 0 18px;
   padding: 15px 0 9px;
-  border-bottom: 2.5px solid var(--ink);
+  border-bottom: 2.5px solid var(--bd);
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -350,7 +351,7 @@
 .hw-status-inline {
   align-self: flex-start;
   margin: 2px 0;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 12px;
   padding: 8px 18px;
   font-size: 1.25rem;
@@ -358,7 +359,7 @@
   letter-spacing: 0.06em;
   line-height: 1;
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .hw-status-inline.hw-lolos {
   color: var(--green);
@@ -401,11 +402,12 @@
   height: 64px;
   display: grid;
   place-items: center;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   background: var(--yellow);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   font-size: 1.5rem;
+  color: var(--on-yellow);
 }
 .hw-buka h2 {
   margin: 6px 0 0;
@@ -450,9 +452,9 @@
   align-items: center;
   gap: 10px;
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 14px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   padding: 10px 12px;
   text-decoration: none;
   color: var(--ink);
@@ -463,7 +465,7 @@
 }
 .hw-kakak-card:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .hw-kakak-ava {
   width: 40px;
@@ -471,7 +473,7 @@
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   background: var(--green-bg);
   font-weight: 900;
@@ -501,7 +503,7 @@
   gap: 6px;
   background: #25d366;
   color: #fff;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 999px;
   padding: 7px 12px;
   font-size: 0.72rem;
@@ -531,7 +533,7 @@
   margin: 0 18px 18px;
   padding: 11px 13px;
   background: #fff8e1;
-  border: 2.5px dashed var(--ink);
+  border: 2.5px dashed var(--bd);
   border-radius: 12px;
   font-size: 0.76rem;
   font-weight: 700;
@@ -552,9 +554,9 @@
   display: grid;
   place-items: center;
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 9px;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
   color: var(--ink);
   font-size: 0.85rem;
   cursor: pointer;
@@ -570,9 +572,9 @@
   right: 0;
   min-width: 140px;
   background: var(--white);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   padding: 4px;
   display: flex;
   flex-direction: column;
@@ -653,9 +655,9 @@
 }
 .hw-pick {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   padding: 16px;
 }
 .hw-pick h2 {
@@ -689,7 +691,7 @@
   font-size: 0.84rem;
 }
 .hw-pick-item:hover {
-  border-color: var(--ink);
+  border-color: var(--bd);
   background: var(--white);
 }
 .hw-pick-item .hw-ava {

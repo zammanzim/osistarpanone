@@ -3,7 +3,7 @@
 /* ===== Hero Full-Width ===== */
 .tb-hero .tb-hero-ico {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .tb-kicker {
   display: inline-flex;
@@ -38,9 +38,9 @@
 }
 
 .tb-total-hero {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: #fff;
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 20px;
   padding: 16px 18px;
   box-shadow: 5px 5px 0 var(--red);
@@ -69,7 +69,7 @@
 }
 .tb-cek-pill {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
   border: 2px solid #fff;
   border-radius: 999px;
   padding: 2px 10px;
@@ -145,10 +145,10 @@
 }
 .stat-card {
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 16px;
   padding: 12px 13px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -163,7 +163,7 @@
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   display: grid;
   place-items: center;
   font-size: 0.78rem;
@@ -232,10 +232,10 @@
 /* ===== Rail Daftar Penabung ===== */
 .tb-panel {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 13px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
   min-width: 0;
 }
 .tb-panel-head {
@@ -257,7 +257,7 @@
   margin-right: 4px;
 }
 .tb-pill-cnt {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
   border-radius: 999px;
   padding: 2px 8px;
@@ -289,14 +289,14 @@
 }
 .tb-roster-item:hover {
   background: var(--paper-2);
-  border-color: var(--ink);
+  border-color: var(--bd);
   transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .tb-roster-item.on {
   background: #fff3bf;
-  border-color: var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  border-color: var(--bd);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .tb-roster-name {
   font-size: 0.77rem;
@@ -331,7 +331,7 @@
   border-radius: 999px;
   font-size: 0.6rem;
   font-weight: 900;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
 }
 .tb-roster-badge.lunas {
   background: #def5e3;
@@ -345,14 +345,14 @@
 /* ===== Controls inside Top Search Drawer + List Bar ===== */
 .status-filter-pills {
   display: inline-flex;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   overflow: hidden;
   background: var(--paper);
 }
 .status-filter-pills button {
   border: none;
-  border-right: 2px solid var(--ink);
+  border-right: 2px solid var(--bd);
   background: transparent;
   padding: 7px 11px;
   font-family: inherit;
@@ -369,7 +369,7 @@
   background: var(--paper-2);
 }
 .status-filter-pills button.on {
-  background: var(--ink);
+  background: var(--inv-bg);
   color: var(--yellow);
 }
 .filter-sort-wrap {
@@ -400,21 +400,21 @@
 .tb-count-pill {
   background: var(--white);
   color: var(--ink);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 999px;
   padding: 2px 10px;
   font-size: 0.68rem;
   font-weight: 900;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 
 /* ===== Kartu Penabung ===== */
 .rekap-card {
   background: var(--white);
-  border: 3px solid var(--ink);
+  border: 3px solid var(--bd);
   border-radius: 18px;
   padding: 14px 16px;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 4px 4px 0 var(--sh);
 }
 .rekap-card h3 {
   font-size: 0.86rem;
@@ -434,11 +434,11 @@
   transition: box-shadow 0.12s ease, transform 0.12s ease;
 }
 .tb-person-card:not(.is-open):hover {
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
   transform: translate(-1px, -1px);
 }
 .tb-person-card.is-open {
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: 5px 5px 0 var(--sh);
 }
 .tb-head {
   display: flex;
@@ -499,7 +499,7 @@
   padding: 2px 7px;
   border-radius: 999px;
   background: #fff3c4;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   color: var(--ink);
 }
 .tb-head-sub {
@@ -519,7 +519,7 @@
   border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 800;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
 }
 .tb-head-status.ok {
   background: var(--green-bg);
@@ -535,7 +535,7 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--paper-2);
   color: var(--ink);
   display: inline-flex;
@@ -550,6 +550,7 @@
 }
 .tb-person-card.is-open .tb-chev {
   background: var(--yellow);
+  color: var(--on-yellow);
 }
 .tb-person-card.is-open .tb-chev i {
   transform: rotate(180deg);
@@ -585,11 +586,11 @@
   gap: 10px;
 }
 .tb-day-group {
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   border-radius: 12px;
   background: var(--paper);
   overflow: hidden;
-  box-shadow: 2px 2px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--sh);
 }
 .tb-day-head {
   display: flex;
@@ -599,7 +600,7 @@
   flex-wrap: wrap;
   padding: 8px 11px;
   background: var(--paper-2);
-  border-bottom: 2px solid var(--ink);
+  border-bottom: 2px solid var(--bd);
 }
 .tb-day-date {
   display: inline-flex;
@@ -622,7 +623,7 @@
   font-weight: 800;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
 }
 .tb-day-net.plus {
   background: var(--green-bg);
@@ -640,7 +641,7 @@
   padding: 2px 7px;
   border-radius: 999px;
   background: var(--white);
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   color: var(--ink);
 }
 .tb-day-rows {
@@ -762,7 +763,7 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--white);
   color: var(--ink);
   font-size: 0.85rem;
@@ -779,9 +780,9 @@
   right: 0;
   top: calc(100% + 6px);
   background: var(--white);
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
   min-width: 180px;
   z-index: 30;
   overflow: hidden;
@@ -844,12 +845,12 @@
   text-transform: uppercase;
   padding: 3px 9px;
   border-radius: 999px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--bd);
   white-space: nowrap;
 }
 .jenis.total {
   background: var(--yellow);
-  color: var(--ink);
+  color: var(--on-yellow);
 }
 .jenis.masuk {
   background: #d6f5d6;
@@ -870,7 +871,7 @@
 }
 .jenis-toggle button {
   padding: 11px;
-  border: 2.5px solid var(--ink);
+  border: 2.5px solid var(--bd);
   border-radius: 12px;
   background: var(--white);
   font-family: inherit;
@@ -881,12 +882,12 @@
 .jenis-toggle button.on-masuk {
   background: #d6f5d6;
   color: #146314;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 .jenis-toggle button.on-keluar {
   background: #ffe9e9;
   color: var(--red-dark);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 3px 3px 0 var(--sh);
 }
 
 /* Tabel Setoran (Tanpa horizontal scroll di desktop, card-row di mobile) */
@@ -906,7 +907,7 @@ table.kas-tabel th {
   letter-spacing: 0.05em;
   color: var(--gray);
   padding: 8px;
-  border-bottom: 2px solid var(--ink);
+  border-bottom: 2px solid var(--bd);
   white-space: nowrap;
 }
 table.kas-tabel td {
@@ -930,7 +931,7 @@ table.kas-tabel td.num {
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  border: 2px solid var(--ink);
+  border: 2px solid var(--bd);
   background: var(--white);
   color: var(--gray);
   font-size: 0.85rem;
@@ -966,11 +967,11 @@ table.kas-tabel td.num {
     gap: 8px;
   }
   table.kas-tabel tbody tr {
-    border: 2px solid var(--ink);
+    border: 2px solid var(--bd);
     border-radius: 12px;
     padding: 9px 10px;
     background: var(--paper);
-    box-shadow: 2px 2px 0 var(--ink);
+    box-shadow: 2px 2px 0 var(--sh);
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 5px 8px;
@@ -1040,7 +1041,7 @@ table.kas-tabel td.num {
       .kas-form-inner {
         width: min(520px, 100%);
         background: var(--white);
-        border: 3px solid var(--ink);
+        border: 3px solid var(--bd);
         border-radius: 18px;
         padding: 18px;
         box-shadow: 6px 6px 0 rgba(15, 10, 11, 0.55);
@@ -1058,7 +1059,7 @@ table.kas-tabel td.num {
         align-items: center;
         gap: 8px;
         background: #d6f5d6;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 12px;
         padding: 9px 12px;
         font-size: 0.84rem;
@@ -1091,7 +1092,7 @@ table.kas-tabel td.num {
         display: flex;
         align-items: center;
         gap: 8px;
-        background: var(--ink);
+        background: var(--inv-bg);
         color: #fff;
         border-radius: 10px;
         padding: 6px 12px;
@@ -1107,7 +1108,7 @@ table.kas-tabel td.num {
         font-size: 0.62rem;
         font-weight: 900;
         background: var(--yellow);
-        color: var(--ink);
+        color: var(--on-yellow);
         border-radius: 999px;
         padding: 1px 9px;
         white-space: nowrap;
@@ -1128,7 +1129,7 @@ table.kas-tabel td.num {
         width: 100%;
         text-align: left;
         padding: 9px 12px;
-        border: 2.5px solid var(--ink);
+        border: 2.5px solid var(--bd);
         border-radius: 12px;
         background: var(--white);
         font-family: inherit;
@@ -1141,13 +1142,13 @@ table.kas-tabel td.num {
       .tb-item .dot {
         width: 22px;
         height: 22px;
-        border: 2px solid var(--ink);
+        border: 2px solid var(--bd);
         border-radius: 50%;
         display: grid;
         place-items: center;
         font-size: 0.68rem;
         flex-shrink: 0;
-        background: #fff;
+        background: var(--white);
       }
       .tb-item.pilih {
         background: #d6f5d6;

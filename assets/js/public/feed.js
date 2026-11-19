@@ -276,7 +276,7 @@ const Feed = {
         const isVideo = it.media_type === "video";
         const media = isVideo
             ? `<div class="feed-media" onclick="Feed.togglePlay(${id}, event)">` +
-              `<video muted loop playsinline preload="metadata" data-src="${(typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key)}"></video>` +
+              `<video muted loop playsinline preload="metadata" poster="${(typeof getThumb === "function" ? getThumb(it.media_key) : "")}" data-src="${(typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key)}"></video>` +
               `<span class="feed-play"><i class="fa-solid fa-play"></i></span>` +
               `<button type="button" class="feed-mute" onclick="event.stopPropagation(); Feed.toggleMute(${id}, this)" title="Suara"><i class="fa-solid fa-volume-xmark"></i></button>` +
               `</div>`
