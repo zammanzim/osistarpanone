@@ -193,7 +193,7 @@ const Lagu = {
                     : own;
                 const canBalas = isOsis && (isSuper || (OsisAuth.bisa && OsisAuth.bisa("lagu")));
                 const selesai = !!l.selesai;
-                const tombolSelesai = isSuper
+                const tombolSelesai = canBalas
                     ? (selesai
                         ? `<button type="button" class="hapus-btn selesai-btn on" onclick="Lagu.tandaiSelesai(${l.id}, false)" title="Batalkan tanda selesai"><i class="fa-solid fa-rotate-left"></i></button>`
                         : `<button type="button" class="hapus-btn selesai-btn" onclick="Lagu.tandaiSelesai(${l.id}, true)" title="Tandai selesai (udah diputar)"><i class="fa-solid fa-check"></i></button>`)
@@ -533,16 +533,18 @@ const Lagu = {
         }
     },
 
-    // ============ TANDAI SELESAI (KHUSUS super_admin, hijau di UI) ============
+    // ============ TANDAI SELESAI (super_admin + admin hak lagu, hijau di UI) ============
     async tandaiSelesai(id, nilai = true) {
         const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
         const isSuper = !!(u && u.mode === "osis" && typeof OsisAuth.isSuper === "function" && OsisAuth.isSuper());
-        if (!isSuper) {
-            showToast("Cuma super admin yang bisa nandain selesai.", "error");
+        const boleh = !!(u && u.mode === "osis" && (isSuper || (OsisAuth.bisa && OsisAuth.bisa("lagu"))));
+        if (!boleh) {
+            showToast("Cuma super admin / admin lagu yang bisa nandain selesai.", "error");
             return;
         }
         // Langsung tandai tanpa popup, batalin lewat tombol undo.
         try {
+            if (!OsisAuth.butuh("lagu")) return;
             await tandaiLaguSelesai(u.id, id, nilai);
             // Update optimistis biar langsung hijau tanpa nunggu reload
             const item = (Lagu.cache || []).find(l => String(l.id) === String(id));
@@ -553,7 +555,7 @@ const Lagu = {
         } catch (err) {
             console.error(err);
             if (err.message === "ERR_NO_AUTH") {
-                showPopup("Cuma super admin yang bisa nandain selesai.", "error");
+                showPopup("Cuma super admin / admin lagu yang bisa nandain selesai.", "error");
             } else if (String(err.message || "").match(/schema cache|does not exist|not found|tandai_lagu_selesai/i)) {
                 showPopup("Database belum dimigrasi. Jalankan dulu migrasi-lagu-selesai.sql di Supabase.", "error");
             } else {
