@@ -24,7 +24,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../assets/css/osis/uang-kas.css?v=3" />
+    <link rel="stylesheet" href="../assets/css/osis/uang-kas.css?v=4" />
     <link rel="stylesheet" href="../assets/css/shared/dark.css?v=1" />
     <script src="../assets/js/vendor/supabase.min.js?v=10"></script>
     <script src="../assets/js/core/config.js?v=14"></script>
@@ -41,7 +41,7 @@
     <script src="../assets/js/osis/shell/osis-sidebar.js?v=47" defer></script>
     <script src="../assets/js/osis/shell/osis-header.js?v=21" defer></script>
     <script src="../assets/js/shared/utilities/form-persist.js?v=10" defer></script>
-    <script src="../assets/js/osis/modules/uang-kas.js?v=4" defer></script>
+    <script src="../assets/js/osis/modules/uang-kas.js?v=5" defer></script>
     <script src="../assets/js/pwa/pwa.js?v=12" defer></script>
   </head>
   <body>
@@ -268,7 +268,10 @@
               <div class="uk-modal-sub" id="ukDetMeta">-</div>
             </div>
           </div>
-          <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0">
+          <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end">
+            <button type="button" class="btn btn-white btn-sm" id="btnDetSkip" style="display: none" title="Atur minggu yang di-skip untuk anggota ini">
+              <i class="fa-solid fa-forward"></i> Skip Kas
+            </button>
             <button type="button" class="btn btn-red btn-sm" id="btnDetSetor" style="display: none">
               <i class="fa-solid fa-plus"></i> Setor
             </button>
@@ -280,6 +283,38 @@
 
         <div class="uk-det-summary" id="ukDetSummary"></div>
 
+        <div class="uk-skip-box" id="ukSkipPanel" style="display: none">
+          <div class="uk-skip-head">
+            <div>
+              <b><i class="fa-solid fa-forward"></i> Mode Skip Uang Kas Anggota</b>
+              <small>Bebaskan minggu lama (untuk anggota baru) atau ketuk kartu minggu di bawah untuk skip satuan.</small>
+            </div>
+          </div>
+          <div class="uk-skip-controls">
+            <div class="field" style="margin: 0; flex: 1; min-width: 210px">
+              <label>Mulai wajib kas dari minggu</label>
+              <select id="ukSkipMulai" class="admin-input" data-dd="off"></select>
+            </div>
+            <div class="uk-skip-quick">
+              <button type="button" class="btn btn-white btn-sm" id="btnSkipMingguIni" title="Skip semua minggu sebelum minggu berjalan">
+                <i class="fa-solid fa-calendar-day"></i> Mulai Minggu Ini
+              </button>
+              <button type="button" class="btn btn-white btn-sm" id="btnSkipReset" title="Hapus semua skip pada anggota ini">
+                <i class="fa-solid fa-rotate-left"></i> Reset Skip
+              </button>
+            </div>
+          </div>
+          <div class="uk-skip-foot">
+            <span id="ukSkipPreviewInfo">Ketuk kartu minggu di bawah untuk skip/batal skip manual.</span>
+            <div style="display: flex; gap: 6px">
+              <button type="button" class="btn btn-white btn-sm" id="btnBatalSkip">Batal</button>
+              <button type="button" class="btn btn-red btn-sm" id="btnSimpanSkip">
+                <i class="fa-solid fa-floppy-disk"></i> Simpan Skip
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="uk-sec-title">
           <span><i class="fa-solid fa-calendar-check" style="color: var(--red)"></i> Progres Mingguan</span>
           <div class="uk-legend">
@@ -287,6 +322,7 @@
             <span><i class="uk-dot dimuka"></i> Di Muka</span>
             <span><i class="uk-dot cicil"></i> Nyicil</span>
             <span><i class="uk-dot belum"></i> Belum</span>
+            <span><i class="uk-dot skip"></i> Di-skip</span>
             <span><i class="uk-dot libur"></i> Libur</span>
           </div>
         </div>

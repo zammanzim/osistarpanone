@@ -416,152 +416,621 @@
   .sm-feed-card .pesan-list {
     max-height: 760px;
     overflow-y: auto;
-    padding-right: 4px;
+    padding: 2px 6px 6px 2px;
   }
 }
 
-/* ===== Item Pesan Aspirasi Enhanced ===== */
-[data-view="aspirasi"] .pesan-item {
+/* ===== Item Pesan Aspirasi & Playlist Lagu (Unified Neo-Brutalism Cards) ===== */
+[data-view="aspirasi"] .pesan-list,
+[data-view="musik"] .pesan-list {
+  gap: 14px;
+}
+[data-view="aspirasi"] .pesan-item,
+[data-view="musik"] .lagu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 11px;
   border: 2.5px solid var(--bd);
-  border-radius: 16px;
-  padding: 13px 14px;
-  background: var(--paper);
-  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease;
-}
-[data-view="aspirasi"] .pesan-item:first-child {
+  border-radius: 18px;
+  padding: 14px 15px;
   background: var(--white);
-  box-shadow: 3px 3px 0 var(--sh);
+  box-shadow: 3.5px 3.5px 0 var(--sh);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.14s ease, border-color 0.14s ease;
 }
-[data-view="aspirasi"] .pesan-item:hover {
+[data-view="aspirasi"] .pesan-item:first-child,
+[data-view="musik"] .lagu-item:first-child {
   background: var(--white);
+  box-shadow: 3.5px 3.5px 0 var(--sh);
+}
+[data-view="aspirasi"] .pesan-item:hover,
+[data-view="musik"] .lagu-item:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4.5px 4.5px 0 var(--sh);
+}
+
+/* Aspirasi Header & Body */
+[data-view="aspirasi"] .pesan-item.is-private {
+  border-style: dashed;
+  border-color: var(--red);
+  background: linear-gradient(180deg, #fff1f2 0%, var(--white) 58%);
+  box-shadow: 3.5px 3.5px 0 var(--red);
+}
+[data-view="aspirasi"] .pesan-item.is-private:hover {
+  box-shadow: 4.5px 4.5px 0 var(--red);
 }
 [data-view="aspirasi"] .pesan-meta {
+  display: flex;
   align-items: center;
-  gap: 7px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
 }
 .sm-ava {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  border: 2px solid var(--bd);
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 2.5px solid var(--bd);
   background: var(--yellow);
   color: var(--on-yellow);
+  box-shadow: 2px 2px 0 var(--sh);
   display: inline-grid;
   place-items: center;
-  font-size: 0.72rem;
+  font-size: 0.84rem;
   font-weight: 900;
   flex-shrink: 0;
 }
-.sm-priv-pill {
+.pesan-author {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+[data-view="aspirasi"] .pesan-nama {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.25;
+}
+[data-view="aspirasi"] .pesan-kelas {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1.5px solid var(--bd);
+  border-radius: 999px;
+  padding: 2px 9px;
+  line-height: 1.3;
+}
+.pesan-badges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+.sm-priv-pill,
+.sm-replied-pill,
+.lagu-badge-queue,
+[data-view="musik"] .lagu-badge-selesai {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
+  padding: 3px 9px;
+  margin-left: 0;
   border-radius: 999px;
-  border: 1.5px solid var(--bd);
+  border: 2px solid var(--bd);
+  font-size: 0.63rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.sm-priv-pill {
   background: #ffe4e6;
   color: var(--red-dark);
-  font-size: 0.62rem;
-  font-weight: 900;
-  text-transform: uppercase;
 }
 .sm-replied-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1.5px solid var(--bd);
   background: #dcfce7;
   color: #14532d;
-  font-size: 0.62rem;
-  font-weight: 900;
-  text-transform: uppercase;
+}
+[data-view="aspirasi"] .pesan-isi {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
-/* ===== Item Playlist Lagu Enhanced ===== */
-[data-view="musik"] .lagu-item {
-  align-items: flex-start;
-  gap: 12px;
-  border: 2.5px solid var(--bd);
-  border-radius: 16px;
-  padding: 12px 13px;
-  background: var(--paper);
-}
-[data-view="musik"] .lagu-item:first-child {
-  background: var(--white);
-  box-shadow: 3px 3px 0 var(--sh);
-}
+/* Musik Header, Vinyl/Kaset & Quote */
 [data-view="musik"] .lagu-item.selesai {
-  background: var(--green-bg);
+  background: linear-gradient(180deg, var(--green-bg) 0%, var(--white) 58%);
   border-color: var(--green);
+  box-shadow: 3.5px 3.5px 0 var(--green);
+}
+[data-view="musik"] .lagu-item.selesai:hover {
+  box-shadow: 4.5px 4.5px 0 var(--green);
+}
+.lagu-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 [data-view="musik"] .lagu-cover {
-  margin-top: 2px;
+  margin-top: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 2.5px solid var(--bd);
+  background: radial-gradient(circle, #2f282b 0 46%, var(--inv-bg) 47% 100%);
+  box-shadow: 2.5px 2.5px 0 var(--sh);
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+[data-view="musik"] .lagu-kaset {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--bd);
+  background: var(--yellow);
+  animation: laguSpin 3.8s linear infinite;
+}
+[data-view="musik"] .lagu-kaset i {
+  color: var(--on-yellow);
+  font-size: 0.88rem;
+}
+[data-view="musik"] .lagu-item.selesai .lagu-cover {
+  background: var(--green);
+  border-color: var(--bd);
+}
+[data-view="musik"] .lagu-item.selesai .lagu-kaset {
+  animation: none;
+  background: #ffffff;
+  border-color: var(--bd);
+}
+[data-view="musik"] .lagu-item.selesai .lagu-kaset i {
+  color: var(--green);
+  font-size: 0.96rem;
+}
+.lagu-head-info {
+  flex: 1;
+  min-width: 0;
+}
+.lagu-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 [data-view="musik"] .lagu-title {
   white-space: normal;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: 0.94rem;
+  overflow: visible;
+  text-overflow: clip;
+  font-size: 0.98rem;
+  font-weight: 900;
+  line-height: 1.25;
+  color: var(--ink);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .lagu-badge-queue {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.6rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1.5px solid var(--bd);
   background: var(--yellow);
   color: var(--on-yellow);
-  white-space: nowrap;
+}
+[data-view="musik"] .lagu-badge-selesai {
+  background: var(--green);
+  color: #ffffff;
 }
 [data-view="musik"] .lagu-artis {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 2px;
-  color: #4b4345;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 0.8rem;
   font-weight: 700;
+  color: #4b4345;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 [data-view="musik"] .lagu-artis i {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--red);
+  flex-shrink: 0;
+}
+[data-view="musik"] .lagu-item.selesai .lagu-artis i {
+  color: var(--green);
 }
 [data-view="musik"] .lagu-pesan {
-  margin-top: 7px;
-  padding: 7px 10px;
-  border-radius: 10px;
-  border: 1.5px dashed var(--line);
-  background: rgba(255, 255, 255, 0.75);
-  font-size: 0.78rem;
+  margin-top: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  border-left: 4px solid var(--red);
+  background: var(--paper);
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--ink);
-  line-height: 1.45;
+  line-height: 1.5;
   overflow-wrap: anywhere;
+}
+[data-view="musik"] .lagu-item.selesai .lagu-pesan {
+  border-left-color: var(--green);
 }
 [data-view="musik"] .lagu-pesan i {
   color: var(--red);
-  margin-right: 5px;
-  font-size: 0.7rem;
+  margin: 3px 0 0;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+[data-view="musik"] .lagu-item.selesai .lagu-pesan i {
+  color: var(--green);
+}
+
+/* ===== Bubble Balasan OSIS & Inline Editor (Unified Aspirasi & Musik) ===== */
+[data-view="aspirasi"] .pesan-balas,
+[data-view="musik"] .pesan-balas {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  background: #fffbeb;
+  border: 2px solid var(--bd);
+  border-left: 5px solid var(--yellow);
+  border-radius: 13px;
+  padding: 10px 12px;
+  box-shadow: 2.5px 2.5px 0 var(--sh);
+  transition: background 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.pesan-balas-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pesan-balas-ico {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--bd);
+  background: var(--yellow);
+  color: var(--on-yellow);
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.64rem;
+  flex-shrink: 0;
+}
+.pesan-balas-tag {
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--inv-bg);
+  color: var(--yellow);
+  line-height: 1.25;
+}
+[data-view="aspirasi"] .pesan-balas b,
+[data-view="musik"] .pesan-balas b {
+  font-size: 0.77rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+[data-view="aspirasi"] .pesan-balas p,
+[data-view="musik"] .pesan-balas p {
+  margin: 0;
+  font-size: 0.83rem;
+  font-weight: 600;
+  line-height: 1.52;
+  color: var(--ink);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+[data-view="aspirasi"] .pesan-balas.is-editing,
+[data-view="musik"] .pesan-balas.is-editing {
+  background: var(--white);
+  border-color: var(--red);
+  border-left-color: var(--red);
+  box-shadow: 3px 3px 0 var(--red);
+}
+[data-view="aspirasi"] .pesan-balas.is-editing p[contenteditable="true"],
+[data-view="musik"] .pesan-balas.is-editing p[contenteditable="true"] {
+  background: var(--paper);
+  border: 2px solid var(--bd);
+  border-radius: 10px;
+  padding: 9px 11px;
+  min-height: 58px;
+  box-shadow: none;
+}
+[data-view="aspirasi"] .pesan-balas.is-editing p[contenteditable="true"]:focus,
+[data-view="musik"] .pesan-balas.is-editing p[contenteditable="true"]:focus {
+  background: var(--white);
+  border-color: var(--red);
+  box-shadow: 2.5px 2.5px 0 var(--yellow);
+}
+[data-view="aspirasi"] .balas-act,
+[data-view="musik"] .balas-act {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1.5px dashed var(--line);
+}
+.balas-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+.balas-hint kbd {
+  font-family: inherit;
+  font-size: 0.63rem;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1.5px solid var(--bd);
+  background: var(--paper-2);
+  color: var(--ink);
+}
+.balas-act-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+/* ===== Footer Meta & Action Bar (Unified Aspirasi & Musik) ===== */
+.sm-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px 12px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 2px dashed var(--line);
+}
+.sm-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  min-width: 0;
+}
+.sm-meta-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  font-weight: 800;
+}
+.sm-meta-user i {
+  font-size: 0.66rem;
+  color: var(--red);
+}
+[data-view="musik"] .lagu-item.selesai .sm-meta-user i {
+  color: var(--green);
+}
+.sm-meta-dot {
+  opacity: 0.55;
+  font-weight: 900;
+}
+.sm-card-meta .pesan-waktu {
+  margin-left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.71rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+.sm-card-meta .pesan-waktu i {
+  font-size: 0.66rem;
+  opacity: 0.8;
+}
+
+.sm-act-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+.sm-act-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 11px;
+  border: 2px solid var(--bd);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--sh);
+  white-space: nowrap;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.sm-act-btn i {
+  font-size: 0.72rem;
+}
+.sm-act-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--sh);
+}
+.sm-act-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--sh);
+}
+
+/* Tombol Tandai Selesai */
+.sm-act-btn.selesai {
+  background: var(--green-bg);
+  color: var(--green);
+  border-color: var(--green);
+}
+.sm-act-btn.selesai:hover {
+  background: var(--green);
+  color: #ffffff;
+  border-color: var(--bd);
+}
+.sm-act-btn.selesai.on {
+  background: var(--green);
+  color: #ffffff;
+  border-color: var(--bd);
+}
+.sm-act-btn.selesai.on:hover {
+  background: #145f2a;
+  color: #ffffff;
+}
+
+/* Tombol Balas */
+.sm-act-btn.balas {
+  background: var(--yellow);
+  color: var(--on-yellow);
+}
+.sm-act-btn.balas:hover {
+  background: #ffe052;
+}
+.sm-act-btn.balas.edited {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+.sm-act-btn.balas.edited:hover {
+  background: var(--yellow);
+  color: var(--on-yellow);
+}
+
+/* Tombol Editor Balasan */
+.sm-act-btn.simpan {
+  background: var(--red);
+  color: #ffffff;
+}
+.sm-act-btn.simpan:hover {
+  background: var(--red-dark);
+}
+.sm-act-btn.batal {
+  background: var(--white);
+  color: var(--ink);
+}
+.sm-act-btn.batal:hover {
+  background: var(--paper-2);
+}
+.sm-act-btn.hapus-balas {
+  background: #ffe4e6;
+  color: var(--red-dark);
+}
+.sm-act-btn.hapus-balas:hover {
+  background: var(--red);
+  color: #ffffff;
+}
+
+/* Tombol Edit & Hapus (terpisah di kanan) */
+.sm-act-manage {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 7px;
+  border-left: 2px dashed var(--line);
+}
+.sm-act-manage:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.sm-act-ico {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--bd);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+  font-size: 0.74rem;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--sh);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.12s ease, color 0.12s ease;
+}
+.sm-act-ico:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--sh);
+}
+.sm-act-ico:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--sh);
+}
+.sm-act-ico.edit:hover {
+  background: var(--yellow);
+  color: var(--on-yellow);
+}
+.sm-act-ico.del {
+  background: #ffe4e6;
+  color: var(--red-dark);
+}
+.sm-act-ico.del:hover {
+  background: var(--red);
+  color: #ffffff;
 }
 
 @media (max-width: 560px) {
   .sm-feed-card {
     padding: 14px;
   }
+  [data-view="aspirasi"] .pesan-item,
+  [data-view="musik"] .lagu-item {
+    padding: 13px;
+  }
   [data-view="musik"] .lagu-cover {
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
   }
   [data-view="musik"] .lagu-kaset {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
+  }
+  .sm-act-bar {
+    width: 100%;
+    margin-left: 0;
+  }
+  .sm-act-btn {
+    height: 34px;
+    padding: 0 12px;
+  }
+  .sm-act-ico {
+    width: 34px;
+    height: 34px;
+  }
+  .sm-act-manage {
+    margin-left: auto;
+    padding-left: 0;
+    border-left: 0;
+  }
+  .balas-hint {
+    display: none;
   }
 }

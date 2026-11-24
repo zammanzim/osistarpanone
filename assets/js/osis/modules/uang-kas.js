@@ -20,6 +20,9 @@ const UangKas = {
   editingId: null,
   namaQ: "",
   draftLibur: new Set(),
+  skipMode: false,
+  draftSkipMulai: "",
+  draftSkipMinggu: new Set(),
   _initialTarif: 2000,
 
   async init() {
@@ -103,9 +106,39 @@ const UangKas = {
     document.getElementById("btnDetSetor")?.addEventListener("click", () => {
       if (UangKas.detailNama) UangKas.bukaSetor(UangKas.detailNama);
     });
+    document.getElementById("btnDetSkip")?.addEventListener("click", () => UangKas.toggleSkipMode());
+    document.getElementById("ukSkipMulai")?.addEventListener("change", (e) => {
+      UangKas.draftSkipMulai = e.target.value || "";
+      if (UangKas.draftSkipMulai) {
+        [...UangKas.draftSkipMinggu].forEach((s) => {
+          if (s < UangKas.draftSkipMulai) UangKas.draftSkipMinggu.delete(s);
+        });
+      }
+      UangKas.renderDetailModal();
+    });
+    document.getElementById("btnSkipMingguIni")?.addEventListener("click", () => {
+      UangKas.draftSkipMulai = UangKas.seninDari(UangKas.hariIni());
+      [...UangKas.draftSkipMinggu].forEach((s) => {
+        if (s < UangKas.draftSkipMulai) UangKas.draftSkipMinggu.delete(s);
+      });
+      UangKas.renderDetailModal();
+    });
+    document.getElementById("btnSkipReset")?.addEventListener("click", () => {
+      UangKas.draftSkipMulai = "";
+      UangKas.draftSkipMinggu = new Set();
+      UangKas.renderDetailModal();
+    });
+    document.getElementById("btnBatalSkip")?.addEventListener("click", () => UangKas.batalSkipMode());
+    document.getElementById("btnSimpanSkip")?.addEventListener("click", () => UangKas.simpanSkipAnggota());
     document.getElementById("ukDetWeeks")?.addEventListener("click", (e) => {
+      if (!UangKas.bolehKelola() || !UangKas.detailNama) return;
+      if (UangKas.skipMode) {
+        const sw = e.target.closest("[data-uk-week-senin]");
+        if (sw && sw.dataset.ukWeekSenin) UangKas.toggleDraftSkipMinggu(sw.dataset.ukWeekSenin);
+        return;
+      }
       const w = e.target.closest("[data-uk-week-target]");
-      if (!w || !UangKas.bolehKelola() || !UangKas.detailNama) return;
+      if (!w) return;
       const butuh = parseInt(w.dataset.ukWeekKurang || "0", 10) || 0;
       UangKas.bukaSetor(UangKas.detailNama, butuh > 0 ? butuh : null);
     });
@@ -207,6 +240,8 @@ const UangKas = {
     if (acts) acts.style.display = boleh ? "" : "none";
     const detBtn = document.getElementById("btnDetSetor");
     if (detBtn) detBtn.style.display = boleh ? "" : "none";
+    const skipBtn = document.getElementById("btnDetSkip");
+    if (skipBtn) skipBtn.style.display = boleh ? "" : "none";
   },
 
   // ============ TANGGAL & FORMAT (WIB-safe) ============
@@ -317,6 +352,7 @@ const UangKas = {
       tanggal_mulai: UangKas.seninDari(UangKas.tambahHari(UangKas.hariIni(), -21)),
       minggu_libur: [],
       tarif_riwayat: [],
+      skip_anggota: {},
       catatan: "",
     };
   },
@@ -339,13 +375,35 @@ const UangKas = {
     const riw = [...riwMap.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([mulaiKey, nominalVal]) => ({ mulai: mulaiKey, nominal: nominalVal }));
+    const skipRaw = r.skip_anggota && typeof r.skip_anggota === "object" && !Array.isArray(r.skip_anggota)
+      ? r.skip_anggota
+      : {};
+    const skipMap = {};
+    Object.keys(skipRaw).forEach((k) => {
+      const nk = UangKas.norm(k);
+      const v = skipRaw[k];
+      if (!nk || !v || typeof v !== "object") return;
+      const sm = v.mulai ? UangKas.seninDari(v.mulai) : "";
+      const sArr = Array.isArray(v.minggu)
+        ? [...new Set(v.minggu.map((x) => UangKas.seninDari(x)).filter(Boolean))].sort()
+        : [];
+      if (sm || sArr.length) skipMap[nk] = { mulai: sm || "", minggu: sArr };
+    });
     return {
       nominal_mingguan: nom > 0 ? nom : def.nominal_mingguan,
       tanggal_mulai: mulai,
       minggu_libur: libur,
       tarif_riwayat: riw,
+      skip_anggota: skipMap,
       catatan: String(r.catatan || "").trim(),
     };
+  },
+
+  skipInfoDari(nama, cfg) {
+    const c = cfg || UangKas.config || UangKas.defaultConfig();
+    const map = (c && c.skip_anggota && typeof c.skip_anggota === "object") ? c.skip_anggota : {};
+    const hit = map[UangKas.norm(nama)];
+    return hit ? { mulai: hit.mulai || "", minggu: Array.isArray(hit.minggu) ? hit.minggu : [] } : { mulai: "", minggu: [] };
   },
 
   isTabelBelumAda(err) {
@@ -355,16 +413,22 @@ const UangKas = {
   },
 
   async fetchConfigLive() {
-    const { data, error } = await DbScope.queryAngkatan((angId) => {
-      let q = supa
-        .from("osis_uang_kas_config")
-        .select("angkatan_id, nominal_mingguan, tanggal_mulai, minggu_libur, tarif_riwayat, catatan, updated_at")
-        .limit(1);
-      if (angId) q = q.eq("angkatan_id", angId);
-      return q;
-    });
-    if (error) throw error;
-    return (data && data[0]) ? UangKas.normalConfig(data[0]) : UangKas.defaultConfig();
+    const colSets = [
+      "angkatan_id, nominal_mingguan, tanggal_mulai, minggu_libur, tarif_riwayat, skip_anggota, catatan, updated_at",
+      "angkatan_id, nominal_mingguan, tanggal_mulai, minggu_libur, tarif_riwayat, catatan, updated_at",
+    ];
+    let lastErr = null;
+    for (const cols of colSets) {
+      const { data, error } = await DbScope.queryAngkatan((angId) => {
+        let q = supa.from("osis_uang_kas_config").select(cols).limit(1);
+        if (angId) q = q.eq("angkatan_id", angId);
+        return q;
+      });
+      if (!error) return (data && data[0]) ? UangKas.normalConfig(data[0]) : UangKas.defaultConfig();
+      lastErr = error;
+      if (!String(error.message || "").match(/skip_anggota|column/i)) break;
+    }
+    throw lastErr;
   },
 
   async fetchSetoranLive() {
@@ -487,6 +551,10 @@ const UangKas = {
     const mulai = UangKas.seninDari(cfg.tanggal_mulai) || UangKas.seninDari(UangKas.hariIni());
     const mingguIni = UangKas.seninDari(UangKas.hariIni());
     const liburSet = new Set((cfg.minggu_libur || []).map((x) => UangKas.seninDari(x)).filter(Boolean));
+    const skipInfo = UangKas.skipInfoDari(nama, cfg);
+    const mulaiOrang = skipInfo.mulai || "";
+    const skipSet = new Set(skipInfo.minggu || []);
+    const batasLoop = mulaiOrang && mulaiOrang > mingguIni ? mulaiOrang : mingguIni;
 
     const weeks = [];
     let sisa = totalSetor;
@@ -494,15 +562,28 @@ const UangKas = {
     let nomorAktif = 0;
     let guard = 0;
 
-    while (guard < 208 && (cur <= mingguIni || sisa > 0)) {
+    while (guard < 208 && (cur <= batasLoop || sisa > 0)) {
       guard++;
       const isLibur = liburSet.has(cur);
       const isMasaDepan = cur > mingguIni;
+      const isSkip = !isLibur && ((mulaiOrang && cur < mulaiOrang) || skipSet.has(cur));
       if (isLibur) {
         weeks.push({
           senin: cur,
           nomor: null,
           status: "libur",
+          tarif: 0,
+          terbayar: 0,
+          kurang: 0,
+          masaDepan: isMasaDepan,
+        });
+      } else if (isSkip) {
+        nomorAktif++;
+        weeks.push({
+          senin: cur,
+          nomor: nomorAktif,
+          status: "skip",
+          alasanSkip: mulaiOrang && cur < mulaiOrang ? "sebelum_mulai" : "manual",
           tarif: 0,
           terbayar: 0,
           kurang: 0,
@@ -530,7 +611,8 @@ const UangKas = {
       cur = UangKas.tambahHari(cur, 7);
     }
 
-    const wajibKini = weeks.filter((w) => w.status !== "libur" && !w.masaDepan);
+    const wajibKini = weeks.filter((w) => w.status !== "libur" && w.status !== "skip" && !w.masaDepan);
+    const skipKini = weeks.filter((w) => w.status === "skip" && !w.masaDepan).length;
     const lunasKini = wajibKini.filter((w) => w.status === "lunas").length;
     const dimukaCount = weeks.filter((w) => w.masaDepan && w.status === "dimuka").length;
     const tunggakanMinggu = wajibKini.filter((w) => w.status !== "lunas").length;
@@ -550,6 +632,9 @@ const UangKas = {
       totalSetor,
       weeks,
       aktifKini: wajibKini.length,
+      skipKini,
+      mulaiOrang,
+      adaSkip: !!(mulaiOrang || skipSet.size),
       lunasKini,
       dimukaCount,
       tunggakanMinggu,
@@ -672,7 +757,7 @@ const UangKas = {
 
     // Statistik
     const totalRp = semuaSetoran.reduce((s, r) => s + (parseInt(r.nominal, 10) || 0), 0);
-    const refWeeks = orangAll[0]?.prog.weeks || UangKas.hitungProgres("__ref__").weeks;
+    const refWeeks = UangKas.hitungProgres("__ref__").weeks;
     const mingguAktifKini = refWeeks.filter((w) => w.status !== "libur" && !w.masaDepan).length;
     const mingguLiburKini = refWeeks.filter((w) => w.status === "libur" && !w.masaDepan).length;
     const lunasCount = orangAll.filter((o) => o.prog.tunggakanRp === 0).length;
@@ -819,7 +904,10 @@ const UangKas = {
       const badgeCls = p.statusRingkas === "dimuka" ? "dimuka" : (p.statusRingkas === "cicil" ? "cicil" : (p.tunggakanRp > 0 ? "nunggak" : "lunas"));
       const progTxt = p.aktifKini > 0
         ? `${p.lunasKini}/${p.aktifKini} mgg${p.dimukaCount ? ` (+${p.dimukaCount})` : ""}`
-        : "Belum mulai";
+        : (p.skipKini > 0 ? `Di-skip (${p.skipKini} mgg)` : "Belum mulai");
+      const skipTag = p.skipKini > 0
+        ? `<span class="uk-tag-skip">Skip ${p.skipKini} mgg</span>`
+        : (p.adaSkip ? `<span class="uk-tag-skip">Ada skip</span>` : "");
 
       return `<div class="uk-person ${statusCls}${o.saya ? " saya" : ""}" role="button" tabindex="0" data-uk-orang="${namaEnc}">
         <span class="uk-ava">${escapeHtml(inisial)}</span>
@@ -827,6 +915,7 @@ const UangKas = {
           <div class="uk-phead">
             <b>${escapeHtml(o.nama)}</b>
             ${o.saya ? `<span class="uk-tag-saya">Saya</span>` : ""}
+            ${skipTag}
           </div>
           ${meta ? `<div class="uk-sub">${escapeHtml(meta)}</div>` : ""}
           <div class="uk-pbar-wrap">
@@ -875,6 +964,7 @@ const UangKas = {
   bukaDetail(nama) {
     if (!nama) return;
     UangKas.detailNama = nama;
+    UangKas.skipMode = false;
     UangKas.renderDetailModal();
     document.getElementById("ukDetailModal")?.classList.add("open");
     document.body.style.overflow = "hidden";
@@ -886,14 +976,99 @@ const UangKas = {
       document.body.style.overflow = "";
     }
     UangKas.detailNama = "";
+    UangKas.skipMode = false;
+  },
+
+  muatDraftSkipDariConfig(nama) {
+    const info = UangKas.skipInfoDari(nama);
+    UangKas.draftSkipMulai = info.mulai || "";
+    UangKas.draftSkipMinggu = new Set(info.minggu || []);
+  },
+
+  toggleSkipMode() {
+    if (!UangKas.butuhKelola() || !UangKas.detailNama) return;
+    if (UangKas.skipMode) {
+      UangKas.batalSkipMode();
+      return;
+    }
+    UangKas.muatDraftSkipDariConfig(UangKas.detailNama);
+    UangKas.skipMode = true;
+    UangKas.renderDetailModal();
+  },
+
+  batalSkipMode() {
+    UangKas.skipMode = false;
+    UangKas.renderDetailModal();
+  },
+
+  cfgDenganDraftSkip(nama) {
+    const base = UangKas.config || UangKas.defaultConfig();
+    const k = UangKas.norm(nama);
+    const nextSkip = { ...(base.skip_anggota || {}) };
+    const m = UangKas.draftSkipMulai ? UangKas.seninDari(UangKas.draftSkipMulai) : "";
+    const arr = [...UangKas.draftSkipMinggu].filter(Boolean).sort();
+    if (m || arr.length) nextSkip[k] = { mulai: m, minggu: arr };
+    else delete nextSkip[k];
+    return { ...base, skip_anggota: nextSkip };
+  },
+
+  toggleDraftSkipMinggu(senin) {
+    const s = UangKas.seninDari(senin);
+    if (!s) return;
+    const mulai = UangKas.draftSkipMulai;
+    if (mulai && s < mulai) {
+      // Kalau minggu ini ter-skip karena < mulai, ketuk minggu ini = majukan mulai wajib ke minggu ini
+      UangKas.draftSkipMulai = s;
+    } else if (UangKas.draftSkipMinggu.has(s)) {
+      UangKas.draftSkipMinggu.delete(s);
+    } else {
+      UangKas.draftSkipMinggu.add(s);
+    }
+    UangKas.renderDetailModal();
+  },
+
+  async simpanSkipAnggota() {
+    if (!UangKas.butuhKelola() || !UangKas.detailNama) return;
+    const u = OsisAuth.getUser();
+    const nama = UangKas.detailNama;
+    const pMulai = UangKas.draftSkipMulai ? UangKas.seninDari(UangKas.draftSkipMulai) : null;
+    const pMinggu = [...UangKas.draftSkipMinggu]
+      .map((x) => UangKas.seninDari(x))
+      .filter((x) => x && (!pMulai || x >= pMulai))
+      .sort();
+    const btn = document.getElementById("btnSimpanSkip");
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
+    try {
+      const { data, error } = await supa.rpc("atur_uang_kas_skip_anggota", {
+        p_user_id: u.id,
+        p_nama: nama,
+        p_mulai: pMulai,
+        p_minggu: pMinggu,
+        p_angkatan_id: DbScope.angkatanId(),
+      });
+      if (error) throw error;
+      cekOk(data);
+      Cache.del(UangKas.angKey("cfg"));
+      UangKas.skipMode = false;
+      showToast(`Pengaturan skip kas ${nama} disimpan!`, "success");
+      try { catatAksi("atur_skip_uang_kas", `${nama} · mulai ${pMulai || "awal"} · ${pMinggu.length} mgg`); } catch {}
+      await UangKas.muat();
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal simpan skip: " + (err.message || err), "error");
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Skip'; }
+    }
   },
 
   renderDetailModal() {
     const nama = UangKas.detailNama;
     if (!nama) return;
-    const orang = UangKas.daftarAnggota().find((o) => UangKas.norm(o.nama) === UangKas.norm(nama));
-    const prog = orang ? orang.prog : UangKas.hitungProgres(nama);
     const boleh = UangKas.bolehKelola();
+    const inSkip = boleh && UangKas.skipMode;
+    const orang = UangKas.daftarAnggota().find((o) => UangKas.norm(o.nama) === UangKas.norm(nama));
+    const cfgAktif = inSkip ? UangKas.cfgDenganDraftSkip(nama) : (UangKas.config || UangKas.defaultConfig());
+    const prog = inSkip ? UangKas.hitungProgres(nama, cfgAktif) : (orang ? orang.prog : UangKas.hitungProgres(nama));
 
     document.getElementById("ukDetNama").textContent = orang ? orang.nama : nama;
     const metaParts = [];
@@ -902,11 +1077,54 @@ const UangKas = {
     if (!metaParts.length) metaParts.push("Anggota OSIS");
     document.getElementById("ukDetMeta").textContent = metaParts.join(" · ");
     document.getElementById("btnDetSetor").style.display = boleh ? "" : "none";
+    const btnSkip = document.getElementById("btnDetSkip");
+    if (btnSkip) {
+      btnSkip.style.display = boleh ? "" : "none";
+      btnSkip.className = inSkip ? "btn btn-yellow btn-sm" : "btn btn-white btn-sm";
+      btnSkip.innerHTML = inSkip
+        ? '<i class="fa-solid fa-xmark"></i> Tutup Skip'
+        : `<i class="fa-solid fa-forward"></i> Skip Kas${prog.skipKini > 0 ? ` (${prog.skipKini})` : ""}`;
+    }
+
+    const skipPanel = document.getElementById("ukSkipPanel");
+    if (skipPanel) {
+      skipPanel.style.display = inSkip ? "" : "none";
+      if (inSkip) {
+        const sel = document.getElementById("ukSkipMulai");
+        if (sel) {
+          const refWeeks = UangKas.hitungProgres("__ref__").weeks.filter((w) => w.status !== "libur");
+          const mingguDepan = UangKas.tambahHari(UangKas.seninDari(UangKas.hariIni()), 7);
+          const opsiList = [...refWeeks.map((w) => ({ senin: w.senin, nomor: w.nomor }))];
+          if (!opsiList.some((x) => x.senin === mingguDepan)) {
+            opsiList.push({ senin: mingguDepan, nomor: opsiList.length + 1 });
+          }
+          if (UangKas.draftSkipMulai && !opsiList.some((x) => x.senin === UangKas.draftSkipMulai)) {
+            opsiList.push({ senin: UangKas.draftSkipMulai, nomor: "?" });
+            opsiList.sort((a, b) => a.senin.localeCompare(b.senin));
+          }
+          const mIni = UangKas.seninDari(UangKas.hariIni());
+          sel.innerHTML = `<option value="">Sejak awal kas (${escapeHtml(UangKas.fmtPendek(cfgAktif.tanggal_mulai))}) — Tanpa skip awal</option>`
+            + opsiList.slice(1).map((o) => {
+              const tag = o.senin === mIni ? " · Minggu Ini" : (o.senin > mIni ? " · Minggu Depan" : "");
+              const selAttr = o.senin === UangKas.draftSkipMulai ? " selected" : "";
+              return `<option value="${o.senin}"${selAttr}>Minggu ${o.nomor} (${escapeHtml(UangKas.fmtRentang(o.senin))})${tag}</option>`;
+            }).join("");
+        }
+        const infoEl = document.getElementById("ukSkipPreviewInfo");
+        if (infoEl) {
+          const jmlSkip = prog.weeks.filter((w) => w.status === "skip").length;
+          infoEl.textContent = jmlSkip > 0
+            ? `Preview: ${jmlSkip} minggu di-skip · Sisa wajib ${prog.aktifKini} minggu.`
+            : "Belum ada minggu di-skip — pilih minggu mulai atau ketuk kartu di bawah.";
+        }
+      }
+    }
 
     // 4 summary box
+    const subLunas = prog.skipKini > 0 ? ` <small style="font-size:0.65rem; color:#4338ca">(${prog.skipKini} skip)</small>` : "";
     document.getElementById("ukDetSummary").innerHTML = `
       <div class="uk-det-box"><span>Total Disetor</span><b style="color:#146314">${UangKas.rp(prog.totalSetor)}</b></div>
-      <div class="uk-det-box"><span>Minggu Lunas</span><b>${prog.lunasKini} / ${prog.aktifKini} mgg</b></div>
+      <div class="uk-det-box"><span>Minggu Lunas</span><b>${prog.lunasKini} / ${prog.aktifKini} mgg${subLunas}</b></div>
       <div class="uk-det-box"><span>Tunggakan</span><b style="color:${prog.tunggakanRp > 0 ? "var(--red-dark)" : "#146314"}">${prog.tunggakanRp > 0 ? UangKas.rp(prog.tunggakanRp) : "Lunas ✓"}</b></div>
       <div class="uk-det-box"><span>Di Muka / Saldo</span><b style="color:#09527a">${prog.saldoLebih > 0 ? UangKas.rp(prog.saldoLebih) : "-"}</b></div>`;
 
@@ -914,7 +1132,7 @@ const UangKas = {
     const perBulan = new Map();
     let kumulatifKurang = 0;
     const enrichedWeeks = prog.weeks.map((w) => {
-      if (w.status !== "libur" && w.kurang > 0) kumulatifKurang += w.kurang;
+      if (w.status !== "libur" && w.status !== "skip" && w.kurang > 0) kumulatifKurang += w.kurang;
       return { ...w, _kumKurang: kumulatifKurang };
     });
     enrichedWeeks.forEach((w) => {
@@ -943,11 +1161,29 @@ const UangKas = {
               } else if (w.status === "cicil") {
                 ico = '<i class="fa-solid fa-hourglass-half"></i>';
                 statTxt = `${UangKas.rp(w.terbayar)} / ${UangKas.rp(w.tarif)}`;
+              } else if (w.status === "skip") {
+                ico = '<i class="fa-solid fa-forward"></i>';
+                statTxt = "Di-skip (Rp0)";
               } else if (w.status === "libur") {
                 ico = '<i class="fa-solid fa-umbrella-beach"></i>';
                 statTxt = "Libur (tidak ditagih)";
               }
-              const dapatKlik = boleh && (w.status === "belum" || w.status === "cicil");
+              if (inSkip && w.status !== "libur") {
+                const titleSkip = w.status === "skip"
+                  ? "Ketuk untuk batalkan skip minggu ini"
+                  : "Ketuk untuk skip minggu ini pada anggota ini";
+                return `<button type="button" class="uk-week ${w.status} skip-editable"
+                  data-uk-week-senin="${w.senin}"
+                  title="${escapeHtml(titleSkip)}">
+                  <div class="uk-week-top">
+                    <span class="uk-week-num">Minggu ${w.nomor}</span>
+                    <span class="uk-week-ico">${ico}</span>
+                  </div>
+                  <div class="uk-week-tgl">${escapeHtml(UangKas.fmtRentang(w.senin))}</div>
+                  <div class="uk-week-stat">${escapeHtml(statTxt)}</div>
+                </button>`;
+              }
+              const dapatKlik = boleh && !inSkip && (w.status === "belum" || w.status === "cicil");
               const title = dapatKlik ? `Klik untuk setor s.d. minggu ini (${UangKas.rp(w._kumKurang)})` : "";
               return `<button type="button" class="uk-week ${w.status}${dapatKlik ? " clickable" : ""}"
                 ${dapatKlik ? `data-uk-week-target="${w.senin}" data-uk-week-kurang="${w._kumKurang}"` : "disabled"}
@@ -1336,6 +1572,7 @@ const UangKas = {
       tanggal_mulai: mulai,
       minggu_libur: libur,
       tarif_riwayat: riwayat,
+      skip_anggota: curCfg.skip_anggota || {},
       catatan,
     });
 

@@ -285,6 +285,117 @@ const Keuangan = {
     return (t.tanggal || "").slice(0, 4);
   },
 
+  parseYmd(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || "").trim());
+    if (!m) return null;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return isNaN(d) ? null : d;
+  },
+
+  fmtYmd(d) {
+    const p = (x) => String(x).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  },
+
+  seninDari(ymd) {
+    const d = Keuangan.parseYmd(ymd);
+    if (!d) return "";
+    const mundur = (d.getDay() + 6) % 7;
+    return Keuangan.fmtYmd(new Date(d.getFullYear(), d.getMonth(), d.getDate() - mundur));
+  },
+
+  fmtRentangMinggu(seninYmd) {
+    const a = Keuangan.parseYmd(seninYmd);
+    if (!a) return seninYmd || "-";
+    const b = new Date(a.getFullYear(), a.getMonth(), a.getDate() + 6);
+    const p = (x) => String(x).padStart(2, "0");
+    const blnA = a.toLocaleDateString("id-ID", { month: "short" });
+    const blnB = b.toLocaleDateString("id-ID", { month: "short" });
+    if (a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()) {
+      return `${p(a.getDate())}–${p(b.getDate())} ${blnB} ${b.getFullYear()}`;
+    }
+    if (a.getFullYear() === b.getFullYear()) {
+      return `${p(a.getDate())} ${blnA}–${p(b.getDate())} ${blnB} ${b.getFullYear()}`;
+    }
+    return `${p(a.getDate())} ${blnA} ${a.getFullYear()}–${p(b.getDate())} ${blnB} ${b.getFullYear()}`;
+  },
+
+  // Gabungkan baris setoran Uang Kas (uang_kas_setoran_id != null) menjadi 1 blok per minggu (Senin–Minggu)
+  gabungBlokUangKas(rows) {
+    const hasil = [];
+    const grupMap = new Map();
+    (rows || []).forEach((t) => {
+      if (!t || !t.uang_kas_setoran_id) {
+        if (t) hasil.push(t);
+        return;
+      }
+      const senin = Keuangan.seninDari(t.tanggal) || String(t.tanggal || "tanpa-tgl");
+      let g = grupMap.get(senin);
+      if (!g) {
+        const rentang = Keuangan.fmtRentangMinggu(senin);
+        g = {
+          id: "uk-week-" + senin,
+          _isUkGroup: true,
+          uang_kas_setoran_id: -1,
+          senin,
+          rentangLabel: rentang,
+          jenis: "masuk",
+          tanggal: String(t.tanggal || senin),
+          keterangan: `Uang Kas Mingguan (${rentang})`,
+          kategori: t.kategori || "Uang Kas",
+          nominal: 0,
+          divisi: "",
+          pic: "",
+          catatan: "",
+          bukti_path: "",
+          pengunggah: t.pengunggah || "",
+          created_at: t.created_at || "",
+          updated_at: t.updated_at || "",
+          items: [],
+          _orangSet: new Set(),
+        };
+        grupMap.set(senin, g);
+        hasil.push(g);
+      }
+      const nom = parseInt(t.nominal, 10) || 0;
+      g.nominal += nom;
+      if (String(t.tanggal || "") > String(g.tanggal || "")) g.tanggal = t.tanggal;
+      if (String(t.updated_at || "") > String(g.updated_at || "")) g.updated_at = t.updated_at;
+      const nama = String(t.pic || "").trim() || String(t.keterangan || "").replace(/^Uang\s*Kas:\s*/i, "").trim() || "Anggota";
+      g._orangSet.add(nama.toLowerCase());
+      g.items.push({
+        id: t.id,
+        setoran_id: t.uang_kas_setoran_id,
+        nama,
+        tanggal: t.tanggal,
+        nominal: nom,
+        catatan: t.catatan || "",
+        pengunggah: t.pengunggah || "",
+      });
+    });
+    grupMap.forEach((g) => {
+      g.nOrang = g._orangSet.size;
+      g.nSetor = g.items.length;
+      g.pic = `${g.nOrang} anggota`;
+      delete g._orangSet;
+    });
+    return hasil;
+  },
+
+  async fetchSemuaKas(scope) {
+    const semua = [];
+    const batchSize = 1000;
+    let off = 0;
+    for (let guard = 0; guard < 10; guard++) {
+      const part = await getKas(batchSize, off, scope);
+      if (!part || !part.length) break;
+      semua.push(...part);
+      if (part.length < batchSize) break;
+      off += part.length;
+    }
+    return semua;
+  },
+
   // Scope server = filter aktif (tahun/jenis/kategori/divisi/cari). Halaman
   // yang di-fetch selalu pas dengan filter, statistik ikut scope via RPC.
   scopeDariFilter() {
@@ -338,19 +449,14 @@ const Keuangan = {
       }
       const [ringkas, rows] = await Promise.all([
         (typeof osisKasRingkas === "function" ? osisKasRingkas(uid, scope) : Promise.resolve(null)).catch(() => null),
-        getKas(Keuangan.perPage, Keuangan.offset, scope),
+        Keuangan.fetchSemuaKas(scope),
       ]);
       if (ringkas) Keuangan.ringkas = ringkas;
-      if (awal) {
-        Keuangan.cache = rows || [];
-      } else {
-        const ada = new Set((Keuangan.cache || []).map((t) => String(t.id)));
-        (rows || []).forEach((t) => { if (!ada.has(String(t.id))) { ada.add(String(t.id)); Keuangan.cache.push(t); } });
-      }
-      Keuangan.offset = (Keuangan.cache || []).length;
-      Keuangan.habis = (rows || []).length < Keuangan.perPage;
+      Keuangan.cache = rows || [];
+      Keuangan.offset = Keuangan.cache.length;
+      Keuangan.habis = true;
       // Cache persisten hanya bila lengkap + tanpa filter.
-      if (Keuangan.habis && Keuangan.scopeKosong()) {
+      if (Keuangan.scopeKosong()) {
         try { Cache.set("kas", Keuangan.cache); } catch {}
       }
       try { Keuangan.buildOptions(); } catch {}
@@ -379,7 +485,7 @@ const Keuangan = {
     }
     try {
       const scope = Keuangan.scopeDariFilter();
-      const rows = await getKas(null, 0, scope);
+      const rows = await Keuangan.fetchSemuaKas(scope);
       Keuangan.cache = rows || [];
       Keuangan.offset = Keuangan.cache.length;
       Keuangan.habis = true;
@@ -491,6 +597,7 @@ const Keuangan = {
         return false;
       return true;
     });
+    data = Keuangan.gabungBlokUangKas(data);
     if (f.sort === "lama")
       data = [...data].sort((a, b) =>
         String(a.tanggal || "") > String(b.tanggal || "") ? 1 : -1,
@@ -516,10 +623,10 @@ const Keuangan = {
   // bukan cache parsial). Gagal -> fallback data tampil + toast.
   async barisLaporan() {
     try {
-      const full = await getKas(null, 0, Keuangan.scopeDariFilter());
+      const full = await Keuangan.fetchSemuaKas(Keuangan.scopeDariFilter());
       if (full && full.length) {
         const f = Keuangan.filter;
-        const data = [...full];
+        const data = Keuangan.gabungBlokUangKas(full);
         if (f.sort === "lama")
           data.sort((a, b) =>
             String(a.tanggal || "") > String(b.tanggal || "") ? 1 : -1,
@@ -607,7 +714,8 @@ const Keuangan = {
         .reduce((a, t) => a + (parseInt(t.nominal, 10) || 0), 0);
     const masuk = R ? parseInt(R.masuk, 10) || 0 : sum("masuk");
     const keluar = R ? parseInt(R.keluar, 10) || 0 : sum("keluar");
-    const nTrans = R && R.n != null ? parseInt(R.n, 10) || 0 : data.length;
+    const nTrans = Keuangan.habis ? data.length : (R && R.n != null ? parseInt(R.n, 10) || 0 : data.length);
+    const nBlokKas = data.filter((t) => t && t._isUkGroup).length;
     const saldo = masuk - keluar;
     const set = (id, v) => {
       const el = document.getElementById(id);
@@ -674,7 +782,7 @@ const Keuangan = {
     set("statCount", nTrans + " transaksi");
     set(
       "statCountSub",
-      `${(Keuangan.cache || []).length} dimuat di layar`,
+      nBlokKas > 0 ? `termasuk ${nBlokKas} blok uang kas` : `${data.length} riwayat tercatat`,
     );
     set(
       "statSelisih",
@@ -755,7 +863,7 @@ const Keuangan = {
 
     // Ringkasan Top Kategori interaktif (rail kiri)
     const katMap = {};
-    (Keuangan.cache || []).forEach((t) => {
+    Keuangan.gabungBlokUangKas(Keuangan.cache || []).forEach((t) => {
       const k = t.kategori || "Lainnya";
       if (!katMap[k]) katMap[k] = { name: k, masuk: 0, keluar: 0, n: 0 };
       katMap[k].n++;
@@ -837,6 +945,26 @@ const Keuangan = {
 
     wrap.innerHTML = `<table class="kas-tabel"><thead><tr><th>Tanggal</th><th>Transaksi</th><th>Jenis</th><th>Kategori</th><th class="num">Nominal</th></tr></thead><tbody>${tampil
       .map((t) => {
+        if (t._isUkGroup) {
+          const infoSetor = t.nSetor !== t.nOrang
+            ? `${t.nOrang} anggota (${t.nSetor} setoran)`
+            : `${t.nOrang} anggota menyetor`;
+          return `
+            <tr data-kas-row="${escapeHtml(t.id)}" class="kas-row-ukgroup">
+                <td class="col-tgl"><span class="kas-tgl-pill">${Keuangan.fmtTanggal(t.tanggal)}</span></td>
+                <td class="col-ket">
+                  <div class="kas-desc-title">${escapeHtml(t.keterangan)}</div>
+                  <div class="kas-meta-line">
+                    <span class="kas-mini-tag bukti"><i class="fa-solid fa-coins"></i> Blok Mingguan</span>
+                    <span><i class="fa-solid fa-users"></i> ${escapeHtml(infoSetor)}</span>
+                    <span><i class="fa-solid fa-hand-pointer"></i> Ketuk untuk daftar nama</span>
+                  </div>
+                </td>
+                <td class="col-jenis"><span class="jenis masuk">Pemasukan</span></td>
+                <td class="col-kat"><span class="kat-chip">${escapeHtml(t.kategori || "Uang Kas")}</span></td>
+                <td class="nominal masuk">+ ${Keuangan.rp(t.nominal)}</td>
+            </tr>`;
+        }
         const divTag = t.divisi
           ? `<span class="kas-mini-tag"><i class="fa-solid fa-users"></i> ${escapeHtml(t.divisi)}</span>`
           : "";
@@ -1245,11 +1373,7 @@ const Keuangan = {
 
   // ============ DETAIL ============
   detail(id) {
-    const t = Keuangan.cache.find((x) => String(x.id) === String(id));
-    if (!t) return;
-    Keuangan.detailId = id;
-    const masuk = t.jenis === "masuk";
-    const dariUangKas = !!t.uang_kas_setoran_id;
+    const idStr = String(id || "");
     const kv = (k, v, ico, tone, wide) => `
             <div class="osis-det-kv${wide ? " wide" : ""}">
                 <div class="osis-det-kv-top">
@@ -1258,6 +1382,84 @@ const Keuangan = {
                 </div>
                 <div class="v">${v || "-"}</div>
             </div>`;
+
+    if (idStr.startsWith("uk-week-")) {
+      const grp = Keuangan.dataTampil().find((x) => x && String(x.id) === idStr)
+        || Keuangan.gabungBlokUangKas(Keuangan.cache || []).find((x) => x && String(x.id) === idStr);
+      if (!grp) return;
+      Keuangan.detailId = id;
+      const mapOrang = new Map();
+      (grp.items || []).forEach((it) => {
+        const key = String(it.nama || "").trim().toLowerCase() || String(it.id);
+        let row = mapOrang.get(key);
+        if (!row) {
+          row = { nama: it.nama || "Anggota", nominal: 0, n: 0, tanggalList: [], catatanList: [] };
+          mapOrang.set(key, row);
+        }
+        row.nominal += parseInt(it.nominal, 10) || 0;
+        row.n += 1;
+        if (it.tanggal && !row.tanggalList.includes(it.tanggal)) row.tanggalList.push(it.tanggal);
+        if (it.catatan && !row.catatanList.includes(it.catatan)) row.catatanList.push(it.catatan);
+      });
+      const listOrang = [...mapOrang.values()].sort((a, b) => a.nama.localeCompare(b.nama, "id"));
+      const memberRows = listOrang.map((m, idx) => {
+        const tglStr = m.tanggalList.map((d) => Keuangan.fmtTanggal(d)).join(", ");
+        const catStr = m.catatanList.length ? ` · ${m.catatanList.join("; ")}` : "";
+        const kaliStr = m.n > 1 ? ` (${m.n}x setor)` : "";
+        return `<div class="kas-uk-mrow">
+          <span class="kas-uk-mno">${idx + 1}</span>
+          <div class="kas-uk-mmain">
+            <b>${escapeHtml(m.nama)}</b>
+            <small>${escapeHtml(tglStr + kaliStr + catStr)}</small>
+          </div>
+          <span class="kas-uk-mamt">+ ${Keuangan.rp(m.nominal)}</span>
+        </div>`;
+      }).join("");
+
+      document.getElementById("kasDetailBody").innerHTML = `
+            <div class="osis-det-hero tone-masuk">
+                <div class="osis-det-chips">
+                    <span class="osis-det-chip green"><i class="fa-solid fa-arrow-down"></i> Pemasukan</span>
+                    <span class="osis-det-chip yellow"><i class="fa-solid fa-tag"></i> ${escapeHtml(grp.kategori || "Uang Kas")}</span>
+                    <span class="osis-det-chip blue"><i class="fa-solid fa-layer-group"></i> Blok Mingguan</span>
+                </div>
+                <h4 class="osis-det-title">${escapeHtml(grp.keterangan)}</h4>
+                <div class="osis-det-amount masuk">+ ${Keuangan.rp(grp.nominal)}</div>
+            </div>
+            <div class="osis-det-grid">
+                ${kv("Rentang Minggu", escapeHtml(grp.rentangLabel), "fa-calendar-week", "t-amber")}
+                ${kv("Anggota Menyetor", `${listOrang.length} orang`, "fa-users", "t-blue")}
+                ${kv("Total Transaksi", `${grp.nSetor} setoran`, "fa-receipt", "t-purple")}
+                ${kv("Kategori", escapeHtml(grp.kategori || "Uang Kas"), "fa-tag", "t-red")}
+            </div>
+            <div class="osis-det-sec">
+                <div class="osis-det-sec-head">
+                    <span><i class="fa-solid fa-list-check"></i> Daftar Anggota yang Menyetor (${listOrang.length})</span>
+                </div>
+                <div class="kas-uk-mlist">${memberRows}</div>
+            </div>
+            <div class="osis-det-alert warn">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Blok ini adalah gabungan mingguan dari setoran <b>Uang Kas</b>. Tambah, edit, atau hapus setoran per orang lewat halaman Uang Kas.</span>
+            </div>`;
+      const btnBukti = document.getElementById("btnDownloadBukti");
+      const btnEd = document.getElementById("btnEditDariDetail");
+      const btnDel = document.getElementById("btnHapusDariDetail");
+      const btnUk = document.getElementById("btnKeUangKasDetail");
+      if (btnBukti) btnBukti.style.display = "none";
+      if (btnEd) btnEd.style.display = "none";
+      if (btnDel) btnDel.style.display = "none";
+      if (btnUk) btnUk.style.display = "";
+      document.getElementById("kasDetail").classList.add("open");
+      document.body.style.overflow = "hidden";
+      return;
+    }
+
+    const t = Keuangan.cache.find((x) => String(x.id) === idStr);
+    if (!t) return;
+    Keuangan.detailId = id;
+    const masuk = t.jenis === "masuk";
+    const dariUangKas = !!t.uang_kas_setoran_id;
     document.getElementById("kasDetailBody").innerHTML = `
             <div class="osis-det-hero ${masuk ? "tone-masuk" : "tone-keluar"}">
                 <div class="osis-det-chips">

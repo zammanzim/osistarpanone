@@ -193,34 +193,56 @@ const Lagu = {
                     : own;
                 const canBalas = isOsis && (isSuper || (OsisAuth.bisa && OsisAuth.bisa("lagu")));
                 const selesai = !!l.selesai;
+                const balasan = String(l.balasan || "").trim();
                 const tombolSelesai = canBalas
                     ? (selesai
-                        ? `<button type="button" class="hapus-btn selesai-btn on" onclick="Lagu.tandaiSelesai(${l.id}, false)" title="Batalkan tanda selesai"><i class="fa-solid fa-rotate-left"></i></button>`
-                        : `<button type="button" class="hapus-btn selesai-btn" onclick="Lagu.tandaiSelesai(${l.id}, true)" title="Tandai selesai (udah diputar)"><i class="fa-solid fa-check"></i></button>`)
+                        ? `<button type="button" class="sm-act-btn selesai on" onclick="Lagu.tandaiSelesai(${l.id}, false)" title="Batalkan tanda selesai"><i class="fa-solid fa-rotate-left"></i><span>Batalkan</span></button>`
+                        : `<button type="button" class="sm-act-btn selesai" onclick="Lagu.tandaiSelesai(${l.id}, true)" title="Tandai selesai (udah diputar)"><i class="fa-solid fa-check"></i><span>Tandai Selesai</span></button>`)
                     : "";
-                const balasan = String(l.balasan || "").trim();
+                const tombolBalas = canBalas
+                    ? `<button type="button" class="sm-act-btn balas${balasan ? " edited" : ""}" onclick="Lagu.balas(${l.id})" title="${balasan ? "Edit balasan" : "Balas request"}"><i class="fa-solid ${balasan ? "fa-pen-to-square" : "fa-reply"}"></i><span>${balasan ? "Edit Balasan" : "Balas"}</span></button>`
+                    : "";
+                const tombolKelola = canKelola
+                    ? `<div class="sm-act-manage">
+                        <button type="button" class="sm-act-ico edit" onclick="Lagu.edit(${l.id})" title="${isOsis ? "Edit (OSIS)" : "Edit request-ku"}"><i class="fa-solid fa-pen"></i></button>
+                        <button type="button" class="sm-act-ico del" onclick="Lagu.hapus(${l.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus request-ku"}"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>`
+                    : "";
+                const hasAct = !!(tombolSelesai || tombolBalas || tombolKelola);
                 const balasHtml = balasan
-                    ? `<div class="pesan-balas"><i class="fa-solid fa-reply"></i><div><b>${escapeHtml(l.dibalas_oleh || "OSIS")}</b><p data-balas-teks="${l.id}" contenteditable="false" data-ph="Tulis balasan...">${escapeHtml(balasan)}</p></div></div>`
+                    ? `<div class="pesan-balas">
+                        <div class="pesan-balas-head">
+                            <span class="pesan-balas-ico"><i class="fa-solid fa-reply"></i></span>
+                            <span class="pesan-balas-tag">OSIS</span>
+                            <b>${escapeHtml(l.dibalas_oleh || "OSIS")}</b>
+                        </div>
+                        <p data-balas-teks="${l.id}" contenteditable="false" data-ph="Tulis balasan...">${escapeHtml(balasan)}</p>
+                    </div>`
                     : "";
                 const statusBadge = selesai
                     ? `<span class="lagu-badge-selesai"><i class="fa-solid fa-circle-check"></i> Selesai</span>`
                     : `<span class="lagu-badge-queue"><i class="fa-solid fa-clock"></i> Antrean</span>`;
                 return `
             <div class="lagu-item${selesai ? " selesai" : ""}" data-balas-id="${l.id}">
-                <div class="lagu-cover"><div class="lagu-kaset"><i class="fa-solid fa-music"></i></div></div>
-                <div class="lagu-body">
-                    <div class="lagu-title">${escapeHtml(l.judul)} ${statusBadge}</div>
-                    <div class="lagu-artis"><i class="fa-solid fa-microphone-lines"></i> <span>${escapeHtml(l.penyanyi || "-")}</span></div>
-                    ${l.pesan ? `<div class="lagu-pesan"><i class="fa-solid fa-quote-left"></i>${escapeHtml(l.pesan)}</div>` : ""}
-                    ${balasHtml}
-                    <div class="lagu-meta">
-                        <span><i class="fa-solid fa-user"></i> ${escapeHtml(l.nama || "Anonim")}</span>
-                        <span class="pesan-waktu">${Lagu.formatWaktu(l.created_at)}</span>
-                        ${tombolSelesai}
-                        ${canBalas ? `<button type="button" class="hapus-btn" onclick="Lagu.balas(${l.id})" title="Balas request"><i class="fa-solid fa-reply"></i></button>` : ""}
-                        ${canKelola ? `<button type="button" class="hapus-btn" onclick="Lagu.edit(${l.id})" title="${isOsis ? "Edit (OSIS)" : "Edit request-ku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
-                        ${canKelola ? `<button type="button" class="hapus-btn" onclick="Lagu.hapus(${l.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus request-ku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
+                <div class="lagu-head">
+                    <div class="lagu-cover" aria-hidden="true"><div class="lagu-kaset"><i class="fa-solid ${selesai ? "fa-check" : "fa-music"}"></i></div></div>
+                    <div class="lagu-head-info">
+                        <div class="lagu-title-row">
+                            <div class="lagu-title">${escapeHtml(l.judul)}</div>
+                            ${statusBadge}
+                        </div>
+                        <div class="lagu-artis"><i class="fa-solid fa-microphone-lines"></i> <span>${escapeHtml(l.penyanyi || "-")}</span></div>
                     </div>
+                </div>
+                ${l.pesan ? `<div class="lagu-pesan"><i class="fa-solid fa-quote-left"></i><span>${escapeHtml(l.pesan)}</span></div>` : ""}
+                ${balasHtml}
+                <div class="sm-card-foot">
+                    <div class="sm-card-meta">
+                        <span class="sm-meta-user"><i class="fa-solid fa-user"></i> ${escapeHtml(l.nama || "Anonim")}</span>
+                        <span class="sm-meta-dot" aria-hidden="true">&middot;</span>
+                        <span class="pesan-waktu"><i class="fa-regular fa-calendar"></i> ${Lagu.formatWaktu(l.created_at)}</span>
+                    </div>
+                    ${hasAct ? `<div class="sm-act-bar">${tombolSelesai}${tombolBalas}${tombolKelola}</div>` : ""}
                 </div>
             </div>`;
             }).join("");
@@ -406,17 +428,32 @@ const Lagu = {
             const nama = ((typeof OsisAuth.displayName === "function" ? OsisAuth.displayName(u) : "") || (u && (u.nama || u.username)) || "OSIS").trim() || "OSIS";
             const div = document.createElement("div");
             div.className = "pesan-balas";
-            div.innerHTML = `<i class="fa-solid fa-reply"></i><div><b>${escapeHtml(nama)}</b><p data-balas-teks="${id}" data-ph="Tulis balasan..."></p></div>`;
-            const body = wrap.querySelector(".lagu-body");
-            const meta = body ? body.querySelector(".lagu-meta") : null;
-            if (meta) meta.before(div);
-            else if (body) body.appendChild(div);
+            div.innerHTML = `<div class="pesan-balas-head"><span class="pesan-balas-ico"><i class="fa-solid fa-reply"></i></span><span class="pesan-balas-tag">OSIS</span><b>${escapeHtml(nama)}</b></div><p data-balas-teks="${id}" data-ph="Tulis balasan..."></p>`;
+            const foot = wrap.querySelector(".sm-card-foot");
+            if (foot) foot.before(div);
             else wrap.appendChild(div);
             p = div.querySelector("p");
         }
         p.dataset.orig = String(item.balasan || "");
         p.contentEditable = "true";
         p.spellcheck = false;
+        // Tombol aksi di dalam bubble editor: simpan, batal, hapus
+        Lagu.buangAct();
+        const bubble = p.closest(".pesan-balas");
+        if (bubble) bubble.classList.add("is-editing");
+        const act = document.createElement("div");
+        act.className = "balas-act";
+        act.innerHTML =
+            `<span class="balas-hint"><kbd>Esc</kbd> batal</span>` +
+            `<div class="balas-act-btns">` +
+            (String(item.balasan || "").trim()
+                ? `<button type="button" class="sm-act-btn hapus-balas" onmousedown="event.preventDefault()" onclick="Lagu.hapusBalasBtn(${item.id})" title="Hapus balasan"><i class="fa-solid fa-trash-can"></i><span>Hapus</span></button>`
+                : "") +
+            `<button type="button" class="sm-act-btn batal" onmousedown="event.preventDefault()" onclick="Lagu.batalBalasBtn(${item.id})" title="Batal"><i class="fa-solid fa-xmark"></i><span>Batal</span></button>` +
+            `<button type="button" class="sm-act-btn simpan" onmousedown="event.preventDefault()" onclick="Lagu.simpanBalasBtn(${item.id})" title="Simpan balasan"><i class="fa-solid fa-check"></i><span>Simpan</span></button>` +
+            `</div>`;
+        if (bubble) bubble.appendChild(act);
+        else p.after(act);
         p.focus();
         try {
             const r = document.createRange();
@@ -426,27 +463,15 @@ const Lagu = {
             s.removeAllRanges();
             s.addRange(r);
         } catch {}
-        // Tombol aksi di bawah bubble: ceklis simpan, batal, hapus
-        Lagu.buangAct();
-        const act = document.createElement("div");
-        act.className = "balas-act";
-        act.innerHTML =
-            `<button class="btn btn-red btn-sm" onmousedown="event.preventDefault()" onclick="Lagu.simpanBalasBtn(${item.id})" title="Simpan balasan"><i class="fa-solid fa-check"></i></button>` +
-            `<button class="btn btn-white btn-sm" onmousedown="event.preventDefault()" onclick="Lagu.batalBalasBtn(${item.id})" title="Batal"><i class="fa-solid fa-xmark"></i> Batal</button>` +
-            (String(item.balasan || "").trim()
-                ? `<button class="btn btn-white btn-sm" onmousedown="event.preventDefault()" onclick="Lagu.hapusBalasBtn(${item.id})" title="Hapus balasan"><i class="fa-solid fa-trash-can"></i> Hapus</button>`
-                : "");
-        const bubble = p.closest(".pesan-balas");
-        if (bubble) bubble.after(act);
-        else p.after(act);
     },
 
     balasEl(id) {
-        return document.querySelector(`[data-balas-teks="${id}"]`);
+        return document.querySelector(`#daftarLagu [data-balas-teks="${id}"]`);
     },
 
     buangAct() {
-        document.querySelectorAll(".balas-act").forEach(el => el.remove());
+        document.querySelectorAll("#daftarLagu .balas-act").forEach(el => el.remove());
+        document.querySelectorAll("#daftarLagu .pesan-balas.is-editing").forEach(el => el.classList.remove("is-editing"));
     },
 
     simpanBalasBtn(id) {
@@ -457,9 +482,11 @@ const Lagu = {
     batalBalasBtn(id) {
         const el = Lagu.balasEl(id);
         if (el) {
-            el.textContent = el.dataset.orig || "";
+            const orig = el.dataset.orig || "";
+            el.textContent = orig;
             el.contentEditable = "false";
             el.blur();
+            if (!String(orig).trim()) el.closest(".pesan-balas")?.remove();
         }
         Lagu.buangAct();
     },
@@ -481,6 +508,7 @@ const Lagu = {
         el.contentEditable = "false";
         if (val === lama) {
             el.textContent = lama;
+            if (!lama) el.closest(".pesan-balas")?.remove();
             return;
         }
         if (!val && lama) {
@@ -491,7 +519,7 @@ const Lagu = {
             }
         }
         if (!val && !lama) {
-            el.textContent = "";
+            el.closest(".pesan-balas")?.remove();
             return;
         }
         const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
@@ -499,17 +527,20 @@ const Lagu = {
         const boleh = !!(u && u.mode === "osis" && (isSuper || (OsisAuth.bisa && OsisAuth.bisa("lagu"))));
         if (!boleh) {
             el.textContent = lama;
+            if (!lama) el.closest(".pesan-balas")?.remove();
             showToast("Cuma super admin / admin lagu yang bisa bales.", "error");
             return;
         }
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
             el.textContent = lama;
+            if (!lama) el.closest(".pesan-balas")?.remove();
             showToast("Butuh koneksi buat bales request.", "error");
             return;
         }
         try {
             if (!OsisAuth.butuh("lagu")) {
                 el.textContent = lama;
+                if (!lama) el.closest(".pesan-balas")?.remove();
                 return;
             }
             await balasLaguOsis(u.id, id, val);
@@ -519,6 +550,7 @@ const Lagu = {
         } catch (err) {
             console.error(err);
             el.textContent = lama;
+            if (!lama) el.closest(".pesan-balas")?.remove();
             if (err.message === "ERR_NO_AUTH") {
                 showPopup("Cuma super admin / admin lagu yang bisa bales.", "error");
             } else if (err.message === "ERR_NOT_FOUND") {

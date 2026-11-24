@@ -249,25 +249,45 @@ const Aspirasi = {
                     const initChar = namaTxt.charAt(0).toUpperCase() || "A";
                     const lock = p.is_private ? `<span class="sm-priv-pill" title="Private — hanya OSIS"><i class="fa-solid fa-lock"></i> Private</span>` : "";
                     const balasan = String(p.balasan || "").trim();
-                    const repliedPill = balasan ? `<span class="sm-replied-pill"><i class="fa-solid fa-check"></i> Dibalas</span>` : "";
+                    const repliedPill = balasan ? `<span class="sm-replied-pill"><i class="fa-solid fa-circle-check"></i> Dibalas</span>` : "";
+                    const tombolBalas = canBalas
+                        ? `<button type="button" class="sm-act-btn balas${balasan ? " edited" : ""}" onclick="Aspirasi.balas(${p.id})" title="${balasan ? "Edit balasan" : "Balas pesan"}"><i class="fa-solid ${balasan ? "fa-pen-to-square" : "fa-reply"}"></i><span>${balasan ? "Edit Balasan" : "Balas"}</span></button>`
+                        : "";
+                    const tombolKelola = canKelola
+                        ? `<div class="sm-act-manage">
+                            <button type="button" class="sm-act-ico edit" onclick="Aspirasi.edit(${p.id})" title="${isOsis ? "Edit (OSIS)" : "Edit pesanku"}"><i class="fa-solid fa-pen"></i></button>
+                            <button type="button" class="sm-act-ico del" onclick="Aspirasi.hapus(${p.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus pesanku"}"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>`
+                        : "";
+                    const hasAct = !!(tombolBalas || tombolKelola);
                     const balasHtml = balasan
-                        ? `<div class="pesan-balas"><i class="fa-solid fa-reply"></i><div><b>${escapeHtml(p.dibalas_oleh || "OSIS")}</b><p data-balas-teks="${p.id}" contenteditable="false" data-ph="Tulis balasan...">${escapeHtml(balasan)}</p></div></div>`
+                        ? `<div class="pesan-balas">
+                            <div class="pesan-balas-head">
+                                <span class="pesan-balas-ico"><i class="fa-solid fa-reply"></i></span>
+                                <span class="pesan-balas-tag">OSIS</span>
+                                <b>${escapeHtml(p.dibalas_oleh || "OSIS")}</b>
+                            </div>
+                            <p data-balas-teks="${p.id}" contenteditable="false" data-ph="Tulis balasan...">${escapeHtml(balasan)}</p>
+                        </div>`
                         : "";
                     return `
-                <div class="pesan-item" data-balas-id="${p.id}" style="${p.is_private ? "border-style:dashed" : ""}">
+                <div class="pesan-item${p.is_private ? " is-private" : ""}${balasan ? " is-replied" : ""}" data-balas-id="${p.id}">
                     <div class="pesan-meta">
                         <span class="sm-ava">${escapeHtml(initChar)}</span>
-                        <span class="pesan-nama">${escapeHtml(namaTxt)}</span>
-                        <span class="pesan-kelas">${escapeHtml(p.kelas || "-")}</span>
-                        ${lock}
-                        ${repliedPill}
-                        <span class="pesan-waktu">${Aspirasi.formatWaktu(p.created_at)}</span>
-                        ${canBalas ? `<button type="button" class="hapus-btn" onclick="Aspirasi.balas(${p.id})" title="Balas pesan"><i class="fa-solid fa-reply"></i></button>` : ""}
-                        ${canKelola ? `<button type="button" class="hapus-btn" onclick="Aspirasi.edit(${p.id})" title="${isOsis ? "Edit (OSIS)" : "Edit pesanku"}"><i class="fa-solid fa-pen"></i></button>` : ""}
-                        ${canKelola ? `<button type="button" class="hapus-btn" onclick="Aspirasi.hapus(${p.id})" title="${isOsis ? "Hapus (OSIS)" : "Hapus pesanku"}"><i class="fa-solid fa-trash-can"></i></button>` : ""}
+                        <div class="pesan-author">
+                            <span class="pesan-nama">${escapeHtml(namaTxt)}</span>
+                            <span class="pesan-kelas">${escapeHtml(p.kelas || "-")}</span>
+                        </div>
+                        ${lock || repliedPill ? `<div class="pesan-badges">${lock}${repliedPill}</div>` : ""}
                     </div>
                     <p class="pesan-isi">${escapeHtml(p.isi)}</p>
                     ${balasHtml}
+                    <div class="sm-card-foot">
+                        <div class="sm-card-meta">
+                            <span class="pesan-waktu"><i class="fa-regular fa-calendar"></i> ${Aspirasi.formatWaktu(p.created_at)}</span>
+                        </div>
+                        ${hasAct ? `<div class="sm-act-bar">${tombolBalas}${tombolKelola}</div>` : ""}
+                    </div>
                 </div>`;
                 }).join("");
                 return sep + items;
@@ -420,15 +440,32 @@ const Aspirasi = {
             const nama = ((typeof OsisAuth.displayName === "function" ? OsisAuth.displayName(u) : "") || (u && (u.nama || u.username)) || "OSIS").trim() || "OSIS";
             const div = document.createElement("div");
             div.className = "pesan-balas";
-            div.innerHTML = `<i class="fa-solid fa-reply"></i><div><b>${escapeHtml(nama)}</b><p data-balas-teks="${id}" data-ph="Tulis balasan..."></p></div>`;
-            const isi = wrap.querySelector(".pesan-isi");
-            if (isi) isi.after(div);
+            div.innerHTML = `<div class="pesan-balas-head"><span class="pesan-balas-ico"><i class="fa-solid fa-reply"></i></span><span class="pesan-balas-tag">OSIS</span><b>${escapeHtml(nama)}</b></div><p data-balas-teks="${id}" data-ph="Tulis balasan..."></p>`;
+            const foot = wrap.querySelector(".sm-card-foot");
+            if (foot) foot.before(div);
             else wrap.appendChild(div);
             p = div.querySelector("p");
         }
         p.dataset.orig = String(item.balasan || "");
         p.contentEditable = "true";
         p.spellcheck = false;
+        // Tombol aksi di dalam bubble editor: simpan, batal, hapus
+        Aspirasi.buangAct();
+        const bubble = p.closest(".pesan-balas");
+        if (bubble) bubble.classList.add("is-editing");
+        const act = document.createElement("div");
+        act.className = "balas-act";
+        act.innerHTML =
+            `<span class="balas-hint"><kbd>Esc</kbd> batal</span>` +
+            `<div class="balas-act-btns">` +
+            (String(item.balasan || "").trim()
+                ? `<button type="button" class="sm-act-btn hapus-balas" onmousedown="event.preventDefault()" onclick="Aspirasi.hapusBalasBtn(${item.id})" title="Hapus balasan"><i class="fa-solid fa-trash-can"></i><span>Hapus</span></button>`
+                : "") +
+            `<button type="button" class="sm-act-btn batal" onmousedown="event.preventDefault()" onclick="Aspirasi.batalBalasBtn(${item.id})" title="Batal"><i class="fa-solid fa-xmark"></i><span>Batal</span></button>` +
+            `<button type="button" class="sm-act-btn simpan" onmousedown="event.preventDefault()" onclick="Aspirasi.simpanBalasBtn(${item.id})" title="Simpan balasan"><i class="fa-solid fa-check"></i><span>Simpan</span></button>` +
+            `</div>`;
+        if (bubble) bubble.appendChild(act);
+        else p.after(act);
         p.focus();
         try {
             const r = document.createRange();
@@ -438,27 +475,15 @@ const Aspirasi = {
             s.removeAllRanges();
             s.addRange(r);
         } catch {}
-        // Tombol aksi di bawah bubble: ceklis simpan, batal, hapus
-        Aspirasi.buangAct();
-        const act = document.createElement("div");
-        act.className = "balas-act";
-        act.innerHTML =
-            `<button class="btn btn-red btn-sm" onmousedown="event.preventDefault()" onclick="Aspirasi.simpanBalasBtn(${item.id})" title="Simpan balasan"><i class="fa-solid fa-check"></i></button>` +
-            `<button class="btn btn-white btn-sm" onmousedown="event.preventDefault()" onclick="Aspirasi.batalBalasBtn(${item.id})" title="Batal"><i class="fa-solid fa-xmark"></i> Batal</button>` +
-            (String(item.balasan || "").trim()
-                ? `<button class="btn btn-white btn-sm" onmousedown="event.preventDefault()" onclick="Aspirasi.hapusBalasBtn(${item.id})" title="Hapus balasan"><i class="fa-solid fa-trash-can"></i> Hapus</button>`
-                : "");
-        const bubble = p.closest(".pesan-balas");
-        if (bubble) bubble.after(act);
-        else p.after(act);
     },
 
     balasEl(id) {
-        return document.querySelector(`[data-balas-teks="${id}"]`);
+        return document.querySelector(`#daftarPesan [data-balas-teks="${id}"]`);
     },
 
     buangAct() {
-        document.querySelectorAll(".balas-act").forEach(el => el.remove());
+        document.querySelectorAll("#daftarPesan .balas-act").forEach(el => el.remove());
+        document.querySelectorAll("#daftarPesan .pesan-balas.is-editing").forEach(el => el.classList.remove("is-editing"));
     },
 
     simpanBalasBtn(id) {
@@ -469,9 +494,11 @@ const Aspirasi = {
     batalBalasBtn(id) {
         const el = Aspirasi.balasEl(id);
         if (el) {
-            el.textContent = el.dataset.orig || "";
+            const orig = el.dataset.orig || "";
+            el.textContent = orig;
             el.contentEditable = "false";
             el.blur();
+            if (!String(orig).trim()) el.closest(".pesan-balas")?.remove();
         }
         Aspirasi.buangAct();
     },
@@ -493,6 +520,7 @@ const Aspirasi = {
         el.contentEditable = "false";
         if (val === lama) {
             el.textContent = lama;
+            if (!lama) el.closest(".pesan-balas")?.remove();
             return;
         }
         if (!val && lama) {
@@ -503,24 +531,27 @@ const Aspirasi = {
             }
         }
         if (!val && !lama) {
-            el.textContent = "";
+            el.closest(".pesan-balas")?.remove();
             return;
         }
         const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
         const boleh = !!(u && u.mode === "osis" && (OsisAuth.isSuper() || (OsisAuth.bisa && OsisAuth.bisa("aspirasi"))));
         if (!boleh) {
             el.textContent = lama;
+            if (!lama) el.closest(".pesan-balas")?.remove();
             showToast("Cuma super admin / admin aspirasi yang bisa bales.", "error");
             return;
         }
         if (typeof Outbox !== "undefined" && Outbox.offline()) {
             el.textContent = lama;
+            if (!lama) el.closest(".pesan-balas")?.remove();
             showToast("Butuh koneksi buat bales pesan.", "error");
             return;
         }
         try {
             if (!OsisAuth.butuh("aspirasi")) {
                 el.textContent = lama;
+                if (!lama) el.closest(".pesan-balas")?.remove();
                 return;
             }
             await balasAspirasiOsis(u.id, id, val);
@@ -530,6 +561,7 @@ const Aspirasi = {
         } catch (err) {
             console.error(err);
             el.textContent = lama;
+            if (!lama) el.closest(".pesan-balas")?.remove();
             if (err.message === "ERR_NO_AUTH") {
                 showPopup("Cuma super admin / admin aspirasi yang bisa bales.", "error");
             } else if (err.message === "ERR_NOT_FOUND") {

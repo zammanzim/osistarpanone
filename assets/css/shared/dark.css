@@ -146,8 +146,76 @@ html[data-theme="dark"] [data-view="musik"] .lagu-artis {
   color: #dcd4df;
 }
 html[data-theme="dark"] [data-view="musik"] .lagu-pesan {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--line);
+  border-left-color: var(--red);
   color: var(--ink);
+}
+html[data-theme="dark"] [data-view="musik"] .lagu-item.selesai {
+  background: linear-gradient(180deg, #143222 0%, var(--white) 58%);
+  border-color: var(--green);
+  box-shadow: 3.5px 3.5px 0 var(--green);
+}
+html[data-theme="dark"] [data-view="musik"] .lagu-item.selesai:hover {
+  box-shadow: 4.5px 4.5px 0 var(--green);
+}
+html[data-theme="dark"] [data-view="musik"] .lagu-item.selesai .lagu-pesan {
+  border-left-color: var(--green);
+}
+html[data-theme="dark"] [data-view="musik"] .lagu-item.selesai .lagu-kaset {
+  background: #0e2418;
+  border-color: var(--bd);
+}
+html[data-theme="dark"] [data-view="musik"] .lagu-badge-selesai {
+  background: var(--green);
+  color: #0b2014;
+}
+html[data-theme="dark"] [data-view="aspirasi"] .pesan-item.is-private {
+  background: linear-gradient(180deg, #331620 0%, var(--white) 58%);
+  border-color: var(--red);
+  box-shadow: 3.5px 3.5px 0 var(--red);
+}
+html[data-theme="dark"] [data-view="aspirasi"] .pesan-item.is-private:hover {
+  box-shadow: 4.5px 4.5px 0 var(--red);
+}
+html[data-theme="dark"] [data-view="aspirasi"] .pesan-balas,
+html[data-theme="dark"] [data-view="musik"] .pesan-balas {
+  background: #2b2419;
+  color: var(--ink);
+}
+html[data-theme="dark"] [data-view="aspirasi"] .pesan-balas.is-editing,
+html[data-theme="dark"] [data-view="musik"] .pesan-balas.is-editing {
+  background: var(--white);
+}
+html[data-theme="dark"] .sm-act-btn.selesai {
+  background: #143222;
+  color: #7ce8a8;
+  border-color: var(--green);
+}
+html[data-theme="dark"] .sm-act-btn.selesai:hover,
+html[data-theme="dark"] .sm-act-btn.selesai.on {
+  background: var(--green);
+  color: #0b2014;
+  border-color: var(--bd);
+}
+html[data-theme="dark"] .sm-act-btn.selesai.on:hover {
+  background: #2bc16c;
+  color: #0b2014;
+}
+html[data-theme="dark"] .sm-act-btn.balas:hover,
+html[data-theme="dark"] .sm-act-btn.balas.edited:hover {
+  background: #ffe052;
+  color: var(--on-yellow);
+}
+html[data-theme="dark"] .sm-act-btn.hapus-balas,
+html[data-theme="dark"] .sm-act-ico.del {
+  background: #3a1922;
+  color: #ff8c99;
+}
+html[data-theme="dark"] .sm-act-btn.hapus-balas:hover,
+html[data-theme="dark"] .sm-act-ico.del:hover {
+  background: var(--red);
+  color: #ffffff;
 }
 html[data-theme="dark"] .login-body {
   background:

@@ -930,3 +930,70 @@ table.kas-tabel tbody tr:hover td {
     order: 2;
   }
 }
+
+/* ===== Blok Mingguan Uang Kas di Keuangan ===== */
+.kas-uk-mlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+.kas-uk-mrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 2px solid var(--bd);
+  border-radius: 11px;
+  background: var(--paper);
+}
+.kas-uk-mno {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1.5px solid var(--bd);
+  background: var(--yellow);
+  color: var(--on-yellow);
+  display: grid;
+  place-items: center;
+  font-size: 0.68rem;
+  font-weight: 900;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.kas-uk-mmain {
+  flex: 1;
+  min-width: 0;
+}
+.kas-uk-mmain b {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.kas-uk-mmain small {
+  display: block;
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: var(--gray);
+  margin-top: 1px;
+}
+.kas-uk-mamt {
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #146314;
+  background: #def5e3;
+  border: 1.5px solid var(--bd);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+html[data-theme="dark"] .kas-uk-mamt {
+  background: #143321;
+  color: #7ce8a8;
+}
