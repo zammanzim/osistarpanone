@@ -72,6 +72,8 @@ const Profil = {
         document.getElementById("profilPwBaru")?.addEventListener("input", () => Profil.syncPwFeedback());
         document.getElementById("profilPwKonfirm")?.addEventListener("input", () => Profil.syncPwFeedback());
 
+        Profil.isiFormDariUser(u);
+        Profil.renderFoto();
         Profil.renderHero(u);
         Profil.renderAkun(u);
         Profil.syncBioCounter();
@@ -84,10 +86,25 @@ const Profil = {
         Profil.muat();
     },
 
+    isiFormDariUser(u) {
+        if (!u) return;
+        Profil.fotoPath = u.foto || "";
+        const elNama = document.getElementById("profilNama");
+        const elBio = document.getElementById("profilBio");
+        const elUser = document.getElementById("profilUsername");
+        const elJab = document.getElementById("profilJabatan");
+        if (elNama) elNama.value = u.nama || "";
+        if (elBio) elBio.value = u.bio || "";
+        if (elUser) elUser.value = u.username || "";
+        if (elJab) elJab.value = u.jabatan || "-";
+    },
+
     async muat() {
+        if (typeof navigator !== "undefined" && navigator.onLine === false) return;
         try {
             const fresh = await getOsisUserById(Profil.userId);
             if (!fresh) {
+                if (typeof navigator !== "undefined" && navigator.onLine === false) return;
                 OsisAuth.logout();
                 location.replace("../login");
                 return;
@@ -110,25 +127,18 @@ const Profil = {
             localStorage.setItem(OsisAuth.KEY, JSON.stringify(next));
             if (typeof OsisAuth.renderHeader === "function") OsisAuth.renderHeader();
 
-            Profil.fotoPath = fresh.foto || "";
             Profil.pendingFile = null;
             Profil.fotoDihapus = false;
             Profil._revokePendingUrl();
-
-            const elNama = document.getElementById("profilNama");
-            const elBio = document.getElementById("profilBio");
-            const elUser = document.getElementById("profilUsername");
-            const elJab = document.getElementById("profilJabatan");
-            if (elNama) elNama.value = fresh.nama || "";
-            if (elBio) elBio.value = fresh.bio || "";
-            if (elUser) elUser.value = fresh.username || "";
-            if (elJab) elJab.value = fresh.jabatan || "-";
+            Profil.isiFormDariUser(fresh);
 
             Profil.syncBioCounter();
             Profil.renderFoto();
             Profil.renderHero(fresh);
             Profil.renderAkun(fresh);
         } catch (err) {
+            if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+            if (/offline|fetch|network|abort/i.test(String((err && err.message) || err))) return;
             console.error(err);
             showToast("Gagal memuat profil: " + err.message, "error");
         }

@@ -58,6 +58,12 @@ const Poster = {
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...'; }
         }
         try {
+            if (awal && typeof navigator !== "undefined" && navigator.onLine === false && Poster.cache.length) {
+                Poster.offset = Poster.cache.length;
+                Poster.habis = true;
+                Poster.render();
+                return;
+            }
             const rows = await getPoster(Poster.perPage, Poster.offset);
             if (awal) Poster.cache = []; // ganti render instan dengan fresh
             const ada = new Set(Poster.cache.map(p => String(p.id)));
@@ -68,15 +74,18 @@ const Poster = {
             if (!rows || rows.length < Poster.perPage) {
                 Poster.habis = true;
                 Cache.set("poster", Poster.cache);
+            } else if (awal) {
+                try { simpanListCache("poster", Poster.cache, false); } catch {}
             }
             Poster.render();
         } catch (err) {
             console.error(err);
+            const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
             if (awal && !Poster.cache.length) {
                 grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat poster. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Poster.muat(true)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
-            } else if (awal) {
+            } else if (!isOff && awal) {
                 showToast("Gagal refresh, tampil data lama.", "error");
-            } else {
+            } else if (!isOff) {
                 showToast("Gagal muat lanjutan poster.", "error");
                 try { Poster.render(); } catch {} // balikin tombol manual
             }

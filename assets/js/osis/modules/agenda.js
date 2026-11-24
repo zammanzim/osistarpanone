@@ -467,12 +467,15 @@ const AgendaAdmin = {
             // (lihat catatan di state).
             if (AgendaAdmin.habis && !sid && !nmr) {
                 try { Cache.set("agenda_all", AgendaAdmin.cache); } catch {}
+            } else if (awal && !sid && !nmr) {
+                try { simpanListCache("agenda_all", AgendaAdmin.cache, false); } catch {}
             }
             AgendaAdmin.render();
         } catch (err) {
             console.error(err);
+            const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
             if (awal && !(AgendaAdmin.cache || []).length && listEl) listEl.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Offline dan belum ada data tersimpan. Buka halaman ini sekali saat online.</div>`;
-            else if (typeof showToast === "function") showToast("Gagal muat lanjutan agenda.", "error");
+            else if (!isOff && typeof showToast === "function") showToast("Gagal muat lanjutan agenda.", "error");
         } finally {
             AgendaAdmin.loading = false;
             // Aksi user (ganti filter) yang ketahan pas loading -> ulangi sekali.

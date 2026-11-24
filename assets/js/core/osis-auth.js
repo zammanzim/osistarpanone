@@ -33,6 +33,9 @@ const OsisAuth = {
             try { localStorage.removeItem(OsisAuth.AKSES_KEY); } catch {}
             return null;
         }
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+            return OsisAuth.getAkses();
+        }
         try {
             const a = await aksesSaya(u.id);
             try { localStorage.setItem(OsisAuth.AKSES_KEY, JSON.stringify(a || null)); } catch {}
@@ -240,15 +243,36 @@ const OsisAuth = {
     // Sinkronkan cache dengan session Auth. Dipanggil tiap halaman dimuat
     // sebelum renderHeader. Offline/gagal baca session: pertahankan cache.
     async syncAuth() {
+        const cached = OsisAuth.getUser();
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+            if (cached && OsisAuth.isGuest(cached)) OsisAuth.buangCacheOsis();
+            return;
+        }
         let session = null;
+        let errSession = null;
         try {
             const r = await supa.auth.getSession();
             session = r && r.data ? r.data.session : null;
+            errSession = r ? r.error : null;
         } catch {
             return; // CDN belum termuat / offline total — jangan utak-atik cache
         }
-        const cached = OsisAuth.getUser();
         if (!session) {
+            // Saat JWT >1 jam dan koneksi putus/lemot, getSession() gagal refresh
+            // token lalu mengembalikan { session: null, error } tanpa melempar catch.
+            // Jangan buang cache login/data supaya mode offline tetap jalan.
+            if (errSession) {
+                const msg = String(errSession.message || errSession.name || errSession || "");
+                const status = Number(errSession.status || 0);
+                const gagalJaringan =
+                    (typeof navigator !== "undefined" && navigator.onLine === false) ||
+                    errSession.name === "AuthRetryableFetchError" ||
+                    (!status && /offline|fetch|network|abort|timeout|retryable/i.test(msg));
+                if (gagalJaringan) {
+                    if (cached && OsisAuth.isGuest(cached)) OsisAuth.buangCacheOsis();
+                    return;
+                }
+            }
             // Tidak ada session tapi cache bilang login (OSIS/biasa = basi:
             // logout di tab lain / token dicabut; guest = legacy dihapus) ->
             // buang biar tidak dikira login.

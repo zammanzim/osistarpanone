@@ -462,14 +462,22 @@ const UangKas = {
     } catch (e) { console.error(e); }
 
     // 2) Config + Setoran Uang Kas
+    let adaCacheKas = false;
     try {
       const cachedCfg = Cache.get(UangKas.angKey("cfg"));
       const cachedSet = Cache.get(UangKas.angKey("set"));
-      if (cachedCfg && cachedSet) {
-        UangKas.config = UangKas.normalConfig(cachedCfg);
-        UangKas.setoran = cachedSet;
+      if (cachedCfg || Array.isArray(cachedSet)) {
+        adaCacheKas = true;
+        UangKas.config = cachedCfg ? UangKas.normalConfig(cachedCfg) : UangKas.defaultConfig();
+        UangKas.setoran = Array.isArray(cachedSet) ? cachedSet : [];
         UangKas.terapkanAkses();
         UangKas.render();
+      }
+      if (typeof navigator !== "undefined" && navigator.onLine === false && adaCacheKas) {
+        if (UangKas.detailNama && document.getElementById("ukDetailModal")?.classList.contains("open")) {
+          UangKas.renderDetailModal();
+        }
+        return;
       }
       const [cfg, setoran] = await Promise.all([
         UangKas.fetchConfigLive(),
@@ -483,12 +491,15 @@ const UangKas = {
       console.error(err);
       if (!UangKas.config) UangKas.config = UangKas.defaultConfig();
       if (!UangKas.setoran) UangKas.setoran = [];
-      showToast(
-        UangKas.isTabelBelumAda(err)
-          ? "Tabel uang kas belum dibuat di Supabase (jalankan database/migrations/migrasi-uang-kas.sql)."
-          : "Gagal memuat uang kas: " + (err.message || err),
-        "error",
-      );
+      const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
+      if (!isOff || !adaCacheKas) {
+        showToast(
+          UangKas.isTabelBelumAda(err)
+            ? "Tabel uang kas belum dibuat di Supabase (jalankan database/migrations/migrasi-uang-kas.sql)."
+            : "Gagal memuat uang kas: " + (err.message || err),
+          "error",
+        );
+      }
     }
     UangKas.terapkanAkses();
     UangKas.render();

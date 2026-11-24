@@ -204,7 +204,6 @@ const Dokumen = {
         const listEl = document.getElementById("dokumenList");
         if (awal) {
             Dokumen.offset = 0;
-            Dokumen.cache = [];
             Dokumen.habis = false;
             // render instan dari cache persisten (tanpa fetch)
             let instan = false;
@@ -214,15 +213,23 @@ const Dokumen = {
                     Dokumen.cache = [...c];
                     Dokumen.render();
                     instan = true;
+                } else {
                     Dokumen.cache = [];
-                    Dokumen.offset = 0;
-                    Dokumen.habis = false;
                 }
-            } catch {}
+            } catch {
+                Dokumen.cache = [];
+            }
             if (!instan && listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat dokumen...</div>`;
         }
         try {
+            if (awal && typeof navigator !== "undefined" && navigator.onLine === false && Dokumen.cache.length) {
+                Dokumen.offset = Dokumen.cache.length;
+                Dokumen.habis = true;
+                Dokumen.render();
+                return;
+            }
             const rows = await getDokumen(Dokumen.perPage, Dokumen.offset);
+            if (awal) Dokumen.cache = [];
             const ada = new Set(Dokumen.cache.map(d => String(d.id)));
             (rows || []).forEach(r => {
                 if (!ada.has(String(r.id))) { Dokumen.cache.push(r); ada.add(String(r.id)); }
@@ -231,12 +238,15 @@ const Dokumen = {
             if (!rows || rows.length < Dokumen.perPage) {
                 Dokumen.habis = true;
                 try { Cache.set("dokumen", Dokumen.cache); } catch {}
+            } else if (awal) {
+                try { simpanListCache("dokumen", Dokumen.cache, false); } catch {}
             }
             Dokumen.render();
         } catch (err) {
             console.error(err);
+            const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
             if (awal && listEl && !Dokumen.cache.length) listEl.innerHTML = `<div class="pesan-empty">Gagal memuat dokumen.</div>`;
-            else if (typeof showToast === "function") showToast("Gagal muat lanjutan.", "error");
+            else if (!isOff && typeof showToast === "function") showToast("Gagal muat lanjutan.", "error");
         } finally {
             Dokumen.loading = false;
         }

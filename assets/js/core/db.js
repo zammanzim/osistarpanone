@@ -263,14 +263,17 @@ const DbScope = {
   isInternalKey(key) {
     const k = String(key || "");
     return (
-      k === "kas" || k === "saldo_awal" ||
+      k === "kas" || k === "kas_ringkas" || k === "saldo_awal" ||
       k === "absensi_config" ||
       k === "tabungan" || k === "program" ||
+      k === "anggota_saya" || k === "nama_pengurus" || k === "osis_users_ringkas" ||
       k === "osis_visitor" ||
-      k === "osis_users" || k === "akses_matriks" || k.startsWith("agenda_") ||
+      k === "osis_users" || k === "akses_matriks" || k.startsWith("akses_matriks_") ||
+      k.startsWith("osis_users_") || k.startsWith("agenda_") ||
       k === "wawancara_calon" || k === "wawancara_tanya" ||
       k === "wawancara_sesi" || k === "wawancara_petugas" ||
-      k.startsWith("wawancara_jawaban_") ||
+      k.startsWith("wawancara_jawaban_") || k.startsWith("wawancara_urutan_") ||
+      k.startsWith("wawancara_turunan_") || k.startsWith("wawancara_dokumentasi_") ||
       k.startsWith("tes_")
     );
   },
@@ -316,13 +319,19 @@ const Cache = {
   },
   set(key, data) {
     try {
-      // Bagi dua: data kecil (teks) boleh di-cache buat offline.
-      // Data besar / media-heavy (galeri, feed, kegiatan, dll) jangan
-      // di-cache — hemat storage + hindari quota localStorage.
-      const BERAT = new Set(["gallery", "feed", "kegiatan", "arsip", "poster", "prestasi", "dokumen", "informasi", "wawancara_calon", "wawancara_hasil_publik"]);
+      // Galeri publik yang berat (banyak array foto/video publik) di-skip biar hemat quota.
+      // Modul internal OSIS (poster, dokumen, informasi, wawancara, dll) TETAP disimpan
+      // supaya bisa dibuka offline — ukuran dijaga oleh batas 250KB di bawah.
+      const BERAT = new Set(["gallery", "feed", "kegiatan", "arsip", "prestasi"]);
       if (BERAT.has(key)) return;
-      const payload = JSON.stringify({ data, t: Date.now(), v: Cache.version });
-      if (payload.length > 250000) return; // ~250KB, hindari data besar
+      let payload = JSON.stringify({ data, t: Date.now(), v: Cache.version });
+      if (payload.length > 250000) {
+        if (Array.isArray(data) && data.length > 1) {
+          const potong = Math.max(15, Math.floor((data.length * 200000) / payload.length));
+          payload = JSON.stringify({ data: data.slice(0, potong), t: Date.now(), v: Cache.version });
+        }
+        if (payload.length > 250000) return;
+      }
       localStorage.setItem(Cache.key(key), payload);
     } catch {}
   },
@@ -346,6 +355,43 @@ const Cache = {
     keys.forEach((key) => Cache.del(key));
   },
 };
+
+// Deteksi error murni karena jaringan mati / timeout (bukan error auth / SQL).
+function adalahOfflineErr(err) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  const m = String((err && (err.message || err.details || err.name)) || err || "");
+  return /offline|failed to fetch|networkerror|network request failed|load failed|abort|timed? ?out|fetch tidak tersedia/i.test(m);
+}
+
+// Simpan list ke Cache tanpa mengecilkan cache penuh bila pemanggil cuma minta
+// batch kecil (mis. Dashboard minta 4-8 baris terbaru).
+function simpanListCache(key, rows, utuh = false) {
+  if (!Array.isArray(rows)) return;
+  if (utuh) {
+    Cache.set(key, rows);
+    return;
+  }
+  const lama = Cache.get(key);
+  if (!Array.isArray(lama) || rows.length >= lama.length) {
+    Cache.set(key, rows);
+    return;
+  }
+  if (!rows.length) return;
+  const idsBaru = new Set(rows.map((r) => String(r && r.id)));
+  Cache.set(key, rows.concat(lama.filter((r) => !idsBaru.has(String(r && r.id)))));
+}
+
+// Ambil fallback offline dari cache lintas-angkatan (+ saring bila angkatanId diminta).
+function ambilLintasOffline(key, angkatanId, limit) {
+  const c = Cache.get(key);
+  if (!Array.isArray(c)) return null;
+  let hasil = c;
+  if (angkatanId !== undefined && angkatanId !== null && Number(angkatanId) > 0) {
+    const target = Number(angkatanId);
+    hasil = c.filter((r) => !r || r.angkatan_id == null || Number(r.angkatan_id) === target);
+  }
+  return limit ? hasil.slice(0, limit) : hasil;
+}
 
 // =========================================================================
 // DEVICE ID - id unik per perangkat (buat limit harian & visitor)
@@ -783,60 +829,112 @@ async function angkatanHapus(userId, id) {
 // Anggota simple per angkatan (nama, kelas, tahun, jabatan, username) — urut nama A-Z.
 // Dipakai absen & admin anggota. Biodata lengkap ada di tabel pengurus.
 async function getAnggota(angkatanId) {
-  const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
-    let q = supa
-      .from("anggota")
-      .select("id, tahun, nama, jabatan, kelas, username, created_at" + (skipAngCol ? "" : ", angkatan_id"))
-      .order("tahun", { ascending: true })
-      .order("nama", { ascending: true });
-    if (angId) q = q.eq("angkatan_id", angId);
-    return q;
-  }, angkatanId);
-  if (error) throw error;
-  return data;
+  const tanpaFilter = angkatanId === undefined || angkatanId === null || !Number(angkatanId);
+  try {
+    const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
+      let q = supa
+        .from("anggota")
+        .select("id, tahun, nama, jabatan, kelas, username, created_at" + (skipAngCol ? "" : ", angkatan_id"))
+        .order("tahun", { ascending: true })
+        .order("nama", { ascending: true });
+      if (angId) q = q.eq("angkatan_id", angId);
+      return q;
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (tanpaFilter) Cache.set("anggota", rows);
+    else simpanListCache("anggota", rows, false);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const fb = ambilLintasOffline("anggota", angkatanId);
+      if (fb) return fb;
+    }
+    throw err;
+  }
 }
 
 // Pengurus semua tahun (biodata lengkap) — urut jabatan/urutan.
 // Dipakai halaman pengurus, homepage struktur & dashboard.
 async function getPengurus() {
-  const { data, error } = await supa
-    .from("pengurus")
-    .select("*")
-    .order("tahun", { ascending: true })
-    .order("urutan", { ascending: true });
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supa
+      .from("pengurus")
+      .select("*")
+      .order("tahun", { ascending: true })
+      .order("urutan", { ascending: true });
+    if (error) throw error;
+    const rows = data || [];
+    Cache.set("pengurus", rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("pengurus");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 
 // Periode + status aktif (tabel periode) — nentuin tahun mana yang dipakai
 // roster absen. Cuma tahun aktif yang muncul (cth: 2026 & 2027 aktif).
 async function getPeriode() {
-  const { data, error } = await supa
-    .from("periode")
-    .select("tahun, aktif")
-    .order("tahun", { ascending: true });
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supa
+      .from("periode")
+      .select("tahun, aktif")
+      .order("tahun", { ascending: true });
+    if (error) throw error;
+    const rows = data || [];
+    Cache.set("periode", rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("periode");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 
 // Seksi bidang & BPH
 async function getSekbid() {
-  const { data, error } = await supa
-    .from("sekbid")
-    .select("*")
-    .order("urutan", { ascending: true });
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supa
+      .from("sekbid")
+      .select("*")
+      .order("urutan", { ascending: true });
+    if (error) throw error;
+    const rows = data || [];
+    Cache.set("sekbid", rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("sekbid");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 
 // Foto halaman web (tabel web_foto)
 async function getWebFoto() {
-  const { data, error } = await supa
-    .from("web_foto")
-    .select("*")
-    .order("kunci", { ascending: true });
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supa
+      .from("web_foto")
+      .select("*")
+      .order("kunci", { ascending: true });
+    if (error) throw error;
+    const rows = data || [];
+    Cache.set("web_foto", rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("web_foto");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 
 // Kirim aspirasi siswa - lewat RPC biar bisa dilimit per device per hari
@@ -855,37 +953,52 @@ async function kirimAspirasi(nama, kelas, isi, isPrivate = false) {
 // Ambil aspirasi terbaru buat ditampilkan (terbaru di atas, default 50/halaman)
 async function getAspirasi(limit = 50, offset = 0) {
   try {
-    const { data, error } = await supa.rpc("aspirasi_list_publik", {
-      p_device_id: getDeviceId(),
-      p_limit: limit,
-      p_offset: offset,
-    });
-    if (!error && Array.isArray(data)) return data;
-    if (error && !/aspirasi_list_publik|PGRST202|42883|not found|does not exist/i.test(String(error.message || ""))) {
-      throw error;
+    try {
+      const { data, error } = await supa.rpc("aspirasi_list_publik", {
+        p_device_id: getDeviceId(),
+        p_limit: limit,
+        p_offset: offset,
+      });
+      if (!error && Array.isArray(data)) {
+        if (!offset) simpanListCache("aspirasi", data, data.length < limit);
+        return data;
+      }
+      if (error && !/aspirasi_list_publik|PGRST202|42883|not found|does not exist/i.test(String(error.message || ""))) {
+        throw error;
+      }
+    } catch (e) {
+      if (!/aspirasi_list_publik|PGRST202|42883|not found|does not exist/i.test(String(e.message || ""))) {
+        throw e;
+      }
     }
-  } catch (e) {
-    if (!/aspirasi_list_publik|PGRST202|42883|not found|does not exist/i.test(String(e.message || ""))) {
-      throw e;
-    }
-  }
-  let { data, error } = await supa
-    .from("aspirasi")
-    .select("id, nama, kelas, isi, is_private, balasan, dibalas_oleh, dibalas_at, created_at")
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-  // Fallback: DB belum dimigrasi (kolom balasan belum ada) -> select lama.
-  if (error && String(error.message || "").match(/balasan|dibalas|schema cache|column/i)) {
-    const fb = await supa
+    let { data, error } = await supa
       .from("aspirasi")
-      .select("id, nama, kelas, isi, is_private, created_at")
+      .select("id, nama, kelas, isi, is_private, balasan, dibalas_oleh, dibalas_at, created_at")
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
-    if (fb.error) throw fb.error;
-    return (fb.data || []).map(r => ({ ...r, device_id: "", balasan: "", dibalas_oleh: "", dibalas_at: null }));
+    // Fallback: DB belum dimigrasi (kolom balasan belum ada) -> select lama.
+    if (error && String(error.message || "").match(/balasan|dibalas|schema cache|column/i)) {
+      const fb = await supa
+        .from("aspirasi")
+        .select("id, nama, kelas, isi, is_private, created_at")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+      if (fb.error) throw fb.error;
+      const rowsFb = (fb.data || []).map(r => ({ ...r, device_id: "", balasan: "", dibalas_oleh: "", dibalas_at: null }));
+      if (!offset) simpanListCache("aspirasi", rowsFb, rowsFb.length < limit);
+      return rowsFb;
+    }
+    if (error) throw error;
+    const rows = (data || []).map(r => ({ device_id: "", ...r }));
+    if (!offset) simpanListCache("aspirasi", rows, rows.length < limit);
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const c = Cache.get("aspirasi");
+      if (Array.isArray(c)) return c.slice(0, limit);
+    }
+    throw err;
   }
-  if (error) throw error;
-  return (data || []).map(r => ({ device_id: "", ...r }));
 }
 
 // Hapus aspirasi milik sendiri (device_id dicek di server)
@@ -1003,16 +1116,24 @@ async function aktivitasCatat(aksi, halaman, detail) {
 
 // List aktivitas terbaru (popup visitor + halaman Logs; dukung offset buat muat lagi)
 async function aktivitasList(limit, offset, angkatanId) {
-  const params = {
-    p_limit: limit || 30,
-    p_offset: offset || 0,
-  };
-  if (angkatanId !== undefined) {
-    params.p_angkatan_id = angkatanId;
+  const kunci = "logs_aktivitas_" + (angkatanId === undefined || angkatanId === null ? "all" : String(angkatanId));
+  const lim = limit || 30;
+  const off = offset || 0;
+  try {
+    const params = { p_limit: lim, p_offset: off };
+    if (angkatanId !== undefined) params.p_angkatan_id = angkatanId;
+    const { data, error } = await supa.rpc("aktivitas_list", params);
+    if (error) throw error;
+    const rows = Array.isArray(data) ? data : [];
+    if (!off) simpanListCache(kunci, rows, rows.length < lim);
+    return rows;
+  } catch (err) {
+    if (!off && adalahOfflineErr(err)) {
+      const c = Cache.get(kunci);
+      if (Array.isArray(c)) return c.slice(0, lim);
+    }
+    throw err;
   }
-  const { data, error } = await supa.rpc("aktivitas_list", params);
-  if (error) throw error;
-  return Array.isArray(data) ? data : [];
 }
 
 // Helper global: catat aksi dari modul mana pun. Aman dipanggil walau
@@ -1031,47 +1152,64 @@ function catatAksi(aksi, detail) {
 async function getRequestLagu(batas = 30) {
   const n = Math.min(200, Math.max(1, parseInt(batas, 10) || 30));
   try {
-    const { data, error } = await supa.rpc("lagu_list_publik", {
-      p_device_id: getDeviceId(),
-      p_batas: n,
-    });
-    if (!error && Array.isArray(data)) return data;
-    if (error && !/lagu_list_publik|PGRST202|42883|not found|does not exist/i.test(String(error.message || ""))) {
-      throw error;
+    try {
+      const { data, error } = await supa.rpc("lagu_list_publik", {
+        p_device_id: getDeviceId(),
+        p_batas: n,
+      });
+      if (!error && Array.isArray(data)) {
+        simpanListCache("lagu", data, data.length < n);
+        return data;
+      }
+      if (error && !/lagu_list_publik|PGRST202|42883|not found|does not exist/i.test(String(error.message || ""))) {
+        throw error;
+      }
+    } catch (e) {
+      if (!/lagu_list_publik|PGRST202|42883|not found|does not exist/i.test(String(e.message || ""))) {
+        throw e;
+      }
     }
-  } catch (e) {
-    if (!/lagu_list_publik|PGRST202|42883|not found|does not exist/i.test(String(e.message || ""))) {
-      throw e;
-    }
-  }
-  const kolom = "id, judul, penyanyi, pesan, nama, selesai, balasan, dibalas_oleh, dibalas_at, created_at";
-  let { data, error } = await supa
-    .from("lagu_requests")
-    .select(kolom)
-    .order("created_at", { ascending: false })
-    .range(0, n - 1);
-  // Fallback: DB belum dimigrasi (kolom balasan belum ada) -> tanpa kolom balasan.
-  if (error && String(error.message || "").match(/balasan|dibalas/i)) {
-    const fb = await supa
+    const kolom = "id, judul, penyanyi, pesan, nama, selesai, balasan, dibalas_oleh, dibalas_at, created_at";
+    let { data, error } = await supa
       .from("lagu_requests")
-      .select("id, judul, penyanyi, pesan, nama, selesai, created_at")
+      .select(kolom)
       .order("created_at", { ascending: false })
       .range(0, n - 1);
-    if (fb.error) throw fb.error;
-    return (fb.data || []).map(r => ({ ...r, device_id: "", balasan: "", dibalas_oleh: "", dibalas_at: null }));
+    // Fallback: DB belum dimigrasi (kolom balasan belum ada) -> tanpa kolom balasan.
+    if (error && String(error.message || "").match(/balasan|dibalas/i)) {
+      const fb = await supa
+        .from("lagu_requests")
+        .select("id, judul, penyanyi, pesan, nama, selesai, created_at")
+        .order("created_at", { ascending: false })
+        .range(0, n - 1);
+      if (fb.error) throw fb.error;
+      const rowsFb = (fb.data || []).map(r => ({ ...r, device_id: "", balasan: "", dibalas_oleh: "", dibalas_at: null }));
+      simpanListCache("lagu", rowsFb, rowsFb.length < n);
+      return rowsFb;
+    }
+    // Fallback: DB belum dimigrasi (kolom selesai belum ada) -> select lama.
+    if (error && String(error.message || "").match(/selesai|schema cache|column/i)) {
+      const fb = await supa
+        .from("lagu_requests")
+        .select("id, judul, penyanyi, pesan, nama, created_at")
+        .order("created_at", { ascending: false })
+        .range(0, n - 1);
+      if (fb.error) throw fb.error;
+      const rowsFb2 = (fb.data || []).map(r => ({ ...r, device_id: "", selesai: false }));
+      simpanListCache("lagu", rowsFb2, rowsFb2.length < n);
+      return rowsFb2;
+    }
+    if (error) throw error;
+    const rows = (data || []).map(r => ({ device_id: "", ...r }));
+    simpanListCache("lagu", rows, rows.length < n);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("lagu");
+      if (Array.isArray(c)) return c.slice(0, n);
+    }
+    throw err;
   }
-  // Fallback: DB belum dimigrasi (kolom selesai belum ada) -> select lama.
-  if (error && String(error.message || "").match(/selesai|schema cache|column/i)) {
-    const fb = await supa
-      .from("lagu_requests")
-      .select("id, judul, penyanyi, pesan, nama, created_at")
-      .order("created_at", { ascending: false })
-      .range(0, n - 1);
-    if (fb.error) throw fb.error;
-    return (fb.data || []).map(r => ({ ...r, device_id: "", selesai: false }));
-  }
-  if (error) throw error;
-  return (data || []).map(r => ({ device_id: "", ...r }));
 }
 
 // Total request lagu di server (dihitung Postgres, bukan jumlah baris yang
@@ -1442,17 +1580,28 @@ async function hapusPrestasi(userId, id) {
 // POSTER - feed foto + caption (arsip peringatan), 1 foto per poster
 // =========================================================================
 async function getPoster(limit = 50, offset = 0, angkatanId) {
-  const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
-    let q = supa
-      .from("poster")
-      .select("id, judul, caption, foto, created_by, pengunggah, created_at" + (skipAngCol ? "" : ", angkatan_id"))
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
-    if (angId) q = q.eq("angkatan_id", angId);
-    return q;
-  }, angkatanId);
-  if (error) throw error;
-  return data || [];
+  const tanpaFilter = angkatanId === undefined || angkatanId === null || !Number(angkatanId);
+  try {
+    const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
+      let q = supa
+        .from("poster")
+        .select("id, judul, caption, foto, created_by, pengunggah, created_at" + (skipAngCol ? "" : ", angkatan_id"))
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+      if (angId) q = q.eq("angkatan_id", angId);
+      return q;
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (!offset) simpanListCache("poster", rows, tanpaFilter && rows.length < limit);
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const fb = ambilLintasOffline("poster", angkatanId, limit);
+      if (fb) return fb;
+    }
+    throw err;
+  }
 }
 async function buatPoster(userId, judul, caption, foto, angkatanId) {
   const { data, error } = await supa.rpc("buat_poster", {
@@ -1495,26 +1644,51 @@ async function hapusPoster(userId, id) {
 // =========================================================================
 const INFO_KOLOM = "id, judul, subjudul, kepada, pembuka, tanggal, jam, tempat, bawaan, penutup, created_by, pengunggah, created_at";
 async function getInformasiList(limit = 50, offset = 0, angkatanId) {
-  const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
-    let q = supa
-      .from("informasi")
-      .select(INFO_KOLOM + (skipAngCol ? "" : ", angkatan_id"))
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
-    if (angId) q = q.eq("angkatan_id", angId);
-    return q;
-  }, angkatanId);
-  if (error) throw error;
-  return data || [];
+  const tanpaFilter = angkatanId === undefined || angkatanId === null || !Number(angkatanId);
+  try {
+    const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
+      let q = supa
+        .from("informasi")
+        .select(INFO_KOLOM + (skipAngCol ? "" : ", angkatan_id"))
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+      if (angId) q = q.eq("angkatan_id", angId);
+      return q;
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (!offset) simpanListCache("informasi", rows, tanpaFilter && rows.length < limit);
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const fb = ambilLintasOffline("informasi", angkatanId, limit);
+      if (fb) return fb;
+    }
+    throw err;
+  }
 }
 async function getInformasi(id) {
-  const { data, error } = await supa
-    .from("informasi")
-    .select(INFO_KOLOM + ", angkatan_id")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-  return data || null;
+  try {
+    const { data, error } = await supa
+      .from("informasi")
+      .select(INFO_KOLOM + ", angkatan_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (data) Cache.set("info_item_" + id, data);
+    return data || null;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("info_item_" + id);
+      if (c) return c;
+      const list = Cache.get("informasi");
+      if (Array.isArray(list)) {
+        const hit = list.find((x) => String(x && x.id) === String(id));
+        if (hit) return hit;
+      }
+    }
+    throw err;
+  }
 }
 async function buatInformasi(userId, f) {
   const { data, error } = await supa.rpc("buat_informasi", {
@@ -1942,30 +2116,55 @@ async function hapusArsip(userId, id) {
 // NOTULENSI RAPAT - DB-driven (halaman osis/notulensi)
 // =========================================================================
 async function getNotulensi(limit, offset, angkatanId) {
-  const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
-    let q = supa
-      .from("rapat_notulensi")
-      .select(
-        "id, judul, tanggal, waktu_mulai, waktu_selesai, lokasi, divisi, pimpinan, notulis, peserta, agenda_topik, isi_pembahasan, keputusan, tindak_lanjut, lampiran, status, pengunggah, created_at" + (skipAngCol ? "" : ", angkatan_id"),
-      )
-      .order("tanggal", { ascending: false })
-      .order("created_at", { ascending: false });
-    if (angId) q = q.eq("angkatan_id", angId);
-    return terapkanRange(q, limit, offset);
-  }, angkatanId);
-  if (error) throw error;
-  return data || [];
+  const tanpaFilter = angkatanId === undefined || angkatanId === null || !Number(angkatanId);
+  try {
+    const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
+      let q = supa
+        .from("rapat_notulensi")
+        .select(
+          "id, judul, tanggal, waktu_mulai, waktu_selesai, lokasi, divisi, pimpinan, notulis, peserta, agenda_topik, isi_pembahasan, keputusan, tindak_lanjut, lampiran, status, pengunggah, created_at" + (skipAngCol ? "" : ", angkatan_id"),
+        )
+        .order("tanggal", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (angId) q = q.eq("angkatan_id", angId);
+      return terapkanRange(q, limit, offset);
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (!offset) simpanListCache("notulensi", rows, tanpaFilter && (!limit || rows.length < limit));
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const fb = ambilLintasOffline("notulensi", angkatanId, limit);
+      if (fb) return fb;
+    }
+    throw err;
+  }
 }
 async function getNotulensiSatu(id) {
-  const { data, error } = await supa
-    .from("rapat_notulensi")
-    .select(
-      "id, judul, tanggal, waktu_mulai, waktu_selesai, lokasi, divisi, pimpinan, notulis, peserta, agenda_topik, isi_pembahasan, keputusan, tindak_lanjut, lampiran, status, pengunggah, created_at, angkatan_id",
-    )
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-  return data || null;
+  try {
+    const { data, error } = await supa
+      .from("rapat_notulensi")
+      .select(
+        "id, judul, tanggal, waktu_mulai, waktu_selesai, lokasi, divisi, pimpinan, notulis, peserta, agenda_topik, isi_pembahasan, keputusan, tindak_lanjut, lampiran, status, pengunggah, created_at, angkatan_id",
+      )
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (data) Cache.set("notulensi_item_" + id, data);
+    return data || null;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("notulensi_item_" + id);
+      if (c) return c;
+      const list = Cache.get("notulensi");
+      if (Array.isArray(list)) {
+        const hit = list.find((x) => String(x && x.id) === String(id));
+        if (hit) return hit;
+      }
+    }
+    throw err;
+  }
 }
 async function buatNotulensi(userId, f) {
   const { data, error } = await supa.rpc("buat_notulensi", {
@@ -2110,16 +2309,27 @@ async function hapusProker(userId, id) {
 // PROGRAM OSIS — Tahunan & Bulanan (halaman osis/program)
 // =========================================================================
 async function getProgram(angkatanId) {
-  const { data, error } = await DbScope.queryAngkatan((angId) => {
-    let q = supa
-      .from("program")
-      .select("id, sekbid_id, nama, tipe, deskripsi, pj, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, pengunggah, created_at" + (angId ? ", angkatan_id" : ""))
-      .order("created_at", { ascending: false });
-    if (angId) q = q.eq("angkatan_id", angId);
-    return q;
-  }, angkatanId);
-  if (error) throw error;
-  return data || [];
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId());
+  try {
+    const { data, error } = await DbScope.queryAngkatan((angId) => {
+      let q = supa
+        .from("program")
+        .select("id, sekbid_id, nama, tipe, deskripsi, pj, tgl_mulai, tgl_selesai, lokasi, target_peserta, status, progress, catatan, pengunggah, created_at" + (angId ? ", angkatan_id" : ""))
+        .order("created_at", { ascending: false });
+      if (angId) q = q.eq("angkatan_id", angId);
+      return q;
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (defaultAng) Cache.set("program", rows);
+    return rows;
+  } catch (err) {
+    if (defaultAng && adalahOfflineErr(err)) {
+      const c = Cache.get("program");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 
 async function buatProgram(userId, f) {
@@ -2181,18 +2391,29 @@ async function hapusProgram(userId, id) {
 // DOKUMEN OSIS - DB-driven (halaman osis/dokumen)
 // =========================================================================
 async function getDokumen(limit, offset, angkatanId) {
-  const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
-    let q = supa
-      .from("osis_dokumen")
-      .select(
-        "id, nama, kategori, tahun, divisi, deskripsi, file_path, file_type, mime, ukuran_bytes, pengunggah, created_by, created_at" + (skipAngCol ? "" : ", angkatan_id"),
-      )
-      .order("created_at", { ascending: false });
-    if (angId) q = q.eq("angkatan_id", angId);
-    return terapkanRange(q, limit, offset);
-  }, angkatanId);
-  if (error) throw error;
-  return data || [];
+  const tanpaFilter = angkatanId === undefined || angkatanId === null || !Number(angkatanId);
+  try {
+    const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
+      let q = supa
+        .from("osis_dokumen")
+        .select(
+          "id, nama, kategori, tahun, divisi, deskripsi, file_path, file_type, mime, ukuran_bytes, pengunggah, created_by, created_at" + (skipAngCol ? "" : ", angkatan_id"),
+        )
+        .order("created_at", { ascending: false });
+      if (angId) q = q.eq("angkatan_id", angId);
+      return terapkanRange(q, limit, offset);
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (!offset) simpanListCache("dokumen", rows, tanpaFilter && (!limit || rows.length < limit));
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const fb = ambilLintasOffline("dokumen", angkatanId, limit);
+      if (fb) return fb;
+    }
+    throw err;
+  }
 }
 async function buatDokumen(userId, f) {
   const { data, error } = await supa.rpc("buat_dokumen", {
@@ -2320,40 +2541,56 @@ async function hapusTask(userId, id) {
 // =========================================================================
 async function getKas(limit, offset, scope) {
   const s = scope || {};
+  const scopeUtuh = !s.tahun && !s.jenis && !s.kategori && !s.divisi && !s.q &&
+    (s.angkatan_id === undefined || s.angkatan_id === null || Number(s.angkatan_id) === Number(DbScope.angkatanId()));
   const baseCols = "id, jenis, tanggal, keterangan, kategori, nominal, divisi, pic, proker_id, catatan, bukti_path, created_by, pengunggah, created_at, updated_at";
   const selects = [baseCols + ", uang_kas_setoran_id", baseCols];
   let lastErr = null;
-  for (const colSet of selects) {
-    const { data, error } = await DbScope.queryAngkatan((angId) => {
-      let q = supa
-        .from("osis_kas")
-        .select(colSet + (angId ? ", angkatan_id" : ""))
-        .order("tanggal", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (angId) q = q.eq("angkatan_id", angId);
-      // Scope = filter aktif halaman (tahun/jenis/kategori/divisi/cari) biar
-      // halaman per halaman isinya pas, bukan global yang kesaring jadi kosong.
-      if (s.tahun) { q = q.gte("tanggal", s.tahun + "-01-01").lt("tanggal", (parseInt(s.tahun, 10) + 1) + "-01-01"); }
-      if (s.jenis) q = q.eq("jenis", s.jenis);
-      if (s.kategori) q = q.eq("kategori", s.kategori);
-      if (s.divisi) q = q.eq("divisi", s.divisi);
-      if (s.q) {
-        const k = String(s.q).replace(/[%_,()"']/g, "").slice(0, 60);
-        if (k) q = q.or(`keterangan.ilike.*${k}*,catatan.ilike.*${k}*,pic.ilike.*${k}*`);
+  try {
+    for (const colSet of selects) {
+      const { data, error } = await DbScope.queryAngkatan((angId) => {
+        let q = supa
+          .from("osis_kas")
+          .select(colSet + (angId ? ", angkatan_id" : ""))
+          .order("tanggal", { ascending: false })
+          .order("created_at", { ascending: false });
+        if (angId) q = q.eq("angkatan_id", angId);
+        // Scope = filter aktif halaman (tahun/jenis/kategori/divisi/cari) biar
+        // halaman per halaman isinya pas, bukan global yang kesaring jadi kosong.
+        if (s.tahun) { q = q.gte("tanggal", s.tahun + "-01-01").lt("tanggal", (parseInt(s.tahun, 10) + 1) + "-01-01"); }
+        if (s.jenis) q = q.eq("jenis", s.jenis);
+        if (s.kategori) q = q.eq("kategori", s.kategori);
+        if (s.divisi) q = q.eq("divisi", s.divisi);
+        if (s.q) {
+          const k = String(s.q).replace(/[%_,()"']/g, "").slice(0, 60);
+          if (k) q = q.or(`keterangan.ilike.*${k}*,catatan.ilike.*${k}*,pic.ilike.*${k}*`);
+        }
+        return terapkanRange(q, limit, offset);
+      }, s.angkatan_id);
+      if (!error) {
+        const rows = data || [];
+        if (scopeUtuh && !offset) simpanListCache("kas", rows, !limit || rows.length < limit);
+        return rows;
       }
-      return terapkanRange(q, limit, offset);
-    }, s.angkatan_id);
-    if (!error) return data || [];
-    lastErr = error;
-    if (!String(error.message || "").match(/uang_kas_setoran_id|column/i)) break;
+      lastErr = error;
+      if (!String(error.message || "").match(/uang_kas_setoran_id|column/i)) break;
+    }
+    throw lastErr || new Error("Gagal memuat transaksi.");
+  } catch (err) {
+    if (scopeUtuh && !offset && adalahOfflineErr(err)) {
+      const c = Cache.get("kas");
+      if (Array.isArray(c)) return limit ? c.slice(0, limit) : c;
+    }
+    throw err;
   }
-  throw lastErr || new Error("Gagal memuat transaksi.");
 }
 // Angka halaman keuangan dari server (1 panggilan): total + rekap + opsi.
 // RPC belum ada (migrasi belum di-run) -> null, frontend fallback hitung lokal.
 async function osisKasRingkas(userId, scope) {
+  const s = scope || {};
+  const scopeUtuh = !s.tahun && !s.jenis && !s.kategori && !s.divisi && !s.q &&
+    (s.angkatan_id === undefined || s.angkatan_id === null || Number(s.angkatan_id) === Number(DbScope.angkatanId()));
   try {
-    const s = scope || {};
     const nul = (v) => { v = String(v == null ? "" : v).trim(); return v ? v : null; };
     const { data, error } = await supa.rpc("osis_kas_ringkas", {
       p_user_id: userId, p_tahun: nul(s.tahun), p_jenis: nul(s.jenis),
@@ -2362,14 +2599,22 @@ async function osisKasRingkas(userId, scope) {
     });
     if (error) throw error;
     if (!data || data.error) throw new Error((data && data.error) || "ERR_RINGKAS");
+    if (scopeUtuh) Cache.set("kas_ringkas", data);
     return data;
   } catch (err) {
     if (wawancaraButuhMigrasi(err)) return null;
+    if (scopeUtuh && adalahOfflineErr(err)) {
+      const c = Cache.get("kas_ringkas");
+      if (c) return c;
+      return null;
+    }
     throw err;
   }
 }
 // Angka statistik agenda dari server. Sama: null bila RPC belum ada.
 async function sekbidAgendaRingkas(userId, sekbidId, nama, angkatanId) {
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId());
+  const kunci = "agenda_ringkas_" + (sekbidId || "all") + "_" + (nama || "");
   try {
     const { data, error } = await supa.rpc("sekbid_agenda_ringkas", {
       p_user_id: userId, p_sekbid_id: sekbidId || null, p_nama: nama || null,
@@ -2377,22 +2622,39 @@ async function sekbidAgendaRingkas(userId, sekbidId, nama, angkatanId) {
     });
     if (error) throw error;
     if (!data || data.error) throw new Error((data && data.error) || "ERR_RINGKAS");
+    if (defaultAng) Cache.set(kunci, data);
     return data;
   } catch (err) {
     if (wawancaraButuhMigrasi(err)) return null;
+    if (defaultAng && adalahOfflineErr(err)) {
+      const c = Cache.get(kunci);
+      if (c) return c;
+      return null;
+    }
     throw err;
   }
 }
 async function getSaldoAwal(angkatanId) {
-  const { data, error } = await DbScope.queryAngkatan((angId) => {
-    let q = supa
-      .from("osis_saldo_awal")
-      .select("periode, nominal" + (angId ? ", angkatan_id" : ""));
-    if (angId) q = q.eq("angkatan_id", angId);
-    return q;
-  }, angkatanId);
-  if (error) throw error;
-  return data || [];
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId());
+  try {
+    const { data, error } = await DbScope.queryAngkatan((angId) => {
+      let q = supa
+        .from("osis_saldo_awal")
+        .select("periode, nominal" + (angId ? ", angkatan_id" : ""));
+      if (angId) q = q.eq("angkatan_id", angId);
+      return q;
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (defaultAng) Cache.set("saldo_awal", rows);
+    return rows;
+  } catch (err) {
+    if (defaultAng && adalahOfflineErr(err)) {
+      const c = Cache.get("saldo_awal");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 async function buatKas(userId, f) {
   const { data, error } = await supa.rpc("buat_kas", {
@@ -2461,6 +2723,7 @@ async function setSaldoAwal(userId, periode, nominal, angkatanId) {
 // (cek osis_users + UNIQUE tanggal+lower(nama) anti dobel/bentrok).
 // =========================================================================
 async function getAbsensi(angkatanId) {
+  const tanpaFilter = angkatanId === undefined || angkatanId === null || !Number(angkatanId);
   // Kolom baru (kegiatan / sumber / akun_id / akun_mode / sesi_qr_id) bisa
   // belum ada kalau migrasi belum di-run — coba select dari paling lengkap
   // ke paling minimal, sisanya default.
@@ -2470,30 +2733,41 @@ async function getAbsensi(angkatanId) {
     "id, tanggal, nama, status, alasan, created_by, pengunggah, created_at, updated_at",
   ];
   let lastErr = null;
-  for (const sel of selects) {
-    const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
-      let q = supa
-        .from("osis_absensi")
-        .select(sel + (skipAngCol ? "" : ", angkatan_id"))
-        .order("tanggal", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (angId) q = q.eq("angkatan_id", angId);
-      return q;
-    }, angkatanId);
-    if (!error) {
-      return (data || []).map((r) => ({
-        ...r,
-        kegiatan: r.kegiatan ?? "",
-        sumber: r.sumber || "manual",
-        akun_id: r.akun_id ?? null,
-        akun_mode: r.akun_mode || "",
-        sesi_qr_id: r.sesi_qr_id ?? null,
-      }));
+  try {
+    for (const sel of selects) {
+      const { data, error } = await DbScope.queryLintas((angId, skipAngCol) => {
+        let q = supa
+          .from("osis_absensi")
+          .select(sel + (skipAngCol ? "" : ", angkatan_id"))
+          .order("tanggal", { ascending: false })
+          .order("created_at", { ascending: false });
+        if (angId) q = q.eq("angkatan_id", angId);
+        return q;
+      }, angkatanId);
+      if (!error) {
+        const rows = (data || []).map((r) => ({
+          ...r,
+          kegiatan: r.kegiatan ?? "",
+          sumber: r.sumber || "manual",
+          akun_id: r.akun_id ?? null,
+          akun_mode: r.akun_mode || "",
+          sesi_qr_id: r.sesi_qr_id ?? null,
+        }));
+        if (tanpaFilter) Cache.set("absensi", rows);
+        else simpanListCache("absensi", rows, false);
+        return rows;
+      }
+      lastErr = error;
+      if (!String(error.message || "").match(/column/i)) break;
     }
-    lastErr = error;
-    if (!String(error.message || "").match(/column/i)) break;
+    throw lastErr || new Error("Gagal memuat absensi.");
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const fb = ambilLintasOffline("absensi", angkatanId);
+      if (fb) return fb;
+    }
+    throw err;
   }
-  throw lastErr || new Error("Gagal memuat absensi.");
 }
 async function buatAbsensi(userId, f) {
   const payload = {
@@ -2568,19 +2842,29 @@ async function hapusAbsensi(userId, id) {
 async function getAbsensiConfig(angkatanId) {
   const angId = DbScope.angkatanId(angkatanId);
   if (!angId) return null;
-  const { data, error } = await supa
-    .from("osis_absensi_config")
-    .select("angkatan_id, tahun_aktif, tahun_default, updated_by, updated_at")
-    .eq("angkatan_id", angId)
-    .maybeSingle();
-  if (error) {
-    // Tabel migrasi mungkin belum di-run — fallback null biar halaman tetap jalan
-    if (/does not exist|schema cache|42P01|PGRST205/i.test(String(error.message || "") + " " + String(error.code || ""))) {
-      return null;
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angId) === Number(DbScope.angkatanId());
+  try {
+    const { data, error } = await supa
+      .from("osis_absensi_config")
+      .select("angkatan_id, tahun_aktif, tahun_default, updated_by, updated_at")
+      .eq("angkatan_id", angId)
+      .maybeSingle();
+    if (error) {
+      // Tabel migrasi mungkin belum di-run — fallback null biar halaman tetap jalan
+      if (/does not exist|schema cache|42P01|PGRST205/i.test(String(error.message || "") + " " + String(error.code || ""))) {
+        return null;
+      }
+      throw error;
     }
-    throw error;
+    if (defaultAng && data) Cache.set("absensi_config", data);
+    return data || null;
+  } catch (err) {
+    if (defaultAng && adalahOfflineErr(err)) {
+      const c = Cache.get("absensi_config");
+      if (c) return c;
+    }
+    throw err;
   }
-  return data || null;
 }
 async function simpanAbsensiConfig(userId, f = {}) {
   const payload = {
@@ -2680,36 +2964,49 @@ async function qrAbsenCatat(userId, sesiId, token) {
 // Tampil satu tabel per orang + running total per orang (dihitung client).
 // =========================================================================
 async function getTabungan(angkatanId) {
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId());
   try {
-    const { data, error } = await DbScope.queryAngkatan((angId) => {
-      let q = supa
-        .from("osis_tabungan")
-        .select(
-          "id, nama, tanggal, nominal, jenis, cek, created_by, pengunggah, created_at, updated_at" + (angId ? ", angkatan_id" : ""),
-        )
-        .order("tanggal", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (angId) q = q.eq("angkatan_id", angId);
-      return q;
-    }, angkatanId);
-    if (error) throw error;
-    return data || [];
+    try {
+      const { data, error } = await DbScope.queryAngkatan((angId) => {
+        let q = supa
+          .from("osis_tabungan")
+          .select(
+            "id, nama, tanggal, nominal, jenis, cek, created_by, pengunggah, created_at, updated_at" + (angId ? ", angkatan_id" : ""),
+          )
+          .order("tanggal", { ascending: false })
+          .order("created_at", { ascending: false });
+        if (angId) q = q.eq("angkatan_id", angId);
+        return q;
+      }, angkatanId);
+      if (error) throw error;
+      const rows = data || [];
+      if (defaultAng) Cache.set("tabungan", rows);
+      return rows;
+    } catch (err) {
+      // kolom jenis belum ada (migrasi belum di-run) — pakai kolom lama
+      if (!String(err.message || "").match(/jenis|column/i)) throw err;
+      const { data, error } = await DbScope.queryAngkatan((angId) => {
+        let q = supa
+          .from("osis_tabungan")
+          .select(
+            "id, nama, tanggal, nominal, cek, created_by, pengunggah, created_at, updated_at" + (angId ? ", angkatan_id" : ""),
+          )
+          .order("tanggal", { ascending: false })
+          .order("created_at", { ascending: false });
+        if (angId) q = q.eq("angkatan_id", angId);
+        return q;
+      }, angkatanId);
+      if (error) throw error;
+      const rows = (data || []).map((r) => ({ ...r, jenis: "masuk" }));
+      if (defaultAng) Cache.set("tabungan", rows);
+      return rows;
+    }
   } catch (err) {
-    // kolom jenis belum ada (migrasi belum di-run) — pakai kolom lama
-    if (!String(err.message || "").match(/jenis|column/i)) throw err;
-    const { data, error } = await DbScope.queryAngkatan((angId) => {
-      let q = supa
-        .from("osis_tabungan")
-        .select(
-          "id, nama, tanggal, nominal, cek, created_by, pengunggah, created_at, updated_at" + (angId ? ", angkatan_id" : ""),
-        )
-        .order("tanggal", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (angId) q = q.eq("angkatan_id", angId);
-      return q;
-    }, angkatanId);
-    if (error) throw error;
-    return (data || []).map((r) => ({ ...r, jenis: "masuk" }));
+    if (defaultAng && adalahOfflineErr(err)) {
+      const c = Cache.get("tabungan");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
   }
 }
 async function buatTabungan(userId, f) {
@@ -2948,69 +3245,113 @@ async function kirimRespons(formId, jawaban, userId) {
 // AGENDA PER SEKBID - DB-driven (judul, deskripsi, tanggal, lokasi, status, fotos)
 // =========================================================================
 async function getAgendaBySekbid(sekbidId, limit, offset, nama, angkatanId) {
-  const { data, error } = await DbScope.queryAngkatan((angId) => {
-    let q = supa
-      .from("sekbid_agenda")
-      .select(
-        "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pengunggah, created_at" + (angId ? ", angkatan_id" : ""),
-      )
-      .eq("sekbid_id", sekbidId)
-      .order("tanggal", { ascending: false })
-      .order("created_at", { ascending: false });
-    if (angId) q = q.eq("angkatan_id", angId);
-    if (nama) q = q.eq("pengunggah", nama);
-    return terapkanRange(q, limit, offset);
-  }, angkatanId);
-  if (error) throw error;
-  return data || [];
+  const defaultScope = !nama && (angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId()));
+  const kunci = "agenda_sb_" + sekbidId;
+  try {
+    const { data, error } = await DbScope.queryAngkatan((angId) => {
+      let q = supa
+        .from("sekbid_agenda")
+        .select(
+          "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pengunggah, created_at" + (angId ? ", angkatan_id" : ""),
+        )
+        .eq("sekbid_id", sekbidId)
+        .order("tanggal", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (angId) q = q.eq("angkatan_id", angId);
+      if (nama) q = q.eq("pengunggah", nama);
+      return terapkanRange(q, limit, offset);
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (defaultScope && !offset) simpanListCache(kunci, rows, !limit || rows.length < limit);
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      if (defaultScope) {
+        const c = Cache.get(kunci);
+        if (Array.isArray(c)) return limit ? c.slice(0, limit) : c;
+      }
+      const semua = Cache.get("agenda_all");
+      if (Array.isArray(semua)) {
+        const saring = semua.filter((r) => String(r && r.sekbid_id) === String(sekbidId) && (!nama || r.pengunggah === nama));
+        return limit ? saring.slice(0, limit) : saring;
+      }
+    }
+    throw err;
+  }
 }
 async function getAllAgenda(limit, offset, nama, angkatanId) {
-  const { data, error } = await DbScope.queryAngkatan((angId) => {
-    let q = supa
-      .from("sekbid_agenda")
-      .select(
-        "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pengunggah, created_at" + (angId ? ", angkatan_id" : ""),
-      )
-      .order("tanggal", { ascending: false })
-      .order("created_at", { ascending: false });
-    if (angId) q = q.eq("angkatan_id", angId);
-    if (nama) q = q.eq("pengunggah", nama);
-    return terapkanRange(q, limit, offset);
-  }, angkatanId);
-  if (error) throw error;
-  return data || [];
+  const defaultScope = !nama && (angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId()));
+  try {
+    const { data, error } = await DbScope.queryAngkatan((angId) => {
+      let q = supa
+        .from("sekbid_agenda")
+        .select(
+          "id, sekbid_id, judul, deskripsi, tanggal, lokasi, status, fotos, pengunggah, created_at" + (angId ? ", angkatan_id" : ""),
+        )
+        .order("tanggal", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (angId) q = q.eq("angkatan_id", angId);
+      if (nama) q = q.eq("pengunggah", nama);
+      return terapkanRange(q, limit, offset);
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (defaultScope && !offset) simpanListCache("agenda_all", rows, !limit || rows.length < limit);
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const c = Cache.get("agenda_all");
+      if (Array.isArray(c)) {
+        const saring = nama ? c.filter((r) => r && r.pengunggah === nama) : c;
+        return limit ? saring.slice(0, limit) : saring;
+      }
+    }
+    throw err;
+  }
 }
 // Daftar pengurus buat filter "nama" di halaman agenda: [{nama, sekbid_id, angkatan}].
 // sekbid dari osis_users.sekbid_id; kalau kosong dicocokin dari jabatan ke
 // nama sekbid (mis. jabatan "Kewirausahaan" -> sekbid 14).
 async function getNamaPengurus(angkatanId) {
-  const [usersRes, sekbidRes] = await Promise.all([
-    DbScope.queryAngkatan((angId) => {
-      let q = supa
-        .from("osis_users")
-        .select("nama, jabatan, sekbid_id, angkatan" + (angId ? ", angkatan_id" : ""))
-        .order("nama", { ascending: true });
-      if (angId) q = q.or(`angkatan_id.eq.${angId},angkatan_id.is.null`);
-      return q;
-    }, angkatanId),
-    supa.from("sekbid").select("id, nama"),
-  ]);
-  if (usersRes.error) throw usersRes.error;
-  if (sekbidRes.error) throw sekbidRes.error;
-  const byJabatan = {};
-  (sekbidRes.data || []).forEach(s => {
-    const key = String(s.nama || "").trim().toLowerCase();
-    if (key && !(key in byJabatan)) byJabatan[key] = s.id;
-  });
-  const uniq = {};
-  (usersRes.data || []).forEach(r => {
-    const nama = String(r.nama || "").trim();
-    if (!nama || uniq[nama]) return;
-    const jab = String(r.jabatan || "").trim().toLowerCase();
-    const sb = r.sekbid_id != null ? parseInt(r.sekbid_id, 10) : byJabatan[jab];
-    uniq[nama] = { nama, sekbid_id: Number.isFinite(sb) ? sb : null, angkatan: String(r.angkatan || "").trim() };
-  });
-  return Object.values(uniq);
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId());
+  try {
+    const [usersRes, sekbidRes] = await Promise.all([
+      DbScope.queryAngkatan((angId) => {
+        let q = supa
+          .from("osis_users")
+          .select("nama, jabatan, sekbid_id, angkatan" + (angId ? ", angkatan_id" : ""))
+          .order("nama", { ascending: true });
+        if (angId) q = q.or(`angkatan_id.eq.${angId},angkatan_id.is.null`);
+        return q;
+      }, angkatanId),
+      supa.from("sekbid").select("id, nama"),
+    ]);
+    if (usersRes.error) throw usersRes.error;
+    if (sekbidRes.error) throw sekbidRes.error;
+    const byJabatan = {};
+    (sekbidRes.data || []).forEach(s => {
+      const key = String(s.nama || "").trim().toLowerCase();
+      if (key && !(key in byJabatan)) byJabatan[key] = s.id;
+    });
+    const uniq = {};
+    (usersRes.data || []).forEach(r => {
+      const nama = String(r.nama || "").trim();
+      if (!nama || uniq[nama]) return;
+      const jab = String(r.jabatan || "").trim().toLowerCase();
+      const sb = r.sekbid_id != null ? parseInt(r.sekbid_id, 10) : byJabatan[jab];
+      uniq[nama] = { nama, sekbid_id: Number.isFinite(sb) ? sb : null, angkatan: String(r.angkatan || "").trim() };
+    });
+    const hasil = Object.values(uniq);
+    if (defaultAng) Cache.set("nama_pengurus", hasil);
+    return hasil;
+  } catch (err) {
+    if (defaultAng && adalahOfflineErr(err)) {
+      const c = Cache.get("nama_pengurus");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 async function buatAgenda(
   userId,
@@ -3291,11 +3632,21 @@ async function feedShareCat(postId) {
 // =========================================================================
 
 async function getSiteContent() {
-  const { data, error } = await supa
-    .from("site_content")
-    .select("kunci, nilai");
-  if (error) throw error;
-  return data || [];
+  try {
+    const { data, error } = await supa
+      .from("site_content")
+      .select("kunci, nilai");
+    if (error) throw error;
+    const rows = data || [];
+    Cache.set("site_content", rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("site_content");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 
 async function saveSiteText(userId, kunci, nilai) {
@@ -3467,12 +3818,21 @@ async function hapusAnggota(id) {
 async function getAnggotaSaya(angkatanId) {
   const uid = _uid();
   if (!uid) return null;
-  const { data, error } = await supa.rpc("anggota_saya", {
-    p_user_id: uid,
-    p_angkatan_id: DbScope.angkatanId(angkatanId),
-  });
-  if (error) throw error;
-  return data || null;
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId());
+  try {
+    const { data, error } = await supa.rpc("anggota_saya", {
+      p_user_id: uid,
+      p_angkatan_id: DbScope.angkatanId(angkatanId),
+    });
+    if (error) throw error;
+    if (defaultAng && data) Cache.set("anggota_saya", data);
+    return data || null;
+  } catch (err) {
+    if (defaultAng && adalahOfflineErr(err)) {
+      return Cache.get("anggota_saya") || null;
+    }
+    throw err;
+  }
 }
 
 // =========================================================================
@@ -3526,9 +3886,17 @@ async function hapusPengurus(id) {
 async function getPengurusSaya() {
   const uid = _uid();
   if (!uid) return null;
-  const { data, error } = await supa.rpc("pengurus_saya", { p_user_id: uid });
-  if (error) throw error;
-  return data || null;
+  try {
+    const { data, error } = await supa.rpc("pengurus_saya", { p_user_id: uid });
+    if (error) throw error;
+    if (data) Cache.set("pengurus_saya", data);
+    return data || null;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      return Cache.get("pengurus_saya") || null;
+    }
+    throw err;
+  }
 }
 
 // Update biodata MILIK SENDIRI (nama & jabatan dikunci di server).
@@ -3619,14 +3987,25 @@ async function setSuper(adminId, targetId, jadikan) {
 
 // Matriks semua user + haknya (hanya super_admin). Tanpa password.
 async function aksesMatriks(adminId, angkatanId = null) {
-  const params = { p_admin: adminId };
-  if (angkatanId !== null && angkatanId !== undefined) {
-    params.p_angkatan_id = Number(angkatanId);
+  const kunci = "akses_matriks_" + (angkatanId === null || angkatanId === undefined ? "all" : String(angkatanId));
+  try {
+    const params = { p_admin: adminId };
+    if (angkatanId !== null && angkatanId !== undefined) {
+      params.p_angkatan_id = Number(angkatanId);
+    }
+    const { data, error } = await supa.rpc("akses_matriks", params);
+    if (error) throw error;
+    if (data && data.error) throw new Error(data.error);
+    const rows = data || [];
+    Cache.set(kunci, rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get(kunci);
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
   }
-  const { data, error } = await supa.rpc("akses_matriks", params);
-  if (error) throw error;
-  if (data && data.error) throw new Error(data.error);
-  return data || [];
 }
 
 // =========================================================================
@@ -3639,14 +4018,25 @@ async function aksesMatriks(adminId, angkatanId = null) {
 
 // Daftar akun + status taut Auth + super + sekbid otomatis dari jabatan.
 async function osisUserList(adminId, angkatanId = null) {
-  const params = { p_user_id: adminId };
-  if (angkatanId !== null && angkatanId !== undefined) {
-    params.p_angkatan_id = Number(angkatanId);
+  const kunci = "osis_users_" + (angkatanId === null || angkatanId === undefined ? "all" : String(angkatanId));
+  try {
+    const params = { p_user_id: adminId };
+    if (angkatanId !== null && angkatanId !== undefined) {
+      params.p_angkatan_id = Number(angkatanId);
+    }
+    const { data, error } = await supa.rpc("osis_user_list", params);
+    if (error) throw error;
+    if (data && data.error) throw new Error(data.error);
+    const rows = data || [];
+    Cache.set(kunci, rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get(kunci);
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
   }
-  const { data, error } = await supa.rpc("osis_user_list", params);
-  if (error) throw error;
-  if (data && data.error) throw new Error(data.error);
-  return data || [];
 }
 
 // Tambah akun. Password awal = plaintext LEGACY buat klaim login pertama
@@ -3931,16 +4321,27 @@ async function getWawancaraJawaban(sesiId) {
 }
 // Roster senior ringkas buat dropdown petugas (id, nama, jabatan).
 async function getOsisUsersRingkas(angkatanId) {
-  const { data, error } = await DbScope.queryAngkatan((angId) => {
-    let q = supa
-      .from("osis_users")
-      .select("id, nama, username, jabatan" + (angId ? ", angkatan_id" : ""))
-      .order("nama", { ascending: true });
-    if (angId) q = q.or(`angkatan_id.eq.${angId},angkatan_id.is.null`);
-    return q;
-  }, angkatanId);
-  if (error) throw error;
-  return data || [];
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId());
+  try {
+    const { data, error } = await DbScope.queryAngkatan((angId) => {
+      let q = supa
+        .from("osis_users")
+        .select("id, nama, username, jabatan" + (angId ? ", angkatan_id" : ""))
+        .order("nama", { ascending: true });
+      if (angId) q = q.or(`angkatan_id.eq.${angId},angkatan_id.is.null`);
+      return q;
+    }, angkatanId);
+    if (error) throw error;
+    const rows = data || [];
+    if (defaultAng) Cache.set("osis_users_ringkas", rows);
+    return rows;
+  } catch (err) {
+    if (defaultAng && adalahOfflineErr(err)) {
+      const c = Cache.get("osis_users_ringkas");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 async function wawancaraCalonTambah(userId, f) {
   const { data, error } = await supa.rpc("wawancara_calon_tambah", {
@@ -4235,29 +4636,51 @@ function tesCekJson(data) {
 }
 
 async function getTesDaftar(angkatanId = null) {
-  const { data, error } = await supa.rpc("tes_daftar", {
-    p_user_id: _uid(),
-    p_angkatan_id: angkatanId ? Number(angkatanId) : null,
-  });
-  if (error) {
-    if (tesButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI");
-    throw error;
+  const kunci = "tes_daftar_" + (angkatanId ? Number(angkatanId) : "def");
+  try {
+    const { data, error } = await supa.rpc("tes_daftar", {
+      p_user_id: _uid(),
+      p_angkatan_id: angkatanId ? Number(angkatanId) : null,
+    });
+    if (error) {
+      if (tesButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI");
+      throw error;
+    }
+    tesCekJson(data);
+    const rows = Array.isArray(data) ? data : [];
+    Cache.set(kunci, rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get(kunci) || Cache.get("tes_daftar");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
   }
-  tesCekJson(data);
-  return Array.isArray(data) ? data : [];
 }
 
 async function bukaTes(tesId, untukEdit = false) {
-  const { data, error } = await supa.rpc("tes_buka", {
-    p_user_id: _uid(),
-    p_tes_id: Number(tesId),
-    p_untuk_edit: !!untukEdit,
-  });
-  if (error) {
-    if (tesButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI");
-    throw error;
+  const kunci = "tes_buka_" + Number(tesId) + "_" + (untukEdit ? 1 : 0);
+  try {
+    const { data, error } = await supa.rpc("tes_buka", {
+      p_user_id: _uid(),
+      p_tes_id: Number(tesId),
+      p_untuk_edit: !!untukEdit,
+    });
+    if (error) {
+      if (tesButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI");
+      throw error;
+    }
+    const res = tesCekJson(data);
+    if (res) Cache.set(kunci, res);
+    return res;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get(kunci);
+      if (c) return c;
+    }
+    throw err;
   }
-  return tesCekJson(data);
 }
 
 async function simpanTes(f) {
@@ -4312,28 +4735,50 @@ async function submitTes(tesId, jawaban, mulaiAt = null) {
 }
 
 async function getTesHasilList(tesId) {
-  const { data, error } = await supa.rpc("tes_hasil_list", {
-    p_user_id: _uid(),
-    p_tes_id: Number(tesId),
-  });
-  if (error) {
-    if (tesButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI");
-    throw error;
+  const kunci = "tes_hasil_list_" + Number(tesId);
+  try {
+    const { data, error } = await supa.rpc("tes_hasil_list", {
+      p_user_id: _uid(),
+      p_tes_id: Number(tesId),
+    });
+    if (error) {
+      if (tesButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI");
+      throw error;
+    }
+    tesCekJson(data);
+    const rows = Array.isArray(data) ? data : [];
+    Cache.set(kunci, rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get(kunci);
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
   }
-  tesCekJson(data);
-  return Array.isArray(data) ? data : [];
 }
 
 async function getTesHasilDetail(hasilId) {
-  const { data, error } = await supa.rpc("tes_hasil_detail", {
-    p_user_id: _uid(),
-    p_hasil_id: Number(hasilId),
-  });
-  if (error) {
-    if (tesButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI");
-    throw error;
+  const kunci = "tes_hasil_det_" + Number(hasilId);
+  try {
+    const { data, error } = await supa.rpc("tes_hasil_detail", {
+      p_user_id: _uid(),
+      p_hasil_id: Number(hasilId),
+    });
+    if (error) {
+      if (tesButuhMigrasi(error)) throw new Error("BUTUH_MIGRASI");
+      throw error;
+    }
+    const res = tesCekJson(data);
+    if (res) Cache.set(kunci, res);
+    return res;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get(kunci);
+      if (c) return c;
+    }
+    throw err;
   }
-  return tesCekJson(data);
 }
 
 async function koreksiTes(hasilId, koreksi, catatan = "", selesai = true) {

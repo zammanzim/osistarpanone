@@ -250,6 +250,12 @@ const Notulensi = {
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...'; }
         }
         try {
+            if (awal && typeof navigator !== "undefined" && navigator.onLine === false && Notulensi.cache.length) {
+                Notulensi.offset = Notulensi.cache.length;
+                Notulensi.habis = true;
+                Notulensi.tampilDaftar();
+                return;
+            }
             const rows = await getNotulensi(Notulensi.perPage, Notulensi.offset);
             if (awal) Notulensi.cache = [];
             const ada = new Set(Notulensi.cache.map(a => String(a.id)));
@@ -260,15 +266,18 @@ const Notulensi = {
             if (!rows || rows.length < Notulensi.perPage) {
                 Notulensi.habis = true;
                 try { Cache.set("notulensi", Notulensi.cache); } catch {}
+            } else if (awal) {
+                try { simpanListCache("notulensi", Notulensi.cache, false); } catch {}
             }
             Notulensi.tampilDaftar();
         } catch (err) {
             console.error(err);
+            const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
             if (awal && !Notulensi.cache.length) {
                 wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Notulensi.muat()"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
-            } else if (awal) {
+            } else if (!isOff && awal) {
                 showToast("Gagal refresh, tampil data lama.", "error");
-            } else {
+            } else if (!isOff) {
                 showToast("Gagal muat lanjutan.", "error");
                 try { Notulensi.tampilDaftar(); } catch {}
             }

@@ -3,9 +3,12 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v227";
+const VERSI = "tarpan-v228";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
+// Cache lintas-origin (Font Awesome, Google Fonts, foto R2) tidak ikut
+// dihapus tiap bump VERSI supaya ikon & gambar terakhir tetap tampil offline.
+const LINTAS = "tarpan-lintas-v1";
 
 // App shell - SEMUA halaman + script lokal di-precache biar offline-ready
 // sejak kunjungan pertama (tidak tergantung runtime cache yang bisa kehapus
@@ -18,11 +21,13 @@ const APP_SHELL = [
   "./absen.html",
   "./changelog.html",
   "./hasil-wawancara.html",
+  "./jepun.html",
   "./offline.html",
   "./manifest.webmanifest",
   "./assets/css/shared/style.css",
   "./assets/css/shared/dark.css",
   "./assets/css/public/feed.css",
+  "./assets/css/public/jepun.css",
   "./assets/css/shared/osis2.css",
   "./assets/css/osis/absensi.css",
   "./assets/css/osis/agenda.css",
@@ -135,6 +140,7 @@ const APP_SHELL = [
   "./assets/js/services/visitor.js",
   "./assets/js/osis/modules/wawancara.js",
   "./assets/js/public/hasil-wawancara.js",
+  "./assets/js/public/jepun.js",
   "./assets/js/vendor/jsQR.min.js",
   "./assets/js/vendor/qrcode.min.js",
   "./assets/icons/icon-192.png",
@@ -144,11 +150,37 @@ const APP_SHELL = [
   "./assets/icons/favicon-32.png",
 ];
 
+// Cloudflare Pages clean-URL me-redirect *.html -> 308 URL bersih (res.redirected = true).
+// Navigasi browser punya redirect:"manual" — kalau SW balas cached response dengan
+// redirected:true, browser menolak dengan "This page can't be loaded" (ERR_FAILED).
+async function bersihRedirect(res) {
+  if (!res || !res.redirected || res.type === "opaque") return res;
+  const body = await res.blob();
+  return new Response(body, {
+    status: res.status || 200,
+    statusText: res.statusText,
+    headers: new Headers(res.headers),
+  });
+}
+
+async function isiPrecache() {
+  const cache = await caches.open(STATIS);
+  const unik = Array.from(new Set(APP_SHELL));
+  await Promise.all(
+    unik.map(async (item) => {
+      const absUrl = new URL(item, self.location.href).href;
+      const res = await fetch(new Request(absUrl, { cache: "no-cache", redirect: "follow" }));
+      if (!res || !res.ok) throw new Error("Gagal precache: " + item);
+      await cache.put(absUrl, await bersihRedirect(res));
+    }),
+  );
+}
+
 self.addEventListener("install", (e) => {
   // Catatan: JANGAN skipWaiting() di sini. SW baru wajib menunggu sampai
   // halaman memintanya via pesan SKIP_WAITING (assets/js/pwa/pwa.js). skipWaiting
   // otomatis = take-over tiba-tiba + controllerchange + reload sendiri.
-  e.waitUntil(caches.open(STATIS).then((c) => c.addAll(APP_SHELL)));
+  e.waitUntil(isiPrecache());
 });
 
 self.addEventListener("activate", (e) => {
@@ -159,7 +191,11 @@ self.addEventListener("activate", (e) => {
         Promise.all(
           keys
             .filter(
-              (k) => k.startsWith("tarpan-") && k !== STATIS && k !== RUNTIME,
+              (k) =>
+                k.startsWith("tarpan-") &&
+                k !== STATIS &&
+                k !== RUNTIME &&
+                k !== LINTAS,
             )
             .map((k) => caches.delete(k)),
         ),
@@ -266,24 +302,81 @@ async function basiDulu(request, namaCache) {
     const m = await c.match(request, { ignoreSearch: false });
     if (m) { cached = m; break; }
   }
+  // Kalau URL pakai ?v=XX tapi RUNTIME belum terisi (baru buka pertama kali / habis update),
+  // cocokkan ke STATIS tanpa query biar instan walau sinyal mati/lemot.
+  if (!cached && new URL(request.url).origin === self.location.origin) {
+    const statis = await caches.open(STATIS);
+    const dariStatis = await statis.match(request, { ignoreSearch: true });
+    if (dariStatis) cached = dariStatis;
+  }
   const ambil = fetch(request)
-    .then((res) => {
+    .then(async (res) => {
       if (res && (res.ok || res.type === "opaque"))
-        cacheUtama.put(request, res.clone());
+        cacheUtama.put(request, await bersihRedirect(res.clone()));
       return res;
     })
     .catch(async () => {
-      if (cached) return cached;
+      if (cached) return bersihRedirect(cached);
       if (new URL(request.url).origin === self.location.origin) {
         for (const nama of daftarCache) {
           const c = await caches.open(nama);
           const tanpaQuery = await c.match(request, { ignoreSearch: true });
-          if (tanpaQuery) return tanpaQuery;
+          if (tanpaQuery) return bersihRedirect(tanpaQuery);
         }
       }
       throw new Error("offline");
     });
-  return cached || ambil;
+  return cached ? bersihRedirect(cached) : ambil;
+}
+
+// Cari HTML halaman di cache (cocokkan clean URL Cloudflare Pages "/osis/keuangan"
+// dengan precache "./osis/keuangan.html", termasuk URL ber-query ?id=... / ?n=...).
+async function cariNavigasiCache(req, url) {
+  if (url.origin !== self.location.origin) return null;
+  const daftarCache = [RUNTIME, STATIS];
+  for (const nama of daftarCache) {
+    const c = await caches.open(nama);
+    const persis = await c.match(req, { ignoreSearch: false });
+    if (persis) return bersihRedirect(persis);
+  }
+
+  const scopePath = new URL("./", self.location.href).pathname;
+  const rawPath = url.pathname.startsWith(scopePath)
+    ? url.pathname.slice(scopePath.length)
+    : url.pathname;
+  const rel = rawPath.replace(/^\/+/, "").replace(/\/+$/, "");
+
+  const kandidat = [];
+  if (!rel || rel === "index" || rel === "index.html") {
+    kandidat.push("./index.html", "./");
+  } else if (rel === "osis" || rel === "osis/index" || rel === "osis/index.html") {
+    kandidat.push("./osis/index.html", "./osis/", "./osis/index");
+  } else if (rel.endsWith(".html")) {
+    kandidat.push("./" + rel, "./" + rel.slice(0, -5));
+  } else {
+    kandidat.push("./" + rel + ".html", "./" + rel, "./" + rel + "/index.html");
+  }
+
+  for (const k of kandidat) {
+    const targetHref = new URL(k, self.location.href).href;
+    for (const nama of daftarCache) {
+      const c = await caches.open(nama);
+      const hit = await c.match(targetHref, { ignoreSearch: true });
+      if (hit) return bersihRedirect(hit);
+    }
+  }
+  return null;
+}
+
+// Fetch navigasi dengan batas tunggu supaya sinyal "nyangkut" (Wi-Fi tanpa internet)
+// tidak menggantung sampai browser lempar ERR_TIMED_OUT.
+function fetchNavigasi(req, ms) {
+  if (typeof AbortController === "undefined") return fetch(req);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => {
+    try { ctrl.abort(); } catch {}
+  }, ms);
+  return fetch(req, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
 }
 
 self.addEventListener("fetch", (e) => {
@@ -294,26 +387,35 @@ self.addEventListener("fetch", (e) => {
   if (req.headers.has("range") || req.destination === "video" || req.destination === "audio") return;
   const url = new URL(req.url);
 
-  // 1) Navigasi halaman (termasuk hash-route SPA) - network dulu, fallback cache/offline.
+  // 1) Navigasi halaman (termasuk clean URL Cloudflare Pages & hash-route SPA).
   if (req.mode === "navigate") {
     e.respondWith(
       (async () => {
+        const scopePath = new URL("./", self.location.href).pathname;
+        // "/osis" tanpa garis miring di akhir -> arahkan ke "/osis/" biar path
+        // relatif "../assets/..." dan link "keuangan" tetap mengarah ke dalam /osis/.
+        if (url.origin === self.location.origin && url.pathname === scopePath + "osis") {
+          return Response.redirect(new URL("./osis/" + url.search + url.hash, self.location.href).href, 302);
+        }
         try {
-          const res = await fetch(req);
-          const cache = await caches.open(RUNTIME);
-          cache.put(req, res.clone());
+          if (self.navigator && self.navigator.onLine === false) {
+            throw new Error("offline");
+          }
+          const res = await fetchNavigasi(req, 4500);
+          if (res && res.ok) {
+            const cache = await caches.open(RUNTIME);
+            cache.put(req, await bersihRedirect(res.clone()));
+          }
           return res;
         } catch {
-          const cached = await caches.match(req);
-          if (cached) return cached;
-          // SPA: rute hash (#/sekbid dsb) tetap dilayani index.html dari cache.
-          if (url.origin === self.location.origin) {
-            const shell =
-              (await caches.match("./index.html")) ||
-              (await caches.match("./"));
-            if (shell) return shell;
-          }
-          return caches.match("./offline.html");
+          const hit = await cariNavigasiCache(req, url);
+          if (hit) return hit;
+          const off = await caches.match("./offline.html");
+          if (off) return bersihRedirect(off);
+          return new Response(
+            "<!doctype html><html lang='id'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Offline</title><body style='font-family:sans-serif;padding:24px;text-align:center'><h2>Kamu sedang offline</h2><p>Halaman belum tersimpan di perangkat.</p></body></html>",
+            { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } },
+          );
         }
       })(),
     );
@@ -331,12 +433,13 @@ self.addEventListener("fetch", (e) => {
 
   // 4) Lintas origin: CDN (fonts, cdnjs, jsdelivr) + media R2
   // (custom domain, mis. media.osistarpanone.my.id) + sisa foto Supabase
-  // lama selama masa transisi - SWR + fallback cache.
+  // lama selama masa transisi - SWR + fallback cache lintas versi.
   e.respondWith(
     (async () => {
-      const cache = await caches.open(RUNTIME);
+      const cache = await caches.open(LINTAS);
       const cached = await cache.match(req);
       try {
+        if (self.navigator && self.navigator.onLine === false && cached) return cached;
         const res = await fetch(req);
         if (res && res.status !== 206 && (res.ok || res.type === "opaque"))
           cache.put(req, res.clone());

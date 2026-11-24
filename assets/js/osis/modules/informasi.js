@@ -279,6 +279,12 @@ const Informasi = {
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memuat...'; }
         }
         try {
+            if (awal && typeof navigator !== "undefined" && navigator.onLine === false && Informasi.cache.length) {
+                Informasi.offset = Informasi.cache.length;
+                Informasi.habis = true;
+                Informasi.tampilDaftar();
+                return;
+            }
             const rows = await getInformasiList(Informasi.perPage, Informasi.offset);
             if (awal) Informasi.cache = [];
             const ada = new Set(Informasi.cache.map(x => String(x.id)));
@@ -289,15 +295,18 @@ const Informasi = {
             if (!rows || rows.length < Informasi.perPage) {
                 Informasi.habis = true;
                 Cache.set("informasi", Informasi.cache);
+            } else if (awal) {
+                try { simpanListCache("informasi", Informasi.cache, false); } catch {}
             }
             Informasi.tampilDaftar();
         } catch (err) {
             console.error(err);
+            const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
             if (awal && !Informasi.cache.length) {
                 wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Informasi.muat()"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
-            } else if (awal) {
+            } else if (!isOff && awal) {
                 showToast("Gagal refresh, tampil data lama.", "error");
-            } else {
+            } else if (!isOff) {
                 showToast("Gagal muat lanjutan informasi.", "error");
                 try { Informasi.tampilDaftar(); } catch {}
             }

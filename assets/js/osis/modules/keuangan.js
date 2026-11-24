@@ -437,14 +437,19 @@ const Keuangan = {
         Keuangan.habis = false;
         Keuangan.ringkas = null;
         Keuangan.tampilLimit = Keuangan.defaultLimit;
-        // Render cache persisten DULU (hanya bila tanpa filter) biar offline langsung tampil.
-        if (Keuangan.scopeKosong()) {
-          const cached = Cache.get("kas");
-          if (cached) {
-            try { Keuangan.buildOptions(); } catch {}
-            Keuangan.cache = cached;
-            Keuangan.render();
-          }
+        // Render cache persisten DULU biar offline langsung tampil (termasuk saat difilter lokal).
+        const cached = Cache.get("kas");
+        const cachedRingkas = Keuangan.scopeKosong() ? Cache.get("kas_ringkas") : null;
+        if (cachedRingkas) Keuangan.ringkas = cachedRingkas;
+        if (cached) {
+          Keuangan.cache = cached;
+          try { Keuangan.buildOptions(); } catch {}
+          Keuangan.render();
+        }
+        if (typeof navigator !== "undefined" && navigator.onLine === false && (Keuangan.cache || []).length) {
+          Keuangan.offset = Keuangan.cache.length;
+          Keuangan.habis = true;
+          return;
         }
       }
       const [ringkas, rows] = await Promise.all([
@@ -463,10 +468,11 @@ const Keuangan = {
       Keuangan.render();
     } catch (err) {
       console.error(err);
+      const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
       if (awal && !(Keuangan.cache || []).length) {
         document.getElementById("kasWrap").innerHTML =
           `<div class="pesan-empty">Gagal memuat transaksi.</div>`;
-      } else if (typeof showToast === "function") {
+      } else if (!isOff && typeof showToast === "function") {
         showToast("Gagal muat lanjutan transaksi.", "error");
       }
     } finally {
