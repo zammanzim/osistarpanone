@@ -18,7 +18,10 @@ const Prestasi = {
         Prestasi.terinisialisasi = true;
         // Segarkan hak kendali lalu sesuaikan tombol
         if (typeof OsisAuth.refreshAkses === "function") {
-            OsisAuth.refreshAkses().then(() => { Prestasi.cekLogin(); Prestasi.render(); }).catch(() => {});
+            OsisAuth.refreshAkses().then(() => {
+                Prestasi.cekLogin();
+                if (!Prestasi.loading && Prestasi.cache.length) Prestasi.render();
+            }).catch(() => {});
         }
         Prestasi.cekLogin();
         Prestasi.muat();
@@ -72,6 +75,13 @@ const Prestasi = {
             const cached = Cache.get("prestasi");
             if (cached && cached.length) {
                 Prestasi.cache = cached.slice();
+                if (typeof navigator !== "undefined" && navigator.onLine === false) {
+                    Prestasi.offset = Prestasi.cache.length;
+                    Prestasi.habis = true;
+                    Prestasi.render();
+                    Prestasi.loading = false;
+                    return;
+                }
                 Prestasi.render();
             } else {
                 Prestasi.cache = [];
@@ -89,20 +99,22 @@ const Prestasi = {
                 if (!ada.has(String(p.id))) { ada.add(String(p.id)); Prestasi.cache.push(p); }
             });
             Prestasi.offset = Prestasi.cache.length;
-            if (!rows || rows.length < Prestasi.perPage) {
+            if (!rows || rows.length < Prestasi.perPage || (typeof navigator !== "undefined" && navigator.onLine === false)) {
                 Prestasi.habis = true;
                 Cache.set("prestasi", Prestasi.cache);
+            } else if (awal) {
+                try { simpanListCache("prestasi", Prestasi.cache, false); } catch {}
             }
             Prestasi.render();
         } catch (err) {
             console.error(err);
+            const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
             if (awal && !Prestasi.cache.length) {
                 grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat prestasi.<br><br><button class="btn btn-red btn-sm" onclick="Prestasi.muat(true)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
-            } else if (awal) {
-                showToast("Gagal refresh, tampil data lama.", "error");
-            } else {
-                showToast("Gagal muat lanjutan prestasi.", "error");
-                Prestasi.render(); // balikin tombol manual
+            } else if (Prestasi.cache.length) {
+                if (isOff) Prestasi.habis = true;
+                Prestasi.render();
+                if (!isOff && !awal) showToast("Gagal muat lanjutan prestasi.", "error");
             }
         } finally {
             Prestasi.loading = false;
@@ -150,7 +162,7 @@ const Prestasi = {
         const coverUrl = cover ? getFoto(cover) : "";
         const isVid = typeof isVideoPath === "function" && isVideoPath(cover);
         const oc = `onclick="Prestasi.bukaPopup(${item.id})"`;
-        const media = !coverUrl ? `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`
+        const media = !coverUrl ? thumbBento("", tag || "Prestasi", oc)
             : (typeof thumbBentoPath === "function")
             ? thumbBentoPath(cover, tag || "Prestasi", oc)
             : (isVid

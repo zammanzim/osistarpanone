@@ -190,11 +190,24 @@ const Feed = {
         if (!awal && Feed.habis) return;
         Feed.loading = true;
         if (awal) {
-            Feed.items = [];
             Feed.offset = 0;
             Feed.habis = false;
             Feed.komenCache = {};
-            list.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat feed...</div>`;
+            const cached = (typeof Cache !== "undefined" && Cache.get) ? Cache.get("feed") : null;
+            if (Array.isArray(cached) && cached.length) {
+                Feed.items = cached.map((r, i) => ({ ...r, _r: r._r ?? (i * 0.013) }));
+                if (typeof navigator !== "undefined" && navigator.onLine === false) {
+                    Feed.offset = Feed.items.length;
+                    Feed.habis = true;
+                    Feed.render();
+                    Feed.loading = false;
+                    return;
+                }
+                Feed.render();
+            } else {
+                Feed.items = [];
+                list.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat feed...</div>`;
+            }
         }
         try {
             const rows = await feedPostsList(Feed.perPage, Feed.offset, Feed.userKey());
@@ -205,15 +218,28 @@ const Feed = {
                 Feed.items.push(r);
             });
             Feed.offset = Feed.items.length;
-            if (!rows || rows.length < Feed.perPage) Feed.habis = true;
+            if (!rows || rows.length < Feed.perPage || (typeof navigator !== "undefined" && navigator.onLine === false)) {
+                Feed.habis = true;
+            }
+            if (awal && Feed.items.length && typeof simpanListCache === "function") {
+                try { simpanListCache("feed", Feed.items, Feed.habis); } catch {}
+            }
             Feed.render();
         } catch (err) {
             console.error(err);
+            const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
             if (err && err.message === "FEED_NO_TABLE") {
                 list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-database"></i> Tabel feed belum ada.<br>Jalankan dulu <b>migrasi-feed.sql</b> di Supabase SQL Editor.</div>`;
+            } else if ((Feed.items || []).length) {
+                Feed.offset = Feed.items.length;
+                if (isOff) Feed.habis = true;
+                Feed.render();
+                if (!isOff && !awal && typeof showToast === "function") {
+                    showToast("Gagal muat lanjutan feed.", "error");
+                }
             } else if (awal) {
                 list.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat feed. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Feed.muat(true)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
-            } else if (typeof showToast === "function") {
+            } else if (!isOff && typeof showToast === "function") {
                 showToast("Gagal muat lanjutan feed.", "error");
             }
         } finally {
@@ -280,7 +306,7 @@ const Feed = {
               `<span class="feed-play"><i class="fa-solid fa-play"></i></span>` +
               `<button type="button" class="feed-mute" onclick="event.stopPropagation(); Feed.toggleMute(${id}, this)" title="Suara"><i class="fa-solid fa-volume-xmark"></i></button>` +
               `</div>`
-            : `<div class="feed-media"><span class="media-muat media-muat-tinggi" style="width:100%"><img src="${(typeof getThumb === "function" ? getThumb(it.media_key) : (typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key))}" data-full="${(typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key)}" alt="${esc(it.caption || "Postingan feed")}" loading="lazy" decoding="async" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src=this.dataset.full;}else{this.closest('.media-muat').classList.add('sudah-muat')}"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span></div>`;
+            : `<div class="feed-media"><span class="media-muat media-muat-tinggi" style="width:100%"><img src="${(typeof getThumb === "function" ? getThumb(it.media_key) : (typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key))}" data-full="${(typeof getFoto === "function" ? getFoto(it.media_key) : it.media_key)}" alt="${esc(it.caption || "Postingan feed")}" loading="lazy" decoding="async" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="if(!this.dataset.fb&&navigator.onLine!==false){this.dataset.fb='1';this.src=this.dataset.full;}else{this.closest('.media-muat').classList.add('sudah-muat')}"><span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span></span></div>`;
         const u = Feed.user();
         const canDel = Feed.isSuper() || (Feed.isOsis() && u && String(it.created_by) === String(u.id));
         const komenBuka = !!Feed.komenBuka[id];
@@ -388,6 +414,7 @@ const Feed = {
     // dan paling dekat ke tengah layar. Sisanya dipaksa jeda.
     pilihVideoAktif() {
         if (document.hidden) return;
+        if (typeof navigator !== "undefined" && navigator.onLine === false) { Feed.jedaSemua(); return; }
         // Hemat data: putar-otomatis mati = semua dijeda, user mainkan manual.
         if (!Feed.putarOtomatis()) { Feed.jedaSemua(); return; }
         try {

@@ -21,7 +21,7 @@ const Kegiatan = {
       OsisAuth.refreshAkses()
         .then(() => {
           Kegiatan.cekLogin();
-          Kegiatan.render();
+          if (!Kegiatan.loading && (Kegiatan.cache.length || Kegiatan.draft)) Kegiatan.render();
         })
         .catch(() => {});
     }
@@ -145,6 +145,13 @@ const Kegiatan = {
       const cached = Cache.get("kegiatan");
       if (cached && cached.length) {
         Kegiatan.cache = cached.slice();
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+          Kegiatan.offset = Kegiatan.cache.length;
+          Kegiatan.habis = true;
+          Kegiatan.render();
+          Kegiatan.loading = false;
+          return;
+        }
         Kegiatan.render();
       } else {
         Kegiatan.cache = [];
@@ -181,20 +188,22 @@ const Kegiatan = {
         if (!ada.has(String(k.id))) { ada.add(String(k.id)); Kegiatan.cache.push(k); }
       });
       Kegiatan.offset = Kegiatan.cache.length;
-      if (!rows || rows.length < Kegiatan.perPage) {
+      if (!rows || rows.length < Kegiatan.perPage || (typeof navigator !== "undefined" && navigator.onLine === false)) {
         Kegiatan.habis = true;
         Cache.set("kegiatan", Kegiatan.cache);
+      } else if (awal) {
+        try { simpanListCache("kegiatan", Kegiatan.cache, false); } catch {}
       }
       Kegiatan.render();
     } catch (err) {
       console.error(err);
+      const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
       if (awal && !Kegiatan.cache.length) {
         grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat kegiatan.<br><br><button class="btn btn-red btn-sm" onclick="Kegiatan.muat(true)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
-      } else if (awal) {
-        showToast("Gagal refresh, tampil data lama.", "error");
-      } else {
-        showToast("Gagal muat lanjutan kegiatan.", "error");
-        Kegiatan.render(); // balikin tombol manual
+      } else if (Kegiatan.cache.length) {
+        if (isOff) Kegiatan.habis = true;
+        Kegiatan.render();
+        if (!isOff && !awal) showToast("Gagal muat lanjutan kegiatan.", "error");
       }
     } finally {
       Kegiatan.loading = false;

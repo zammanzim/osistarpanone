@@ -53,7 +53,9 @@ const Arsip = {
       OsisAuth.refreshAkses()
         .then(() => {
           Arsip.cekLogin();
-          Arsip.render();
+          if (!Arsip.memuat && (Arsip.pernahMuat || Arsip.gagalMuat)) {
+            Arsip.render();
+          }
         })
         .catch(() => {});
     }
@@ -178,8 +180,30 @@ const Arsip = {
     const token = ++Arsip.token;
     Arsip.memuat = true;
     Arsip.gagalMuat = false;
-    grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat arsip...</div>`;
-    Arsip.renderBar();
+    // Tampilkan cache 15 item terakhir dulu supaya instan & tetap kebaca saat offline.
+    const cached = Cache.get("arsip");
+    if (Array.isArray(cached) && cached.length) {
+      const from = (Arsip.page - 1) * Arsip.perPage;
+      const slice = cached.slice(from, from + Arsip.perPage);
+      if (slice.length) {
+        const cachedTotal = Number(Cache.get("arsip_count")) || cached.length;
+        Arsip.total = (typeof navigator !== "undefined" && navigator.onLine === false)
+          ? cached.length
+          : Math.max(cachedTotal, cached.length);
+        Arsip.rows = slice;
+        Arsip.pernahMuat = true;
+        Arsip.memuat = false;
+        Arsip.render();
+        if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+        Arsip.memuat = true;
+      } else {
+        grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat arsip...</div>`;
+        Arsip.renderBar();
+      }
+    } else {
+      grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat arsip...</div>`;
+      Arsip.renderBar();
+    }
     try {
       const [total, rows] = await Promise.all([
         getArsipCount(),
@@ -200,8 +224,13 @@ const Arsip = {
       console.error(err);
       if (token !== Arsip.token) return;
       Arsip.memuat = false;
-      Arsip.gagalMuat = true;
-      grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat arsip. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Arsip.muat(Arsip.page)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+      if ((Arsip.rows || []).length) {
+        Arsip.pernahMuat = true;
+        Arsip.render();
+      } else {
+        Arsip.gagalMuat = true;
+        grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat arsip. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Arsip.muat(Arsip.page)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+      }
     }
     Arsip.renderBar();
   },
@@ -226,10 +255,10 @@ const Arsip = {
       // - lagi loading / belum pernah sukses = tampil loading
       // - fetch terakhir gagal = tampil error + tombol coba lagi
       // "Belum ada arsip" cuma kalau sudah pernah sukses dan hasilnya kosong.
-      if (Arsip.memuat || !Arsip.pernahMuat) {
-        html += `<div class="loading-block"><div class="spinner"></div>Memuat arsip...</div>`;
-      } else if (Arsip.gagalMuat) {
+      if (Arsip.gagalMuat) {
         html += `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat arsip. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Arsip.muat(Arsip.page)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+      } else if (Arsip.memuat || !Arsip.pernahMuat) {
+        html += `<div class="loading-block"><div class="spinner"></div>Memuat arsip...</div>`;
       } else {
         html += `<div class="pesan-empty"><i class="fa-solid fa-images"></i> Belum ada arsip.</div>`;
       }
@@ -980,8 +1009,17 @@ const ArsipPelantikan = {
     ArsipPelantikan.page = Math.max(1, parseInt(page, 10) || 1);
     const grid = document.getElementById("pelantikanGrid");
     const bar = document.getElementById("pelantikanBar");
-    if (grid) { grid.style.display = ""; grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat foto pelantikan...</div>`; }
-    if (bar) { bar.style.display = "none"; bar.innerHTML = ""; }
+    const cached = Cache.get("pelantikan");
+    if (Array.isArray(cached) && cached.length) {
+      const from = (ArsipPelantikan.page - 1) * ArsipPelantikan.perPage;
+      ArsipPelantikan.total = cached.length;
+      ArsipPelantikan.rows = cached.slice(from, from + ArsipPelantikan.perPage);
+      ArsipPelantikan.renderIsi();
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+    } else {
+      if (grid) { grid.style.display = ""; grid.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat foto pelantikan...</div>`; }
+      if (bar) { bar.style.display = "none"; bar.innerHTML = ""; }
+    }
     try {
       const r = await getPelantikan(ArsipPelantikan.page, ArsipPelantikan.perPage);
       ArsipPelantikan.total = r.total || 0;
@@ -989,8 +1027,19 @@ const ArsipPelantikan = {
       ArsipPelantikan.renderIsi();
     } catch (err) {
       console.error(err);
-      // Izin dicabut di tengah jalan / sesi habis -> cek ulang status
-      ArsipPelantikan.refresh();
+      const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
+      if (isOff) {
+        if (!(ArsipPelantikan.rows || []).length && grid) {
+          grid.style.display = "";
+          grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Sedang offline — foto pelantikan belum tersimpan di perangkat.<br><br><button class="btn btn-red btn-sm" onclick="ArsipPelantikan.muatIsi(ArsipPelantikan.page)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+        }
+        return;
+      }
+      // Izin dicabut di tengah jalan / sesi habis -> cek ulang status (hindari loop bila owner lokal)
+      if (!ArsipPelantikan.isOwner()) ArsipPelantikan.refresh();
+      else if (grid && !(ArsipPelantikan.rows || []).length) {
+        grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat pelantikan: ${escapeHtml(err.message || String(err))}</div>`;
+      }
     }
   },
 

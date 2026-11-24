@@ -19,7 +19,10 @@ const Galeri = {
         Galeri.terinisialisasi = true;
         // Segarkan hak kendali lalu sesuaikan tombol
         if (typeof OsisAuth.refreshAkses === "function") {
-            OsisAuth.refreshAkses().then(() => { Galeri.cekLogin(); Galeri.render(); }).catch(() => {});
+            OsisAuth.refreshAkses().then(() => {
+                Galeri.cekLogin();
+                if (!Galeri.loading && (Galeri.cache.length || Galeri.draft)) Galeri.render();
+            }).catch(() => {});
         }
         Galeri.cekLogin();
         Galeri.muat(true);
@@ -236,21 +239,28 @@ const Galeri = {
         Galeri.loading = true;
         if (awal) {
             Galeri.offset = 0;
-            Galeri.cache = [];
             Galeri.habis = false;
-            // render instan dari cache persisten (tanpa fetch)
+            // render instan dari cache persisten (15 item terakhir)
             let instan = false;
             try {
                 const c = Cache.get("gallery");
                 if (c && c.length) {
                     Galeri.cache = [...c];
+                    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+                        Galeri.offset = Galeri.cache.length;
+                        Galeri.habis = true;
+                        Galeri.render();
+                        Galeri.loading = false;
+                        return;
+                    }
                     Galeri.render();
                     instan = true;
+                } else {
                     Galeri.cache = [];
-                    Galeri.offset = 0;
-                    Galeri.habis = false;
                 }
-            } catch {}
+            } catch {
+                Galeri.cache = [];
+            }
             if (!instan) {
                 grid.innerHTML = Galeri.draft ? Galeri.kartuDraft()
                     : `<div class="loading-block"><div class="spinner"></div>Memuat galeri...</div>`;
@@ -269,31 +279,41 @@ const Galeri = {
                     if (u && u.mode === "osis") kosong.forEach(it => { hapusGallery(u.id, it.id).catch(() => {}); });
                 } catch {}
             }
+            if (awal) Galeri.cache = [];
             const ada = new Set(Galeri.cache.map(g => String(g.id)));
             pakai.forEach(g => { if (!ada.has(String(g.id))) { Galeri.cache.push(g); ada.add(String(g.id)); } });
             Galeri.offset = Galeri.cache.length;
-            if (!rows || rows.length < Galeri.perPage) {
+            if (!rows || rows.length < Galeri.perPage || (typeof navigator !== "undefined" && navigator.onLine === false)) {
                 Galeri.habis = true;
-                try { Cache.set("gallery", Galeri.cache); } catch {} // full dataset → aman di-cache offline
+                try { Cache.set("gallery", Galeri.cache); } catch {}
+            } else if (awal) {
+                try { simpanListCache("gallery", Galeri.cache, false); } catch {}
             }
             Galeri.render();
         } catch (err) {
             console.error(err);
-            // offline: pulihkan cache persisten (dataset lengkap) biar tetap bisa dibaca
-            let pulih = false;
-            try {
-                const c = Cache.get("gallery");
-                if (c && c.length) {
-                    Galeri.cache = [...c];
-                    Galeri.offset = Galeri.cache.length;
-                    Galeri.habis = true;
-                    Galeri.render();
-                    pulih = true;
+            const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
+            if (Galeri.cache.length) {
+                Galeri.offset = Galeri.cache.length;
+                if (isOff) Galeri.habis = true;
+                Galeri.render();
+                if (!isOff && !awal && typeof showToast === "function") showToast("Gagal muat lanjutan galeri.", "error");
+            } else {
+                let pulih = false;
+                try {
+                    const c = Cache.get("gallery");
+                    if (c && c.length) {
+                        Galeri.cache = [...c];
+                        Galeri.offset = Galeri.cache.length;
+                        Galeri.habis = true;
+                        Galeri.render();
+                        pulih = true;
+                    }
+                } catch {}
+                if (!pulih) {
+                    if (awal && !Galeri.draft) grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat galeri. Cek koneksi.<br><br><button class="btn btn-red btn-sm" onclick="Galeri.muat(true)"><i class="fa-solid fa-rotate-right"></i> Coba Lagi</button></div>`;
+                    else if (!isOff && typeof showToast === "function") showToast("Gagal muat lanjutan galeri.", "error");
                 }
-            } catch {}
-            if (!pulih) {
-                if (awal && !Galeri.cache.length && !Galeri.draft) grid.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat galeri. Cek koneksi.</div>`;
-                else if (typeof showToast === "function") showToast("Gagal muat lanjutan galeri.", "error");
             }
         } finally {
             Galeri.loading = false;

@@ -214,6 +214,13 @@ const AgendaAdmin = {
 
         AgendaAdmin.muat();
         AgendaAdmin.terapkanAkses();
+        // Hangatkan 15 agenda global di background supaya kalau nanti ganti filter
+        // ke "Semua sekbid" saat offline, tetap ada data cadangan.
+        if ((AgendaAdmin.filterSekbid || AgendaAdmin.filterNama) &&
+            (typeof navigator === "undefined" || navigator.onLine !== false) &&
+            typeof getAllAgenda === "function") {
+            getAllAgenda(15, 0).catch(() => {});
+        }
     },
 
     // Pengendali agenda global (super / mapping eksplisit 'agenda').
@@ -417,6 +424,31 @@ const AgendaAdmin = {
         });
     },
 
+    kunciCacheAktif(sid, nmr) {
+        if (typeof agendaKunciView === "function") return agendaKunciView(sid, nmr);
+        const sb = sid ? String(sid) : "all";
+        const nm = nmr ? String(nmr).trim().toLowerCase() : "all";
+        return "agenda_view_" + sb + "_" + nm;
+    },
+
+    ambilCacheOffline(sid, nmr) {
+        const kv = AgendaAdmin.kunciCacheAktif(sid, nmr);
+        const dariView = Cache.get(kv);
+        if (Array.isArray(dariView) && dariView.length) return dariView;
+        if (sid && !nmr) {
+            const dariSb = Cache.get("agenda_sb_" + sid);
+            if (Array.isArray(dariSb) && dariSb.length) return dariSb;
+        }
+        const semua = Cache.get("agenda_all");
+        if (Array.isArray(semua) && semua.length) {
+            const saring = semua.filter(a =>
+                (!sid || String(a.sekbid_id) === String(sid)) &&
+                (!nmr || String(a.pengunggah || "").trim().toLowerCase() === nmr.toLowerCase()));
+            if (saring.length || (!sid && !nmr)) return saring;
+        }
+        return null;
+    },
+
     // muat() tanpa argumen = refresh penuh (dipakai outbox + pasca simpan/hapus)
     async muat(awal = true) {
         const listEl = document.getElementById("agendaList");
@@ -424,27 +456,28 @@ const AgendaAdmin = {
         if (!awal && AgendaAdmin.habis) return;
         AgendaAdmin.loading = true;
         try {
+            const sid = AgendaAdmin.filterSekbid || null;
+            const nmr = AgendaAdmin.filterNama || null;
             if (awal) {
                 AgendaAdmin.offset = 0;
                 AgendaAdmin.cache = [];
                 AgendaAdmin.habis = false;
-                AgendaAdmin.ringkas = null;
-                // Render cache persisten DULU biar offline langsung tampil.
-                // Cache disaring client-side mengikuti filter aktif.
-                const cached = Cache.get("agenda_all");
+                AgendaAdmin.ringkas = Cache.get("agenda_ringkas_" + (sid || "all") + "_" + (nmr || "")) || null;
+                // Render cache 15 item terakhir DULU biar offline langsung tampil.
+                const cached = AgendaAdmin.ambilCacheOffline(sid, nmr);
                 if (cached) {
-                    const sbr = AgendaAdmin.filterSekbid;
-                    const nmr = AgendaAdmin.filterNama;
-                    AgendaAdmin.cache = (cached || []).filter(a =>
-                        (!sbr || String(a.sekbid_id) === String(sbr)) &&
-                        (!nmr || String(a.pengunggah || "").trim().toLowerCase() === nmr.toLowerCase()));
+                    AgendaAdmin.cache = cached.slice();
+                    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+                        AgendaAdmin.offset = AgendaAdmin.cache.length;
+                        AgendaAdmin.habis = true;
+                        try { AgendaAdmin.render(); } catch {}
+                        return;
+                    }
                     try { AgendaAdmin.render(); } catch {}
                 } else if (listEl) {
                     listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat agenda...</div>`;
                 }
             }
-            const sid = AgendaAdmin.filterSekbid || null;
-            const nmr = AgendaAdmin.filterNama || null;
             const uidS = (() => { try { const u = OsisAuth.getUser && OsisAuth.getUser(); if (u && u.mode === "osis" && u.id) return u.id; } catch {} return null; })();
             // Filter sekbid/nama aktif = fetch di-scope itu (biar halaman 1
             // langsung isinya, bukan 15 global yang kesaring jadi 0).
@@ -462,20 +495,29 @@ const AgendaAdmin = {
                 (rows || []).forEach(a => { if (!ada.has(String(a.id))) { ada.add(String(a.id)); AgendaAdmin.cache.push(a); } });
             }
             AgendaAdmin.offset = (AgendaAdmin.cache || []).length;
-            AgendaAdmin.habis = (rows || []).length < AgendaAdmin.perPage;
-            // Tulis cache persisten hanya kalau lengkap DAN tanpa filter
-            // (lihat catatan di state).
-            if (AgendaAdmin.habis && !sid && !nmr) {
-                try { Cache.set("agenda_all", AgendaAdmin.cache); } catch {}
-            } else if (awal && !sid && !nmr) {
-                try { simpanListCache("agenda_all", AgendaAdmin.cache, false); } catch {}
+            AgendaAdmin.habis = (rows || []).length < AgendaAdmin.perPage || (typeof navigator !== "undefined" && navigator.onLine === false);
+            // Simpan 15 item terakhir sesuai view aktif + stok agenda_all.
+            if (awal) {
+                try { Cache.set(AgendaAdmin.kunciCacheAktif(sid, nmr), AgendaAdmin.cache.slice(0, 15)); } catch {}
+                if (!sid && !nmr) {
+                    try { Cache.set("agenda_all", AgendaAdmin.cache.slice(0, 15)); } catch {}
+                } else {
+                    try { simpanListCache("agenda_all", AgendaAdmin.cache.slice(0, 15), false); } catch {}
+                }
             }
             AgendaAdmin.render();
         } catch (err) {
             console.error(err);
             const isOff = typeof adalahOfflineErr === "function" && adalahOfflineErr(err);
-            if (awal && !(AgendaAdmin.cache || []).length && listEl) listEl.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Offline dan belum ada data tersimpan. Buka halaman ini sekali saat online.</div>`;
-            else if (!isOff && typeof showToast === "function") showToast("Gagal muat lanjutan agenda.", "error");
+            if ((AgendaAdmin.cache || []).length) {
+                if (isOff) AgendaAdmin.habis = true;
+                try { AgendaAdmin.render(); } catch {}
+                if (!isOff && typeof showToast === "function") showToast("Gagal muat lanjutan agenda.", "error");
+            } else if (awal && listEl) {
+                listEl.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-cloud"></i> Offline dan belum ada data tersimpan. Buka halaman ini sekali saat online.</div>`;
+            } else if (!isOff && typeof showToast === "function") {
+                showToast("Gagal muat lanjutan agenda.", "error");
+            }
         } finally {
             AgendaAdmin.loading = false;
             // Aksi user (ganti filter) yang ketahan pas loading -> ulangi sekali.

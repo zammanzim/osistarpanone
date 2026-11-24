@@ -151,13 +151,25 @@ function lepasPreview(files) {
 }
 // HTML thumbnail untuk grid bento (.item): foto = <img>, video = <video>
 // (frame pertama via preload metadata, tanpa autoplay) + tombol play.
+const OFFLINE_THUMB_SVG = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="#f5efea"/><text x="50%" y="50%" font-family="sans-serif" font-size="28" fill="#6f6668" text-anchor="middle">Offline</text></svg>'
+);
+
 function thumbBento(src, alt, extra = "") {
   const esc = (typeof escapeHtml === "function" ? escapeHtml(String(alt || "")) : String(alt || ""));
+  if (!src) {
+    return `<img src="${OFFLINE_THUMB_SVG}" alt="${esc}" onload="this.closest('.media-muat')?.classList.add('sudah-muat')" ${extra}>`;
+  }
+  const sedangOffline = typeof navigator !== "undefined" && navigator.onLine === false;
   if (isVideoPath(src)) {
-    return `<video src="${src}" alt="" muted playsinline preload="metadata" disablepictureinpicture onloadeddata="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat')" ${extra}></video>` +
+    if (sedangOffline) {
+      return `<img src="${OFFLINE_THUMB_SVG}" alt="${esc}" onload="this.closest('.media-muat')?.classList.add('sudah-muat')" ${extra}>` +
+        `<span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>`;
+    }
+    return `<video src="${src}" alt="" muted playsinline preload="metadata" disablepictureinpicture onloadeddata="this.closest('.media-muat')?.classList.add('sudah-muat')" onerror="this.closest('.media-muat')?.classList.add('sudah-muat')" ${extra}></video>` +
       `<span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>`;
   }
-  return `<img src="${src}" alt="${esc}" loading="lazy" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'">` +
+  return `<img src="${src}" alt="${esc}" loading="lazy" onload="this.closest('.media-muat')?.classList.add('sudah-muat')" onerror="this.closest('.media-muat')?.classList.add('sudah-muat');this.style.display='none'" ${extra}>` +
     `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
 }
 // Fallback video lama yang belum punya -thumb.jpg: ganti <img> jadi <video>.
@@ -165,9 +177,10 @@ function thumbVideoFallback(img) {
   if (!img) return;
   const src = img.dataset.videoSrc;
   const wrap = img.closest ? img.closest(".media-muat") : null;
-  if (!src) {
+  if (!src || (typeof navigator !== "undefined" && navigator.onLine === false)) {
     if (wrap) wrap.classList.add("sudah-muat");
-    img.style.display = "none";
+    if (!src) img.style.display = "none";
+    else img.src = OFFLINE_THUMB_SVG;
     return;
   }
   const v = document.createElement("video");
@@ -179,8 +192,9 @@ function thumbVideoFallback(img) {
   const oc = img.getAttribute("onclick");
   if (oc) v.setAttribute("onclick", oc);
   const done = () => { if (wrap) wrap.classList.add("sudah-muat"); };
-  v.addEventListener("loadeddata", done, { once: true });
-  v.addEventListener("error", done, { once: true });
+  const t = setTimeout(done, 3500);
+  v.addEventListener("loadeddata", () => { clearTimeout(t); done(); }, { once: true });
+  v.addEventListener("error", () => { clearTimeout(t); done(); }, { once: true });
   img.replaceWith(v);
 }
 
@@ -193,11 +207,11 @@ function thumbBentoPath(path, alt, extra = "") {
   if (!thumb || thumb === full) return thumbBento(full, alt, extra);
   const esc = (typeof escapeHtml === "function" ? escapeHtml(String(alt || "")) : String(alt || ""));
   if (isVideoPath(full)) {
-    return `<img src="${thumb}" alt="${esc}" loading="lazy" data-video-src="${full}" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="if(typeof thumbVideoFallback==='function')thumbVideoFallback(this);else{this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'}" ${extra}>` +
+    return `<img src="${thumb}" alt="${esc}" loading="lazy" data-video-src="${full}" onload="this.closest('.media-muat')?.classList.add('sudah-muat')" onerror="if(typeof thumbVideoFallback==='function')thumbVideoFallback(this);else{this.closest('.media-muat')?.classList.add('sudah-muat');this.style.display='none'}" ${extra}>` +
       `<span class="vid-play" aria-hidden="true"><i class="fa-solid fa-play"></i></span>` +
       `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
   }
-  return `<img src="${thumb}" alt="${esc}" loading="lazy" data-full="${full}" onload="this.closest('.media-muat').classList.add('sudah-muat')" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src=this.dataset.full;}else{this.closest('.media-muat').classList.add('sudah-muat');this.style.display='none'}" ${extra}>` +
+  return `<img src="${thumb}" alt="${esc}" loading="lazy" data-full="${full}" onload="this.closest('.media-muat')?.classList.add('sudah-muat')" onerror="if(!this.dataset.fb&&navigator.onLine!==false){this.dataset.fb='1';this.src=this.dataset.full;}else{this.closest('.media-muat')?.classList.add('sudah-muat');this.src='${OFFLINE_THUMB_SVG}';}" ${extra}>` +
     `<span class="media-muat-loading" aria-hidden="true"><span class="spinner"></span></span>`;
 }
 
@@ -296,6 +310,23 @@ const DbScope = {
   },
 };
 
+const BATAS_CACHE_RINGKAS = 15;
+
+// Daftar kunci media-heavy & list panjang yang cukup disimpan 15 item terbaru
+// supaya hemat localStorage, cepat dirender, dan tetap tampil saat offline.
+function adalahKunciRingkas15(key) {
+  const k = String(key || "");
+  return (
+    k === "gallery" || k === "feed" || k === "kegiatan" ||
+    k === "arsip" || k === "pelantikan" || k === "prestasi" ||
+    k === "poster" || k === "dokumen" || k === "informasi" ||
+    k === "informasi_publik" || k === "notulensi" ||
+    k === "aspirasi" || k === "lagu" || k === "changelog" ||
+    k === "agenda_all" || k.startsWith("agenda_sb_") || k.startsWith("agenda_view_") ||
+    k.startsWith("logs_aktivitas_")
+  );
+}
+
 const Cache = {
   version: "v3",
   prefix: "osis_cache_",
@@ -317,22 +348,51 @@ const Cache = {
       return null;
     }
   },
+  bersihkanLama() {
+    try {
+      const aktifPrefix = Cache.prefix + Cache.version + "_";
+      const kandidat = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith(Cache.prefix)) continue;
+        if (!k.startsWith(aktifPrefix)) {
+          kandidat.push({ k, t: 0 });
+          continue;
+        }
+        try {
+          const obj = JSON.parse(localStorage.getItem(k) || "{}");
+          kandidat.push({ k, t: Number(obj.t || 0) });
+        } catch {
+          kandidat.push({ k, t: 0 });
+        }
+      }
+      kandidat.sort((a, b) => a.t - b.t);
+      kandidat.slice(0, Math.max(5, Math.ceil(kandidat.length / 3))).forEach((x) => {
+        try { localStorage.removeItem(x.k); } catch {}
+      });
+    } catch {}
+  },
   set(key, data) {
     try {
-      // Galeri publik yang berat (banyak array foto/video publik) di-skip biar hemat quota.
-      // Modul internal OSIS (poster, dokumen, informasi, wawancara, dll) TETAP disimpan
-      // supaya bisa dibuka offline — ukuran dijaga oleh batas 250KB di bawah.
-      const BERAT = new Set(["gallery", "feed", "kegiatan", "arsip", "prestasi"]);
-      if (BERAT.has(key)) return;
-      let payload = JSON.stringify({ data, t: Date.now(), v: Cache.version });
+      let simpanData = data;
+      if (adalahKunciRingkas15(key) && Array.isArray(simpanData) && simpanData.length > BATAS_CACHE_RINGKAS) {
+        simpanData = simpanData.slice(0, BATAS_CACHE_RINGKAS);
+      }
+      let payload = JSON.stringify({ data: simpanData, t: Date.now(), v: Cache.version });
       if (payload.length > 250000) {
-        if (Array.isArray(data) && data.length > 1) {
-          const potong = Math.max(15, Math.floor((data.length * 200000) / payload.length));
-          payload = JSON.stringify({ data: data.slice(0, potong), t: Date.now(), v: Cache.version });
+        if (Array.isArray(simpanData) && simpanData.length > 1) {
+          const potong = Math.max(10, Math.floor((simpanData.length * 200000) / payload.length));
+          payload = JSON.stringify({ data: simpanData.slice(0, potong), t: Date.now(), v: Cache.version });
         }
         if (payload.length > 250000) return;
       }
-      localStorage.setItem(Cache.key(key), payload);
+      const storageKey = Cache.key(key);
+      try {
+        localStorage.setItem(storageKey, payload);
+      } catch {
+        Cache.bersihkanLama();
+        localStorage.setItem(storageKey, payload);
+      }
     } catch {}
   },
   del(key) {
@@ -758,12 +818,22 @@ async function gantiOsisPassword(userId, oldPw, newPw) {
 
 // Ketua & wakil semua tahun
 async function getPimpinan() {
-  const { data, error } = await supa
-    .from("pimpinan")
-    .select("*")
-    .order("tahun", { ascending: true });
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supa
+      .from("pimpinan")
+      .select("*")
+      .order("tahun", { ascending: true });
+    if (error) throw error;
+    const rows = data || [];
+    Cache.set("pimpinan", rows);
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("pimpinan");
+      if (Array.isArray(c)) return c;
+    }
+    throw err;
+  }
 }
 
 // Daftar master angkatan (hanya untuk akun OSIS login).
@@ -1531,14 +1601,24 @@ async function resetPollingSuara(userId) {
 // PRESTASI - home (DB-driven, multi-foto, display_order)
 // =========================================================================
 async function getPrestasi(limit = 50, offset = 0) {
-  const { data, error } = await supa
-    .from("prestasi")
-    .select("id, tag, caption, fotos, display_order, pengunggah, created_at")
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-  if (error) throw error;
-  return data || [];
+  try {
+    const { data, error } = await supa
+      .from("prestasi")
+      .select("id, tag, caption, fotos, display_order, pengunggah, created_at")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    const rows = data || [];
+    if (!offset) simpanListCache("prestasi", rows, rows.length < limit);
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const c = Cache.get("prestasi");
+      if (Array.isArray(c)) return c.slice(0, limit);
+    }
+    throw err;
+  }
 }
 async function buatPrestasi(userId, tag, caption, fotos, order = 99) {
   const { data, error } = await supa.rpc("buat_prestasi", {
@@ -1743,14 +1823,24 @@ async function hapusInformasi(userId, id) {
 // =========================================================================
 const INFO_PUBLIK_KOLOM = "id, judul, kategori, slug, ringkasan, isi, tanggal_mulai, tanggal_selesai, waktu, lokasi, sasaran, link_lampiran, label_lampiran, is_pinned, pengunggah, created_by, created_at, updated_at";
 async function getInformasiPublikList(limit = 50, offset = 0) {
-  const { data, error } = await supa
-    .from("informasi_publik")
-    .select(INFO_PUBLIK_KOLOM)
-    .order("is_pinned", { ascending: false })
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-  if (error) throw error;
-  return data || [];
+  try {
+    const { data, error } = await supa
+      .from("informasi_publik")
+      .select(INFO_PUBLIK_KOLOM)
+      .order("is_pinned", { ascending: false })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    const rows = data || [];
+    if (!offset) simpanListCache("informasi_publik", rows, rows.length < limit);
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const c = Cache.get("informasi_publik");
+      if (Array.isArray(c)) return c.slice(0, limit);
+    }
+    throw err;
+  }
 }
 async function getInformasiPublik(id) {
   const { data, error } = await supa
@@ -1821,26 +1911,36 @@ async function hapusInformasiPublik(userId, id) {
 // =========================================================================
 const CHANGELOG_KOLOM = "id, versi, tanggal, tipe, judul, deskripsi, komit, pesan, files, tambah, kurang, created_at";
 async function getChangelogList(limit = 200, offset = 0) {
-  const { data, error } = await supa
-    .from("changelog")
-    .select(CHANGELOG_KOLOM)
-    .order("tanggal", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
-  if (error) throw error;
-  return (data || []).map((r) => ({
-    version: r.versi,
-    date: r.tanggal,
-    type: r.tipe,
-    commit: r.komit || "",
-    message: r.pesan || "",
-    title: r.judul || "",
-    description: r.deskripsi || "",
-    filesChanged: r.files || 0,
-    insertions: r.tambah || 0,
-    deletions: r.kurang || 0,
-    _id: r.id,
-  }));
+  try {
+    const { data, error } = await supa
+      .from("changelog")
+      .select(CHANGELOG_KOLOM)
+      .order("tanggal", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    const rows = (data || []).map((r) => ({
+      version: r.versi,
+      date: r.tanggal,
+      type: r.tipe,
+      commit: r.komit || "",
+      message: r.pesan || "",
+      title: r.judul || "",
+      description: r.deskripsi || "",
+      filesChanged: r.files || 0,
+      insertions: r.tambah || 0,
+      deletions: r.kurang || 0,
+      _id: r.id,
+    }));
+    if (!offset) simpanListCache("changelog", rows, rows.length < limit);
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const c = Cache.get("changelog");
+      if (Array.isArray(c)) return c.slice(0, limit);
+    }
+    throw err;
+  }
 }
 async function buatChangelog(userId, f) {
   const { data, error } = await supa.rpc("buat_changelog", {
@@ -1888,14 +1988,24 @@ async function hapusChangelog(userId, id) {
 // KEGIATAN HOME - DB-driven (judul, deskripsi, badge, fotos jsonb, order)
 // =========================================================================
 async function getKegiatan(limit = 50, offset = 0) {
-  const { data, error } = await supa
-    .from("kegiatan")
-    .select("id, judul, deskripsi, badge, fotos, display_order, pengunggah, created_at")
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-  if (error) throw error;
-  return data || [];
+  try {
+    const { data, error } = await supa
+      .from("kegiatan")
+      .select("id, judul, deskripsi, badge, fotos, display_order, pengunggah, created_at")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    const rows = data || [];
+    if (!offset) simpanListCache("kegiatan", rows, rows.length < limit);
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const c = Cache.get("kegiatan");
+      if (Array.isArray(c)) return c.slice(0, limit);
+    }
+    throw err;
+  }
 }
 async function buatKegiatan(
   userId,
@@ -1954,25 +2064,51 @@ async function hapusKegiatan(userId, id) {
 // ARSIP GALERI - tabel sendiri (struktur persis kegiatan), pagination
 // =========================================================================
 async function getArsipCount() {
-  const { count, error } = await supa
-    .from("arsip")
-    .select("id", { count: "exact", head: true });
-  if (error) throw error;
-  return count || 0;
+  try {
+    const { count, error } = await supa
+      .from("arsip")
+      .select("id", { count: "exact", head: true });
+    if (error) throw error;
+    const n = count || 0;
+    Cache.set("arsip_count", n);
+    return n;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("arsip");
+      if (Array.isArray(c)) return c.length;
+    }
+    throw err;
+  }
 }
 async function getArsipPage(page = 1, perPage = 6) {
   const p = Math.max(1, parseInt(page, 10) || 1);
   const n = Math.min(24, Math.max(1, parseInt(perPage, 10) || 6));
   const from = (p - 1) * n;
   const to = from + n - 1;
-  const { data, error } = await supa
-    .from("arsip")
-    .select("id, judul, deskripsi, badge, fotos, display_order, pengunggah, created_at")
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false })
-    .range(from, to);
-  if (error) throw error;
-  return data || [];
+  try {
+    // Saat halaman 1 dimuat online, ambil minimal 15 item buat stok cache offline,
+    // lalu kembalikan sesuai ukuran halaman yang diminta pemanggil.
+    const toFetch = p === 1 ? Math.max(to, BATAS_CACHE_RINGKAS - 1) : to;
+    const { data, error } = await supa
+      .from("arsip")
+      .select("id, judul, deskripsi, badge, fotos, display_order, pengunggah, created_at")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .range(from, toFetch);
+    if (error) throw error;
+    const rows = data || [];
+    if (p === 1) {
+      Cache.set("arsip", rows);
+      return rows.slice(0, n);
+    }
+    return rows;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("arsip");
+      if (Array.isArray(c)) return c.slice(from, from + n);
+    }
+    throw err;
+  }
 }
 // Ruang khusus pelantikan: tabel sendiri (pelantikan), baca via RPC bertanda.
 // Hanya owner (bisa 'kegiatan') + yang sudah disetujui. Tulis khusus owner.
@@ -1991,9 +2127,20 @@ async function authIdSaya() {
 async function statusAksesPelantikan() {
   const authId = await authIdSaya();
   if (!authId) return "butuh_login";
-  const { data, error } = await supa.rpc("status_akses_pelantikan", { p_auth_id: authId });
-  if (error) throw error;
-  return String(data || "belum");
+  const kunci = "pelantikan_status_" + authId;
+  try {
+    const { data, error } = await supa.rpc("status_akses_pelantikan", { p_auth_id: authId });
+    if (error) throw error;
+    const st = String(data || "belum");
+    Cache.set(kunci, st);
+    return st;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get(kunci);
+      if (c) return String(c);
+    }
+    throw err;
+  }
 }
 async function mintaAksesPelantikan(alasan) {
   const authId = await authIdSaya();
@@ -2018,11 +2165,28 @@ async function putusMintaPelantikan(userId, mintaId, setuju) {
 async function getPelantikan(page = 1, perPage = 6) {
   const authId = await authIdSaya();
   if (!authId) throw new Error("ERR_LOGIN");
-  const { data, error } = await supa.rpc("get_pelantikan", {
-    p_auth_id: authId, p_page: page, p_per: perPage,
-  });
-  if (error) throw error;
-  return { total: (data && data.total) || 0, rows: (data && data.rows) || [] };
+  const p = Math.max(1, parseInt(page, 10) || 1);
+  const n = Math.max(1, parseInt(perPage, 10) || 6);
+  try {
+    const reqPer = p === 1 ? Math.max(n, BATAS_CACHE_RINGKAS) : n;
+    const { data, error } = await supa.rpc("get_pelantikan", {
+      p_auth_id: authId, p_page: p, p_per: reqPer,
+    });
+    if (error) throw error;
+    const allRows = (data && data.rows) || [];
+    const total = (data && data.total) || 0;
+    if (p === 1) Cache.set("pelantikan", allRows);
+    return { total, rows: p === 1 ? allRows.slice(0, n) : allRows };
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("pelantikan");
+      if (Array.isArray(c)) {
+        const from = (p - 1) * n;
+        return { total: c.length, rows: c.slice(from, from + n) };
+      }
+    }
+    throw err;
+  }
 }
 async function buatPelantikan(userId, judul, deskripsi, badge, fotos, order = 99) {
   const { data, error } = await supa.rpc("buat_pelantikan", {
@@ -2031,6 +2195,7 @@ async function buatPelantikan(userId, judul, deskripsi, badge, fotos, order = 99
   });
   if (error) throw error;
   cekId(data);
+  Cache.del("pelantikan");
   return data;
 }
 async function updatePelantikan(userId, id, judul, deskripsi, badge, fotos, order) {
@@ -2040,6 +2205,7 @@ async function updatePelantikan(userId, id, judul, deskripsi, badge, fotos, orde
   });
   if (error) throw error;
   cekOk(data);
+  Cache.del("pelantikan");
 }
 async function hapusPelantikan(userId, id) {
   const { data, error } = await supa.rpc("hapus_pelantikan", {
@@ -2047,6 +2213,7 @@ async function hapusPelantikan(userId, id) {
   });
   if (error) throw error;
   cekOk(data);
+  Cache.del("pelantikan");
 }
 // Order global terkecil — buat insert baru selalu paling atas (0 itu valid)
 async function getArsipMinOrder() {
@@ -3244,9 +3411,16 @@ async function kirimRespons(formId, jawaban, userId) {
 // =========================================================================
 // AGENDA PER SEKBID - DB-driven (judul, deskripsi, tanggal, lokasi, status, fotos)
 // =========================================================================
+function agendaKunciView(sekbidId, nama) {
+  const sb = sekbidId ? String(sekbidId) : "all";
+  const nm = nama ? String(nama).trim().toLowerCase() : "all";
+  return "agenda_view_" + sb + "_" + nm;
+}
+
 async function getAgendaBySekbid(sekbidId, limit, offset, nama, angkatanId) {
-  const defaultScope = !nama && (angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId()));
-  const kunci = "agenda_sb_" + sekbidId;
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId());
+  const kunciSb = "agenda_sb_" + sekbidId;
+  const kunciView = agendaKunciView(sekbidId, nama);
   try {
     const { data, error } = await DbScope.queryAngkatan((angId) => {
       let q = supa
@@ -3263,17 +3437,30 @@ async function getAgendaBySekbid(sekbidId, limit, offset, nama, angkatanId) {
     }, angkatanId);
     if (error) throw error;
     const rows = data || [];
-    if (defaultScope && !offset) simpanListCache(kunci, rows, !limit || rows.length < limit);
+    if (defaultAng && !offset) {
+      // Simpan 15 item terakhir untuk kombinasi filter ini (termasuk saat difilter per pengurus)
+      Cache.set(kunciView, rows);
+      if (!nama) simpanListCache(kunciSb, rows, !limit || rows.length < limit);
+      simpanListCache("agenda_all", rows, false);
+    }
     return rows;
   } catch (err) {
     if (!offset && adalahOfflineErr(err)) {
-      if (defaultScope) {
-        const c = Cache.get(kunci);
-        if (Array.isArray(c)) return limit ? c.slice(0, limit) : c;
+      if (defaultAng) {
+        const cv = Cache.get(kunciView);
+        if (Array.isArray(cv)) return limit ? cv.slice(0, limit) : cv;
+        if (!nama) {
+          const csb = Cache.get(kunciSb);
+          if (Array.isArray(csb)) return limit ? csb.slice(0, limit) : csb;
+        }
       }
       const semua = Cache.get("agenda_all");
       if (Array.isArray(semua)) {
-        const saring = semua.filter((r) => String(r && r.sekbid_id) === String(sekbidId) && (!nama || r.pengunggah === nama));
+        const nmLow = nama ? String(nama).trim().toLowerCase() : "";
+        const saring = semua.filter((r) =>
+          String(r && r.sekbid_id) === String(sekbidId) &&
+          (!nmLow || String((r && r.pengunggah) || "").trim().toLowerCase() === nmLow)
+        );
         return limit ? saring.slice(0, limit) : saring;
       }
     }
@@ -3281,7 +3468,8 @@ async function getAgendaBySekbid(sekbidId, limit, offset, nama, angkatanId) {
   }
 }
 async function getAllAgenda(limit, offset, nama, angkatanId) {
-  const defaultScope = !nama && (angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId()));
+  const defaultAng = angkatanId === undefined || angkatanId === null || Number(angkatanId) === Number(DbScope.angkatanId());
+  const kunciView = agendaKunciView(null, nama);
   try {
     const { data, error } = await DbScope.queryAngkatan((angId) => {
       let q = supa
@@ -3297,13 +3485,21 @@ async function getAllAgenda(limit, offset, nama, angkatanId) {
     }, angkatanId);
     if (error) throw error;
     const rows = data || [];
-    if (defaultScope && !offset) simpanListCache("agenda_all", rows, !limit || rows.length < limit);
+    if (defaultAng && !offset) {
+      Cache.set(kunciView, rows);
+      simpanListCache("agenda_all", rows, !nama && (!limit || rows.length < limit));
+    }
     return rows;
   } catch (err) {
     if (!offset && adalahOfflineErr(err)) {
+      if (defaultAng) {
+        const cv = Cache.get(kunciView);
+        if (Array.isArray(cv)) return limit ? cv.slice(0, limit) : cv;
+      }
       const c = Cache.get("agenda_all");
       if (Array.isArray(c)) {
-        const saring = nama ? c.filter((r) => r && r.pengunggah === nama) : c;
+        const nmLow = nama ? String(nama).trim().toLowerCase() : "";
+        const saring = nmLow ? c.filter((r) => r && String(r.pengunggah || "").trim().toLowerCase() === nmLow) : c;
         return limit ? saring.slice(0, limit) : saring;
       }
     }
@@ -3379,6 +3575,7 @@ async function buatAgenda(
   cekId(data);
   Cache.del("agenda_" + sekbidId);
   Cache.del("agenda_all");
+  Cache.delPrefix("agenda_");
   return data;
 }
 async function updateAgenda(
@@ -3424,13 +3621,28 @@ async function hapusAgenda(userId, id) {
 
 // Ambil semua kegiatan (terbaru di atas)
 async function getGallery(limit = 100, offset = 0) {
-  const { data, error } = await supa
-    .from("gallery")
-    .select("id, judul, deskripsi, fotos, created_by, pengunggah, created_at")
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-  if (error) throw error;
-  return data || [];
+  try {
+    const reqLim = !offset ? Math.max(limit, BATAS_CACHE_RINGKAS) : limit;
+    const { data, error } = await supa
+      .from("gallery")
+      .select("id, judul, deskripsi, fotos, created_by, pengunggah, created_at")
+      .order("created_at", { ascending: false })
+      .range(offset, offset + reqLim - 1);
+    if (error) throw error;
+    const rows = data || [];
+    if (!offset) {
+      const valid = rows.filter((g) => Array.isArray(g && g.fotos) && g.fotos.length > 0);
+      simpanListCache("gallery", valid, rows.length < reqLim);
+      return rows.slice(0, limit);
+    }
+    return rows;
+  } catch (err) {
+    if (!offset && adalahOfflineErr(err)) {
+      const c = Cache.get("gallery");
+      if (Array.isArray(c)) return c.slice(0, limit);
+    }
+    throw err;
+  }
 }
 
 // Tambah kegiatan, balikin id barunya (<=0 = gagal, server validasi)
@@ -3516,29 +3728,53 @@ function feedErrMigrasi() {
 }
 
 async function feedPostsList(limit, offset, userKey) {
-  const { data, error } = await supa.rpc("feed_posts_list", {
-    p_limit: limit || 8,
-    p_offset: offset || 0,
-    p_user_key: userKey || "",
-  });
-  if (error) {
-    if (feedBelumMigrasi(error)) throw feedErrMigrasi();
-    throw error;
+  const lim = limit || 8;
+  const off = offset || 0;
+  try {
+    const reqLim = !off ? Math.max(lim, BATAS_CACHE_RINGKAS) : lim;
+    const { data, error } = await supa.rpc("feed_posts_list", {
+      p_limit: reqLim,
+      p_offset: off,
+      p_user_key: userKey || "",
+    });
+    if (error) {
+      if (feedBelumMigrasi(error)) throw feedErrMigrasi();
+      throw error;
+    }
+    const rows = Array.isArray(data) ? data : [];
+    if (!off) {
+      simpanListCache("feed", rows, rows.length < reqLim);
+      return rows.slice(0, lim);
+    }
+    return rows;
+  } catch (err) {
+    if (!off && adalahOfflineErr(err)) {
+      const c = Cache.get("feed");
+      if (Array.isArray(c)) return c.slice(0, lim);
+    }
+    throw err;
   }
-  return Array.isArray(data) ? data : [];
 }
 
 // 1 postingan buat deep-link (#/feed?id=...). Balikin objek / null.
 async function feedPostSatu(id, userKey) {
-  const { data, error } = await supa.rpc("feed_post_satu", {
-    p_id: id,
-    p_user_key: userKey || "",
-  });
-  if (error) {
-    if (feedBelumMigrasi(error)) throw feedErrMigrasi();
-    throw error;
+  try {
+    const { data, error } = await supa.rpc("feed_post_satu", {
+      p_id: id,
+      p_user_key: userKey || "",
+    });
+    if (error) {
+      if (feedBelumMigrasi(error)) throw feedErrMigrasi();
+      throw error;
+    }
+    return data || null;
+  } catch (err) {
+    if (adalahOfflineErr(err)) {
+      const c = Cache.get("feed");
+      if (Array.isArray(c)) return c.find((x) => String(x && x.id) === String(id)) || null;
+    }
+    throw err;
   }
-  return data || null;
 }
 
 async function feedPostBuat(userId, f) {
@@ -3556,6 +3792,7 @@ async function feedPostBuat(userId, f) {
     throw error;
   }
   cekId(data);
+  Cache.del("feed");
   return data;
 }
 
@@ -3566,6 +3803,7 @@ async function feedPostHapus(userId, id) {
   });
   if (error) throw error;
   cekOk(data);
+  Cache.del("feed");
 }
 
 async function feedLikeToggle(postId, userKey) {
