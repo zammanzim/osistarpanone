@@ -348,7 +348,7 @@ const OsisAuth = {
         return String(user.nickname || "").trim();
     },
 
-    // Render area auth di header publik
+    // Render area auth di header publik & internal (anti-kedip bila data identik)
     renderHeader() {
         const area = document.getElementById("areaAuth");
         if (!area) return;
@@ -358,9 +358,16 @@ const OsisAuth = {
             if (u0 && u0.mode === "osis") OsisAuth.refreshAkses().catch(() => {});
         } catch {}
         const user = OsisAuth.getUser();
+        const diSub = /(^|\/)osis\//.test(String(location.pathname || "").replace(/\\/g, "/"));
+        const sig = user
+            ? [user.mode || "", user.id || "", OsisAuth.displayName(user), user.jabatan || "", diSub ? "1" : "0"].join("|")
+            : ("anon|" + (diSub ? "1" : "0"));
+        if (area.dataset && area.dataset.authSig === sig && area.children.length > 0) {
+            return;
+        }
+        if (area.dataset) area.dataset.authSig = sig;
 
         if (!user) {
-            const diSub = /(^|\/)osis\//.test(String(location.pathname || "").replace(/\\/g, "/"));
             area.innerHTML = `
                 <a href="${diSub ? "../" : ""}login" class="btn btn-red btn-sm" onclick="OsisAuth.simpanBack()"><i class="fa-solid fa-right-to-bracket"></i> Masuk</a>`;
             return;
@@ -375,12 +382,7 @@ const OsisAuth = {
             <button class="icon-btn" title="Keluar" onclick="OsisAuth.confirmLogout()">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
             </button>`;
-        // OSIS: chip link ke profil. Akun biasa: chip teks saja (tanpa halaman
-        // profil) + tombol keluar. Guest legacy: sama, tinggal dipurge.
         if (isOsis) {
-            // Link relatif terhadap posisi halaman: root -> osis/profil,
-            // dalam /osis/* -> profil.
-            const diSub = /(^|\/)osis\//.test(String(location.pathname || "").replace(/\\/g, "/"));
             const hrefChip = ((diSub ? "" : "osis/") + "profil");
             area.innerHTML = `
                 <a href="${hrefChip}" class="user-chip" title="${escapeHtml(judul)} — klik untuk buka profil">
@@ -405,7 +407,11 @@ const OsisAuth = {
     }
 };
 
+window.OsisAuth = OsisAuth;
+
 async function OsisAuthInit() {
+  // Render chip dari cache sinkron DULU biar tidak pernah kosong saat nunggu getSession
+  OsisAuth.renderHeader();
   try {
     await OsisAuth.syncAuth();
   } catch {}

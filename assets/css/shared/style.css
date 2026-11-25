@@ -38,6 +38,8 @@
 
 html {
   scroll-behavior: smooth;
+  background: var(--paper);
+  color-scheme: light;
 }
 
 body {
@@ -108,6 +110,7 @@ img {
 
 .logo-box {
   height: 46px;
+  min-width: 46px;
   flex-shrink: 0;
 }
 .logo-box img {

@@ -35,6 +35,7 @@
     if (root) {
       if (dark) root.setAttribute("data-theme", "dark");
       else root.removeAttribute("data-theme");
+      root.style.backgroundColor = "";
     }
     try {
       var meta = document.querySelector('meta[name="theme-color"]');

@@ -661,3 +661,141 @@
     padding: 10px;
   }
 }
+
+/* =========================================================================
+   OSIS SHELL ANTI-FLICKER (Header + Sidebar + Cross-Document View Transition)
+   Aktif sejak byte pertama CSS (sebelum JS jalan) pada html.osis-shell
+   supaya header, tombol Beranda mobile, user chip, dan sidebar desktop
+   TIDAK PERNAH hilang/kedip/geser saat pindah halaman MPA.
+   ========================================================================= */
+@view-transition {
+  navigation: auto;
+}
+
+html.osis-shell {
+  background: var(--paper);
+}
+html.osis-shell[data-theme="dark"] {
+  background: #16131b;
+  color-scheme: dark;
+}
+
+html.osis-shell header.top-nav {
+  justify-content: flex-start;
+  gap: 8px;
+  view-transition-name: osis-topnav;
+}
+html.osis-shell header.top-nav .top-nav-extra {
+  margin-left: auto;
+}
+html.osis-shell .top-nav-extra #areaAuth .icon-btn {
+  display: none !important;
+}
+
+#osisMoreWrap {
+  display: inline-flex;
+  position: relative;
+}
+#osisMoreBtn {
+  transition: transform 0.22s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+#osisMoreBtn.active {
+  transform: rotate(90deg);
+}
+#osisMoreVisitor span,
+#osisMoreThemeRow .more-lbl-ico {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.osis-top-judul {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  html.osis-shell .top-nav-extra > a.btn,
+  .top-nav-extra > a.btn[href*="index"] {
+    display: none !important;
+  }
+  html.osis-shell #osisVisitorTrigger,
+  #osisVisitorTrigger {
+    display: none !important;
+  }
+  #osisMoreBeranda { order: 1; }
+  #osisMoreVisitor { order: 2; }
+  #osisMoreThemeRow { order: 3; }
+  #osisMorePengaturan { order: 4; }
+  #headerMorePush { order: 5; }
+  #osisMoreLogout { order: 6; }
+}
+
+@media (min-width: 900px) {
+  html.osis-shell body {
+    padding-left: 300px;
+  }
+  html.osis-shell body.osis-side-anim {
+    transition: padding-left 0.22s ease;
+  }
+  html.osis-shell body.osis-side-edit-wide {
+    padding-left: 392px;
+  }
+  html.osis-shell .osis-sidebar {
+    transform: none !important;
+    transition: width 0.22s ease;
+    view-transition-name: osis-sidebar;
+  }
+  html.osis-shell .osis-sidebar.editing {
+    width: min(392px, 94vw);
+  }
+  html.osis-shell #osisSideBtn {
+    display: none !important;
+  }
+  html.osis-shell .top-nav .brand {
+    display: none !important;
+  }
+  html.osis-shell .top-nav {
+    height: 76.4px;
+  }
+  html.osis-shell .osis-sidebar-head {
+    height: 76.4px;
+    flex-shrink: 0;
+  }
+  html.osis-shell .osis-top-judul {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  html.osis-shell .osis-top-judul i {
+    color: var(--red);
+    font-size: 1.25rem;
+  }
+  html.osis-shell .osis-top-judul span {
+    font-size: 1.45rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  html.osis-shell .osis-sidebar-bg {
+    display: none !important;
+  }
+  html.osis-shell #osisSideClose {
+    display: none !important;
+  }
+}
+
+::view-transition-old(osis-topnav),
+::view-transition-new(osis-topnav),
+::view-transition-old(osis-sidebar),
+::view-transition-new(osis-sidebar) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.1s;
+}

@@ -133,12 +133,27 @@ const OsisSidebar = {
     return "sidebar_" + OsisSidebar.KUNCI;
   },
 
+  _userLokal() {
+    try {
+      if (typeof OsisAuth !== "undefined" && OsisAuth.getUser) return OsisAuth.getUser();
+      return JSON.parse(localStorage.getItem("osis_user") || "null");
+    } catch (e) {
+      return null;
+    }
+  },
+
+  _aksesLokal() {
+    try {
+      if (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) return OsisAuth.getAkses();
+      return JSON.parse(localStorage.getItem("osis_akses") || "null");
+    } catch (e) {
+      return null;
+    }
+  },
+
   uid() {
     try {
-      const u =
-        typeof OsisAuth !== "undefined" && OsisAuth.getUser
-          ? OsisAuth.getUser()
-          : null;
+      const u = OsisSidebar._userLokal();
       if (u && u.mode === "osis" && u.id) return u.id;
     } catch (e) {}
     return null;
@@ -147,11 +162,15 @@ const OsisSidebar = {
   // Boleh mengatur sidebar? super_admin selalu lolos (punya semua hak).
   bisaAtur() {
     try {
-      return (
-        typeof OsisAuth !== "undefined" &&
-        OsisAuth.bisa &&
-        OsisAuth.bisa("site")
-      );
+      if (typeof OsisAuth !== "undefined" && OsisAuth.bisa) {
+        return !!OsisAuth.bisa("site");
+      }
+      const u = OsisSidebar._userLokal();
+      const a = OsisSidebar._aksesLokal();
+      if (!u || u.mode !== "osis" || !a) return false;
+      if (a.super) return true;
+      const list = Array.isArray(a.halaman) ? a.halaman : [];
+      return list.includes("site") || list.includes("*");
     } catch (e) {
       return false;
     }
@@ -284,14 +303,22 @@ const OsisSidebar = {
   },
 
   bacaCache() {
-    // Cache lokal biar sidebar langsung tampil + tetap ada saat offline.
+    // Cache lokal biar sidebar langsung tampil + tetap ada saat offline
+    // (tetap kebaca sinkron walau db.js / Cache belum dieksekusi).
     try {
       let arr = null;
       if (typeof Cache !== "undefined" && Cache.get) {
         arr = Cache.get(OsisSidebar.cacheKey());
       } else {
-        const raw = localStorage.getItem("osis_cache_" + OsisSidebar.cacheKey());
-        arr = raw ? JSON.parse(raw) : null;
+        const rawV3 = localStorage.getItem("osis_cache_v3_" + OsisSidebar.cacheKey());
+        if (rawV3) {
+          const obj = JSON.parse(rawV3);
+          arr = obj && Array.isArray(obj.data) ? obj.data : obj;
+        }
+        if (!Array.isArray(arr)) {
+          const raw = localStorage.getItem("osis_cache_" + OsisSidebar.cacheKey());
+          arr = raw ? JSON.parse(raw) : null;
+        }
       }
       if (Array.isArray(arr) && arr.length) {
         const items = OsisSidebar.normalisasiDaftar(arr);
@@ -314,14 +341,18 @@ const OsisSidebar = {
     } catch (e) {}
   },
 
-  // Muat config pusat: cache dulu (instan), lalu server (segarkan).
+  // Muat config pusat: cache dulu (instan), lalu server (segarkan bila berubah).
   async muat() {
+    const sebelum = OsisSidebar.menuTersimpan();
     const cache = OsisSidebar.bacaCache();
-    if (cache) {
+    if (cache && !OsisSidebar._kotor) {
       OsisSidebar.serverMenu = cache;
-      OsisSidebar.renderMenu();
+      if (!OsisSidebar.menuSama(OsisSidebar.menuTersimpan(), sebelum)) {
+        OsisSidebar.renderMenu();
+      }
     }
     if (typeof getSidebarMenu !== "function") return;
+    const sebelumServer = OsisSidebar.menuTersimpan();
     try {
       const arr = await getSidebarMenu(OsisSidebar.KUNCI);
       if (Array.isArray(arr) && arr.length) {
@@ -335,7 +366,9 @@ const OsisSidebar = {
     } catch (e) {
       // offline / gagal: tetap pakai cache atau bawaan
     }
-    OsisSidebar.renderMenu();
+    if (!OsisSidebar.menuSama(OsisSidebar.menuTersimpan(), sebelumServer)) {
+      OsisSidebar.renderMenu();
+    }
   },
 
   // Simpan susunan ke server (berlaku untuk semua user).
@@ -420,10 +453,13 @@ const OsisSidebar = {
   menuTampil() {
     let superUser = false;
     try {
-      superUser =
-        typeof OsisAuth !== "undefined" &&
-        OsisAuth.isSuper &&
-        OsisAuth.isSuper();
+      if (typeof OsisAuth !== "undefined" && OsisAuth.isSuper) {
+        superUser = !!OsisAuth.isSuper();
+      } else {
+        const u = OsisSidebar._userLokal();
+        const a = OsisSidebar._aksesLokal();
+        superUser = !!(u && u.mode === "osis" && a && a.super);
+      }
     } catch (e) {}
     return OsisSidebar.getMenu().filter((m) => !m.super || superUser);
   },
@@ -507,10 +543,9 @@ const OsisSidebar = {
   },
 
   pasang() {
-    if (document.getElementById("osisSidebar")) return;
+    if (!document.body || document.getElementById("osisSidebar")) return;
 
     document.getElementById("osisNav")?.remove();
-    document.getElementById("osisMoreWrap")?.remove();
 
     if (!document.getElementById("osisSidebarStyle")) {
       const st = document.createElement("style");
@@ -646,7 +681,9 @@ const OsisSidebar = {
                     body.osis-side-static #osisSideClose { display: none; }
                 }
             `;
-      document.head.appendChild(st);
+      const darkLink = document.querySelector('link[href*="dark.css"]');
+      if (darkLink && darkLink.parentNode) darkLink.parentNode.insertBefore(st, darkLink);
+      else document.head.appendChild(st);
     }
 
     // Mode desktop dipasang duluan (sebelum sidebar dibuat) biar transform-nya
@@ -719,6 +756,10 @@ const OsisSidebar = {
         sessionStorage.setItem(OsisSidebar.KUNCI_SCROLL, String(navEl.scrollTop));
       } catch (e) {}
     });
+    if (!OsisSidebar.serverMenu) {
+      const awal = OsisSidebar.bacaCache();
+      if (awal) OsisSidebar.serverMenu = awal;
+    }
     OsisSidebar.perbaruiAngkatan();
     OsisSidebar.renderMenu();
     sb.querySelector("#osisSideClose").addEventListener("click", () =>
@@ -741,15 +782,8 @@ const OsisSidebar = {
         else OsisSidebar.close();
       }
     });
-    // Config pusat + hak akses dimuat async - gambar ulang kalau sudah datang.
-    OsisSidebar.muat();
-    if (typeof OsisAuth !== "undefined" && OsisAuth.refreshAkses) {
-      OsisAuth.refreshAkses()
-        .then(() => {
-          OsisSidebar.perbaruiAngkatan();
-          OsisSidebar.renderMenu();
-        })
-        .catch(() => {});
+    if (typeof getSidebarMenu === "function") {
+      OsisSidebar.sinkronAsync();
     }
     window.addEventListener("osis:angkatan-ready", () =>
       OsisSidebar.perbaruiAngkatan(),
@@ -759,20 +793,70 @@ const OsisSidebar = {
     window.addEventListener("resize", () => OsisSidebar.terapkanMode());
   },
 
-  // Badge angkatan aktif di header sidebar (ambil dari OsisAuth kalau ada).
+  sinkronAsync() {
+    if (OsisSidebar._sudahSinkron) return;
+    if (typeof getSidebarMenu !== "function") return;
+    OsisSidebar._sudahSinkron = true;
+    OsisSidebar.muat();
+    if (typeof OsisAuth !== "undefined" && OsisAuth.refreshAkses) {
+      const jmlSebelum = OsisSidebar.menuTampil().length;
+      const aturSebelum = OsisSidebar.bisaAtur();
+      OsisAuth.refreshAkses()
+        .then(() => {
+          OsisSidebar.perbaruiAngkatan();
+          if (
+            OsisSidebar.menuTampil().length !== jmlSebelum ||
+            OsisSidebar.bisaAtur() !== aturSebelum
+          ) {
+            OsisSidebar.renderMenu();
+          }
+        })
+        .catch(() => {});
+    }
+  },
+
+  // Badge angkatan aktif di header sidebar (ambil dari OsisAuth atau cache lokal).
   perbaruiAngkatan() {
     const el = document.getElementById("osisSideAng");
     if (!el) return;
     let teks = "";
     try {
-      const obj =
+      let obj =
         typeof OsisAuth !== "undefined" && OsisAuth.getAngkatanAktifObj
           ? OsisAuth.getAngkatanAktifObj()
           : null;
+      if (!obj) {
+        const u = OsisSidebar._userLokal();
+        if (u && u.mode === "osis") {
+          const a = OsisSidebar._aksesLokal();
+          const list = JSON.parse(localStorage.getItem("osis_angkatan_list") || "[]");
+          const jab = String(u.jabatan || "").trim().toUpperCase();
+          const ang = String(u.angkatan || "").trim().toUpperCase();
+          const lintas =
+            a && typeof a.lintas_angkatan === "boolean"
+              ? a.lintas_angkatan
+              : !!(
+                  (a && a.super) ||
+                  (typeof u.lintas_angkatan === "boolean" ? u.lintas_angkatan : jab === "PEMBINA" || ang === "PEMBINA")
+                );
+          let id = !lintas ? (u.angkatan_id ? Number(u.angkatan_id) : 0) : Number(localStorage.getItem("osis_angkatan_aktif") || 0);
+          if (lintas && !(id > 0 && (!Array.isArray(list) || !list.length || list.some((x) => Number(x.id) === id)))) {
+            id = u.angkatan_id ? Number(u.angkatan_id) : 0;
+            if (!id && Array.isArray(list) && list.length) {
+              const yr = new Date().getFullYear();
+              const pick = list.find((x) => x.aktif && Number(x.tahun) === yr) || list.find((x) => x.aktif) || list[0];
+              if (pick && pick.id) id = Number(pick.id);
+            }
+          }
+          const hit = id && Array.isArray(list) ? list.find((x) => Number(x.id) === id) : null;
+          obj = hit || { id: id || null, nama: String(u.angkatan || "").trim(), kode: "" };
+        }
+      }
       teks = String((obj && (obj.nama || obj.kode)) || "").trim();
     } catch (e) {}
-    el.textContent = teks;
-    el.style.display = teks ? "" : "none";
+    const nextDisp = teks ? "" : "none";
+    if (el.textContent !== teks) el.textContent = teks;
+    if (el.style.display !== nextDisp) el.style.display = nextDisp;
   },
 
   // ---- mode atur (hanya pengelola Site / super_admin) ----
@@ -1746,5 +1830,13 @@ const OsisSidebar = {
   },
 };
 
-document.addEventListener("DOMContentLoaded", () => OsisSidebar.pasang());
-if (document.readyState !== "loading") OsisSidebar.pasang();
+window.OsisSidebar = OsisSidebar;
+
+document.addEventListener("DOMContentLoaded", () => {
+  OsisSidebar.pasang();
+  OsisSidebar.sinkronAsync();
+});
+if (document.readyState !== "loading") {
+  OsisSidebar.pasang();
+  OsisSidebar.sinkronAsync();
+}

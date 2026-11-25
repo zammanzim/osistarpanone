@@ -144,6 +144,7 @@
         try { localStorage.setItem("tarpan_theme", dark ? "dark" : "light"); } catch (e) {}
         if (dark) document.documentElement.setAttribute("data-theme", "dark");
         else document.documentElement.removeAttribute("data-theme");
+        document.documentElement.style.backgroundColor = "";
         try {
           var meta = document.querySelector('meta[name="theme-color"]');
           if (meta) meta.setAttribute("content", dark ? "#16131b" : "#e11d2e");
@@ -205,10 +206,102 @@
     return document.getElementById(ANG_WRAP_ID);
   }
 
+  function userLokal() {
+    try {
+      if (typeof OsisAuth !== "undefined" && OsisAuth.getUser) return OsisAuth.getUser();
+      return JSON.parse(localStorage.getItem("osis_user") || "null");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function aksesLokal() {
+    try {
+      if (typeof OsisAuth !== "undefined" && OsisAuth.getAkses) return OsisAuth.getAkses();
+      return JSON.parse(localStorage.getItem("osis_akses") || "null");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function angkatanListLokal() {
+    try {
+      if (typeof OsisAuth !== "undefined" && OsisAuth.getAngkatanList) return OsisAuth.getAngkatanList();
+      var arr = JSON.parse(localStorage.getItem("osis_angkatan_list") || "[]");
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function isLintasLokal(u, a) {
+    if (typeof OsisAuth !== "undefined" && typeof OsisAuth.isLintasAngkatan === "function") {
+      return !!OsisAuth.isLintasAngkatan();
+    }
+    if (!u || u.mode !== "osis") return false;
+    if (a && typeof a.lintas_angkatan === "boolean") return a.lintas_angkatan;
+    if (a && a.super) return true;
+    if (typeof u.lintas_angkatan === "boolean") return u.lintas_angkatan;
+    var jab = String(u.jabatan || "").trim().toUpperCase();
+    var ang = String(u.angkatan || "").trim().toUpperCase();
+    return jab === "PEMBINA" || ang === "PEMBINA";
+  }
+
+  function angkatanAktifLokal(u, a, list) {
+    if (typeof OsisAuth !== "undefined" && typeof OsisAuth.getAngkatanAktif === "function") {
+      return OsisAuth.getAngkatanAktif();
+    }
+    if (!u || u.mode !== "osis") return null;
+    if (!isLintasLokal(u, a)) return u.angkatan_id ? Number(u.angkatan_id) : null;
+    var saved = 0;
+    try { saved = Number(localStorage.getItem("osis_angkatan_aktif") || 0); } catch (e) {}
+    if (saved > 0 && (!list.length || list.some(function (x) { return Number(x.id) === saved; }))) {
+      return saved;
+    }
+    if (u.angkatan_id && Number(u.angkatan_id) > 0) return Number(u.angkatan_id);
+    if (list.length > 0) {
+      var yr = new Date().getFullYear();
+      var pick = list.find(function (x) { return x.aktif && Number(x.tahun) === yr; }) ||
+        list.find(function (x) { return x.aktif; }) ||
+        list[0];
+      if (pick && pick.id) return Number(pick.id);
+    }
+    return null;
+  }
+
+  function angkatanAktifObjLokal(u, aktifId, list) {
+    if (typeof OsisAuth !== "undefined" && typeof OsisAuth.getAngkatanAktifObj === "function") {
+      return OsisAuth.getAngkatanAktifObj();
+    }
+    if (aktifId) {
+      var hit = list.find(function (x) { return Number(x.id) === Number(aktifId); });
+      if (hit) return hit;
+    }
+    if (u && u.mode === "osis") {
+      return {
+        id: u.angkatan_id || aktifId || null,
+        nama: String(u.angkatan || "").trim(),
+        kode: "",
+      };
+    }
+    return null;
+  }
+
+  function displayNameLokal(user) {
+    if (!user) return "";
+    if (typeof OsisAuth !== "undefined" && typeof OsisAuth.displayName === "function") {
+      return OsisAuth.displayName(user);
+    }
+    if (user.mode === "osis" || user.mode === "biasa") {
+      return String(user.nama || user.username || "").trim();
+    }
+    return String(user.nickname || "").trim();
+  }
+
   function renderAngkatan() {
     var wrap = bangunAngkatan();
     if (!wrap) return;
-    var u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()) || null;
+    var u = userLokal();
     if (!u || u.mode !== "osis") {
       wrap.innerHTML = "";
       wrap.style.display = "none";
@@ -217,10 +310,11 @@
     }
     wrap.style.display = "";
     wrap.setAttribute("data-visible", "1");
-    var lintas = !!(typeof OsisAuth.isLintasAngkatan === "function" && OsisAuth.isLintasAngkatan());
-    var aktifId = typeof OsisAuth.getAngkatanAktif === "function" ? OsisAuth.getAngkatanAktif() : null;
-    var list = typeof OsisAuth.getAngkatanList === "function" ? OsisAuth.getAngkatanList() : [];
-    var aktifObj = typeof OsisAuth.getAngkatanAktifObj === "function" ? OsisAuth.getAngkatanAktifObj() : null;
+    var a = aksesLokal();
+    var list = angkatanListLokal();
+    var lintas = isLintasLokal(u, a);
+    var aktifId = angkatanAktifLokal(u, a, list);
+    var aktifObj = angkatanAktifObjLokal(u, aktifId, list);
     if (!lintas) {
       var lbl = (aktifObj && aktifObj.nama) || u.angkatan || "OSIS";
       wrap.innerHTML =
@@ -237,10 +331,10 @@
     }
     var opts = "";
     for (var i = 0; i < list.length; i++) {
-      var a = list[i];
-      var sel = Number(a.id) === Number(aktifId) ? " selected" : "";
-      var teks = String(a.nama || a.kode || ("Angkatan " + a.id)) + (a.aktif === false ? " (Arsip)" : "");
-      opts += '<option value="' + esc(a.id) + '"' + sel + ">" + esc(teks) + "</option>";
+      var it = list[i];
+      var sel = Number(it.id) === Number(aktifId) ? " selected" : "";
+      var teks = String(it.nama || it.kode || ("Angkatan " + it.id)) + (it.aktif === false ? " (Arsip)" : "");
+      opts += '<option value="' + esc(it.id) + '"' + sel + ">" + esc(teks) + "</option>";
     }
     wrap.innerHTML =
       '<div class="ang-more-lbl"><i class="fa-solid fa-layer-group"></i><span>Angkatan Aktif</span></div>' +
@@ -250,7 +344,9 @@
       el.addEventListener("change", function () {
         var newId = Number(el.value || 0);
         if (!newId || newId === Number(aktifId)) return;
-        OsisAuth.setAngkatanAktif(newId);
+        if (typeof OsisAuth !== "undefined" && OsisAuth.setAngkatanAktif) {
+          OsisAuth.setAngkatanAktif(newId);
+        }
         close();
         try { location.reload(); } catch (e) {}
       });
@@ -259,16 +355,16 @@
 
   function muatAngkatan() {
     if (_angFetched || !diHalamanOsis()) return;
-    var u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()) || null;
+    var u = userLokal();
     if (!u || u.mode !== "osis" || typeof getAngkatanList !== "function") return;
     _angFetched = true;
-    var beforeId = typeof OsisAuth.getAngkatanAktif === "function" ? OsisAuth.getAngkatanAktif() : null;
+    var beforeId = typeof OsisAuth !== "undefined" && typeof OsisAuth.getAngkatanAktif === "function" ? OsisAuth.getAngkatanAktif() : null;
     getAngkatanList().then(function (list) {
       renderAngkatan();
       try {
         window.dispatchEvent(new CustomEvent("osis:angkatan-ready", { detail: list || [] }));
       } catch (e) {}
-      if (typeof OsisAuth.isLintasAngkatan === "function" && OsisAuth.isLintasAngkatan() && !beforeId && list && list.length) {
+      if (typeof OsisAuth !== "undefined" && typeof OsisAuth.isLintasAngkatan === "function" && OsisAuth.isLintasAngkatan() && !beforeId && list && list.length) {
         var afterId = OsisAuth.getAngkatanAktif();
         if (afterId) {
           OsisAuth.setAngkatanAktif(afterId);
@@ -296,7 +392,7 @@
     var logged = false;
     var isOsis = false;
     try {
-      var u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser()) || null;
+      var u = userLokal();
       logged = !!u;
       isOsis = !!(u && u.mode === "osis");
     } catch (e) {}
@@ -312,10 +408,138 @@
     muatAngkatan();
   }
 
-  function init() {
+  // Hydrate sinkron sebelum frame pertama (dipanggil tepat setelah </header>):
+  // Logo R2, Sidebar + tombol hamburger + judul desktop, Visitor pill, User Chip, & titik-tiga.
+  function pasangLogoAwal() {
+    try {
+      var img = document.querySelector('header.top-nav [data-foto="logo1"]');
+      if (!img) return;
+      var path = "web/logo1.png";
+      var raw = localStorage.getItem("osis_cache_v3_web_foto");
+      if (raw) {
+        var obj = JSON.parse(raw);
+        var arr = obj && Array.isArray(obj.data) ? obj.data : null;
+        if (arr) {
+          for (var i = 0; i < arr.length; i++) {
+            if (arr[i] && arr[i].kunci === "logo1" && arr[i].path) {
+              path = String(arr[i].path);
+              break;
+            }
+          }
+        }
+      }
+      var url = path.indexOf("http") === 0
+        ? path
+        : ((typeof R2_PUBLIC_BASE === "string" && R2_PUBLIC_BASE.indexOf("http") === 0
+            ? R2_PUBLIC_BASE.replace(/\/$/, "")
+            : "https://media.osistarpanone.my.id") + "/" + path.replace(/^\/+/, ""));
+      img.decoding = "sync";
+      if (img.getAttribute("src") !== url) img.src = url;
+    } catch (e) {}
+  }
+
+  function hitungVisitorCache(u) {
+    try {
+      if (!u || u.mode !== "osis") return null;
+      var a = aksesLokal();
+      var list = angkatanListLokal();
+      var angId = angkatanAktifLokal(u, a, list);
+      var key = angId ? ("osis_cache_v3_ang_" + angId + "_osis_visitor") : "osis_cache_v3_osis_visitor";
+      var raw = localStorage.getItem(key) || (angId ? localStorage.getItem("osis_cache_v3_osis_visitor") : null);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      var rows = obj && Array.isArray(obj.data) ? obj.data : null;
+      if (!rows) return null;
+      var fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" });
+      var tglHariIni = fmt.format(new Date());
+      var n = 0;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i] && rows[i].last_seen && fmt.format(new Date(rows[i].last_seen)) === tglHariIni) n++;
+      }
+      return n.toLocaleString("id-ID");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function pasangVisitorAwal(u) {
+    try {
+      var extra = document.querySelector(".top-nav-extra");
+      if (!extra) return null;
+      var btn = document.getElementById("osisVisitorTrigger");
+      if (!btn) {
+        btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "visitor-trigger";
+        btn.id = "osisVisitorTrigger";
+        btn.title = "Pengunjung hari ini";
+        btn.setAttribute("onclick", "typeof OsisVisitor!=='undefined'&&OsisVisitor.bukaPopup()");
+        btn.innerHTML = '<i class="fa-solid fa-eye"></i><span id="osisVisitorCount">-</span>';
+        extra.insertBefore(btn, extra.firstChild);
+      }
+      var isOsis = !!(u && u.mode === "osis" && u.id);
+      btn.style.display = isOsis ? "" : "none";
+      return isOsis ? hitungVisitorCache(u) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function pasangAuthAwal(u) {
+    try {
+      var area = document.getElementById("areaAuth");
+      if (!area) return;
+      var disp = displayNameLokal(u);
+      var sig = u
+        ? [u.mode || "", u.id || "", disp, u.jabatan || "", "1"].join("|")
+        : "anon|1";
+      if (area.dataset && area.dataset.authSig === sig && area.children.length > 0) return;
+      if (area.dataset) area.dataset.authSig = sig;
+      if (!u) {
+        area.innerHTML =
+          '\n                <a href="../login" class="btn btn-red btn-sm" onclick="typeof OsisAuth!==\'undefined\'&&OsisAuth.simpanBack()"><i class="fa-solid fa-right-to-bracket"></i> Masuk</a>';
+        return;
+      }
+      var isOsis = u.mode === "osis";
+      var isBiasa = u.mode === "biasa";
+      var ikon = isOsis ? '<i class="fa-solid fa-id-card"></i>' : '<i class="fa-solid fa-user"></i>';
+      var judul = isOsis ? (u.jabatan || "Anggota OSIS") : (isBiasa ? "Akun Biasa" : "Tamu");
+      var namaChip = esc(disp) || esc(u.username || "Akun");
+      var tombolKeluar =
+        '\n            <button class="icon-btn" title="Keluar" onclick="typeof OsisAuth!==\'undefined\'&&OsisAuth.confirmLogout()">\n                <i class="fa-solid fa-arrow-right-from-bracket"></i>\n            </button>';
+      if (isOsis) {
+        area.innerHTML =
+          '\n                <a href="profil" class="user-chip" title="' + esc(judul) + ' — klik untuk buka profil">\n                    ' + ikon + "\n                    " + namaChip + "\n                </a>\n                " + tombolKeluar;
+        return;
+      }
+      area.innerHTML =
+        '\n            <span class="user-chip ' + (isBiasa ? "" : "chip-guest") + '" title="' + esc(judul) + '">\n                ' + ikon + "\n                " + namaChip + "\n            </span>\n            " + tombolKeluar;
+    } catch (e) {}
+  }
+
+  function shellMount() {
+    if (!diHalamanOsis()) return;
+    try { document.documentElement.classList.add("osis-shell"); } catch (e) {}
+    pasangLogoAwal();
+    if (typeof OsisSidebar !== "undefined" && typeof OsisSidebar.pasang === "function") {
+      OsisSidebar.pasang();
+    }
+    var u = userLokal();
+    var jmlVis = pasangVisitorAwal(u);
+    pasangAuthAwal(u);
     pasangCss();
     bangun();
     refresh();
+    if (jmlVis !== null) {
+      var c1 = document.getElementById("osisVisitorCount");
+      if (c1) c1.textContent = jmlVis;
+      var c2 = document.getElementById("osisMoreVisitorCount");
+      if (c2) c2.textContent = jmlVis;
+    }
+  }
+
+  function init() {
+    shellMount();
     // Ikut renderHeader biar item Keluar sinkron tiap login/logout.
     try {
       if (typeof OsisAuth !== "undefined" && OsisAuth.renderHeader && !OsisAuth.renderHeader._osisMoreHook) {
@@ -331,6 +555,8 @@
       }
     } catch (e) {}
   }
+
+  window.OsisShellMount = shellMount;
 
   if (typeof onReady === "function") {
     onReady(init);

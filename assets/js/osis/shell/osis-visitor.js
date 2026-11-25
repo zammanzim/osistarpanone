@@ -44,8 +44,12 @@ const OsisVisitor = {
         OsisVisitor.pasangCss();
         OsisVisitor.pasangOverlay();
         OsisVisitor.pasangTombol();
-        OsisVisitor.catat();
         OsisVisitor.refresh();
+        try {
+            const cached = (typeof Cache !== "undefined" && Cache.get) ? Cache.get("osis_visitor") : null;
+            if (cached) OsisVisitor.terapkanRows(cached);
+        } catch (e) {}
+        OsisVisitor.catat();
         // Ikut renderHeader biar tombol sinkron tiap login/logout.
         try {
             if (typeof OsisAuth !== "undefined" && OsisAuth.renderHeader && !OsisAuth.renderHeader._osisVisHook) {
@@ -84,7 +88,13 @@ const OsisVisitor = {
     pasangTombol() {
         try {
             var lama = document.getElementById("osisVisitorTrigger");
-            if (lama) return lama;
+            if (lama) {
+                if (!lama.getAttribute("onclick") && !lama._visBound) {
+                    lama._visBound = true;
+                    lama.addEventListener("click", function () { OsisVisitor.bukaPopup(); });
+                }
+                return lama;
+            }
             var extra = document.querySelector(".top-nav-extra");
             if (!extra) return null;
             var btn = document.createElement("button");
@@ -332,6 +342,8 @@ const OsisVisitor = {
         if (ov) ov.classList.remove("open");
     }
 };
+
+window.OsisVisitor = OsisVisitor;
 
 if (typeof onReady === "function") {
     onReady(() => OsisVisitor.init());

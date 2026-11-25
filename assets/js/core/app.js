@@ -42,11 +42,17 @@ const FotoWeb = {
     apply() {
         document.querySelectorAll("[data-foto]").forEach(el => {
             const p = FotoWeb.map[el.dataset.foto];
-            if (p) el.src = getFoto(p);
+            if (p) {
+                const nextSrc = getFoto(p);
+                if (el.getAttribute("src") !== nextSrc) el.src = nextSrc;
+            }
         });
         document.querySelectorAll("[data-foto-bg]").forEach(el => {
             const p = FotoWeb.map[el.dataset.fotoBg];
-            if (p) el.style.backgroundImage = `url('${getFoto(p)}')`;
+            if (p) {
+                const nextBg = `url('${getFoto(p)}')`;
+                if (el.style.backgroundImage !== nextBg) el.style.backgroundImage = nextBg;
+            }
         });
     }
 };

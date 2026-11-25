@@ -3,11 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>(function(){try{if(localStorage.getItem("tarpan_theme")==="dark"){document.documentElement.setAttribute("data-theme","dark");var f=function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#16131b");};f();document.addEventListener("DOMContentLoaded",f);}}catch(e){}})();</script>
+    <script>(function(){try{var d=document.documentElement;d.classList.add("osis-shell");var dark=localStorage.getItem("tarpan_theme")==="dark";if(dark){d.setAttribute("data-theme","dark");d.style.backgroundColor="#16131b";var f=function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#16131b");};f();document.addEventListener("DOMContentLoaded",f);}else{d.style.backgroundColor="#fffdfa";}}catch(e){}})();</script>
     <title>Hasil Wawancara — OSIS TARPAN ONE</title>
-    <link rel="stylesheet" href="../assets/css/shared/style.css?v=43" />
-    <link rel="stylesheet" href="../assets/css/shared/osis2.css?v=15" />
+    <link rel="stylesheet" href="../assets/css/shared/style.css?v=44" />
+    <link rel="stylesheet" href="../assets/css/shared/osis2.css?v=18" />
     <link rel="stylesheet" href="../assets/css/public/hasil-wawancara.css?v=11" />
+    <link rel="stylesheet" href="../assets/css/shared/dark.css?v=2" />
+    <script src="../assets/js/osis/shell/osis-sidebar.js?v=48"></script>
+    <script src="../assets/js/osis/shell/osis-header.js?v=22"></script>
     <meta name="theme-color" content="#e11d2e" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -33,20 +36,17 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="../assets/css/shared/dark.css?v=1" />
-    <script src="../assets/js/vendor/supabase.min.js?v=11"></script>
-    <script src="../assets/js/core/config.js?v=16"></script>
+    <script src="../assets/js/vendor/supabase.min.js?v=11" defer></script>
+    <script src="../assets/js/core/config.js?v=16" defer></script>
     <script src="../assets/js/core/db.js?v=37" defer></script>
     <script src="../assets/js/services/aktivitas.js?v=12" defer></script>
-    <script src="../assets/js/core/app.js?v=16" defer></script>
+    <script src="../assets/js/core/app.js?v=17" defer></script>
     <script src="../assets/js/shared/ui/dropdown.js?v=3" defer></script>
     <script src="../assets/js/shared/ui/toast.js?v=12" defer></script>
     <script src="../assets/js/shared/ui/notice.js?v=12" defer></script>
     <script src="../assets/js/shared/ui/show-popup.js?v=17" defer></script>
-    <script src="../assets/js/core/osis-auth.js?v=21" defer></script>
-    <script src="../assets/js/osis/shell/osis-visitor.js?v=5" defer></script>
-    <script src="../assets/js/osis/shell/osis-sidebar.js?v=47" defer></script>
-    <script src="../assets/js/osis/shell/osis-header.js?v=21" defer></script>
+    <script src="../assets/js/core/osis-auth.js?v=20" defer></script>
+    <script src="../assets/js/osis/shell/osis-visitor.js?v=6" defer></script>
     <script src="../assets/js/public/hasil-wawancara.js?v=15" defer></script>
     <script src="../assets/js/pwa/pwa.js?v=12" defer></script>
   </head>
@@ -67,6 +67,7 @@
         <div id="areaAuth"></div>
       </div>
     </header>
+    <script>window.OsisShellMount&&OsisShellMount()</script>
 
     <div class="osis-wrap">
       <div class="osis-hero" id="hwHero">
