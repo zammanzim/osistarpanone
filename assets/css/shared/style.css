@@ -5156,8 +5156,13 @@ body.edit-mode {
   display: inline-flex !important;
 }
 .top-nav:has(#headerMoreMenu) #pushBellBtn,
-.top-nav:has(#headerMoreMenu) #pwaInstallBtn {
+.top-nav:has(#headerMoreMenu) #pwaInstallBtn,
+.top-nav:has(#osisMoreMenu) #pwaInstallBtn,
+#pwaInstallBtn {
   display: none !important;
+}
+#headerMoreInstall i {
+  color: var(--red);
 }
 #headerMoreVisitor span,
 .header-more-item .more-lbl-ico {
@@ -5169,7 +5174,7 @@ body.edit-mode {
   #editToggleWrap {
     display: none !important;
   }
-  /* Visitor pindah ke titik-tiga (urutan: dash, visitor, edit, tema, pengaturan, notif, keluar, install) */
+  /* Visitor pindah ke titik-tiga (urutan: dash, visitor, edit, tema, pengaturan, notif, install, keluar) */
   #visitorTrigger {
     display: none !important;
   }
@@ -5191,10 +5196,10 @@ body.edit-mode {
   #headerMorePush {
     order: 6;
   }
-  #headerMoreLogout {
+  #headerMoreInstall {
     order: 7;
   }
-  #headerMoreInstall {
+  #headerMoreLogout {
     order: 8;
   }
 }

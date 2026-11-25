@@ -1081,7 +1081,7 @@ async function hapusAspirasiSendiri(id) {
   cekOk(data);
 }
 
-// Cek sakelar buka/tutup aspirasi
+// Cek sakelar buka/tutup aspirasi & lagu + batas harian dari tabel pengaturan
 async function cekStatusAspirasi() {
   try {
     const { data, error } = await supa
@@ -1094,6 +1094,51 @@ async function cekStatusAspirasi() {
   } catch (err) {
     console.error("Gagal baca sakelar aspirasi, default BUKA", err);
     return "BUKA";
+  }
+}
+
+async function cekStatusLagu() {
+  try {
+    const { data, error } = await supa
+      .from("pengaturan")
+      .select("nilai")
+      .eq("kunci", "status_lagu")
+      .maybeSingle();
+    if (error) throw error;
+    return data && data.nilai ? String(data.nilai).trim().toUpperCase() : "BUKA";
+  } catch (err) {
+    console.error("Gagal baca sakelar lagu, default BUKA", err);
+    return "BUKA";
+  }
+}
+
+async function getBatasAspirasi() {
+  try {
+    const { data, error } = await supa
+      .from("pengaturan")
+      .select("nilai")
+      .eq("kunci", "batas_harian_aspirasi")
+      .maybeSingle();
+    if (error) throw error;
+    const n = data && data.nilai != null ? parseInt(String(data.nilai).trim(), 10) : 1;
+    return Number.isFinite(n) && n >= 0 ? Math.min(50, n) : 1;
+  } catch {
+    return 1;
+  }
+}
+
+async function getBatasLagu() {
+  try {
+    const { data, error } = await supa
+      .from("pengaturan")
+      .select("nilai")
+      .eq("kunci", "batas_harian_lagu")
+      .maybeSingle();
+    if (error) throw error;
+    const n = data && data.nilai != null ? parseInt(String(data.nilai).trim(), 10) : 1;
+    return Number.isFinite(n) && n >= 0 ? Math.min(50, n) : 1;
+  } catch {
+    return 1;
   }
 }
 
@@ -3973,8 +4018,9 @@ async function getSemuaPengaturan() {
   if (error) throw error;
   const hasil = {};
   (data || []).forEach((p) => {
-    hasil[p.kunci] = p.nilai;
+    if (p && p.kunci && p.kunci !== "admin_pin") hasil[p.kunci] = p.nilai;
   });
+  Cache.set("pengaturan", hasil);
   return hasil;
 }
 
@@ -3986,6 +4032,7 @@ async function simpanPengaturan(kunci, nilai) {
   });
   if (error) throw error;
   cekOk(data);
+  Cache.del("pengaturan");
 }
 
 // userId diambil dari sesi login (biar signature lama tetap kompatibel).

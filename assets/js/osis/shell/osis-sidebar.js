@@ -51,6 +51,7 @@ const OsisSidebar = {
     { href: "program-tahunan", label: "Program Tahunan", icon: "fa-solid fa-calendar", grup: "Umum", populer: false },
     { href: "poster", label: "Poster", icon: "fa-solid fa-newspaper", grup: "Umum", populer: false },
     { href: "profil", label: "Profil Saya", icon: "fa-solid fa-circle-user", grup: "Umum", populer: false },
+    { href: "../pengaturan?from=osis", label: "Pengaturan", icon: "fa-solid fa-sliders", grup: "Umum", populer: false },
     { href: "absensi", label: "Absensi", icon: "fa-solid fa-clipboard-user", grup: "Sekretaris", populer: false },
     { href: "notulensi", label: "Notulensi", icon: "fa-solid fa-clipboard-list", grup: "Sekretaris", populer: false },
     { href: "dokumen", label: "Dokumen", icon: "fa-solid fa-folder-open", grup: "Sekretaris", populer: false },
@@ -557,8 +558,8 @@ const OsisSidebar = {
                 .osis-sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: min(300px, 86vw); background: var(--white); border-right: 3px solid var(--bd); z-index: 295; transform: translateX(-105%); transition: transform .25s cubic-bezier(.34,1.2,.64,1), width .22s ease; display: flex; flex-direction: column; }
                 .osis-sidebar.open { transform: none; }
                 .osis-sidebar-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 2.5px solid var(--bd); background: var(--white); }
-                .osis-side-head-logo { height: 46px; flex-shrink: 0; }
-                .osis-side-head-logo img { height: 100%; width: auto; object-fit: contain; display: block; }
+                .osis-side-head-logo { width: 46px; height: 46px; flex-shrink: 0; }
+                .osis-side-head-logo img { height: 100%; width: 100%; object-fit: contain; display: block; }
                 .osis-sidebar-head .t { flex: 1; min-width: 0; }
                 .osis-sidebar-head h2 { font-size: .95rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 .osis-side-subrow { display: flex; align-items: center; gap: 6px; margin-top: 3px; min-width: 0; }
@@ -713,13 +714,18 @@ const OsisSidebar = {
     bg.className = "osis-sidebar-bg";
     bg.id = "osisSidebarBg";
     bg.addEventListener("click", () => OsisSidebar.close());
+    let sideLogoSrc = "../assets/icons/icon-192.png";
+    try {
+      const cachedLogo = localStorage.getItem("osis_side_logo_v1");
+      if (cachedLogo && cachedLogo.startsWith("data:image/")) sideLogoSrc = cachedLogo;
+    } catch (e) {}
     const sb = document.createElement("aside");
     sb.className = "osis-sidebar";
     sb.id = "osisSidebar";
     sb.setAttribute("aria-label", "Menu OSIS");
     sb.innerHTML = `
             <div class="osis-sidebar-head">
-                <div class="osis-side-head-logo"><img src="../assets/icons/icon-192.png" alt="Logo OSIS" /></div>
+                <div class="osis-side-head-logo"><img id="osisSideLogoImg" src="${sideLogoSrc}" width="46" height="46" decoding="sync" alt="Logo OSIS" /></div>
                 <div class="t">
                     <h2>OSIS TARPAN ONE</h2>
                     <div class="osis-side-subrow">
@@ -740,6 +746,25 @@ const OsisSidebar = {
             </div>`;
     document.body.appendChild(bg);
     document.body.appendChild(sb);
+    const sideImg = sb.querySelector("#osisSideLogoImg");
+    if (sideImg && !sideLogoSrc.startsWith("data:image/")) {
+      const simpanSideLogo = () => {
+        try {
+          if (!sideImg.naturalWidth || !sideImg.naturalHeight) return;
+          const h = 96;
+          const w = Math.max(1, Math.round(sideImg.naturalWidth * (h / sideImg.naturalHeight)));
+          const cv = document.createElement("canvas");
+          cv.width = w;
+          cv.height = h;
+          cv.getContext("2d").drawImage(sideImg, 0, 0, w, h);
+          let data = cv.toDataURL("image/webp", 0.92);
+          if (!data || !data.startsWith("data:image/")) data = cv.toDataURL("image/png");
+          if (data && data.length < 60000) localStorage.setItem("osis_side_logo_v1", data);
+        } catch (e) {}
+      };
+      if (sideImg.complete && sideImg.naturalWidth) simpanSideLogo();
+      else sideImg.addEventListener("load", simpanSideLogo, { once: true });
+    }
     // Ingat posisi scroll sidebar (session) biar gak balik ke atas pas pindah halaman.
     const navEl = sb.querySelector("#osisSideNav");
     let tScroll = null;

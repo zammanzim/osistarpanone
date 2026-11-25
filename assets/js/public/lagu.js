@@ -3,6 +3,8 @@
 // =========================================================================
 
 const Lagu = {
+    status: "BUKA",
+    batasHarian: 1,
     terinisialisasi: false,
     cache: [],
     editingId: null,
@@ -35,12 +37,23 @@ const Lagu = {
             Lagu.render();
         });
         Lagu.syncChar();
+        Lagu.syncStatusBadge();
 
         // Render cache dulu (wajib saat offline), sisanya jalan background.
         try { Lagu.muatDaftar(); } catch {}
         if (typeof OsisAuth.refreshAkses === "function") {
             try { await OsisAuth.refreshAkses(); } catch {}
         }
+        try {
+            const [st, bts] = await Promise.all([
+                typeof cekStatusLagu === "function" ? cekStatusLagu() : Promise.resolve("BUKA"),
+                typeof getBatasLagu === "function" ? getBatasLagu() : Promise.resolve(1),
+            ]);
+            Lagu.status = st || "BUKA";
+            Lagu.batasHarian = Number.isFinite(bts) ? bts : 1;
+        } catch { Lagu.status = "BUKA"; }
+        Lagu.syncStatusBadge();
+        if (Lagu.status === "TUTUP") Lagu.kunciFormulir();
         try { Lagu.muatDaftar(); } catch {}
         // Autosave balasan inline (blur) + ESC buat batal
         const listBalas = document.getElementById("daftarLagu");
@@ -72,6 +85,44 @@ const Lagu = {
         const n = (kata && kata.value ? kata.value : "").length;
         cnt.textContent = `${n} / 300`;
         cnt.classList.toggle("full", n >= 280);
+    },
+
+    syncStatusBadge() {
+        const el = document.getElementById("laguStatusBadge");
+        const tutup = Lagu.status === "TUTUP";
+        if (el) {
+            el.className = "sm-stat-pill " + (tutup ? "red" : "mint");
+            el.innerHTML = tutup
+                ? `<i class="fa-solid fa-lock"></i> Request Ditutup`
+                : `<i class="fa-solid fa-unlock"></i> Request Dibuka`;
+        }
+        const sub = document.getElementById("laguLimitSub");
+        if (sub && !tutup) {
+            sub.textContent = Lagu.batasHarian === 0
+                ? "Bebas request tanpa batas harian — cek antrean di sebelah"
+                : `${Lagu.batasHarian} request / hari per perangkat — cek antrean di sebelah`;
+        }
+    },
+
+    kunciFormulir() {
+        Lagu.syncStatusBadge();
+        const judul = document.getElementById("judulLagu");
+        const penyanyi = document.getElementById("penyanyiLagu");
+        const kata = document.getElementById("kataLagu");
+        const nama = document.getElementById("namaPengirim");
+        const btn = document.getElementById("btnKirimLagu");
+        const sub = document.getElementById("laguLimitSub");
+        [judul, penyanyi, kata, nama].forEach(el => {
+            if (el) { el.disabled = true; el.placeholder = "Ditutup sementara"; }
+        });
+        if (kata) kata.placeholder = "Maaf, request lagu sedang ditutup sementara oleh pengurus OSIS.";
+        if (sub) sub.textContent = "Request lagu sedang ditutup sementara";
+        if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-lock"></i> Request Lagu Ditutup';
+            btn.style.opacity = "0.6";
+            btn.style.cursor = "not-allowed";
+            btn.style.pointerEvents = "none";
+        }
     },
 
     syncTools() {
@@ -313,6 +364,7 @@ const Lagu = {
     },
 
     async kirim() {
+        if (Lagu.status === "TUTUP") return;
         if (Lagu.editingId) {
             await Lagu.simpanEdit();
             return;
@@ -366,8 +418,13 @@ const Lagu = {
                 Outbox.sesudahAntre(__sesudahAntre);
                 return;
             }
-            if (err.message === "ERR_LIMIT") {
-                showPopup("Hanya bisa masukin 1x/hari, dateng besok lagi yaa. Kalo mau ganti tinggal hapus aja musikmu.", "error");
+            if (err.message === "ERR_TUTUP") {
+                Lagu.status = "TUTUP";
+                Lagu.kunciFormulir();
+                showPopup("Maaf, request lagu sedang ditutup sementara oleh pengurus OSIS.", "error");
+            } else if (err.message === "ERR_LIMIT") {
+                const lblBatas = Lagu.batasHarian > 1 ? `${Lagu.batasHarian}x/hari` : "1x/hari";
+                showPopup(`Hanya bisa masukin ${lblBatas}, dateng besok lagi yaa. Kalo mau ganti tinggal hapus aja musikmu.`, "error");
             } else {
                 showToast("Waduh, gagal terkirim. Cek koneksi lalu coba lagi ya!", "error");
             }

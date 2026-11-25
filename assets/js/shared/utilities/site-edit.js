@@ -1114,6 +1114,8 @@ const HeaderMore = {
         }
     }
 };
+window.SiteEdit = SiteEdit;
+window.HeaderMore = HeaderMore;
 
 // tutup menu kalo klik di luar
 document.addEventListener("click", (e) => {

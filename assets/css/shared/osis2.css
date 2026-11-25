@@ -688,7 +688,8 @@ html.osis-shell header.top-nav {
 html.osis-shell header.top-nav .top-nav-extra {
   margin-left: auto;
 }
-html.osis-shell .top-nav-extra #areaAuth .icon-btn {
+html.osis-shell .top-nav-extra #areaAuth .icon-btn,
+html.osis-shell .top-nav-extra #pwaInstallBtn {
   display: none !important;
 }
 
@@ -701,6 +702,9 @@ html.osis-shell .top-nav-extra #areaAuth .icon-btn {
 }
 #osisMoreBtn.active {
   transform: rotate(90deg);
+}
+#headerMoreInstall i {
+  color: var(--red);
 }
 #osisMoreVisitor span,
 #osisMoreThemeRow .more-lbl-ico {
@@ -727,7 +731,8 @@ html.osis-shell .top-nav-extra #areaAuth .icon-btn {
   #osisMoreThemeRow { order: 3; }
   #osisMorePengaturan { order: 4; }
   #headerMorePush { order: 5; }
-  #osisMoreLogout { order: 6; }
+  #headerMoreInstall { order: 6; }
+  #osisMoreLogout { order: 7; }
 }
 
 @media (min-width: 900px) {

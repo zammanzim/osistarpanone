@@ -4,6 +4,7 @@
 
 const Aspirasi = {
     status: "BUKA",
+    batasHarian: 1,
     terinisialisasi: false,
     cache: [], // akumulasi halaman infinite-scroll
     perPage: 15, // hemat egress: 15 pesan per halaman
@@ -43,7 +44,12 @@ const Aspirasi = {
             try { await OsisAuth.refreshAkses(); } catch {}
         }
         try {
-            Aspirasi.status = await cekStatusAspirasi();
+            const [st, bts] = await Promise.all([
+                cekStatusAspirasi(),
+                typeof getBatasAspirasi === "function" ? getBatasAspirasi() : Promise.resolve(1),
+            ]);
+            Aspirasi.status = st || "BUKA";
+            Aspirasi.batasHarian = Number.isFinite(bts) ? bts : 1;
         } catch { Aspirasi.status = "BUKA"; }
         Aspirasi.syncStatusBadge();
         if (Aspirasi.status === "TUTUP") Aspirasi.kunciFormulir();
@@ -379,8 +385,13 @@ const Aspirasi = {
                 Outbox.sesudahAntre(__sesudahAntre);
                 return;
             }
-            if (err.message === "ERR_LIMIT") {
-                showPopup("Hanya bisa masukin 1x/hari, dateng besok lagi yaa. Kalo mau ganti tinggal hapus aja pesanmu.", "error");
+            if (err.message === "ERR_TUTUP") {
+                Aspirasi.status = "TUTUP";
+                Aspirasi.kunciFormulir();
+                showPopup("Maaf, kotak aspirasi sedang ditutup sementara oleh pengurus OSIS.", "error");
+            } else if (err.message === "ERR_LIMIT") {
+                const lblBatas = Aspirasi.batasHarian > 1 ? `${Aspirasi.batasHarian}x/hari` : "1x/hari";
+                showPopup(`Hanya bisa masukin ${lblBatas}, dateng besok lagi yaa. Kalo mau ganti tinggal hapus aja pesanmu.`, "error");
             } else {
                 showToast("Waduh, gagal terkirim. Cek koneksi lalu coba lagi ya!", "error");
             }

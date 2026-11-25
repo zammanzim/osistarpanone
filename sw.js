@@ -3,7 +3,7 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v232";
+const VERSI = "tarpan-v234";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 // Cache lintas-origin (Font Awesome, Google Fonts, foto R2) tidak ikut
@@ -20,6 +20,7 @@ const APP_SHELL = [
   "./polling.html",
   "./absen.html",
   "./changelog.html",
+  "./pengaturan.html",
   "./hasil-wawancara.html",
   "./jepun.html",
   "./offline.html",
@@ -49,6 +50,7 @@ const APP_SHELL = [
   "./assets/css/osis/uang-kas.css",
   "./assets/css/osis/wawancara.css",
   "./assets/css/public/hasil-wawancara.css",
+  "./assets/css/public/pengaturan.css",
   "./assets/css/public/login.css",
   "./assets/css/public/suara-musik.css",
   "./osis/absensi.html",
@@ -455,7 +457,7 @@ self.addEventListener("fetch", (e) => {
       const cache = await caches.open(LINTAS);
       const cached = await cache.match(req);
       const sedangOnline = !(self.navigator && self.navigator.onLine === false);
-      if (cached) {
+      if (cached && !(req.mode === "cors" && cached.type === "opaque")) {
         if (sedangOnline && req.destination !== "font" && req.destination !== "image") {
           e.waitUntil(
             fetch(req)

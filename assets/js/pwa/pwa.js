@@ -72,13 +72,11 @@
     });
   }
 
-  // ---- 2) Tombol Install App (Android/Desktop; iOS pakai hint) ----
-  // Desktop: pill di kanan atas header (.top-nav-extra).
-  // Mobile (<=700px): item di dalam menu titik-tiga (#headerMoreMenu).
-  // Halaman tanpa header itu: fallback tombol floating lama.
+  // ---- 2) Menu Install App di titik-tiga (#headerMoreMenu / #osisMoreMenu) ----
+  // Hanya tampil di dalam menu titik-tiga (publik index & internal /osis/*),
+  // tanpa tombol luar #pwaInstallBtn dan tanpa tombol floating di halaman login.
   var promptTunda = null;
-  var tombol = null;    // pill desktop / fallback floating
-  var itemMenu = null;  // item more-menu (mobile)
+  var itemMenu = null;
 
   function sudahStandalone() {
     return (
@@ -92,20 +90,21 @@
     var st = document.createElement("style");
     st.id = "pwaInstallCss";
     st.textContent =
-      "#pwaInstallBtn{display:none;align-items:center;gap:6px;padding:8px 14px;" +
-      "border:2.5px solid var(--ink,#1a1314);border-radius:999px;background:var(--white,#fff);" +
-      "font-family:inherit;font-size:.78rem;font-weight:800;color:var(--ink,#1a1314);cursor:pointer;" +
-      "box-shadow:2px 2px 0 var(--ink,#1a1314);white-space:nowrap}" +
-      "#pwaInstallBtn i{color:var(--red,#e11d2e)}" +
-      "#pwaInstallBtn:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink,#1a1314)}" +
-      "#pwaInstallBtn:active{transform:translate(1px,1px);box-shadow:none}" +
-      "@media (max-width:700px){#pwaInstallBtn{display:none!important}}" +
-      "#headerMoreInstall{display:none}" +
+      "#pwaInstallBtn{display:none!important}" +
       "#headerMoreInstall i{color:var(--red,#e11d2e)}";
     try { document.head.appendChild(st); } catch (e) {}
   }
 
-  // Tembak prompt install browser. Dipakai tombol + menu.
+  function segarkanMenu() {
+    try {
+      if (window.HeaderMore && HeaderMore.refresh) HeaderMore.refresh();
+    } catch (e) {}
+    try {
+      if (window.OsisMore && OsisMore.refresh) OsisMore.refresh();
+    } catch (e) {}
+  }
+
+  // Tembak prompt install browser. Dipakai item menu titik-tiga.
   async function pasang() {
     if (!promptTunda) return false;
     try {
@@ -117,95 +116,73 @@
     return true;
   }
 
+  function klikMenu() {
+    try {
+      if (window.HeaderMore && HeaderMore.close) HeaderMore.close();
+    } catch (e) {}
+    try {
+      if (window.OsisMore && OsisMore.close) OsisMore.close();
+    } catch (e) {}
+    var ios = /iphone|ipad|ipod/i.test(navigator.userAgent || "");
+    if (ios && !promptTunda) {
+      toast("iPhone: ketuk Bagikan → Tambah ke Layar Utama", "info");
+      return;
+    }
+    pasang();
+  }
+
   function buatTombol() {
-    if ((tombol || itemMenu) || sudahStandalone()) return;
+    try {
+      var lamaLuar = document.getElementById("pwaInstallBtn");
+      if (lamaLuar) lamaLuar.remove();
+    } catch (e) {}
+    if (sudahStandalone()) return;
     pasangCss();
-    // 1) Item more-menu (mobile) — index saja yang punya #headerMoreMenu.
-    var menu = document.getElementById("headerMoreMenu");
-    if (menu && !document.getElementById("headerMoreInstall")) {
-      itemMenu = document.createElement("button");
-      itemMenu.type = "button";
-      itemMenu.id = "headerMoreInstall";
-      itemMenu.className = "header-more-item";
-      itemMenu.innerHTML = '<i class="fa-solid fa-download"></i> Install App';
-      itemMenu.addEventListener("click", function () {
-        try {
-          if (window.HeaderMore && HeaderMore.close) HeaderMore.close();
-        } catch (e) {}
-        var ios = /iphone|ipad|ipod/i.test(navigator.userAgent || "");
-        if (ios && !promptTunda) {
-          toast("iPhone: ketuk Bagikan → Tambah ke Layar Utama", "info");
-          return;
-        }
-        pasang();
-      });
-      menu.appendChild(itemMenu);
-    }
-    // 2) Pill kanan atas header (desktop).
-    var extra = document.querySelector(".top-nav-extra");
-    if (extra && !document.getElementById("pwaInstallBtn")) {
-      tombol = document.createElement("button");
-      tombol.id = "pwaInstallBtn";
-      tombol.type = "button";
-      tombol.innerHTML = '<i class="fa-solid fa-download"></i><span>Install App</span>';
-      tombol.setAttribute("aria-label", "Install aplikasi OSIS TARPAN ONE");
-      tombol.addEventListener("click", function () { pasang(); });
-      try {
-        var wrap = document.getElementById("headerMoreWrap");
-        if (wrap && wrap.parentNode === extra) extra.insertBefore(tombol, wrap);
-        else extra.appendChild(tombol);
-      } catch (e) {
-        try { extra.appendChild(tombol); } catch (e2) {}
+    var menu = document.getElementById("headerMoreMenu") || document.getElementById("osisMoreMenu");
+    if (!menu) return;
+    var ada = document.getElementById("headerMoreInstall");
+    if (ada) {
+      itemMenu = ada;
+      if (!itemMenu._pwaBound && !itemMenu.getAttribute("onclick")) {
+        itemMenu._pwaBound = true;
+        itemMenu.addEventListener("click", klikMenu);
       }
+      return;
     }
-    // 3) Fallback halaman tanpa header: floating lama.
-    if (!tombol && !itemMenu) {
-      tombol = document.createElement("button");
-      tombol.id = "pwaInstallBtn";
-      tombol.type = "button";
-      tombol.innerHTML = '<i class="fa-solid fa-download"></i><span>Install App</span>';
-      tombol.setAttribute("aria-label", "Install aplikasi OSIS TARPAN ONE");
-      tombol.style.cssText = [
-        "position:fixed", "right:16px", "bottom:96px", "z-index:9999",
-        "display:none", "align-items:center", "gap:8px",
-        "padding:12px 16px", "border:2.5px solid #1a1314", "border-radius:999px",
-        "background:#e11d2e", "color:#fff",
-        "font-family:Outfit,sans-serif", "font-size:.82rem", "font-weight:800",
-        "box-shadow:3px 3px 0 #1a1314", "cursor:pointer",
-      ].join(";");
-      tombol.addEventListener("click", function () { pasang(); });
-      document.body.appendChild(tombol);
-    }
+    itemMenu = document.createElement("button");
+    itemMenu.type = "button";
+    itemMenu.id = "headerMoreInstall";
+    itemMenu.className = "header-more-item";
+    itemMenu.style.display = "none";
+    itemMenu.innerHTML = '<i class="fa-solid fa-download"></i> Install App';
+    itemMenu._pwaBound = true;
+    itemMenu.addEventListener("click", klikMenu);
+    var keluar = document.getElementById("headerMoreLogout") || document.getElementById("osisMoreLogout");
+    if (keluar && keluar.parentNode === menu) menu.insertBefore(itemMenu, keluar);
+    else menu.appendChild(itemMenu);
   }
 
   function tampilTombol() {
-    if (!tombol && !itemMenu) buatTombol();
+    if (!itemMenu) buatTombol();
     if (sudahStandalone()) return;
     var ios = /iphone|ipad|ipod/i.test(navigator.userAgent || "");
     if (ios) return; // iOS tidak ada prompt — jalurnya lewat tampilIOS()
-    if (tombol) tombol.style.display = "inline-flex";
     if (itemMenu) itemMenu.style.display = "";
-    try {
-      if (window.HeaderMore && HeaderMore.refresh) HeaderMore.refresh();
-    } catch (e) {}
+    segarkanMenu();
   }
 
   // iOS tidak ada prompt: tampilkan item menu biar ada jalurnya (toast cara install).
   function tampilIOS() {
+    if (!itemMenu) buatTombol();
     var ios = /iphone|ipad|ipod/i.test(navigator.userAgent || "");
     if (!ios || sudahStandalone() || !itemMenu) return;
     itemMenu.style.display = "";
-    try {
-      if (window.HeaderMore && HeaderMore.refresh) HeaderMore.refresh();
-    } catch (e) {}
+    segarkanMenu();
   }
 
   function sembunyiTombol() {
-    if (tombol) tombol.style.display = "none";
     if (itemMenu) itemMenu.style.display = "none";
-    try {
-      if (window.HeaderMore && HeaderMore.refresh) HeaderMore.refresh();
-    } catch (e) {}
+    segarkanMenu();
   }
 
   function hintIOS() {
@@ -311,6 +288,7 @@
       }
     },
     pasang: pasang,
+    klikMenu: klikMenu,
   };
 
   window.addEventListener("beforeinstallprompt", function (e) {

@@ -39,13 +39,73 @@ const FotoWeb = {
         FotoWeb.apply();
     },
 
+    bacaLogoData(url) {
+        try {
+            const raw = localStorage.getItem("osis_logo1_data_v1");
+            if (!raw) return null;
+            const obj = JSON.parse(raw);
+            if (obj && obj.u === url && typeof obj.d === "string" && obj.d.startsWith("data:image/")) {
+                return obj.d;
+            }
+        } catch {}
+        return null;
+    },
+
+    hangatkanLogo(url) {
+        if (!url || FotoWeb._warmingLogo === url || FotoWeb.bacaLogoData(url)) return;
+        FotoWeb._warmingLogo = url;
+        setTimeout(async () => {
+            try {
+                const res = await fetch(url, { mode: "cors" });
+                if (!res || !res.ok) return;
+                const blob = await res.blob();
+                const objUrl = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const h = 96;
+                        const w = Math.max(1, Math.round(img.naturalWidth * (h / img.naturalHeight)));
+                        const cv = document.createElement("canvas");
+                        cv.width = w;
+                        cv.height = h;
+                        cv.getContext("2d").drawImage(img, 0, 0, w, h);
+                        let data = cv.toDataURL("image/webp", 0.92);
+                        if (!data || !data.startsWith("data:image/")) data = cv.toDataURL("image/png");
+                        if (data && data.length < 60000) {
+                            localStorage.setItem("osis_logo1_data_v1", JSON.stringify({ u: url, d: data }));
+                        }
+                    } catch {}
+                    URL.revokeObjectURL(objUrl);
+                };
+                img.onerror = () => URL.revokeObjectURL(objUrl);
+                img.src = objUrl;
+            } catch {}
+        }, 60);
+    },
+
     apply() {
         document.querySelectorAll("[data-foto]").forEach(el => {
-            const p = FotoWeb.map[el.dataset.foto];
-            if (p) {
-                const nextSrc = getFoto(p);
+            const k = el.dataset.foto;
+            const p = FotoWeb.map[k];
+            if (!p) return;
+            const nextSrc = getFoto(p);
+            if (k === "logo1") {
+                const dataUrl = FotoWeb.bacaLogoData(nextSrc);
+                if (dataUrl) {
+                    el.decoding = "sync";
+                    if (el.getAttribute("data-logo-resolved") !== nextSrc || el.getAttribute("src") !== dataUrl) {
+                        el.setAttribute("data-logo-resolved", nextSrc);
+                        el.src = dataUrl;
+                    }
+                    return;
+                }
+                el.decoding = "sync";
+                el.setAttribute("data-logo-resolved", nextSrc);
                 if (el.getAttribute("src") !== nextSrc) el.src = nextSrc;
+                FotoWeb.hangatkanLogo(nextSrc);
+                return;
             }
+            if (el.getAttribute("src") !== nextSrc) el.src = nextSrc;
         });
         document.querySelectorAll("[data-foto-bg]").forEach(el => {
             const p = FotoWeb.map[el.dataset.fotoBg];
@@ -119,7 +179,7 @@ function ikatRupiah(id) {
 // =========================================================================
 
 const Router = {
-    daftarView: ["home", "pengurus", "sekbid", "galeri", "feed", "arsip", "pelantikan", "aspirasi", "kontak", "musik", "informasi", "pengaturan"],
+    daftarView: ["home", "pengurus", "sekbid", "galeri", "feed", "arsip", "pelantikan", "aspirasi", "kontak", "musik", "informasi"],
     initFns: {},       // init lazy per view
     selesai: {},       // flag view sudah pernah di-init
     current: "home",
@@ -151,6 +211,11 @@ const Router = {
     },
 
     go() {
+        const rawH = location.hash.replace(/^#\/?/, "").toLowerCase().split("?")[0];
+        if (rawH === "pengaturan" && document.querySelector(".view")) {
+            location.replace("pengaturan");
+            return;
+        }
         const nama = Router.parse();
         const token = ++Router.token;
         const old = document.querySelector(".view.active");

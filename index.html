@@ -136,7 +136,7 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="assets/css/shared/style.css?v=43" />
+    <link rel="stylesheet" href="assets/css/shared/style.css?v=45" />
     <link rel="stylesheet" href="assets/css/public/feed.css?v=3" />
     <link rel="stylesheet" href="assets/css/public/suara-musik.css?v=3" />
     <link
@@ -1001,7 +1001,7 @@
     <script src="assets/js/core/config.js?v=14"></script>
     <script src="assets/js/core/db.js?v=38" defer></script>
     <script src="assets/js/services/compress-video.js?v=8" defer></script>
-    <script src="assets/js/core/app.js?v=16" defer></script>
+    <script src="assets/js/core/app.js?v=18" defer></script>
     <script src="assets/js/shared/ui/dropdown.js?v=3" defer></script>
     <script src="assets/js/shared/ui/toast.js?v=10" defer></script>
     <script src="assets/js/shared/ui/notice.js?v=10" defer></script>
@@ -1021,12 +1021,11 @@
     <script src="assets/js/public/arsip.js?v=21" defer></script>
     <script src="assets/js/public/informasi-view.js?v=4" defer></script>
     <script src="assets/js/core/osis-auth.js?v=19" defer></script>
-    <script src="assets/js/shared/utilities/site-edit.js?v=21" defer></script>
+    <script src="assets/js/shared/utilities/site-edit.js?v=22" defer></script>
     <script src="assets/js/shared/ui/bottomnav.js?v=10" defer></script>
     <script src="assets/js/shared/ui/nav-atur.js?v=13" defer></script>
     <script src="assets/js/shared/utilities/theme.js?v=1" defer></script>
-    <script src="assets/js/pwa/pwa.js?v=12" defer></script>
-    <script src="assets/js/shared/utilities/pengaturan.js?v=2" defer></script>
+    <script src="assets/js/pwa/pwa.js?v=13" defer></script>
   </head>
   <body>
     <!-- ===== TOP NAV ===== -->
@@ -1099,11 +1098,11 @@
               ></span>
             </label>
             <a
-              href="#/pengaturan"
+              href="pengaturan"
               class="header-more-item"
               id="headerMorePengaturan"
               onclick="HeaderMore.close()"
-              ><i class="fa-solid fa-gear"></i> Pengaturan</a
+              ><i class="fa-solid fa-sliders"></i> Pengaturan</a
             >
             <a
               href="osis/index"
@@ -1136,6 +1135,15 @@
               ></label>
             </label>
             <button
+              type="button"
+              class="header-more-item"
+              id="headerMoreInstall"
+              onclick="window.PwaInstall&&PwaInstall.klikMenu()"
+              style="display: none"
+            >
+              <i class="fa-solid fa-download"></i> Install App
+            </button>
+            <button
               class="header-more-item danger"
               id="headerMoreLogout"
               onclick="HeaderMore.logout()"
@@ -1147,6 +1155,7 @@
         </div>
       </div>
     </header>
+    <script>(function(){try{var img=document.querySelector('header.top-nav [data-foto="logo1"]');if(!img)return;var raw=localStorage.getItem("osis_logo1_data_v1");if(raw){var o=JSON.parse(raw);if(o&&typeof o.d==="string"&&o.d.indexOf("data:image/")===0){img.decoding="sync";img.setAttribute("data-logo-resolved",o.u||"");img.src=o.d;}}}catch(e){}})();</script>
 
     <!-- ============================================================
          VIEW: HOME
@@ -2069,6 +2078,7 @@
             </p>
           </div>
           <div class="sm-head-pills">
+            <span class="sm-stat-pill mint" id="laguStatusBadge"><i class="fa-solid fa-unlock"></i> Request Dibuka</span>
             <span class="sm-stat-pill live"><span class="sm-live-dot"></span> Jam Istirahat</span>
             <span class="sm-stat-pill yellow"><i class="fa-solid fa-music"></i> <b id="laguHeroTotal">0</b> Request</span>
             <span class="sm-stat-pill mint"><i class="fa-solid fa-circle-check"></i> <b id="laguHeroDone">0</b> Diputar</span>
@@ -2131,7 +2141,7 @@
                 <span class="sm-form-head-ico"><i class="fa-solid fa-music"></i></span>
                 <div>
                   <div class="sm-form-head-title" id="headFormLagu">Form Request Lagu</div>
-                  <span class="sm-form-head-sub">1 request / hari per perangkat — cek antrean di sebelah</span>
+                  <span class="sm-form-head-sub" id="laguLimitSub">1 request / hari per perangkat — cek antrean di sebelah</span>
                 </div>
               </div>
 
@@ -2414,30 +2424,6 @@
       </div>
     </section>
 
-    <!-- ============================================================
-         VIEW: PENGATURAN
-         ============================================================ -->
-    <section class="view" data-view="pengaturan">
-      <div class="wrap">
-        <div class="sec-head">
-          <div>
-            <div class="sec-tag">Preferensi</div>
-            <h2 class="sec-title">Pengaturan <span class="red">Pengguna</span></h2>
-            <p class="sec-sub">
-              Semua preferensi tersimpan di perangkat ini dan langsung berlaku.
-            </p>
-          </div>
-        </div>
-
-        <div id="setelanBody">
-          <div class="loading-block">
-            <div class="spinner"></div>
-            Memuat pengaturan...
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ===== SITE FOOTER ===== -->
     <footer class="site-footer">
       <div class="site-footer-stripes" aria-hidden="true"></div>
@@ -2527,6 +2513,12 @@
               href="changelog.html"
               style="color: inherit; font-size: 0.72rem; font-weight: 800; opacity: 0.85"
               >Changelog</a
+            >
+            <span style="opacity: 0.5">•</span>
+            <a
+              href="pengaturan"
+              style="color: inherit; font-size: 0.72rem; font-weight: 800; opacity: 0.85"
+              >Pengaturan</a
             >
           </span>
         </div>
@@ -2622,11 +2614,11 @@
             ><b>Arsip Galeri</b><small>Semua dokumentasi</small></span
           ></a
         >
-        <a href="#/pengaturan" class="nav-sheet-item" data-route="pengaturan" data-short="Atur"
+        <a href="pengaturan" class="nav-sheet-item" data-short="Atur"
           ><span class="nsi-ico"
-            ><i class="fa-solid fa-gear"></i></span
+            ><i class="fa-solid fa-sliders"></i></span
           ><span class="nsi-text"
-            ><b>Pengaturan</b><small>Preferensi pengguna</small></span
+            ><b>Pengaturan</b><small>Pusat konfigurasi</small></span
           ></a
         >
         <!-- Tambah menu baru tinggal copy <a class="nav-sheet-item"> di sini -->

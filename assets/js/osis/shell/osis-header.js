@@ -23,6 +23,7 @@
   var THEME_ROW_ID = "osisMoreThemeRow";
   var THEME_TOGGLE_ID = "osisMoreThemeToggle";
   var PENG_ID = "osisMorePengaturan";
+  var INSTALL_ID = "headerMoreInstall";
   var CSS_ID = "osisMoreCss";
   var ANG_WRAP_ID = "osisAngkatanWrap";
   var ANG_SEL_ID = "osisAngkatanSelect";
@@ -56,7 +57,8 @@
       "#" + BTN_ID + ".active{transform:rotate(90deg)}" +
       "header.top-nav:has(#osisSideBtn){justify-content:flex-start;gap:8px}" +
       "header.top-nav:has(#osisSideBtn) .top-nav-extra{margin-left:auto}" +
-      ".top-nav-extra #areaAuth .icon-btn{display:none!important}" +
+      ".top-nav-extra #areaAuth .icon-btn,.top-nav-extra #pwaInstallBtn{display:none!important}" +
+      "#" + INSTALL_ID + " i{color:var(--red,#e11d2e)}" +
       "#osisMoreVisitor span,#" + THEME_ROW_ID + " .more-lbl-ico{display:inline-flex;align-items:center;gap:8px}" +
       "@media (max-width:700px){" +
       ".top-nav-extra>a.btn{display:none!important}" +
@@ -67,7 +69,8 @@
       "#" + THEME_ROW_ID + "{order:3}" +
       "#" + PENG_ID + "{order:4}" +
       "#headerMorePush{order:5}" +
-      "#" + LOGOUT_ID + "{order:6}" +
+      "#" + INSTALL_ID + "{order:6}" +
+      "#" + LOGOUT_ID + "{order:7}" +
       "}";
     try {
       document.head.appendChild(st);
@@ -124,7 +127,8 @@
       '<a href="../index#/" class="header-more-item" id="' + BERANDA_ID + '" style="display:none"><i class="fa-solid fa-house"></i> Beranda</a>' +
       '<button class="header-more-item" id="' + VISITOR_ID + '" style="display:none"><span><i class="fa-solid fa-eye"></i> Visitor</span><b id="osisMoreVisitorCount">-</b></button>' +
       '<label class="header-more-item" id="' + THEME_ROW_ID + '"><span class="more-lbl-ico"><i class="fa-solid fa-moon"></i> Mode Gelap</span><span class="edit-toggle-wrap small"><input type="checkbox" id="' + THEME_TOGGLE_ID + '" autocomplete="off" /><span class="edit-slider"></span></span></label>' +
-      '<a href="../index#/pengaturan" class="header-more-item" id="' + PENG_ID + '"><i class="fa-solid fa-gear"></i> Pengaturan</a>' +
+      '<a href="../pengaturan?from=osis" class="header-more-item" id="' + PENG_ID + '"><i class="fa-solid fa-sliders"></i> Pengaturan</a>' +
+      '<button type="button" class="header-more-item" id="' + INSTALL_ID + '" style="display:none"><i class="fa-solid fa-download"></i> Install App</button>' +
       '<button class="header-more-item danger" id="' + LOGOUT_ID + '" style="display:none"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar</button>' +
       "</div>";
     extra.appendChild(wrap);
@@ -172,6 +176,22 @@
           if (typeof OsisAuth !== "undefined" && OsisAuth.logout) {
             OsisAuth.logout();
             return;
+          }
+        } catch (e) {}
+      });
+    }
+    var instBtn = document.getElementById(INSTALL_ID);
+    if (instBtn) {
+      instBtn._pwaBound = true;
+      instBtn.addEventListener("click", function () {
+        close();
+        try {
+          if (window.PwaInstall && window.PwaInstall.klikMenu) {
+            window.PwaInstall.klikMenu();
+            return;
+          }
+          if (window.PwaInstall && window.PwaInstall.pasang) {
+            window.PwaInstall.pasang();
           }
         } catch (e) {}
       });
@@ -403,13 +423,19 @@
     if (beranda) beranda.style.display = narrow ? "" : "none";
     var vis = document.getElementById(VISITOR_ID);
     if (vis) vis.style.display = narrow && isOsis ? "" : "none";
+    var pwaSiap = false;
+    try {
+      pwaSiap = !!(window.PwaInstall && window.PwaInstall.tersedia && window.PwaInstall.tersedia());
+    } catch (e) {}
+    var inst = document.getElementById(INSTALL_ID);
+    if (inst) inst.style.display = pwaSiap ? "" : "none";
     var keluar = document.getElementById(LOGOUT_ID);
     if (keluar) keluar.style.display = logged ? "" : "none";
     muatAngkatan();
   }
 
   // Hydrate sinkron sebelum frame pertama (dipanggil tepat setelah </header>):
-  // Logo R2, Sidebar + tombol hamburger + judul desktop, Visitor pill, User Chip, & titik-tiga.
+  // Logo R2/dataURL, Sidebar + tombol hamburger + judul desktop, Visitor pill, User Chip, & titik-tiga.
   function pasangLogoAwal() {
     try {
       var img = document.querySelector('header.top-nav [data-foto="logo1"]');
@@ -434,6 +460,15 @@
             ? R2_PUBLIC_BASE.replace(/\/$/, "")
             : "https://media.osistarpanone.my.id") + "/" + path.replace(/^\/+/, ""));
       img.decoding = "sync";
+      img.setAttribute("data-logo-resolved", url);
+      var rawData = localStorage.getItem("osis_logo1_data_v1");
+      if (rawData) {
+        var saved = JSON.parse(rawData);
+        if (saved && saved.u === url && typeof saved.d === "string" && saved.d.indexOf("data:image/") === 0) {
+          if (img.getAttribute("src") !== saved.d) img.src = saved.d;
+          return;
+        }
+      }
       if (img.getAttribute("src") !== url) img.src = url;
     } catch (e) {}
   }

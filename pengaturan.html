@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem("tarpan_theme") === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+            document.documentElement.style.backgroundColor = "#16131b";
+            var f = function () {
+              var m = document.querySelector('meta[name="theme-color"]');
+              if (m) m.setAttribute("content", "#16131b");
+            };
+            f();
+            document.addEventListener("DOMContentLoaded", f);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <title>Pengaturan — OSIS TARPAN ONE</title>
+    <meta
+      name="description"
+      content="Pusat pengaturan perangkat, tampilan, media, situs publik, dan modul internal OSIS SMK Taruna Harapan 1 Cipatat."
+    />
+    <meta name="theme-color" content="#e11d2e" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="OSIS TARPAN ONE" />
+    <link rel="canonical" href="https://osistarpanone.my.id/pengaturan.html" />
+    <link rel="stylesheet" href="assets/css/shared/style.css?v=45" />
+    <link rel="stylesheet" href="assets/css/public/pengaturan.css?v=1" />
+    <link rel="stylesheet" href="assets/css/shared/dark.css?v=2" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script src="assets/js/vendor/supabase.min.js?v=10" defer></script>
+    <script src="assets/js/core/config.js?v=14" defer></script>
+    <script src="assets/js/services/compress-video.js?v=4" defer></script>
+    <script src="assets/js/core/db.js?v=36" defer></script>
+    <script src="assets/js/services/aktivitas.js?v=10" defer></script>
+    <script src="assets/js/core/app.js?v=18" defer></script>
+    <script src="assets/js/shared/ui/dropdown.js?v=3" defer></script>
+    <script src="assets/js/shared/ui/toast.js?v=10" defer></script>
+    <script src="assets/js/shared/ui/notice.js?v=10" defer></script>
+    <script src="assets/js/services/upload.js?v=10" defer></script>
+    <script src="assets/js/shared/ui/show-popup.js?v=15" defer></script>
+    <script src="assets/js/core/osis-auth.js?v=20" defer></script>
+    <script src="assets/js/shared/utilities/theme.js?v=1" defer></script>
+    <script src="assets/js/pwa/pwa.js?v=13" defer></script>
+    <script src="assets/js/shared/utilities/pengaturan.js?v=10" defer></script>
+  </head>
+  <body>
+    <header class="top-nav">
+      <a href="index" class="brand" id="stgBrandLink">
+        <div class="logo-box"><img data-foto="logo1" alt="Logo OSIS" /></div>
+        <div class="brand-text">
+          <h2>OSIS TARPAN ONE</h2>
+          <p>Pusat Pengaturan</p>
+        </div>
+      </a>
+      <div class="top-nav-extra">
+        <a href="index" class="btn btn-white btn-sm" id="stgBackTopBtn">
+          <i class="fa-solid fa-arrow-left"></i> <span>Beranda</span>
+        </a>
+        <a href="osis/index" class="btn btn-white btn-sm" id="stgDashTopBtn" style="display: none">
+          <i class="fa-solid fa-grip"></i> <span>Dashboard OSIS</span>
+        </a>
+        <div id="areaAuth"></div>
+      </div>
+    </header>
+
+    <main class="stg-shell">
+      <section class="stg-hero">
+        <div class="stg-hero-top">
+          <div class="stg-hero-title-wrap">
+            <span class="stg-hero-ico" aria-hidden="true">
+              <i class="fa-solid fa-sliders"></i>
+            </span>
+            <div class="stg-hero-copy">
+              <span class="stg-kicker"><i class="fa-solid fa-gear"></i> Konfigurasi Terpadu</span>
+              <h1>Pusat <span class="red">Pengaturan</span></h1>
+              <p id="stgHeroSub">
+                Atur preferensi perangkat ini, tampilan, media, hingga konfigurasi situs publik &amp; modul internal OSIS sesuai aksesmu.
+              </p>
+            </div>
+          </div>
+          <div class="stg-hero-actions">
+            <button type="button" class="btn btn-white btn-sm" id="stgBtnRefresh">
+              <i class="fa-solid fa-rotate"></i> Muat Ulang
+            </button>
+          </div>
+        </div>
+        <div class="stg-hero-stats" id="stgHeroStats">
+          <span class="stg-stat-chip"><i class="fa-solid fa-spinner fa-spin"></i> Memuat status...</span>
+        </div>
+      </section>
+
+      <div class="stg-search-bar" role="search">
+        <i class="fa-solid fa-magnifying-glass stg-s-ico" aria-hidden="true"></i>
+        <input
+          type="search"
+          id="stgSearchInput"
+          class="stg-search-inp"
+          placeholder="Cari pengaturan... (cth: tema, kompresi, polling, aspirasi, logo, kas, absensi, wawancara)"
+          autocomplete="off"
+          aria-label="Cari pengaturan"
+        />
+        <span class="stg-search-count" id="stgSearchCount" hidden>0 cocok</span>
+        <button type="button" class="stg-search-clr" id="stgSearchClear" hidden aria-label="Bersihkan pencarian">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="stg-layout">
+        <aside class="stg-nav" id="stgNav" aria-label="Kategori Pengaturan"></aside>
+        <div class="stg-main" id="stgMain">
+          <div class="stg-card">
+            <div class="loading-block">
+              <div class="spinner"></div>
+              Menyiapkan pusat pengaturan...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <input type="file" id="stgFileInput" accept="image/*" hidden />
+    </main>
+  </body>
+</html>
