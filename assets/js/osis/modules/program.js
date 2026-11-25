@@ -398,14 +398,52 @@ const Program = {
         if (!pj) { showToast("PIC wajib diisi", "error"); return; }
         if (!tgl_mulai) { showToast("Tanggal mulai wajib diisi", "error"); return; }
 
+        const f = {
+            sekbid_id, tipe: Program.tipe, nama, deskripsi, pj,
+            tgl_mulai, tgl_selesai, lokasi, target_peserta: target,
+            status, progress, catatan
+        };
+        const angId = typeof DbScope !== "undefined" && DbScope.angkatanId ? DbScope.angkatanId() : null;
+        const antreProg = {
+            modul: "program",
+            op: id ? "update" : "create",
+            label: "Program: " + nama.slice(0, 44),
+            payload: { id: id || null, f, angkatan_id: angId },
+            cacheKeys: ["program"],
+        };
+        const optimis = () => {
+            try {
+                if (id) {
+                    const hit = (Program.cache || []).find(x => String(x.id) === String(id));
+                    if (hit) Object.assign(hit, f);
+                } else {
+                    Program.cache = [{
+                        id: "tmp-" + Date.now(),
+                        ...f,
+                        pengunggah: u.nama || u.username || "OSIS",
+                        created_at: new Date().toISOString(),
+                        angkatan_id: angId,
+                    }, ...(Program.cache || [])];
+                }
+                Program.render();
+            } catch {}
+        };
+
         const btn = document.getElementById("btnSimpanProgram");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
+        if (typeof OutboxOffline === "function" && OutboxOffline()) {
+            try {
+                await Outbox.enqueue(antreProg);
+                optimis();
+                Program.tutupForm();
+            } catch (e) {
+                showToast("Gagal antre: " + (e.message || e), "error");
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan'; }
+            }
+            return;
+        }
         try {
-            const f = {
-                sekbid_id, tipe: Program.tipe, nama, deskripsi, pj,
-                tgl_mulai, tgl_selesai, lokasi, target_peserta: target,
-                status, progress, catatan
-            };
             if (id) {
                 await updateProgram(u.id, id, f);
                 showToast("Program diperbarui!", "success");
@@ -417,6 +455,11 @@ const Program = {
             Program.tutupForm();
             await Program.muat();
         } catch (err) {
+            if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreProg))) {
+                optimis();
+                Program.tutupForm();
+                return;
+            }
             console.error(err);
             showToast("Gagal simpan: " + err.message, "error");
         } finally {

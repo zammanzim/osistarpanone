@@ -1049,6 +1049,29 @@ const Tes = {
 
     Tes.quiz.submitting = true;
     Tes.hentiTimer();
+    const antreSubmit = {
+      modul: "tes",
+      op: "create",
+      label: "Jawaban Tes: " + String(tes.judul || "Tes").slice(0, 40),
+      payload: { jenisOp: "submit", tesId: tes.id, answers, startedAt },
+      cacheKeys: ["tes_*"],
+    };
+    const selesaiAntreSubmit = async () => {
+      Tes.hapusDraftQuiz(tes.id);
+      Tes.quiz = null;
+      Tes.setView("daftar");
+      await Tes.muatDaftar();
+    };
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        await Outbox.enqueue(antreSubmit);
+        await selesaiAntreSubmit();
+      } catch (e) {
+        if (Tes.quiz) Tes.quiz.submitting = false;
+        showPopup("Gagal mengantrekan jawaban: " + (e.message || e), "error");
+      }
+      return;
+    }
     try {
       const res = await submitTes(tes.id, answers, startedAt);
       Tes.hapusDraftQuiz(tes.id);
@@ -1059,6 +1082,10 @@ const Tes = {
       Tes.quiz = null;
       await Tes.bukaHasilSaya(tesId, hasilId);
     } catch (err) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreSubmit))) {
+        await selesaiAntreSubmit();
+        return;
+      }
       if (Tes.quiz) Tes.quiz.submitting = false;
       showPopup("Gagal mengumpulkan: " + (err.message || err), "error");
     }
@@ -1884,31 +1911,54 @@ const Tes = {
       }
     }
 
+    const fTes = {
+      id: tes.id,
+      angkatan_id: tes.angkatan_id,
+      global: !!tes.global,
+      judul: tes.judul.trim(),
+      deskripsi: tes.deskripsi || "",
+      kategori: tes.kategori || "",
+      status: tes.status,
+      pengaturan: tes.pengaturan,
+      soal: soal.map((s) => ({
+        id: s.id || null,
+        tipe: s.tipe,
+        pertanyaan: s.pertanyaan,
+        opsi: s.opsi,
+        kunci: s.kunci,
+        poin: Number(s.poin) || 0,
+        wajib: !!s.wajib,
+        pembahasan: s.pembahasan || "",
+      })),
+    };
+    const antreBuilder = {
+      modul: "tes",
+      op: tes.id ? "update" : "create",
+      label: (tes.id ? "Edit Tes: " : "Buat Tes: ") + tes.judul.trim().slice(0, 38),
+      payload: { jenisOp: "builder", f: fTes, angkatan_id: tes.angkatan_id },
+      cacheKeys: ["tes_*"],
+    };
     const btn = document.getElementById("btnSimpanTes");
     Tes.builder.saving = true;
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
 
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        await Outbox.enqueue(antreBuilder);
+        Tes.builder.dirty = false;
+        Tes.builder.saving = false;
+        Tes.renderBuilder();
+        return true;
+      } catch (e) {
+        Tes.builder.saving = false;
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Tes'; }
+        showPopup("Gagal mengantrekan tes: " + (e.message || e), "error");
+        return false;
+      }
+    }
+
     try {
-      const res = await simpanTes({
-        id: tes.id,
-        angkatan_id: tes.angkatan_id,
-        global: !!tes.global,
-        judul: tes.judul.trim(),
-        deskripsi: tes.deskripsi || "",
-        kategori: tes.kategori || "",
-        status: tes.status,
-        pengaturan: tes.pengaturan,
-        soal: soal.map((s) => ({
-          id: s.id || null,
-          tipe: s.tipe,
-          pertanyaan: s.pertanyaan,
-          opsi: s.opsi,
-          kunci: s.kunci,
-          poin: Number(s.poin) || 0,
-          wajib: !!s.wajib,
-          pembahasan: s.pembahasan || "",
-        })),
-      });
+      const res = await simpanTes(fTes);
       const newId = res && res.id;
       try { catatAksi(tes.id ? "edit_tes" : "buat_tes", tes.judul); } catch {}
       showToast("Tes berhasil disimpan!", "success");
@@ -1925,6 +1975,12 @@ const Tes = {
       Tes.renderBuilder();
       return true;
     } catch (err) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreBuilder))) {
+        Tes.builder.dirty = false;
+        Tes.builder.saving = false;
+        Tes.renderBuilder();
+        return true;
+      }
       Tes.builder.saving = false;
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Tes'; }
       showPopup("Gagal menyimpan tes: " + (err.message || err), "error");
@@ -2295,11 +2351,47 @@ const Tes = {
     const btn = document.getElementById("btnSimpanKoreksi");
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
     const catatan = (document.getElementById("tesCatatanKoreksi") && document.getElementById("tesCatatanKoreksi").value) || "";
+    const hasilObj = Tes.hasil.detail.hasil || {};
+    const namaP = (Tes.hasil.detail.peserta && Tes.hasil.detail.peserta.nama) || hasilObj.nama || "Peserta";
+    const antreKoreksi = {
+      modul: "tes",
+      op: "update",
+      label: "Koreksi Tes: " + String(namaP).slice(0, 38),
+      payload: {
+        jenisOp: "koreksi",
+        hasilId: hasilObj.id,
+        koreksi: Tes.hasil.koreksiMap || {},
+        catatan,
+        selesai,
+      },
+      cacheKeys: ["tes_*"],
+    };
+    const selesaiAntreKoreksi = async () => {
+      try {
+        hasilObj.catatan_koreksi = catatan;
+        if (selesai) hasilObj.status = "selesai";
+      } catch {}
+      await Tes.bukaRekap(Tes.hasil.detail.tes.id);
+    };
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        await Outbox.enqueue(antreKoreksi);
+        await selesaiAntreKoreksi();
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Simpan &amp; Selesaikan Koreksi'; }
+        showPopup("Gagal mengantrekan koreksi: " + (e.message || e), "error");
+      }
+      return;
+    }
     try {
-      await koreksiTes(Tes.hasil.detail.hasil.id, Tes.hasil.koreksiMap || {}, catatan, selesai);
+      await koreksiTes(hasilObj.id, Tes.hasil.koreksiMap || {}, catatan, selesai);
       showToast("Koreksi berhasil disimpan!", "success");
       await Tes.bukaRekap(Tes.hasil.detail.tes.id);
     } catch (err) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreKoreksi))) {
+        await selesaiAntreKoreksi();
+        return;
+      }
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Simpan &amp; Selesaikan Koreksi'; }
       showPopup("Gagal simpan koreksi: " + (err.message || err), "error");
     }

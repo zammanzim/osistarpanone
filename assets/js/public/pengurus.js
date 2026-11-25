@@ -763,29 +763,76 @@ const Pengurus = {
       wa: Pengurus.bacaSosmed("wa"),
       tiktok: Pengurus.bacaSosmed("tiktok"),
     };
+    const milikSendiri = k.data.id === Pengurus.milikId;
+    const fotoAwal = k.data.foto || "";
+    const filePilih = Pengurus.editFile;
+    const hapusFlag = !!Pengurus.hapusFoto;
+    const antrePg = {
+      modul: "pengurus",
+      op: "update",
+      label: "Biodata Pengurus: " + String(k.nama || k.data.nama || "Saya").slice(0, 34),
+      payload: {
+        id: k.data.id,
+        tahun: k.data.tahun || Pengurus.tahunAktif,
+        milikSendiri,
+        nama: "",
+        jabatan: "",
+        urutan: k.data.urutan ?? 99,
+        fotoExist: hapusFlag ? "" : fotoAwal,
+        hapusFoto: hapusFlag,
+        fotoLamaBuang: (filePilih || hapusFlag) ? fotoAwal : "",
+        bio,
+      },
+      files: filePilih
+        ? [{ slot: "foto", file: filePilih, name: filePilih.name, type: filePilih.type }]
+        : [],
+      cacheKeys: ["pengurus", "pengurus_saya"],
+    };
+    const optimisPg = () => {
+      const fotoOpt = filePilih ? fotoAwal : (hapusFlag ? "" : fotoAwal);
+      Pengurus.editFile = null;
+      Pengurus.hapusFoto = false;
+      Object.assign(k.data, bio, { foto: fotoOpt });
+      k.foto = fotoOpt;
+      try { Cache.set("pengurus", Pengurus.anggota); } catch {}
+      Pengurus.isiBodyView();
+      Pengurus.render();
+    };
     const btn = document.getElementById("pgEditSimpan");
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
     }
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        await Outbox.enqueue(antrePg);
+        optimisPg();
+      } catch (e) {
+        if (typeof showToast === "function") showToast("Gagal antre: " + (e.message || e), "error");
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan';
+        }
+      }
+      return;
+    }
     try {
-      let foto = k.data.foto || "";
+      let foto = fotoAwal;
       // Hapus file lama di storage HANYA setelah DB sukses (di bawah),
       // biar gagal simpan tidak bikin foto yatim/rusak.
       let fotoLamaBuang = "";
-      if (Pengurus.editFile) {
-        const f = Pengurus.editFile;
+      if (filePilih) {
+        const f = filePilih;
         const ext = ((f.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg").slice(0, 8);
         const path = `pengurus/pengurus-${k.data.tahun || Pengurus.tahunAktif}-${Date.now()}.${ext}`;
         await uploadFotoStorage(f, path);
         if (foto && foto !== path) fotoLamaBuang = foto;
         foto = path;
-      } else if (Pengurus.hapusFoto) {
+      } else if (hapusFlag) {
         // Foto dihapus via tombol trash: kosongkan DB, file dibersihkan pas sukses
         if (foto) fotoLamaBuang = foto;
         foto = "";
       }
-      const milikSendiri = k.data.id === Pengurus.milikId;
       if (milikSendiri) {
         await updatePengurusSendiri(k.data.id, Object.assign({}, bio, { foto }));
       } else {
@@ -815,6 +862,10 @@ const Pengurus = {
       Pengurus.isiBodyView();
       Pengurus.render();
     } catch (err) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antrePg))) {
+        optimisPg();
+        return;
+      }
       console.error(err);
       const msg = String((err && err.message) || err || "");
       if (typeof showToast === "function") {

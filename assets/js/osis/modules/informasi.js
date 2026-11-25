@@ -747,11 +747,47 @@ const Informasi = {
         if (!OsisAuth.butuh("informasi")) return;
         const f = Informasi.bacaForm();
         if (!f.judul) { showToast("Judul diisi dulu", "error"); return; }
+        const eid = Informasi.editingId;
+        const angId = typeof DbScope !== "undefined" && DbScope.angkatanId ? DbScope.angkatanId() : null;
+        const antreInfo = {
+            modul: "informasi",
+            op: eid ? "update" : "create",
+            label: "Informasi: " + f.judul.slice(0, 44),
+            payload: { id: eid || null, f, angkatan_id: angId },
+            cacheKeys: eid ? ["informasi", "info_item_" + eid, "informasi-" + eid] : ["informasi"],
+        };
         const btn = document.getElementById("btnSimpanInfo");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
+        const optimis = () => {
+            try {
+                if (eid) {
+                    const hit = (Informasi.items || []).find(x => String(x.id) === String(eid));
+                    if (hit) Object.assign(hit, f);
+                } else {
+                    Informasi.items = [{
+                        id: "tmp-" + Date.now(),
+                        ...f,
+                        pengunggah: u.nama || u.username || "OSIS",
+                        created_at: new Date().toISOString(),
+                        angkatan_id: angId,
+                    }, ...(Informasi.items || [])];
+                }
+                Informasi.renderList();
+            } catch {}
+        };
+        if (typeof OutboxOffline === "function" && OutboxOffline()) {
+            try {
+                await Outbox.enqueue(antreInfo);
+                optimis();
+                Informasi.tutupForm();
+            } catch (e) {
+                showToast("Gagal antre: " + (e.message || e), "error");
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan'; }
+            }
+            return;
+        }
         try {
-            if (Informasi.editingId) {
-                const eid = Informasi.editingId;
+            if (eid) {
                 await updateInformasi(u.id, eid, f);
                 showToast("Informasi diperbarui!", "success");
                 Informasi.tutupForm();
@@ -768,6 +804,11 @@ const Informasi = {
             location.replace("informasi?id=" + newId);
             return;
         } catch (err) {
+            if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreInfo))) {
+                optimis();
+                Informasi.tutupForm();
+                return;
+            }
             console.error(err);
             if (err.message === "ERR_NO_AUTH" || String(err.message).includes("-1")) {
                 showPopup("Kamu tidak punya hak kelola informasi.", "error");

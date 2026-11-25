@@ -1047,8 +1047,35 @@ const UangKas = {
       .map((x) => UangKas.seninDari(x))
       .filter((x) => x && (!pMulai || x >= pMulai))
       .sort();
+    const antreSkip = {
+      modul: "uang_kas",
+      op: "update",
+      label: "Skip Kas: " + nama,
+      payload: { jenisOp: "skip", nama, mulai: pMulai, minggu: pMinggu, angkatan_id: DbScope.angkatanId() },
+      cacheKeys: [UangKas.angKey("cfg")],
+    };
+    const optimisSkip = () => {
+      try {
+        UangKas.config = UangKas.cfgDenganDraftSkip(nama);
+        Cache.set(UangKas.angKey("cfg"), UangKas.config);
+        UangKas.skipMode = false;
+        UangKas.render();
+        UangKas.renderDetailModal();
+      } catch {}
+    };
     const btn = document.getElementById("btnSimpanSkip");
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        await Outbox.enqueue(antreSkip);
+        optimisSkip();
+      } catch (e) {
+        showToast("Gagal antre: " + (e.message || e), "error");
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Skip'; }
+      }
+      return;
+    }
     try {
       const { data, error } = await supa.rpc("atur_uang_kas_skip_anggota", {
         p_user_id: u.id,
@@ -1065,6 +1092,10 @@ const UangKas = {
       try { catatAksi("atur_skip_uang_kas", `${nama} · mulai ${pMulai || "awal"} · ${pMinggu.length} mgg`); } catch {}
       await UangKas.muat();
     } catch (err) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreSkip))) {
+        optimisSkip();
+        return;
+      }
       console.error(err);
       showToast("Gagal simpan skip: " + (err.message || err), "error");
     } finally {
@@ -1421,9 +1452,52 @@ const UangKas = {
     if (!nominal || nominal <= 0) { showToast("Nominal harus lebih dari 0.", "error"); return; }
 
     const id = UangKas.editingId ? Number(UangKas.editingId) : null;
+    const antreSetor = {
+      modul: "uang_kas",
+      op: id ? "update" : "create",
+      label: `Setor Kas: ${nama} (${UangKas.rp(nominal)})`,
+      payload: { jenisOp: "setor", id, nama, tanggal, nominal, catatan, angkatan_id: DbScope.angkatanId() },
+      cacheKeys: [UangKas.angKey("set"), "kas", "kas_ringkas"],
+    };
+    const optimisSetor = () => {
+      try {
+        if (id) {
+          const hit = (UangKas.setoran || []).find((r) => String(r.id) === String(id));
+          if (hit) Object.assign(hit, { nama, tanggal, nominal, catatan });
+        } else {
+          UangKas.setoran = [{
+            id: "tmp-" + Date.now(),
+            nama,
+            tanggal,
+            nominal,
+            catatan,
+            pengunggah: u.nama || u.username || "OSIS",
+            created_at: new Date().toISOString(),
+            angkatan_id: DbScope.angkatanId(),
+          }, ...(UangKas.setoran || [])];
+        }
+        Cache.set(UangKas.angKey("set"), UangKas.setoran);
+        UangKas.tutupSetor();
+        UangKas.render();
+        if (UangKas.detailNama && document.getElementById("ukDetailModal")?.classList.contains("open")) {
+          UangKas.renderDetailModal();
+        }
+      } catch {}
+    };
 
     const btn = document.getElementById("btnSimpanSetor");
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        await Outbox.enqueue(antreSetor);
+        optimisSetor();
+      } catch (e) {
+        showToast("Gagal antre: " + (e.message || e), "error");
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Setoran'; }
+      }
+      return;
+    }
     try {
       if (id) {
         const { data, error } = await supa.rpc("update_uang_kas_setoran", {
@@ -1448,6 +1522,10 @@ const UangKas = {
       UangKas.tutupSetor();
       await UangKas.muat();
     } catch (err) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreSetor))) {
+        optimisSetor();
+        return;
+      }
       console.error(err);
       showToast("Gagal simpan: " + (err.message || err), "error");
     } finally {
@@ -1588,8 +1666,34 @@ const UangKas = {
     });
 
     const u = OsisAuth.getUser();
+    const antreCfg = {
+      modul: "uang_kas",
+      op: "update",
+      label: `Pengaturan Kas (${UangKas.rp(nextCfg.nominal_mingguan)}/mgg)`,
+      payload: { jenisOp: "setting", cfg: nextCfg, angkatan_id: DbScope.angkatanId() },
+      cacheKeys: [UangKas.angKey("cfg")],
+    };
+    const optimisCfg = () => {
+      try {
+        UangKas.config = nextCfg;
+        Cache.set(UangKas.angKey("cfg"), nextCfg);
+        UangKas.tutupSetting();
+        UangKas.render();
+      } catch {}
+    };
     const btn = document.getElementById("btnSimpanSetting");
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        await Outbox.enqueue(antreCfg);
+        optimisCfg();
+      } catch (e) {
+        showToast("Gagal antre: " + (e.message || e), "error");
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan'; }
+      }
+      return;
+    }
     try {
       const { data, error } = await supa.rpc("simpan_uang_kas_config", {
         p_user_id: u.id,
@@ -1608,6 +1712,10 @@ const UangKas = {
       try { catatAksi("atur_uang_kas", `tarif ${UangKas.rp(nextCfg.nominal_mingguan)} · ${nextCfg.minggu_libur.length} libur`); } catch {}
       await UangKas.muat();
     } catch (err) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreCfg))) {
+        optimisCfg();
+        return;
+      }
       console.error(err);
       showToast("Gagal simpan pengaturan: " + (err.message || err), "error");
     } finally {

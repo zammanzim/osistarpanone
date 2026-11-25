@@ -769,10 +769,57 @@ const InfoView = (function () {
       is_pinned: card.dataset.pin === "1",
     };
     const linkLama = lampiranAwal.link;
+    const isBaru = editingId === "baru";
+    const antreInfv = {
+      modul: "informasi_publik",
+      op: isBaru ? "create" : "update",
+      label: (isBaru ? "Info Publik: " : "Ubah Info: ") + payload.judul.slice(0, 38),
+      payload: { id: isBaru ? null : editingId, f: Object.assign({}, payload), linkLama },
+      files: pendingLampiran
+        ? [{ slot: "pdf", file: pendingLampiran, name: pendingLampiran.name, type: pendingLampiran.type }]
+        : [],
+      cacheKeys: ["informasi_publik", CACHE_KUNCI],
+    };
     const btn = document.getElementById("btnInfvSimpan");
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+    }
+    const selesaiAntreInfv = function (uObj) {
+      try {
+        const salinan = Object.assign({}, payload);
+        if (pendingLampiran) {
+          salinan.label_lampiran = pendingLampiran.name + " (menunggu upload)";
+        }
+        if (isBaru) {
+          semua = [Object.assign({
+            id: "tmp-" + Date.now(),
+            pengunggah: (uObj && (uObj.nama || uObj.username)) || "OSIS",
+            created_at: new Date().toISOString(),
+          }, salinan)].concat(semua || []);
+        } else {
+          const hit = (semua || []).find(function (x) { return String(x.id) === String(editingId); });
+          if (hit) Object.assign(hit, salinan);
+        }
+        editingId = null;
+        resetStagingLampiran(null);
+        render();
+      } catch {}
+    };
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        const uOff = OsisAuth.getUser();
+        if (!uOff || !uOff.id) throw new Error("Silakan login kembali");
+        await Outbox.enqueue(antreInfv);
+        selesaiAntreInfv(uOff);
+      } catch (e) {
+        info((e && e.message) || "Gagal mengantrekan", "error");
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan';
+        }
+      }
+      return;
     }
     try {
       const u = OsisAuth.getUser();
@@ -805,6 +852,10 @@ const InfoView = (function () {
       } catch {}
       await muat(true);
     } catch (e) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(e, antreInfv))) {
+        selesaiAntreInfv(OsisAuth.getUser());
+        return;
+      }
       console.error(e);
       info((e && e.message) || "Gagal menyimpan", "error");
       if (btn) {

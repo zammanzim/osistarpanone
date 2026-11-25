@@ -610,17 +610,41 @@ const HasilWawancara = {
         }
         const kakasuh = v.hasil === "lolos" ? JSON.stringify(daftarKa) : "";
         const diumumkan = v.umumkan === "1" && !!hasil;
-        try {
-            await wawancaraHasilSimpan(u.id, calonId, hasil, "", diumumkan, kakasuh);
+        const antreHasil = {
+            modul: "hasil_wawancara",
+            op: "update",
+            label: "Hasil Wawancara: " + (c.nama || "Calon"),
+            payload: { jenisOp: "hasil", calonId, hasil, catatan: "", diumumkan, kakasuh },
+            cacheKeys: ["wawancara_calon", "wawancara_hasil_publik"],
+        };
+        const terapkanLokal = () => {
             if (c) {
                 c.hasil = hasil;
                 c.hasil_kakasuh = kakasuh;
                 c.hasil_diumumkan = diumumkan;
                 c.hasil_updated_at = new Date().toISOString();
             }
-            if (typeof showToast === "function") showToast("Hasil wawancara disimpan.", "success");
+            try { if (typeof Cache !== "undefined" && Cache.set) Cache.set("wawancara_calon", this.calon || []); } catch {}
             this.render();
+        };
+        if (typeof OutboxOffline === "function" && OutboxOffline()) {
+            try {
+                await Outbox.enqueue(antreHasil);
+                terapkanLokal();
+            } catch (e) {
+                if (typeof showToast === "function") showToast("Gagal antre: " + (e.message || e), "error");
+            }
+            return;
+        }
+        try {
+            await wawancaraHasilSimpan(u.id, calonId, hasil, "", diumumkan, kakasuh);
+            terapkanLokal();
+            if (typeof showToast === "function") showToast("Hasil wawancara disimpan.", "success");
         } catch (err) {
+            if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreHasil))) {
+                terapkanLokal();
+                return;
+            }
             console.error(err);
             if (typeof showToast === "function") {
                 showToast(String((err && err.message) || err) === "BUTUH_MIGRASI_HASIL"
@@ -651,15 +675,40 @@ const HasilWawancara = {
         if (v === null || !v) return;
         const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
         if (!u || !u.id) return;
-        try {
-            await wawancaraTemplateSimpan(u.id, String(v.lanjut || ""), String(v.gagal || ""));
+        const lanjutStr = String(v.lanjut || "");
+        const gagalStr = String(v.gagal || "");
+        const antreTpl = {
+            modul: "hasil_wawancara",
+            op: "update",
+            label: "Template Hasil Wawancara",
+            payload: { jenisOp: "template", lanjut: lanjutStr, gagal: gagalStr },
+            cacheKeys: ["site_content"],
+        };
+        const terapkanTpl = () => {
             this.tpl = {
-                lanjut: (String(v.lanjut || "").trim() || this.TPL_LANJUT),
-                gagal: (String(v.gagal || "").trim() || this.TPL_GAGAL),
+                lanjut: (lanjutStr.trim() || this.TPL_LANJUT),
+                gagal: (gagalStr.trim() || this.TPL_GAGAL),
             };
-            if (typeof showToast === "function") showToast("Template pesan disimpan.", "success");
             this.render();
+        };
+        if (typeof OutboxOffline === "function" && OutboxOffline()) {
+            try {
+                await Outbox.enqueue(antreTpl);
+                terapkanTpl();
+            } catch (e) {
+                if (typeof showToast === "function") showToast("Gagal antre: " + (e.message || e), "error");
+            }
+            return;
+        }
+        try {
+            await wawancaraTemplateSimpan(u.id, lanjutStr, gagalStr);
+            terapkanTpl();
+            if (typeof showToast === "function") showToast("Template pesan disimpan.", "success");
         } catch (err) {
+            if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreTpl))) {
+                terapkanTpl();
+                return;
+            }
             console.error(err);
             if (typeof showToast === "function") {
                 showToast(String((err && err.message) || err) === "BUTUH_MIGRASI_HASIL"

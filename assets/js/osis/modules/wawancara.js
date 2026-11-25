@@ -2643,13 +2643,54 @@ const Wawancara = {
             try { if (typeof showToast === "function") showToast("Isi nama calon dulu.", "error"); } catch {}
             return;
         }
+        const ids = Wawancara.kumpulPewIds(document.getElementById("wwCalonForm"));
+        let calonId = idVal ? parseInt(idVal, 10) : null;
+        const angId = typeof DbScope !== "undefined" && DbScope.angkatanId ? DbScope.angkatanId() : null;
+        const antreCalon = {
+            modul: "wawancara",
+            op: calonId ? "update" : "create",
+            label: (calonId ? "Edit Calon: " : "Tambah Calon: ") + f.nama.slice(0, 38),
+            payload: { jenis: "calon", id: calonId, f, pewIds: ids, angkatan_id: angId },
+            cacheKeys: ["wawancara_calon", "wawancara_sesi", "wawancara_petugas"],
+        };
+        const optimisCalon = async () => {
+            try {
+                if (calonId) {
+                    const hit = (Wawancara.calon || []).find(x => String(x.id) === String(calonId));
+                    if (hit) Object.assign(hit, f);
+                } else {
+                    Wawancara.calon = [...(Wawancara.calon || []), {
+                        id: "tmp-" + Date.now(),
+                        ...f,
+                        display_order: 99,
+                        created_at: new Date().toISOString(),
+                        angkatan_id: angId,
+                    }];
+                }
+                if (typeof Cache !== "undefined" && Cache.set) Cache.set("wawancara_calon", Wawancara.calon);
+                Wawancara.tutupFormCalon();
+                if (Wawancara.sesi && Wawancara.calonAktif && String(Wawancara.calonAktif.id) === String(calonId)) {
+                    Object.assign(Wawancara.calonAktif, f);
+                    Wawancara.renderSesi();
+                } else if (!Wawancara.sesi) {
+                    Wawancara.renderDaftar();
+                }
+            } catch {}
+        };
+        if (typeof OutboxOffline === "function" && OutboxOffline()) {
+            try {
+                await Outbox.enqueue(antreCalon);
+                await optimisCalon();
+            } catch (e) {
+                try { if (typeof showToast === "function") showToast("Gagal antre: " + (e.message || e), "error"); } catch {}
+            }
+            return;
+        }
         try {
             const uid = Wawancara.uid();
-            let calonId = idVal ? parseInt(idVal, 10) : null;
             if (calonId) await wawancaraCalonUbah(uid, calonId, f);
             else calonId = await wawancaraCalonTambah(uid, f);
             // Pewawancara langsung di form ini (sesi dipastikan dulu, satu per calon).
-            const ids = Wawancara.kumpulPewIds(document.getElementById("wwCalonForm"));
             if (ids.length) {
                 try {
                     const sid = await wawancaraSesiPastikan(uid, calonId);
@@ -2679,6 +2720,10 @@ const Wawancara = {
                 await Wawancara.muatDaftar();
             }
         } catch (err) {
+            if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreCalon))) {
+                await optimisCalon();
+                return;
+            }
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
         }
     },
@@ -2830,12 +2875,60 @@ const Wawancara = {
             try { if (typeof showToast === "function") showToast("Isi pertanyaan dulu.", "error"); } catch {}
             return;
         }
+        const pid = idVal ? parseInt(idVal, 10) : null;
+        const parId = parentVal ? parseInt(parentVal, 10) : null;
+        const angId = typeof DbScope !== "undefined" && DbScope.angkatanId ? DbScope.angkatanId() : null;
+        const antreTanya = {
+            modul: "wawancara",
+            op: pid ? "update" : "create",
+            label: (pid ? "Edit Pertanyaan: " : "Pertanyaan: ") + teks.slice(0, 38),
+            payload: {
+                jenis: "pertanyaan",
+                id: pid,
+                teks,
+                parentId: parId,
+                sesiId: Wawancara.sesi ? Wawancara.sesi.id : null,
+                angkatan_id: angId,
+            },
+            cacheKeys: ["wawancara_tanya"],
+        };
+        const optimisTanya = () => {
+            try {
+                if (pid) {
+                    const hit = (Wawancara.pertanyaan || []).find(p => String(p.id) === String(pid));
+                    if (hit) hit.teks = teks;
+                } else {
+                    Wawancara.pertanyaan = [...(Wawancara.pertanyaan || []), {
+                        id: "tmp-" + Date.now(),
+                        teks,
+                        parent_id: parId,
+                        urutan: (Wawancara.pertanyaan || []).length + 1,
+                        aktif: true,
+                        penting: false,
+                        angkatan_id: angId,
+                    }];
+                }
+                if (typeof Cache !== "undefined" && Cache.set) Cache.set("wawancara_tanya", Wawancara.pertanyaan);
+                Wawancara.tutupFormTanya();
+                if (mode === "kelola") Wawancara.renderKelolaTanya();
+                else if (Wawancara.sesi) Wawancara.renderSesi();
+            } catch {}
+        };
+        if (typeof OutboxOffline === "function" && OutboxOffline()) {
+            try {
+                await Outbox.enqueue(antreTanya);
+                optimisTanya();
+            } catch (e) {
+                try { if (typeof showToast === "function") showToast("Gagal antre: " + (e.message || e), "error"); } catch {}
+            }
+            return;
+        }
         try {
             await wawancaraPertanyaanSimpan(
                 Wawancara.uid(),
-                idVal ? parseInt(idVal, 10) : null,
+                pid,
                 teks,
-                parentVal ? parseInt(parentVal, 10) : null,
+                parId,
             );
             try { if (typeof showToast === "function") showToast("Pertanyaan disimpan.", "success"); } catch {}
             Wawancara.tutupFormTanya();
@@ -2849,6 +2942,10 @@ const Wawancara = {
             if (mode === "kelola") Wawancara.renderKelolaTanya();
             else if (Wawancara.sesi) Wawancara.renderSesi();
         } catch (err) {
+            if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreTanya))) {
+                optimisTanya();
+                return;
+            }
             try { if (typeof showToast === "function") showToast("Gagal: " + (err.message || err), "error"); } catch {}
         }
     },

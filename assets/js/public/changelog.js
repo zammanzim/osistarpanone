@@ -207,15 +207,59 @@
     var judul = g("clJudul"), deskripsi = g("clDeskripsi"), tanggal = g("clTanggal");
     if (!judul) { toast("Judul diisi dulu", "error"); return; }
     if (!deskripsi) { toast("Deskripsi diisi dulu", "error"); return; }
+    var versi = editingId ? null : versiBerikut(tipeForm);
+    if (!editingId && !versi) { toast("Gagal hitung versi", "error"); return; }
+    var antreCl = {
+      modul: "changelog",
+      op: editingId ? "update" : "create",
+      label: editingId ? ("Ubah Changelog: " + judul.slice(0, 34)) : ("Rilis " + versi + ": " + judul.slice(0, 30)),
+      payload: editingId
+        ? { id: editingId, f: { type: null, title: judul, description: deskripsi, date: tanggal || null } }
+        : { f: { versi: versi, tipe: tipeForm, judul: judul, deskripsi: deskripsi, date: tanggal || null } },
+      cacheKeys: ["changelog"],
+    };
+    var optimisCl = function () {
+      try {
+        if (editingId) {
+          var hit = (semua || []).find(function (x) { return String(x._id) === String(editingId); });
+          if (hit) {
+            hit.title = judul;
+            hit.description = deskripsi;
+            if (tanggal) hit.date = tanggal;
+          }
+        } else {
+          semua = [{
+            _id: "tmp-" + Date.now(),
+            version: versi,
+            date: tanggal || new Date().toISOString().slice(0, 10),
+            type: tipeForm,
+            title: judul,
+            description: deskripsi,
+          }].concat(semua || []);
+          var hero = document.getElementById("clVersi");
+          if (hero && semua.length) hero.textContent = semua[0].version;
+        }
+        tutupForm();
+        render();
+      } catch (e) {}
+    };
     var btn = document.getElementById("btnSimpanCl");
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...'; }
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        await Outbox.enqueue(antreCl);
+        optimisCl();
+      } catch (e) {
+        toast(String((e && e.message) || e), "error");
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan'; }
+      }
+      return;
+    }
     try {
       if (editingId) {
         await updateChangelog(u.id, editingId, { type: null, title: judul, description: deskripsi, date: tanggal || null });
         toast("Versi diperbarui!");
       } else {
-        var versi = versiBerikut(tipeForm);
-        if (!versi) { toast("Gagal hitung versi", "error"); return; }
         await buatChangelog(u.id, { versi: versi, tipe: tipeForm, judul: judul, deskripsi: deskripsi, date: tanggal || null });
         toast("Tayang sebagai " + versi + "!");
       }
@@ -224,6 +268,10 @@
       try { localStorage.removeItem("changelog_cache"); } catch (e) {}
       await muat(true);
     } catch (err) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreCl))) {
+        optimisCl();
+        return;
+      }
       console.error(err);
       var msg = String((err && err.message) || err);
       toast(msg.indexOf("-3") !== -1 ? "Versi sudah dipakai — refresh dulu" : msg, "error");

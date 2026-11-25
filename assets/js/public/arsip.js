@@ -1231,18 +1231,34 @@ const ArsipPelantikan = {
     const u = OsisAuth.getUser && OsisAuth.getUser();
     if (!u || u.mode !== "osis") { showPopup("Cuma OSIS", "error"); return; }
     if (!OsisAuth.butuh("kegiatan")) return;
-    if (typeof Outbox !== "undefined" && Outbox.offline()) {
-      showToast("Lagi offline — pelantikan cuma bisa diupload pas online.", "error");
-      return;
-    }
     ArsipPelantikan.bacaTeksDraft();
     const d = ArsipPelantikan.draft;
     if (!d || !d.judul || !d.judul.trim()) { showToast("Judul wajib diisi", "error"); return; }
     if (!d.files || !d.files.length) { showToast("Tambah minimal 1 foto/video", "error"); return; }
     const rows = ArsipPelantikan.rows || [];
     const order = rows.length ? Math.min(...rows.map(ArsipPelantikan.ord)) - 1 : 99;
+    const antrePel = {
+      modul: "pelantikan",
+      op: "create",
+      label: `Pelantikan: ${d.judul.trim().slice(0, 34)} (${d.files.length} media)`,
+      payload: { judul: d.judul.trim(), deskripsi: d.deskripsi || "", badge: d.badge || "", order },
+      files: d.files.map((f, idx) => ({ slot: "foto_" + idx, file: f, name: f.name, type: f.type })),
+      cacheKeys: ["pelantikan"],
+    };
     const btn = document.querySelector("#pelantikanGrid .gal-save");
     if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    if (typeof OutboxOffline === "function" && OutboxOffline()) {
+      try {
+        await Outbox.enqueue(antrePel);
+        try { if (typeof lepasPreview === "function") lepasPreview(d.files); } catch {}
+        ArsipPelantikan.draft = null;
+        ArsipPelantikan.renderIsi();
+      } catch (e) {
+        showToast("Gagal antre: " + (e.message || e), "error");
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+      }
+      return;
+    }
     try {
       const paths = [];
       for (let i = 0; i < d.files.length; i++) {
@@ -1259,6 +1275,12 @@ const ArsipPelantikan = {
       ArsipPelantikan.draft = null;
       ArsipPelantikan.muatIsi(1);
     } catch (err) {
+      if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antrePel))) {
+        try { if (typeof lepasPreview === "function") lepasPreview(d.files); } catch {}
+        ArsipPelantikan.draft = null;
+        ArsipPelantikan.renderIsi();
+        return;
+      }
       console.error(err);
       showToast("Gagal simpan: " + err.message, "error");
       if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i>';

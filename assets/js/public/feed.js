@@ -681,8 +681,42 @@ const Feed = {
             if (typeof showToast === "function") showToast("Login dulu buat komen.", "error");
             return;
         }
+        const userKey = Feed.userKey();
+        const nama = Feed.namaSaya() || "Anonim";
+        const antreKomen = {
+            modul: "feed",
+            op: "create",
+            label: "Komentar Feed: " + teks.slice(0, 36),
+            payload: { jenisOp: "komen", postId: id, userKey, nama, teks },
+            cacheKeys: ["feed"],
+        };
+        const optimisKomen = () => {
+            const cur = Array.isArray(Feed.komenCache[id]) ? Feed.komenCache[id].slice() : [];
+            cur.push({
+                id: "tmp-" + Date.now(),
+                user_key: userKey,
+                nama,
+                teks,
+                created_at: new Date().toISOString(),
+            });
+            Feed.komenCache[id] = cur;
+            const item = (Feed.items || []).find(x => String(x.id) === String(id));
+            if (item) item.comment_count = Math.max(cur.length, (parseInt(item.comment_count, 10) || 0) + 1);
+            const box = document.getElementById("feedKbox-" + id);
+            if (box) box.innerHTML = Feed.komenHtml(id);
+            Feed.refreshCount(id);
+        };
+        if (typeof OutboxOffline === "function" && OutboxOffline()) {
+            try {
+                await Outbox.enqueue(antreKomen);
+                optimisKomen();
+            } catch (e) {
+                if (typeof showToast === "function") showToast("Gagal antre komentar: " + (e.message || e), "error");
+            }
+            return;
+        }
         try {
-            await feedKomenTambah(id, Feed.userKey(), Feed.namaSaya() || "Anonim", teks);
+            await feedKomenTambah(id, userKey, nama, teks);
             const rows = await feedKomenList(id, 20, 0);
             Feed.komenCache[id] = rows || [];
             const item = (Feed.items || []).find(x => String(x.id) === String(id));
@@ -692,6 +726,10 @@ const Feed = {
             Feed.refreshCount(id);
             catatAksi("komen_feed", teks.slice(0, 80));
         } catch (err) {
+            if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreKomen))) {
+                optimisKomen();
+                return;
+            }
             console.error(err);
             if (typeof showToast === "function") showToast("Gagal kirim komentar.", "error");
         }
@@ -945,6 +983,24 @@ const Feed = {
         }
         const btn = document.getElementById("btnSimpanFeed");
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memposting...'; }
+        const antrePost = {
+            modul: "feed",
+            op: "create",
+            label: `Feed (${Feed.pendingKind === "video" ? "Video" : "Foto"}): ${caption.slice(0, 32)}`,
+            payload: { jenisOp: "post", media_type: Feed.pendingKind, caption, kategori },
+            files: [{ slot: "media", file, name: file.name, type: file.type }],
+            cacheKeys: ["feed"],
+        };
+        if (typeof OutboxOffline === "function" && OutboxOffline()) {
+            try {
+                await Outbox.enqueue(antrePost);
+                Feed.tutupForm();
+            } catch (e) {
+                if (typeof showToast === "function") showToast("Gagal antre: " + (e.message || e), "error");
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-check"></i> Posting'; }
+            }
+            return;
+        }
         // Row-first: baris DB dibuat dulu biar popup bisa ketutup otomatis
         // 1.2 dtk setelah Simpan; file mengupload di background via bar bawah.
         // Thumb sempat broken sebentar sampai upload kelar lalu auto-refresh.
@@ -968,23 +1024,41 @@ const Feed = {
                 window.scrollTo(0, 0);
             } catch (e) {}
             // Upload jalan background (tidak di-await): chip tampil + %,
-            // kelar -> refresh feed. Gagal -> chip merah + tombol Coba lagi.
+            // kelar -> refresh feed. Gagal jaringan -> lempar ke Outbox biar auto-upload saat online.
+            const antreMediaOnly = {
+                modul: "feed",
+                op: "create",
+                label: `Media Feed: ${caption.slice(0, 34)}`,
+                payload: { jenisOp: "media_only", path },
+                files: [{ slot: "media", file, name: file.name, type: file.type }],
+                cacheKeys: ["feed"],
+            };
             try {
                 const p = uploadFotoStorage(file, path, {
                     label: "Feed: " + kategori,
                     onDone: function () { try { Feed.muat(true); } catch (e) {} },
                 });
                 if (p && typeof p.catch === "function") {
-                    p.catch(function (err) {
+                    p.catch(async function (err) {
+                        if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreMediaOnly))) {
+                            return;
+                        }
                         console.error(err);
                         if (typeof showToast === "function") showToast("Upload media gagal — cek chip upload buat coba lagi.", "error");
                     });
                 }
             } catch (err) {
+                if (typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antreMediaOnly))) {
+                    return;
+                }
                 console.error(err);
                 if (typeof showToast === "function") showToast("Upload media gagal: " + (err && err.message), "error");
             }
         } catch (err) {
+            if (!postId && typeof Outbox !== "undefined" && Outbox.enqueueOnNetErr && (await Outbox.enqueueOnNetErr(err, antrePost))) {
+                Feed.tutupForm();
+                return;
+            }
             console.error(err);
             if (err && err.message === "FEED_NO_TABLE") {
                 if (typeof showPopup === "function") showPopup("Tabel feed belum ada — jalankan migrasi-feed.sql di Supabase SQL Editor dulu.", "error");

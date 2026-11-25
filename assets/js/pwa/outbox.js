@@ -38,13 +38,19 @@
     lagu: "Request Lagu",
     absensi: "Absensi",
     tabungan: "Tabungan",
+    uang_kas: "Uang Kas",
     task: "Task",
     keuangan: "Keuangan",
     dokumen: "Dokumen",
     agenda: "Agenda",
+    program: "Program Kerja",
+    informasi: "Informasi Harian",
+    informasi_publik: "Informasi Publik",
     galeri: "Galeri",
     kegiatan: "Kegiatan",
     arsip: "Arsip Galeri",
+    pelantikan: "Arsip Pelantikan",
+    feed: "Feed",
     prestasi: "Prestasi",
     poster: "Poster",
     notulensi: "Notulensi",
@@ -61,6 +67,9 @@
     akses: "Akses",
     profil: "Profil",
     wawancara: "Wawancara",
+    hasil_wawancara: "Hasil Wawancara",
+    tes: "Tes & Kuis",
+    changelog: "Changelog",
   };
 
   function labelModul(m) {
@@ -242,7 +251,7 @@
       try {
         var ops = await semuaOps();
         return ops.filter(function (o) {
-          return o.status === "pending" || o.status === "failed";
+          return o.status === "pending" || o.status === "failed" || o.status === "sending";
         }).length;
       } catch {
         return 0;
@@ -274,9 +283,9 @@
         var f = arr[i] || {};
         var blob = f.blob || f.file || null;
         if (!blob) continue;
-        if (blob.size > 25 * 1024 * 1024)
+        if (blob.size > 100 * 1024 * 1024)
           throw new Error(
-            "File " + (f.name || "lampiran") + " >25MB, kecilkan dulu.",
+            "File " + (f.name || "lampiran") + " >100MB, kecilkan dulu.",
           );
         var bid = id + "_b" + i;
         blobs.push({
@@ -418,15 +427,53 @@
       }
     },
 
-    // Upload 1 file antrean -> path storage. pathFn(meta, idx) -> string.
-    async uploadSlot(meta, idx, pathFn, uid) {
+    // Upload 1 file antrean -> path storage. Kalau sudah pernah terupload pada
+    // percobaan sebelumnya (putus di tengah batch), pakai path yang sudah tersimpan.
+    async uploadSlot(meta, idx, pathFn, uid, opId) {
+      if (meta && meta.uploadedPath) return meta.uploadedPath;
       var file = await Outbox.blobOf(meta);
       var ext = String(
         (meta.name || "file").split(".").pop() || "bin",
       ).toLowerCase();
       var path = pathFn(meta, idx, ext, uid || "anon");
       await uploadFotoStorage(file, path);
+      meta.uploadedPath = path;
+      if (opId) {
+        try {
+          var curOp = await tx("ops", "readonly", function (t) { return t.get(opId); });
+          if (curOp && Array.isArray(curOp.files) && curOp.files[idx]) {
+            curOp.files[idx].uploadedPath = path;
+            await tx("ops", "readwrite", function (t) { return t.put(curOp); });
+          }
+        } catch {}
+      }
       return path;
+    },
+
+    // Segarkan JWT Supabase dulu setelah lama offline (>1 jam) supaya presign R2
+    // & RPC tidak gagal palsu "belum login / sesi habis" saat baru dapat sinyal.
+    async pastikanSesiSegar() {
+      try {
+        if (typeof supa === "undefined" || !supa || !supa.auth) return;
+        var r = await supa.auth.getSession();
+        var s = r && r.data ? r.data.session : null;
+        var kadaluarsa = s && s.expires_at && Number(s.expires_at) * 1000 < Date.now() + 60000;
+        var punyaUserLokal = typeof OsisAuth !== "undefined" && OsisAuth.getUser && OsisAuth.getUser();
+        if ((!s && punyaUserLokal) || kadaluarsa) {
+          if (typeof supa.auth.refreshSession === "function") {
+            await supa.auth.refreshSession().catch(function () {});
+          }
+        }
+      } catch {}
+    },
+
+    isAuthTransien: function (err, op) {
+      if (!err || (op && (op.tries || 0) >= 3)) return false;
+      var u = null;
+      try { u = typeof OsisAuth !== "undefined" && OsisAuth.getUser ? OsisAuth.getUser() : null; } catch {}
+      if (!u || !u.id) return false;
+      var m = String((err && err.message) || err || "");
+      return /belum login|sesi habis|jwt|token|401/i.test(m);
     },
 
     uidAktif: function (op) {
@@ -448,23 +495,32 @@
       return uid;
     },
 
-    // Bersihkan cache SWR yang relevan (dukung wildcard "agenda_*").
-    buangCache: function (keys) {
+    // Bersihkan cache SWR yang relevan (dukung wildcard "agenda_*" & scope angkatan).
+    buangCache: function (keys, angkatanId) {
       try {
         (keys || []).forEach(function (k) {
           if (!k) return;
-          if (String(k).slice(-2) === "_*") {
-            var pre =
-              typeof Cache !== "undefined"
-                ? Cache.prefix + (Cache.version || "") + "_" + String(k).slice(0, -2)
-                : "osis_cache_" + String(k).slice(0, -2);
+          var s = String(k);
+          if (s.slice(-2) === "_*") {
+            var stem = s.slice(0, -2);
+            if (typeof Cache !== "undefined" && Cache.delPrefix) {
+              Cache.delPrefix(stem);
+            }
             try {
               Object.keys(localStorage).forEach(function (lk) {
-                if (lk.indexOf(pre) === 0) localStorage.removeItem(lk);
+                if (lk.indexOf("osis_cache_") === 0 && lk.indexOf("_" + stem) !== -1) {
+                  localStorage.removeItem(lk);
+                }
               });
             } catch {}
-          } else if (typeof Cache !== "undefined") {
-            Cache.del(k);
+          } else {
+            if (typeof Cache !== "undefined" && Cache.del) Cache.del(s);
+            if (angkatanId) {
+              try {
+                var ver = (typeof Cache !== "undefined" && Cache.version) ? Cache.version : "v3";
+                localStorage.removeItem("osis_cache_" + ver + "_ang_" + angkatanId + "_" + s);
+              } catch {}
+            }
           }
         });
       } catch {}
@@ -486,13 +542,14 @@
       } catch {}
     },
 
-    // Proses antrean FIFO. silent=true -> tanpa toast sukses.
+    // Proses antrean FIFO. Tampilkan toast sukses setiap ada item yang berhasil terupload.
     async processQueue(opts) {
       var o = opts || {};
       if (sedangJalan) return { jalan: true };
       if (Outbox.offline() && !o.abaikanOffline) return { offline: true };
       sedangJalan = true;
-      var hasil = { ok: 0, gagal: 0, lewati: 0 };
+      Outbox._emit();
+      var hasil = { ok: 0, gagal: 0, lewati: 0, tundaAuth: false };
       try {
         var ops = await Outbox.daftar();
         var antre = ops.filter(function (x) {
@@ -503,6 +560,9 @@
             x.status !== "sending"
           );
         });
+        if (antre.length) {
+          await Outbox.pastikanSesiSegar();
+        }
         for (var i = 0; i < antre.length; i++) {
           var op = antre[i];
           // berhenti di item pertama yang gagal jaringan (sisanya pasti gagal juga)
@@ -510,12 +570,13 @@
             status: "sending",
             tries: (op.tries || 0) + 1,
           });
+          Outbox._emit();
           try {
             var h = Outbox.handlers[op.modul];
             if (!h) throw new Error("Handler " + op.modul + " hilang.");
             await h(op);
             await Outbox.hapus(op.id);
-            Outbox.buangCache(op.cacheKeys);
+            Outbox.buangCache(op.cacheKeys, op.angkatanId);
             try {
               var rf = Outbox.refreshers[op.modul];
               if (typeof rf === "function") await rf();
@@ -527,9 +588,19 @@
             if (Outbox.isNetErr(e)) {
               await Outbox._tandai(op.id, {
                 status: "pending",
+                tries: Math.max(0, (op.tries || 0)),
                 lastError: "Menunggu koneksi.",
               });
               break; // jaringan putus lagi — stop, coba lain waktu
+            }
+            if (Outbox.isAuthTransien(e, op)) {
+              await Outbox.pastikanSesiSegar();
+              await Outbox._tandai(op.id, {
+                status: "pending",
+                lastError: "Menyegarkan sesi login, mencoba lagi…",
+              });
+              hasil.tundaAuth = true;
+              break;
             }
             await Outbox._tandai(op.id, {
               status: "failed",
@@ -542,16 +613,21 @@
         sedangJalan = false;
         Outbox._emit();
       }
-      if (!o.silent) {
+      if (hasil.tundaAuth) {
+        setTimeout(function () {
+          if (!Outbox.offline()) Outbox.processQueue({ auto: true });
+        }, 4000);
+      }
+      if (!o.silent || hasil.ok > 0) {
         if (hasil.ok && !hasil.gagal)
           toast(
             hasil.ok === 1
-              ? "1 antrean terkirim!"
-              : hasil.ok + " antrean terkirim!",
+              ? "1 antrean offline berhasil diupload!"
+              : hasil.ok + " antrean offline berhasil diupload!",
           );
         else if (hasil.ok && hasil.gagal)
           toast(
-            hasil.ok + " terkirim, " + hasil.gagal + " gagal (cek panel).",
+            hasil.ok + " terupload, " + hasil.gagal + " gagal (cek panel).",
             "info",
           );
         else if (hasil.gagal && o.manual)
@@ -650,7 +726,7 @@
         op.files[0], 0,
         function (m, i, ext, u) {
           return "kas/kas-" + u + "-" + Date.now() + "." + ext;
-        }, uid,
+        }, uid, op.id,
       );
       f.bukti_path = path;
     } else {
@@ -680,7 +756,7 @@
         m, 0,
         function (mm, i, ext, u) {
           return "dokumen/dokumen-" + u + "-" + Date.now() + "." + extOf(mm.name, "bin");
-        }, uid,
+        }, uid, op.id,
       );
       f.file_path = path;
       f.file_type = extOf(m.name, "bin");
@@ -709,7 +785,7 @@
           return function (m, j, ext, u) {
             return folder + "/" + prefix + u + "-" + Date.now() + "-" + idx + "." + extOf(m.name, "jpg");
           };
-        })(i), uid,
+        })(i), uid, op.id,
       );
       out.push({ path: path, caption: "" });
     }
@@ -738,7 +814,7 @@
       paths.push(
         await Outbox.uploadSlot(op.files[i], i, function (m, j, ext, u) {
           return "gallery/galeri-" + u + "-" + Date.now() + "-" + j + "." + extOf(m.name, "jpg");
-        }, uid),
+        }, uid, op.id),
       );
     }
     await buatGallery(uid, p.judul, p.deskripsi || "", paths);
@@ -765,7 +841,7 @@
     if (!op.files || !op.files.length) throw new Error("Foto antrean hilang.");
     var path = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
       return "prestasi/prestasi-" + u + "-" + Date.now() + "." + extOf(m.name, "jpg");
-    }, uid);
+    }, uid, op.id);
     await buatPrestasi(uid, p.tag || "", p.caption || "", [{ path: path, caption: "" }], p.order == null ? 99 : p.order);
   };
 
@@ -778,7 +854,7 @@
       if (op.files.length && op.files[0]) {
         foto = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
           return "poster/poster-" + u + "-" + Date.now() + "." + extOf(m.name, "jpg");
-        }, uid);
+        }, uid, op.id);
         if (p.fotoExist && p.fotoExist !== foto) { try { await hapusFotoStorage(p.fotoExist); } catch {} }
       }
       await updatePoster(uid, p.id, p.judul || "", p.caption || "", foto);
@@ -786,7 +862,7 @@
     }
     var path = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
       return "poster/poster-" + u + "-" + Date.now() + "." + extOf(m.name, "jpg");
-    }, uid);
+    }, uid, op.id);
     await buatPoster(uid, p.judul || "", p.caption || "", path, p.angkatan_id || op.angkatanId || null);
   };
 
@@ -835,25 +911,30 @@
   Outbox.handlers.pengurus = async function (op) {
     var uid = Outbox.butuhLogin(op);
     var p = op.payload || {};
-    var foto = p.fotoExist || "";
+    var foto = p.hapusFoto ? "" : (p.fotoExist || "");
+    var buang = p.fotoLamaBuang || "";
     if (op.files && op.files.length) {
       foto = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
         return "pengurus/pengurus-" + (p.tahun || "x") + "-" + Date.now() + "." + extOf(m.name, "jpg");
-      }, uid);
-      if (p.fotoExist && p.fotoExist !== foto) {
-        try {
-          await hapusFotoStorage(p.fotoExist);
-        } catch {}
+      }, uid, op.id);
+      if (!buang && p.fotoExist) buang = p.fotoExist;
+    }
+    if (p.milikSendiri && p.id) {
+      await updatePengurusSendiri(p.id, Object.assign({}, p.bio || {}, { foto: foto }));
+      if (buang && buang !== foto) {
+        try { await hapusFotoStorage(buang); } catch {}
       }
+      return;
     }
     if (op.op === "update" && p.id) {
-      var rowU = { nama: p.nama, jabatan: p.jabatan, urutan: p.urutan,
-        panggilan: p.panggilan || "", ttl: p.ttl || "",
-        visi: p.visi || "", misi: p.misi || "",
-        ig: p.ig || "", wa: p.wa || "", tiktok: p.tiktok || "",
-        motto: p.motto || "", kelas: p.kelas || "", username: p.username || "" };
-      // foto hanya dikirim kalau ada (baru/existing) — jangan hapus foto server.
-      if (foto || (op.files && op.files.length)) rowU.foto = foto;
+      var src = p.bio ? Object.assign({}, p, p.bio) : p;
+      var rowU = { nama: src.nama || "", jabatan: src.jabatan || "", urutan: src.urutan,
+        panggilan: src.panggilan || "", ttl: src.ttl || "",
+        visi: src.visi || "", misi: src.misi || "",
+        ig: src.ig || "", wa: src.wa || "", tiktok: src.tiktok || "",
+        motto: src.motto || "", kelas: src.kelas || "", username: src.username || "" };
+      // foto dikirim kalau ada baru/existing, atau memang sengaja dihapus via p.hapusFoto.
+      if (foto || (op.files && op.files.length) || p.hapusFoto) rowU.foto = foto;
       try {
         await updatePengurus(p.id, rowU);
       } catch (e) {
@@ -861,6 +942,9 @@
           delete rowU.foto;
           await updatePengurus(p.id, rowU);
         } else throw e;
+      }
+      if (buang && buang !== foto) {
+        try { await hapusFotoStorage(buang); } catch {}
       }
     } else {
       await tambahPengurus({ tahun: p.tahun, nama: p.nama, jabatan: p.jabatan, urutan: p.urutan, foto: foto,
@@ -885,7 +969,7 @@
       var fm = op.files[i];
       var path = await Outbox.uploadSlot(fm, i, function (m, j, ext) {
         return folderOf[fm.slot] + "/" + prefOf[fm.slot] + (p.tahun || "x") + "-" + Date.now() + "." + extOf(m.name, "jpg");
-      });
+      }, undefined, op.id);
       if (next[fm.slot] && next[fm.slot] !== path) {
         try {
           await hapusFotoStorage(next[fm.slot]);
@@ -902,7 +986,7 @@
     if (op.files && op.files.length) {
       foto = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext) {
         return "sekbid/sekbid-" + Date.now() + "." + extOf(m.name, "jpg");
-      });
+      }, undefined, op.id);
       if (p.fotoExist && p.fotoExist !== foto) {
         try {
           await hapusFotoStorage(p.fotoExist);
@@ -921,7 +1005,7 @@
     if (!op.files || !op.files.length) throw new Error("Foto antrean hilang.");
     var path = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext) {
       return "web/" + String(p.kunci || "foto").replace(/[^a-z0-9_-]/gi, "") + "-" + Date.now() + "." + extOf(m.name, "jpg");
-    });
+    }, undefined, op.id);
     await simpanWebFoto(p.kunci, path);
     if (p.existingPath && p.existingPath !== path) {
       try {
@@ -943,7 +1027,7 @@
       var fm = op.files[i];
       var path = await Outbox.uploadSlot(fm, i, function (m, j, ext) {
         return "formulir/f-" + (p.formId || "x") + "-" + Date.now() + "-" + j + "." + extOf(m.name, "bin");
-      });
+      }, undefined, op.id);
       jawaban[fm.slot] = { nama: fm.name, path: path, ukuran: fm.size || 0 };
     }
     // petakan key lokal -> id pertanyaan asli
@@ -970,11 +1054,7 @@
     await setAkses(uid, p.targetId, p.halaman || [], null, false);
   };
 
-  // ---- Wawancara (khusus isi sesi/calon: jawaban, turunan, spontan, urutan)
-  // Payload SELALU snapshot penuh per target (replace semantics) — antrean
-  // digabung per target di sisi modul, jadi yang tersinkron = versi terakhir.
-  // Master: upsert server per (sesi, pertanyaan) sehingga jawabanId temp/null
-  // aman dilepas. Spontan temp: dibuat baru dari snapshot (teks + jawaban).
+  // ---- Wawancara (sesi jawaban/dokumentasi + master calon & bank pertanyaan)
   Outbox.handlers.wawancara = async function (op) {
     if (typeof wawancaraJawabanSimpan !== "function")
       throw new Error("Buka halaman Wawancara saat online untuk mengirim antrean ini.");
@@ -1016,7 +1096,7 @@
         throw new Error("Buka halaman Wawancara saat online untuk mengirim antrean ini.");
       var path = p.file_path || "";
       if (op.files && op.files.length) {
-        path = await Outbox.uploadSlot(op.files[0], 0, function () { return p.file_path; }, uid);
+        path = await Outbox.uploadSlot(op.files[0], 0, function () { return p.file_path; }, uid, op.id);
       }
       if (!path) throw new Error("File antrean hilang.");
       await wawancaraDokumentasiTambah(uid, p.sesiId, {
@@ -1031,6 +1111,31 @@
           if (typeof hapusFotoStorage === "function") await hapusFotoStorage(p.file_path);
         } catch {}
       }
+    } else if (p.jenis === "calon") {
+      var cid = p.id ? parseInt(p.id, 10) : null;
+      var fc = Object.assign({}, p.f || {});
+      if (!cid && !fc.angkatan_id && (p.angkatan_id || op.angkatanId)) {
+        fc.angkatan_id = p.angkatan_id || op.angkatanId;
+      }
+      if (cid) await wawancaraCalonUbah(uid, cid, fc);
+      else cid = await wawancaraCalonTambah(uid, fc);
+      if (Array.isArray(p.pewIds) && p.pewIds.length && cid) {
+        var sid = await wawancaraSesiPastikan(uid, cid);
+        await wawancaraSesiPetugas(uid, sid, p.pewIds);
+      }
+    } else if (p.jenis === "pertanyaan") {
+      await wawancaraPertanyaanSimpan(
+        uid,
+        p.id ? parseInt(p.id, 10) : null,
+        p.teks || "",
+        p.parentId ? parseInt(p.parentId, 10) : null,
+        p.urutan != null ? p.urutan : null,
+        p.aktif != null ? p.aktif : null,
+        p.angkatan_id || op.angkatanId || null,
+      );
+      if (p.sesiId && typeof wawancaraUrutanPastikan === "function") {
+        try { await wawancaraUrutanPastikan(uid, p.sesiId); } catch {}
+      }
     } else {
       throw new Error("Jenis antrean wawancara tidak dikenal: " + (p.jenis || "?"));
     }
@@ -1042,7 +1147,7 @@
     if (op.files && op.files.length) {
       fotoBaru = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
         return "profil/profil-" + u + "-" + Date.now() + "." + extOf(m.name, "jpg");
-      }, uid);
+      }, uid, op.id);
       if (p.fotoExist && p.fotoExist !== fotoBaru) {
         try {
           await hapusFotoStorage(p.fotoExist);
@@ -1058,6 +1163,189 @@
         Profil.renderFoto();
       }
     } catch {}
+  };
+
+  // ---- Informasi Harian, Informasi Publik, Program, Uang Kas, Tes, Hasil Wawancara, Feed, Pelantikan, Changelog
+  Outbox.handlers.informasi = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    var f = Object.assign({}, p.f || {});
+    if (op.op === "update" && p.id) {
+      await updateInformasi(uid, p.id, f);
+    } else {
+      if (!f.angkatan_id && (p.angkatan_id || op.angkatanId)) {
+        f.angkatan_id = p.angkatan_id || op.angkatanId;
+      }
+      await buatInformasi(uid, f);
+    }
+  };
+
+  Outbox.handlers.informasi_publik = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    var f = Object.assign({}, p.f || {});
+    if (op.files && op.files.length) {
+      var fm = op.files[0];
+      var key = await Outbox.uploadSlot(fm, 0, function (m) {
+        var aman = String(m.name || "lampiran.pdf").replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/^_+/, "") || "lampiran.pdf";
+        return "informasi/" + Date.now() + "-" + aman;
+      }, uid, op.id);
+      f.link_lampiran = key;
+      f.label_lampiran = fm.name || "lampiran.pdf";
+    }
+    if (op.op === "update" && p.id) {
+      await updateInformasiPublik(uid, p.id, f);
+    } else {
+      await buatInformasiPublik(uid, f);
+    }
+    if (p.linkLama && p.linkLama !== f.link_lampiran && !/^https?:\/\//i.test(p.linkLama)) {
+      try { await hapusFotoStorage(p.linkLama); } catch {}
+    }
+    try { localStorage.removeItem("cache_papan_info"); } catch {}
+  };
+
+  Outbox.handlers.program = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    var f = Object.assign({}, p.f || {});
+    if (op.op === "update" && p.id) {
+      await updateProgram(uid, p.id, f);
+    } else {
+      if (!f.angkatan_id && (p.angkatan_id || op.angkatanId)) {
+        f.angkatan_id = p.angkatan_id || op.angkatanId;
+      }
+      await buatProgram(uid, f);
+    }
+  };
+
+  Outbox.handlers.uang_kas = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    var angId = p.angkatan_id || op.angkatanId || (typeof DbScope !== "undefined" && DbScope.angkatanId ? DbScope.angkatanId() : null);
+    if (p.jenisOp === "setting") {
+      var cfg = p.cfg || {};
+      var rc = await supa.rpc("simpan_uang_kas_config", {
+        p_user_id: uid,
+        p_nominal_mingguan: cfg.nominal_mingguan,
+        p_tanggal_mulai: cfg.tanggal_mulai,
+        p_minggu_libur: cfg.minggu_libur || [],
+        p_tarif_riwayat: cfg.tarif_riwayat || [],
+        p_catatan: cfg.catatan || "",
+        p_angkatan_id: angId,
+      });
+      if (rc.error) throw rc.error;
+      cekOk(rc.data);
+    } else if (p.jenisOp === "skip") {
+      var rs = await supa.rpc("atur_uang_kas_skip_anggota", {
+        p_user_id: uid,
+        p_nama: p.nama,
+        p_mulai: p.mulai || null,
+        p_minggu: p.minggu || [],
+        p_angkatan_id: angId,
+      });
+      if (rs.error) throw rs.error;
+      cekOk(rs.data);
+    } else {
+      if (op.op === "update" && p.id) {
+        var ru = await supa.rpc("update_uang_kas_setoran", {
+          p_user_id: uid,
+          p_id: Number(p.id),
+          p_nama: p.nama,
+          p_tanggal: p.tanggal,
+          p_nominal: p.nominal,
+          p_catatan: p.catatan || "",
+        });
+        if (ru.error) throw ru.error;
+        cekOk(ru.data);
+      } else {
+        var rb = await supa.rpc("buat_uang_kas_setoran", {
+          p_user_id: uid,
+          p_nama: p.nama,
+          p_tanggal: p.tanggal,
+          p_nominal: p.nominal,
+          p_catatan: p.catatan || "",
+          p_angkatan_id: angId,
+        });
+        if (rb.error) throw rb.error;
+        cekId(rb.data);
+      }
+    }
+  };
+
+  Outbox.handlers.tes = async function (op) {
+    Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    if (p.jenisOp === "builder") {
+      var fb = Object.assign({}, p.f || {});
+      if (!fb.id && !fb.angkatan_id && (p.angkatan_id || op.angkatanId)) {
+        fb.angkatan_id = p.angkatan_id || op.angkatanId;
+      }
+      await simpanTes(fb);
+    } else if (p.jenisOp === "koreksi") {
+      await koreksiTes(p.hasilId, p.koreksi || {}, p.catatan || "", p.selesai !== false);
+    } else {
+      await submitTes(p.tesId, p.answers || {}, p.startedAt || null);
+    }
+  };
+
+  Outbox.handlers.hasil_wawancara = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    if (p.jenisOp === "template") {
+      await wawancaraTemplateSimpan(uid, p.lanjut || "", p.gagal || "");
+    } else {
+      await wawancaraHasilSimpan(uid, p.calonId, p.hasil || "", p.catatan || "", !!p.diumumkan, p.kakasuh || "");
+    }
+  };
+
+  Outbox.handlers.feed = async function (op) {
+    var p = op.payload || {};
+    if (p.jenisOp === "komen") {
+      await feedKomenTambah(p.postId, p.userKey || "", p.nama || "Anonim", p.teks || "");
+      return;
+    }
+    var uid = Outbox.butuhLogin(op);
+    if (!op.files || !op.files.length) throw new Error("Media antrean hilang.");
+    if (p.jenisOp === "media_only") {
+      if (!p.path) throw new Error("Path media antrean kosong.");
+      await Outbox.uploadSlot(op.files[0], 0, function () { return p.path; }, uid, op.id);
+      return;
+    }
+    var path = await Outbox.uploadSlot(op.files[0], 0, function (m, i, ext, u) {
+      return "feed/feed-" + u + "-" + Date.now() + "." + extOf(m.name, p.media_type === "video" ? "mp4" : "jpg");
+    }, uid, op.id);
+    await feedPostBuat(uid, {
+      media_type: p.media_type || "photo",
+      media_key: path,
+      thumb_key: "",
+      caption: p.caption || "",
+      kategori: p.kategori || "aib",
+    });
+  };
+
+  Outbox.handlers.pelantikan = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    var paths = [];
+    for (var i = 0; i < (op.files || []).length; i++) {
+      var fm = op.files[i];
+      var path = await Outbox.uploadSlot(fm, i, function (m, idx, ext, u) {
+        return "pelantikan/pel-" + u + "-" + Date.now() + "-" + idx + "." + extOf(m.name, "jpg");
+      }, uid, op.id);
+      paths.push({ path: path, caption: "" });
+    }
+    await buatPelantikan(uid, p.judul, p.deskripsi || "", p.badge || "", paths, p.order == null ? 99 : p.order);
+  };
+
+  Outbox.handlers.changelog = async function (op) {
+    var uid = Outbox.butuhLogin(op);
+    var p = op.payload || {};
+    if (op.op === "update" && p.id) {
+      await updateChangelog(uid, p.id, p.f || {});
+    } else {
+      await buatChangelog(uid, p.f || {});
+    }
+    try { localStorage.removeItem("changelog_cache"); } catch {}
   };
 
   // =====================================================================
@@ -1090,6 +1378,9 @@
   Outbox.refreshers.arsip = coba(function () {
     if (typeof Arsip !== "undefined" && Arsip.terinisialisasi) return Arsip.muat(Arsip.page || 1);
   });
+  Outbox.refreshers.pelantikan = coba(function () {
+    if (typeof ArsipPelantikan !== "undefined" && ArsipPelantikan.muatIsi) return ArsipPelantikan.muatIsi(ArsipPelantikan.page || 1);
+  });
   Outbox.refreshers.prestasi = coba(function () {
     return Prestasi.muat();
   });
@@ -1098,6 +1389,9 @@
   });
   Outbox.refreshers.keuangan = coba(function () {
     return Keuangan.muat();
+  });
+  Outbox.refreshers.uang_kas = coba(function () {
+    return UangKas.muat();
   });
   Outbox.refreshers.dokumen = coba(function () {
     return Dokumen.muat();
@@ -1120,11 +1414,48 @@
   Outbox.refreshers.proker = coba(function () {
     return Proker.muat();
   });
+  Outbox.refreshers.program = coba(function () {
+    return Program.muat();
+  });
   Outbox.refreshers.evaluasi = coba(function () {
     return Evaluasi.muat();
   });
+  Outbox.refreshers.informasi = coba(function () {
+    return Informasi.muat();
+  });
+  Outbox.refreshers.informasi_publik = coba(function () {
+    return InfoView.muat(true);
+  });
+  Outbox.refreshers.tes = coba(function () {
+    return Tes.muatDaftar(true);
+  });
+  Outbox.refreshers.hasil_wawancara = coba(function () {
+    return HasilWawancara.muatData();
+  });
+  Outbox.refreshers.feed = coba(function () {
+    return Feed.muat(true);
+  });
+  Outbox.refreshers.pengurus = coba(function () {
+    if (typeof Pengurus !== "undefined" && Pengurus.siap) return Pengurus.muat();
+  });
+  Outbox.refreshers.changelog = coba(function () {
+    return Changelog.muat(true);
+  });
   Outbox.refreshers.wawancara = coba(async function () {
-    if (typeof Wawancara === "undefined" || !Wawancara.sesi) return;
+    if (typeof Wawancara === "undefined") return;
+    try { Wawancara.calon = await getWawancaraCalon(); } catch {}
+    try { Wawancara.sesiSemua = await getWawancaraSesi(); } catch {}
+    try { Wawancara.petugas = (typeof getWawancaraPetugas === "function") ? await getWawancaraPetugas() : (Wawancara.petugas || []); } catch {}
+    try { Wawancara.pertanyaan = (await getWawancaraPertanyaan()).filter(function (p) { return p.aktif !== false; }); } catch {}
+    if (!Wawancara.sesi) {
+      try {
+        if (document.getElementById("wwTanyaForm") && document.getElementById("wwTanyaForm").classList.contains("open") && typeof Wawancara.renderKelolaTanya === "function") {
+          Wawancara.renderKelolaTanya();
+        }
+        if (typeof Wawancara.muatDaftar === "function") await Wawancara.muatDaftar();
+      } catch {}
+      return;
+    }
     // Muat ulang data sesi aktif (getter cache-first ikut perbarui cache).
     try { Wawancara.jawaban = await getWawancaraJawaban(Wawancara.sesi.id); } catch {}
     try { await Wawancara.muatTurunan(); } catch {}
@@ -1349,9 +1680,21 @@
 
   function renderFab(n) {
     pastikanUI();
+    try {
+      fab.style.bottom = document.getElementById("bottomNav") ? "96px" : "22px";
+    } catch {}
     if (n > 0) {
       fab.style.display = "inline-flex";
+      var ico = fab.querySelector("i");
+      var lbl = fab.querySelector("span:not(.cnt)");
       var c = fab.querySelector(".cnt");
+      if (sedangJalan) {
+        if (ico) ico.className = "fa-solid fa-spinner fa-spin";
+        if (lbl) lbl.textContent = "Mengupload…";
+      } else {
+        if (ico) ico.className = "fa-solid fa-cloud-arrow-up";
+        if (lbl) lbl.textContent = "Antrean";
+      }
       if (c) c.textContent = n > 99 ? "99+" : String(n);
     } else {
       fab.style.display = "none";
@@ -1364,38 +1707,51 @@
   // =====================================================================
   // INIT — badge, auto-sync (online event + interval + pesan SW).
   // =====================================================================
+  var timerOnline = null;
   function init() {
     pastikanUI();
     Outbox._emit();
     Outbox.tampilkanPill();
     window.addEventListener("online", function () {
       Outbox.tampilkanPill();
-      toast("Online lagi — mengirim antrean…", "info");
-      Outbox.processQueue({ silent: true });
+      if (timerOnline) clearTimeout(timerOnline);
+      timerOnline = setTimeout(function () {
+        timerOnline = null;
+        if (Outbox.offline()) return;
+        Outbox.hitung().then(function (n) {
+          if (n > 0) {
+            toast("Online lagi — mengupload " + n + " antrean…", "info");
+            Outbox.processQueue({ auto: true });
+          }
+        }).catch(function () {});
+      }, 1200);
     });
     window.addEventListener("offline", function () {
+      if (timerOnline) { clearTimeout(timerOnline); timerOnline = null; }
       Outbox.tampilkanPill();
     });
     try {
       document.addEventListener("visibilitychange", function () {
         if (!document.hidden && !Outbox.offline())
-          Outbox.processQueue({ silent: true });
+          Outbox.hitung().then(function (n) {
+            if (n > 0) Outbox.processQueue({ auto: true });
+          }).catch(function () {});
       });
     } catch {}
     try {
       setInterval(function () {
         if (!Outbox.offline())
           Outbox.hitung().then(function (n) {
-            if (n > 0) Outbox.processQueue({ silent: true });
-          });
-      }, 60000);
+            if (n > 0) Outbox.processQueue({ auto: true });
+          }).catch(function () {});
+      }, 25000);
     } catch {}
     // pesan dari SW (Background Sync)
     try {
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.addEventListener("message", function (e) {
           if (e && e.data === "OUTBOX_SYNC")
-            Outbox.processQueue({ silent: true });
+            Outbox.processQueue({ auto: true });
         });
       }
     } catch {}
@@ -1403,9 +1759,9 @@
     setTimeout(function () {
       if (!Outbox.offline())
         Outbox.hitung().then(function (n) {
-          if (n > 0) Outbox.processQueue({ silent: true });
-        });
-    }, 3000);
+          if (n > 0) Outbox.processQueue({ auto: true });
+        }).catch(function () {});
+    }, 1800);
     Outbox.cobaDaftarkanSync();
   }
 
