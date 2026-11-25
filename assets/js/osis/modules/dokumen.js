@@ -45,8 +45,6 @@ const Dokumen = {
         } catch {}
         Dokumen.syncViewBtns();
 
-        // Segarkan hak kendali (biar perubahan akses langsung berlaku)
-        try { await OsisAuth.refreshAkses(); } catch {}
         Dokumen.terapkanAkses();
 
         // opsi kategori (form + filter)
@@ -57,17 +55,35 @@ const Dokumen = {
         const fk = document.getElementById("filterKategori");
         if (fk) fk.innerHTML = `<option value="">Semua</option>` + katOpts;
 
-        // opsi divisi: BPH + Umum + sekbid (fail silent)
-        try {
-            const list = await getSekbid();
+        const isiDivisiOpsi = (list) => {
             const names = [...new Set((list || []).map(s => s.nama).filter(Boolean))];
             const opts = ["BPH", "Umum", ...names].map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
             const dd = document.getElementById("dokDivisi");
-            if (dd) dd.innerHTML = `<option value="">— Pilih —</option>` + opts;
+            if (dd) {
+                const curD = dd.value || "";
+                dd.innerHTML = `<option value="">— Pilih —</option>` + opts;
+                if (curD) dd.value = curD;
+            }
             const fd = document.getElementById("filterDivisi");
-            if (fd) fd.innerHTML = `<option value="">Semua</option>` + opts;
-        } catch {}
-        try { window.Dropdown?.segarkanSemua?.(); } catch {}
+            if (fd) {
+                const curF = fd.value || "";
+                fd.innerHTML = `<option value="">Semua</option>` + opts;
+                if (curF) fd.value = curF;
+            }
+            try { window.Dropdown?.segarkanSemua?.(); } catch {}
+        };
+
+        // Isi opsi divisi dari cache instan, segarkan akses + sekbid di background tanpa menahan muat()
+        try { isiDivisiOpsi(Cache.get("sekbid") || []); } catch {}
+        if (typeof OsisAuth.refreshAkses === "function") {
+            OsisAuth.refreshAkses().then(() => {
+                Dokumen.terapkanAkses();
+                if (Dokumen.cache && Dokumen.cache.length) Dokumen.render();
+            }).catch(() => {});
+        }
+        getSekbid().then(list => {
+            if (list && list.length) isiDivisiOpsi(list);
+        }).catch(() => {});
 
         document.getElementById("btnUploadDokumen")?.addEventListener("click", () => Dokumen.bukaForm());
         document.getElementById("btnBatalDokumen")?.addEventListener("click", () => Dokumen.tutupForm());

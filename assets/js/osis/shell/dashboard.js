@@ -40,11 +40,6 @@ const Dashboard = {
         Dashboard.tickJam();
         setInterval(() => Dashboard.tickJam(), 1000);
 
-        // Segarkan hak kendali biar chip + pintasan cepat selalu akurat
-        try {
-            if (typeof OsisAuth.refreshAkses === "function") await OsisAuth.refreshAkses();
-        } catch {}
-
         const sapaan = (u.nama || u.username || "OSIS").split(" ")[0];
         const helloEl = document.getElementById("osisHello");
         if (helloEl) helloEl.textContent = `Halo, ${sapaan}! 👋`;
@@ -54,6 +49,13 @@ const Dashboard = {
         Dashboard.renderMeta(u);
         Dashboard.renderAvatar(u);
         Dashboard.renderHak();
+
+        // Segarkan hak kendali di background biar tidak menahan render awal
+        if (typeof OsisAuth.refreshAkses === "function") {
+            OsisAuth.refreshAkses().then(() => {
+                try { Dashboard.renderHak(); } catch {}
+            }).catch(() => {});
+        }
 
         // Refresh foto PP & profil terbaru (fail silent)
         if (typeof getOsisUserById === "function" && u.id) {
@@ -75,14 +77,85 @@ const Dashboard = {
             }).catch(() => {});
         }
 
-        // Kumpulkan nama milik user login (buat pencocokan Tabungan & Absensi Pribadi)
-        const namaSet = new Set();
-        const addNama = (n) => { n = String(n || "").trim().toLowerCase(); if (n) namaSet.add(n); };
-        addNama(u.nama);
-
         // Dashboard selalu per angkatan aktif
         const angId = (typeof DbScope !== "undefined" && DbScope.angkatanId) ? DbScope.angkatanId() : null;
 
+        const terapkanPaket = (d) => {
+            const namaSet = new Set();
+            const addNama = (n) => { n = String(n || "").trim().toLowerCase(); if (n) namaSet.add(n); };
+            addNama(u.nama);
+            if (d.angSaya && d.angSaya.nama) addNama(d.angSaya.nama);
+            if (d.pengSaya && d.pengSaya.nama) addNama(d.pengSaya.nama);
+            Dashboard.namaSaya = [...namaSet];
+
+            Dashboard.sekbidMap = {};
+            (d.sekbid || []).forEach(s => { Dashboard.sekbidMap[String(s.id)] = s.nama || ""; });
+
+            Dashboard.renderPersonal(u, d.tabungan, d.absensi);
+            Dashboard.renderStats(d.agenda, d.agendaRingkas, d.anggota, d.periodeList, d.kas, d.kasRingkas, d.tabungan);
+            Dashboard.renderAgenda(d.agenda);
+            Dashboard.renderNotulensi(d.notulensiList);
+            Dashboard.renderKas(d.kas, d.kasRingkas);
+            Dashboard.renderAbsensi(d.absensi);
+            Dashboard.renderProgram(d.programList);
+            Dashboard.renderInformasi(d.infoList);
+            Dashboard.renderInbox(d.aspirasiList, d.laguList);
+            Dashboard.renderDokumen(d.dokumen);
+            Dashboard.renderAktivitas(d.agenda, d.kas, d.tabungan, d.absensi, d.dokumen, d.infoList, d.notulensiList, d.programList);
+        };
+
+        // 1) Render INSTAN (<5ms) dari cache lokal bila sudah ada stok sebelumnya
+        let adaCacheAwal = false;
+        try {
+            const ambilL = (k, lim) => (typeof ambilLintasOffline === "function" ? ambilLintasOffline(k, angId, lim) : Cache.get(k));
+            const paketCache = {
+                agenda: Cache.get("agenda_all"),
+                agendaRingkas: Cache.get("agenda_ringkas_all_"),
+                anggota: ambilL("anggota"),
+                periodeList: Cache.get("periode"),
+                kas: Cache.get("kas"),
+                kasRingkas: Cache.get("kas_ringkas"),
+                tabungan: Cache.get("tabungan"),
+                absensi: ambilL("absensi"),
+                dokumen: ambilL("dokumen", 8),
+                sekbid: Cache.get("sekbid"),
+                infoList: ambilL("informasi", 4),
+                programList: Cache.get("program"),
+                notulensiList: ambilL("notulensi", 4),
+                aspirasiList: Cache.get("aspirasi"),
+                laguList: Cache.get("lagu"),
+                angSaya: Cache.get("anggota_saya"),
+                pengSaya: Cache.get("pengurus_saya"),
+            };
+            adaCacheAwal = Object.values(paketCache).some(v => (Array.isArray(v) ? v.length > 0 : !!v));
+            if (adaCacheAwal) {
+                terapkanPaket({
+                    agenda: paketCache.agenda || [],
+                    agendaRingkas: paketCache.agendaRingkas || null,
+                    anggota: paketCache.anggota || [],
+                    periodeList: paketCache.periodeList || [],
+                    kas: paketCache.kas || [],
+                    kasRingkas: paketCache.kasRingkas || null,
+                    tabungan: paketCache.tabungan || [],
+                    absensi: paketCache.absensi || [],
+                    dokumen: paketCache.dokumen || [],
+                    sekbid: paketCache.sekbid || [],
+                    infoList: paketCache.infoList || [],
+                    programList: paketCache.programList || [],
+                    notulensiList: paketCache.notulensiList || [],
+                    aspirasiList: paketCache.aspirasiList || [],
+                    laguList: paketCache.laguList || [],
+                    angSaya: paketCache.angSaya || null,
+                    pengSaya: paketCache.pengSaya || null,
+                });
+            }
+        } catch {}
+
+        if (typeof navigator !== "undefined" && navigator.onLine === false && adaCacheAwal) {
+            return;
+        }
+
+        // 2) Revalidasi semua panel di background begitu respon masuk
         const [
             agenda,
             agendaRingkas,
@@ -121,23 +194,11 @@ const Dashboard = {
             (typeof getPengurusSaya === "function" ? getPengurusSaya() : Promise.resolve(null)).catch(() => null)
         ]);
 
-        if (angSaya && angSaya.nama) addNama(angSaya.nama);
-        if (pengSaya && pengSaya.nama) addNama(pengSaya.nama);
-        Dashboard.namaSaya = [...namaSet];
-
-        (sekbid || []).forEach(s => { Dashboard.sekbidMap[String(s.id)] = s.nama || ""; });
-
-        Dashboard.renderPersonal(u, tabungan, absensi);
-        Dashboard.renderStats(agenda, agendaRingkas, anggota, periodeList, kas, kasRingkas, tabungan);
-        Dashboard.renderAgenda(agenda);
-        Dashboard.renderNotulensi(notulensiList);
-        Dashboard.renderKas(kas, kasRingkas);
-        Dashboard.renderAbsensi(absensi);
-        Dashboard.renderProgram(programList);
-        Dashboard.renderInformasi(infoList);
-        Dashboard.renderInbox(aspirasiList, laguList);
-        Dashboard.renderDokumen(dokumen);
-        Dashboard.renderAktivitas(agenda, kas, tabungan, absensi, dokumen, infoList, notulensiList, programList);
+        terapkanPaket({
+            agenda, agendaRingkas, anggota, periodeList, kas, kasRingkas,
+            tabungan, absensi, dokumen, sekbid, infoList, programList,
+            notulensiList, aspirasiList, laguList, angSaya, pengSaya,
+        });
     },
 
     // ============ TABS INTERAKTIF DI KARTU BENTO ============

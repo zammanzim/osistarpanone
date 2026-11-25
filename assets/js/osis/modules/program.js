@@ -24,19 +24,35 @@ const Program = {
         }
         const t = (document.body && document.body.dataset && document.body.dataset.tipe) || "tahunan";
         Program.tipe = t === "bulanan" ? "bulanan" : "tahunan";
-        // Segarkan hak kendali (biar perubahan akses langsung berlaku)
-        try { await OsisAuth.refreshAkses(); } catch {}
         Program.terapkanAkses();
 
-        // Muat daftar sekbid
-        try {
-            Program.sekbidList = (await getSekbid()) || [];
+        const isiSekbidFilter = (list) => {
+            if (!Array.isArray(list) || !list.length) return;
+            Program.sekbidList = list;
             const fs = document.getElementById("filterSekbid");
             if (fs) {
+                const cur = fs.value || "";
                 fs.innerHTML = `<option value="">Semua sekbid</option>` +
                     Program.sekbidList.map(s => `<option value="${s.id}">${escapeHtml(s.nama)}</option>`).join("");
+                if (cur) fs.value = cur;
             }
-        } catch {}
+            try { window.Dropdown?.segarkanSemua?.(); } catch {}
+        };
+
+        // Pakai cache sekbid instan tanpa nunggu network, lalu segarkan akses + sekbid di background
+        try { isiSekbidFilter(Cache.get("sekbid")); } catch {}
+        if (typeof OsisAuth.refreshAkses === "function") {
+            OsisAuth.refreshAkses().then(() => {
+                Program.terapkanAkses();
+                if (Program.cache && Program.cache.length) Program.render();
+            }).catch(() => {});
+        }
+        getSekbid().then(fresh => {
+            if (fresh && fresh.length) {
+                isiSekbidFilter(fresh);
+                if (Program.cache && Program.cache.length) Program.render();
+            }
+        }).catch(() => {});
 
         document.getElementById("btnTambahProgram")?.addEventListener("click", () => Program.bukaForm());
         document.getElementById("btnBatalProgram")?.addEventListener("click", () => Program.tutupForm());
@@ -135,12 +151,12 @@ const Program = {
     // ============ DATA ============
     async muat() {
         const listEl = document.getElementById("programList");
-        if (listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat program...</div>`;
         try {
             const cached = Cache.get("program");
             if (cached) {
                 Program.cache = cached;
                 Program.render();
+                if (typeof navigator !== "undefined" && navigator.onLine === false) return;
                 getProgram().then(fresh => {
                     if (JSON.stringify(fresh) !== JSON.stringify(cached)) {
                         Cache.set("program", fresh);
@@ -150,6 +166,7 @@ const Program = {
                 }).catch(() => {});
                 return;
             }
+            if (listEl) listEl.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat program...</div>`;
             const data = await getProgram();
             Cache.set("program", data);
             Program.cache = data || [];

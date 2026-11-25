@@ -54,15 +54,9 @@ const Keuangan = {
       location.replace("../login");
       return;
     }
-    // Segarkan hak kendali (biar perubahan akses langsung berlaku)
-    try {
-      await OsisAuth.refreshAkses();
-    } catch {}
     Keuangan.terapkanAkses();
 
-    // opsi divisi: BPH + Umum + sekbid (fail silent)
-    try {
-      const list = await getSekbid();
+    const isiDivisiKas = (list) => {
       const names = [
         ...new Set((list || []).map((s) => s.nama).filter(Boolean)),
       ];
@@ -72,11 +66,31 @@ const Keuangan = {
         )
         .join("");
       const dd = document.getElementById("kasDivisi");
-      if (dd) dd.innerHTML = `<option value="">- Pilih -</option>` + opts;
+      if (dd) {
+        const curD = dd.value || "";
+        dd.innerHTML = `<option value="">- Pilih -</option>` + opts;
+        if (curD) dd.value = curD;
+      }
       const fd = document.getElementById("filterDivisi");
-      if (fd) fd.innerHTML = `<option value="">Semua</option>` + opts;
+      if (fd) {
+        const curF = fd.value || "";
+        fd.innerHTML = `<option value="">Semua</option>` + opts;
+        if (curF) fd.value = curF;
+      }
       Keuangan.segarkanDropdown();
-    } catch {}
+    };
+
+    // Isi opsi divisi dari cache instan, segarkan akses + sekbid di background biar muat() langsung jalan
+    try { isiDivisiKas(Cache.get("sekbid") || []); } catch {}
+    if (typeof OsisAuth.refreshAkses === "function") {
+      OsisAuth.refreshAkses().then(() => {
+        Keuangan.terapkanAkses();
+        if (Keuangan.cache && Keuangan.cache.length) Keuangan.render();
+      }).catch(() => {});
+    }
+    getSekbid().then((list) => {
+      if (list && list.length) isiDivisiKas(list);
+    }).catch(() => {});
 
     document
       .getElementById("btnTambahKas")

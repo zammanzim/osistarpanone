@@ -240,7 +240,14 @@ const Wawancara = {
             location.replace("../login");
             return;
         }
-        try { if (typeof OsisAuth.refreshAkses === "function") await OsisAuth.refreshAkses(); } catch {}
+        if (typeof OsisAuth.refreshAkses === "function") {
+            OsisAuth.refreshAkses().then(() => {
+                try {
+                    if (Wawancara.sesi) Wawancara.renderSesi();
+                    else { Wawancara.renderHero(); Wawancara.renderDaftar(); }
+                } catch {}
+            }).catch(() => {});
+        }
         Wawancara.pasangPopup();
         Wawancara.pasangBack();
         Wawancara.pasangNavigasiKeyboard();
@@ -271,18 +278,44 @@ const Wawancara = {
         if (sec) sec.style.display = "";
         const hero = document.getElementById("wwHero");
         if (hero) hero.style.display = "";
-        if (wrap) {
-            wrap.style.display = "";
+        if (wrap) wrap.style.display = "";
+        Wawancara.pasangFilter();
+
+        // 1) Render INSTAN dari cache lokal tanpa nunggu network
+        let adaCache = false;
+        try {
+            const cCalon = Cache.get("wawancara_calon");
+            if (Array.isArray(cCalon) && cCalon.length) {
+                Wawancara.calon = cCalon;
+                Wawancara.sesiSemua = Cache.get("wawancara_sesi") || [];
+                Wawancara.senior = Cache.get("osis_users_ringkas") || [];
+                Wawancara.petugas = Cache.get("wawancara_petugas") || [];
+                Wawancara.butuhMigrasi = false;
+                Wawancara.renderHero();
+                Wawancara.renderDaftar();
+                adaCache = true;
+            }
+        } catch {}
+
+        if (!adaCache && wrap) {
             wrap.innerHTML = `<div class="loading-block"><div class="spinner"></div>Memuat daftar calon...</div>`;
         }
-        Wawancara.pasangFilter();
+        if (adaCache && typeof navigator !== "undefined" && navigator.onLine === false) {
+            return;
+        }
+
+        // 2) Ambil semua data paralel dalam 1 gelombang (bukan beruntun)
         try {
-            const [calon, sesi] = await Promise.all([getWawancaraCalon(), getWawancaraSesi()]);
+            const [calon, sesi, senior, petugas] = await Promise.all([
+                getWawancaraCalon(),
+                getWawancaraSesi(),
+                getOsisUsersRingkas().catch(() => Wawancara.senior || []),
+                (typeof getWawancaraPetugas === "function" ? getWawancaraPetugas() : Promise.resolve([])).catch(() => Wawancara.petugas || []),
+            ]);
             Wawancara.calon = calon || [];
             Wawancara.sesiSemua = sesi || [];
-            try { Wawancara.senior = await getOsisUsersRingkas(); } catch { Wawancara.senior = []; }
-            try { Wawancara.petugas = (typeof getWawancaraPetugas === "function") ? await getWawancaraPetugas() : []; }
-            catch { Wawancara.petugas = []; }
+            Wawancara.senior = senior || [];
+            Wawancara.petugas = petugas || [];
             Wawancara.butuhMigrasi = false;
         } catch (err) {
             console.error(err);
@@ -291,7 +324,7 @@ const Wawancara = {
                 Wawancara.renderButuhMigrasi();
                 return;
             }
-            if (wrap) wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat: ${escapeHtml(err.message || err)}</div>`;
+            if (!adaCache && wrap) wrap.innerHTML = `<div class="pesan-empty"><i class="fa-solid fa-triangle-exclamation"></i> Gagal memuat: ${escapeHtml(err.message || err)}</div>`;
             return;
         }
         Wawancara.renderHero();
@@ -477,46 +510,51 @@ const Wawancara = {
         if (list) list.style.display = "none";
         try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
         try {
-            const [calon, sesiSemua, tanya] = await Promise.all([
-                getWawancaraCalon(), getWawancaraSesi(), getWawancaraPertanyaan(),
+            const [calon, sesiSemua, tanya, senior, petugas] = await Promise.all([
+                getWawancaraCalon(),
+                getWawancaraSesi(),
+                getWawancaraPertanyaan(),
+                getOsisUsersRingkas().catch(() => Wawancara.senior || []),
+                (typeof getWawancaraPetugas === "function" ? getWawancaraPetugas() : Promise.resolve([])).catch(() => Wawancara.petugas || []),
             ]);
             Wawancara.calon = calon || [];
             Wawancara.sesiSemua = sesiSemua || [];
             Wawancara.pertanyaan = (tanya || []).filter(p => p.aktif !== false);
-            try { Wawancara.senior = await getOsisUsersRingkas(); } catch { Wawancara.senior = []; }
-            try { Wawancara.petugas = (typeof getWawancaraPetugas === "function") ? await getWawancaraPetugas() : []; }
-            catch { Wawancara.petugas = []; }
+            Wawancara.senior = senior || [];
+            Wawancara.petugas = petugas || [];
             const c = Wawancara.calon.find(x => String(x.id) === String(calonId));
             if (!c) throw new Error("Calon tidak ditemukan (mungkin sudah dihapus).");
             Wawancara.calonAktif = c;
-            // Pastikan sesi ada (satu per calon) agar jawaban punya cantolan.
-            // Offline: pakai sesi dari cache (tambah calon baru butuh online).
-            let sid = null;
-            try {
-                sid = await wawancaraSesiPastikan(Wawancara.uid(), c.id);
-            } catch (errP) {
-                if (Wawancara.jaringanPutus(errP)) {
-                    const s0 = (Wawancara.sesiSemua || []).find(x => String(x.calon_id) === String(c.id));
-                    if (!s0) throw new Error("Calon ini belum pernah dibuka saat online — hubungkan internet sekali untuk memuat datanya.");
-                    sid = s0.id;
-                } else throw errP;
+            // Kalau sesi calon sudah ada, langsung pakai tanpa round-trip pastikan ulang.
+            let sesiHit = (Wawancara.sesiSemua || []).find(x => String(x.calon_id) === String(c.id)) || null;
+            if (!sesiHit) {
+                let sid = null;
+                try {
+                    sid = await wawancaraSesiPastikan(Wawancara.uid(), c.id);
+                } catch (errP) {
+                    if (Wawancara.jaringanPutus(errP)) {
+                        throw new Error("Calon ini belum pernah dibuka saat online — hubungkan internet sekali untuk memuat datanya.");
+                    }
+                    throw errP;
+                }
+                const fresh = await getWawancaraSesi();
+                Wawancara.sesiSemua = fresh || [];
+                sesiHit = (fresh || []).find(s => String(s.id) === String(sid)) || null;
             }
-            const fresh = await getWawancaraSesi();
-            Wawancara.sesiSemua = fresh || [];
-            Wawancara.sesi = (fresh || []).find(s => String(s.id) === String(sid));
-            Wawancara.jawaban = await getWawancaraJawaban(Wawancara.sesi.id);
-            // Susunan khusus sesi ini (bawaan = master bila belum diatur).
+            if (!sesiHit) throw new Error("Sesi wawancara belum tersedia.");
+            Wawancara.sesi = sesiHit;
             Wawancara.urutanSesi = {};
-            try {
-                await wawancaraUrutanPastikan(Wawancara.uid(), Wawancara.sesi.id);
-            } catch (errU) {
-                if (!Wawancara.jaringanPutus(errU)) throw errU;
-                // Offline: lanjut pakai cache/master, antrean menyusul.
+            // Pastikan urutan di background bila belum ada, sambil muat 4 tabel sesi secara paralel!
+            if (typeof navigator === "undefined" || navigator.onLine !== false) {
+                wawancaraUrutanPastikan(Wawancara.uid(), Wawancara.sesi.id).catch(() => {});
             }
-            await Wawancara.muatUrutanSesi();
-            await Wawancara.muatTurunan();
-            try { await Wawancara.muatDokumentasi(); }
-            catch (eDok) { if (!Wawancara.jaringanPutus(eDok)) throw eDok; Wawancara.dokumentasi = []; }
+            const [jwb] = await Promise.all([
+                getWawancaraJawaban(Wawancara.sesi.id),
+                Wawancara.muatUrutanSesi().catch(errU => { if (!Wawancara.jaringanPutus(errU)) throw errU; }),
+                Wawancara.muatTurunan().catch(errT => { if (!Wawancara.jaringanPutus(errT)) throw errT; }),
+                Wawancara.muatDokumentasi().catch(eDok => { if (!Wawancara.jaringanPutus(eDok)) throw eDok; Wawancara.dokumentasi = []; }),
+            ]);
+            Wawancara.jawaban = jwb || [];
             // Selesai dibuka = langsung mode hasil (read-only); selain itu mode atur.
             Wawancara.mode = Wawancara.sesi.status === "selesai" ? "hasil" : "atur";
             Wawancara.idx = 0;

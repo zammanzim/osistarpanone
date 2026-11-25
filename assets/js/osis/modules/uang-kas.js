@@ -31,8 +31,15 @@ const UangKas = {
       location.replace("../login");
       return;
     }
-    try { await OsisAuth.refreshAkses(); } catch {}
     UangKas.terapkanAkses();
+    if (typeof OsisAuth.refreshAkses === "function") {
+      OsisAuth.refreshAkses().then(() => {
+        UangKas.terapkanAkses();
+        if ((UangKas.roster && UangKas.roster.length) || (UangKas.setoran && UangKas.setoran.length)) {
+          UangKas.render();
+        }
+      }).catch(() => {});
+    }
 
     document.getElementById("btnTambahSetor")?.addEventListener("click", () => UangKas.bukaSetor());
     document.getElementById("btnAturKas")?.addEventListener("click", () => UangKas.bukaSetting());
@@ -447,42 +454,47 @@ const UangKas = {
 
   async muat() {
     const angId = DbScope.angkatanId();
-    // 1) Roster anggota + periode (tabel sudah ada)
+    // 1) Render INSTAN (<5ms) dari cache lokal (roster + config + setoran) tanpa nunggu network!
+    let adaCacheKas = false;
     try {
       const cachedAng = Cache.get(UangKas.angKey("roster"));
-      if (cachedAng) UangKas.pakaiRoster(cachedAng.anggota, cachedAng.periode);
-      const [ang, per] = await Promise.all([
+      if (cachedAng && Array.isArray(cachedAng.anggota) && cachedAng.anggota.length) {
+        UangKas.pakaiRoster(cachedAng.anggota, cachedAng.periode);
+      } else {
+        const fbAng = typeof ambilLintasOffline === "function" ? ambilLintasOffline("anggota", angId) : Cache.get("anggota");
+        const fbPer = Cache.get("periode");
+        if (Array.isArray(fbAng) && fbAng.length) UangKas.pakaiRoster(fbAng, fbPer || []);
+      }
+      const cachedCfg = Cache.get(UangKas.angKey("cfg"));
+      const cachedSet = Cache.get(UangKas.angKey("set"));
+      if (cachedCfg || Array.isArray(cachedSet) || (UangKas.roster && UangKas.roster.length)) {
+        adaCacheKas = !!(cachedCfg || Array.isArray(cachedSet));
+        UangKas.config = cachedCfg ? UangKas.normalConfig(cachedCfg) : (UangKas.config || UangKas.defaultConfig());
+        UangKas.setoran = Array.isArray(cachedSet) ? cachedSet : (UangKas.setoran || []);
+        UangKas.terapkanAkses();
+        UangKas.render();
+      }
+    } catch (e) { console.error(e); }
+
+    if (typeof navigator !== "undefined" && navigator.onLine === false && adaCacheKas) {
+      if (UangKas.detailNama && document.getElementById("ukDetailModal")?.classList.contains("open")) {
+        UangKas.renderDetailModal();
+      }
+      return;
+    }
+
+    // 2) Segarkan semua sumber data (roster + periode + config + setoran) paralel dalam 1 gelombang!
+    try {
+      const [ang, per, cfg, setoran] = await Promise.all([
         (typeof getAnggota === "function" ? getAnggota(angId) : Promise.resolve([])).catch(() => []),
         (typeof getPeriode === "function" ? getPeriode() : Promise.resolve([])).catch(() => []),
+        UangKas.fetchConfigLive(),
+        UangKas.fetchSetoranLive(),
       ]);
       if (ang && ang.length) {
         Cache.set(UangKas.angKey("roster"), { anggota: ang, periode: per });
         UangKas.pakaiRoster(ang, per);
       }
-    } catch (e) { console.error(e); }
-
-    // 2) Config + Setoran Uang Kas
-    let adaCacheKas = false;
-    try {
-      const cachedCfg = Cache.get(UangKas.angKey("cfg"));
-      const cachedSet = Cache.get(UangKas.angKey("set"));
-      if (cachedCfg || Array.isArray(cachedSet)) {
-        adaCacheKas = true;
-        UangKas.config = cachedCfg ? UangKas.normalConfig(cachedCfg) : UangKas.defaultConfig();
-        UangKas.setoran = Array.isArray(cachedSet) ? cachedSet : [];
-        UangKas.terapkanAkses();
-        UangKas.render();
-      }
-      if (typeof navigator !== "undefined" && navigator.onLine === false && adaCacheKas) {
-        if (UangKas.detailNama && document.getElementById("ukDetailModal")?.classList.contains("open")) {
-          UangKas.renderDetailModal();
-        }
-        return;
-      }
-      const [cfg, setoran] = await Promise.all([
-        UangKas.fetchConfigLive(),
-        UangKas.fetchSetoranLive(),
-      ]);
       UangKas.config = cfg;
       UangKas.setoran = setoran;
       Cache.set(UangKas.angKey("cfg"), cfg);

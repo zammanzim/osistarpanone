@@ -3,7 +3,7 @@
 // App shell precache + runtime cache. Aman untuk Supabase (API tidak di-cache).
 // =========================================================================
 
-const VERSI = "tarpan-v230";
+const VERSI = "tarpan-v231";
 const STATIS = VERSI + "-statis";
 const RUNTIME = VERSI + "-runtime";
 // Cache lintas-origin (Font Awesome, Google Fonts, foto R2) tidak ikut
@@ -388,6 +388,8 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
 
   // 1) Navigasi halaman (termasuk clean URL Cloudflare Pages & hash-route SPA).
+  // Stale-while-revalidate: sajikan HTML precache/runtime INSTAN (0ms) supaya
+  // pindah halaman tidak ketahan jaringan, sambil segarkan di background.
   if (req.mode === "navigate") {
     e.respondWith(
       (async () => {
@@ -397,19 +399,33 @@ self.addEventListener("fetch", (e) => {
         if (url.origin === self.location.origin && url.pathname === scopePath + "osis") {
           return Response.redirect(new URL("./osis/" + url.search + url.hash, self.location.href).href, 302);
         }
-        try {
-          if (self.navigator && self.navigator.onLine === false) {
-            throw new Error("offline");
+        const hitAwal = await cariNavigasiCache(req, url);
+        const sedangOnline = !(self.navigator && self.navigator.onLine === false);
+        if (hitAwal) {
+          if (sedangOnline) {
+            e.waitUntil(
+              fetchNavigasi(req, 4500)
+                .then(async (res) => {
+                  if (res && res.ok) {
+                    const cache = await caches.open(RUNTIME);
+                    await cache.put(req, await bersihRedirect(res.clone()));
+                  }
+                })
+                .catch(() => {}),
+            );
           }
+          return hitAwal;
+        }
+        try {
+          if (!sedangOnline) throw new Error("offline");
           const res = await fetchNavigasi(req, 4500);
           if (res && res.ok) {
             const cache = await caches.open(RUNTIME);
-            cache.put(req, await bersihRedirect(res.clone()));
+            await cache.put(req, await bersihRedirect(res.clone()));
+            return bersihRedirect(res);
           }
           return res;
         } catch {
-          const hit = await cariNavigasiCache(req, url);
-          if (hit) return hit;
           const off = await caches.match("./offline.html");
           if (off) return bersihRedirect(off);
           return new Response(
@@ -433,19 +449,33 @@ self.addEventListener("fetch", (e) => {
 
   // 4) Lintas origin: CDN (fonts, cdnjs, jsdelivr) + media R2
   // (custom domain, mis. media.osistarpanone.my.id) + sisa foto Supabase
-  // lama selama masa transisi - SWR + fallback cache lintas versi.
+  // lama selama masa transisi - SWR instan + fallback cache lintas versi.
   e.respondWith(
     (async () => {
       const cache = await caches.open(LINTAS);
       const cached = await cache.match(req);
+      const sedangOnline = !(self.navigator && self.navigator.onLine === false);
+      if (cached) {
+        if (sedangOnline && req.destination !== "font" && req.destination !== "image") {
+          e.waitUntil(
+            fetch(req)
+              .then((res) => {
+                if (res && res.status !== 206 && (res.ok || res.type === "opaque")) {
+                  return cache.put(req, res.clone());
+                }
+              })
+              .catch(() => {}),
+          );
+        }
+        return cached;
+      }
       try {
-        if (self.navigator && self.navigator.onLine === false && cached) return cached;
+        if (!sedangOnline) throw new Error("offline");
         const res = await fetch(req);
         if (res && res.status !== 206 && (res.ok || res.type === "opaque"))
           cache.put(req, res.clone());
         return res;
       } catch {
-        if (cached) return cached;
         // Gambar gagal total saat offline - kembalikan placeholder SVG ringan.
         if (req.destination === "image") {
           return new Response(

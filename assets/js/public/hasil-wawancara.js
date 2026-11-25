@@ -65,18 +65,28 @@ const HasilWawancara = {
     },
 
     async initOsis() {
-        try {
-            if (typeof OsisAuth !== "undefined" && OsisAuth.syncAuth) await OsisAuth.syncAuth();
-        } catch {}
         const u = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
         if (!u || u.mode !== "osis") {
-            location.replace("../login");
-            return;
+            try {
+                if (typeof OsisAuth !== "undefined" && OsisAuth.syncAuth) await OsisAuth.syncAuth();
+            } catch {}
+            const u2 = (typeof OsisAuth !== "undefined" && OsisAuth.getUser) ? OsisAuth.getUser() : null;
+            if (!u2 || u2.mode !== "osis") {
+                location.replace("../login");
+                return;
+            }
         }
-        try {
-            if (typeof OsisAuth.refreshAkses === "function") await OsisAuth.refreshAkses();
-        } catch {}
         this.bolehEdit = !!(typeof OsisAuth !== "undefined" && OsisAuth.bisa && OsisAuth.bisa("wawancara"));
+        // Sinkronisasi auth & hak akses jalan di background tanpa menahan render cache
+        if (typeof OsisAuth !== "undefined" && OsisAuth.refreshAkses) {
+            OsisAuth.refreshAkses().then(() => {
+                const bolehBaru = !!(OsisAuth.bisa && OsisAuth.bisa("wawancara"));
+                if (bolehBaru !== this.bolehEdit) {
+                    this.bolehEdit = bolehBaru;
+                    if (this.calon && this.calon.length) this.render();
+                }
+            }).catch(() => {});
+        }
         await this.muatData();
     },
 
@@ -85,41 +95,65 @@ const HasilWawancara = {
         await this.muatData();
     },
 
+    terapkanPendukung(periode, pengurus, sc) {
+        const aktif = (periode || []).filter(p => p.aktif).map(p => String(p.tahun));
+        this.pengurusSemua = pengurus || [];
+        this.pengurusList = (pengurus || []).filter(p => aktif.includes(String(p.tahun)));
+        this.tpl = {
+            lanjut: this.ambilTpl(sc, "hasil_wawancara_tpl_lanjut", this.TPL_LANJUT),
+            gagal: this.ambilTpl(sc, "hasil_wawancara_tpl_gagal", this.TPL_GAGAL),
+        };
+    },
+
     async muatData() {
         if (this._memuat) return;
         this._memuat = true;
-        this.setLoading();
+
+        // 1) Render INSTAN dari cache lokal tanpa spinner kalau sudah ada stok
+        let adaCache = false;
         try {
-            if (this.mode === "publik") {
-                this.calon = await getWawancaraHasilPublik();
+            const cCalon = this.mode === "publik"
+                ? Cache.get("wawancara_hasil_publik")
+                : Cache.get("wawancara_calon");
+            if (Array.isArray(cCalon) && cCalon.length) {
+                this.calon = cCalon;
                 this.sesiMap = {};
-            } else {
-                const [calon, sesi] = await Promise.all([getWawancaraCalon(), getWawancaraSesi()]);
-                this.calon = calon || [];
-                this.sesiMap = {};
-                (sesi || []).forEach(s => { this.sesiMap[String(s.calon_id)] = s; });
+                if (this.mode !== "publik") {
+                    (Cache.get("wawancara_sesi") || []).forEach(s => { this.sesiMap[String(s.calon_id)] = s; });
+                }
+                this.terapkanPendukung(
+                    Cache.get("periode") || [],
+                    Cache.get("pengurus") || [],
+                    Cache.get("site_content") || [],
+                );
+                this.render();
+                adaCache = true;
             }
-            // Kontak kakak asuh dari roster pengurus tahun aktif (nama -> wa).
-            try {
-                const [periode, pengurus] = await Promise.all([getPeriode(), getPengurus()]);
-                const aktif = (periode || []).filter(p => p.aktif).map(p => String(p.tahun));
-                this.pengurusSemua = pengurus || [];
-                this.pengurusList = (pengurus || []).filter(p => aktif.includes(String(p.tahun)));
-            } catch { this.pengurusList = []; this.pengurusSemua = []; }
-            // Template pesan hasil (fallback ke teks pembina kalau DB kosong).
-            try {
-                const sc = await getSiteContent();
-                this.tpl = {
-                    lanjut: this.ambilTpl(sc, "hasil_wawancara_tpl_lanjut", this.TPL_LANJUT),
-                    gagal: this.ambilTpl(sc, "hasil_wawancara_tpl_gagal", this.TPL_GAGAL),
-                };
-            } catch {
-                this.tpl = { lanjut: this.TPL_LANJUT, gagal: this.TPL_GAGAL };
-            }
+        } catch {}
+
+        if (!adaCache) this.setLoading();
+        if (adaCache && typeof navigator !== "undefined" && navigator.onLine === false) {
+            this._memuat = false;
+            return;
+        }
+
+        // 2) Ambil semua sumber data sekaligus dalam 1 Promise.all paralel
+        try {
+            const [calon, sesi, periode, pengurus, sc] = await Promise.all([
+                this.mode === "publik" ? getWawancaraHasilPublik() : getWawancaraCalon(),
+                this.mode === "publik" ? Promise.resolve([]) : getWawancaraSesi(),
+                getPeriode().catch(() => Cache.get("periode") || []),
+                getPengurus().catch(() => Cache.get("pengurus") || []),
+                getSiteContent().catch(() => Cache.get("site_content") || []),
+            ]);
+            this.calon = calon || [];
+            this.sesiMap = {};
+            (sesi || []).forEach(s => { this.sesiMap[String(s.calon_id)] = s; });
+            this.terapkanPendukung(periode, pengurus, sc);
             this.render();
         } catch (err) {
             console.error(err);
-            this.renderError(err);
+            if (!adaCache) this.renderError(err);
         } finally {
             this._memuat = false;
         }
