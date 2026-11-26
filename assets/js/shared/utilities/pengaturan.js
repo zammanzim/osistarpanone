@@ -212,6 +212,130 @@ const PengaturanApp = {
     return JSON.parse(JSON.stringify(v));
   },
 
+  lsGet(k) {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+
+  lsSet(k, v) {
+    try {
+      localStorage.setItem(k, v);
+    } catch {}
+  },
+
+  lsDel(k) {
+    try {
+      localStorage.removeItem(k);
+    } catch {}
+  },
+
+  fotoUrl(p) {
+    if (!p) return "";
+    return typeof getFoto === "function" ? getFoto(p) : String(p);
+  },
+
+  bersihBnav(raw) {
+    const src = raw && typeof raw === "object" ? raw : this.BOTTOMNAV_DEFAULT;
+    const normItem = (x, wajibRoute) => {
+      if (!x || typeof x !== "object") return null;
+      const route = String(x.route || "").trim().toLowerCase();
+      const href = String(x.href || "").trim();
+      const label = String(x.label || "").trim().slice(0, 20);
+      const icon = String(x.icon || "fa-solid fa-link").trim().slice(0, 80) || "fa-solid fa-link";
+      if (!label) return null;
+      if (route && !href) {
+        return {
+          route,
+          label,
+          icon,
+          ...(wajibRoute ? {} : { sub: String(x.sub || "").slice(0, 40), short: String(x.short || "").slice(0, 12) }),
+        };
+      }
+      if (!wajibRoute && href && !route) {
+        return {
+          href: href.slice(0, 200),
+          label,
+          icon,
+          sub: String(x.sub || "").slice(0, 40),
+          short: String(x.short || "").slice(0, 12),
+        };
+      }
+      return null;
+    };
+    const tabs = (Array.isArray(src.tabs) ? src.tabs : []).map((t) => normItem(t, true)).filter(Boolean).slice(0, 4);
+    const sheet = (Array.isArray(src.sheet) ? src.sheet : []).map((s) => normItem(s, false)).filter(Boolean).slice(0, 12);
+    if (!tabs.length) return this.klon(this.BOTTOMNAV_DEFAULT);
+    return { tabs, sheet };
+  },
+
+  pastikanBnavDraft() {
+    if (!this.state.bnavDraft || !Array.isArray(this.state.bnavDraft.tabs) || !Array.isArray(this.state.bnavDraft.sheet)) {
+      this.state.bnavDraft = this.bersihBnav(this.data.bottomnav || this.BOTTOMNAV_DEFAULT);
+    }
+    return this.state.bnavDraft;
+  },
+
+  pastikanSideDraft() {
+    if (!Array.isArray(this.state.sideDraft) || !this.state.sideDraft.length) {
+      this.state.sideDraft = this.klon(
+        Array.isArray(this.data.sidebar) && this.data.sidebar.length ? this.data.sidebar : this.SIDEBAR_DEFAULT,
+      );
+    }
+    return this.state.sideDraft;
+  },
+
+  hangatkanDariCache() {
+    try {
+      if (typeof Cache === "undefined" || !Cache.get) return;
+      const sc = Cache.get("site_content");
+      if (Array.isArray(sc)) {
+        const map = {};
+        sc.forEach((r) => { if (r && r.kunci) map[r.kunci] = r.nilai; });
+        this.data.siteMap = map;
+        if (map.polling_status) this.data.pollingStatus = String(map.polling_status).trim().toUpperCase();
+        if (map.polling_judul) this.data.pollingJudul = String(map.polling_judul);
+      }
+      const pg = Cache.get("pengaturan");
+      if (pg && typeof pg === "object") this.data.pengaturan = { ...pg };
+      const wf = Cache.get("web_foto");
+      if (Array.isArray(wf)) {
+        const wmap = { logo1: "web/logo1.png", bg: "web/bg.png", pembina: "web/pembina.jpg" };
+        wf.forEach((r) => { if (r && r.kunci && r.path) wmap[r.kunci] = r.path; });
+        this.data.webFoto = wmap;
+      }
+      const bn = Cache.get("bottomnav");
+      if (bn) {
+        this.data.bottomnav = this.bersihBnav(bn);
+        this.state.bnavDraft = this.klon(this.data.bottomnav);
+      }
+      const sb = Cache.get("sidebar_sidebar_menu");
+      if (Array.isArray(sb) && sb.length) {
+        this.data.sidebar = this.normalisasiSidebar(sb);
+        this.state.sideDraft = this.klon(this.data.sidebar);
+      }
+      const ang = Cache.get("angkatan_list") || (typeof OsisAuth !== "undefined" && OsisAuth.getAngkatanList ? OsisAuth.getAngkatanList() : []);
+      if (Array.isArray(ang) && ang.length) this.data.angkatanList = ang;
+      const per = Cache.get("periode");
+      if (Array.isArray(per)) {
+        this.data.periodeList = per;
+        this.state.absPeriodeAktif = per.filter((p) => p.aktif).map((p) => Number(p.tahun));
+      }
+      const acfg = Cache.get("absensi_config");
+      if (acfg) {
+        this.data.absensiCfg = acfg;
+        this.state.absTahunAktif = Array.isArray(acfg.tahun_aktif) ? acfg.tahun_aktif.map(Number).filter(Number.isFinite) : [];
+        this.state.absTahunDefault = acfg.tahun_default != null ? Number(acfg.tahun_default) : null;
+      }
+      const sa = Cache.get("saldo_awal");
+      if (Array.isArray(sa)) this.data.saldoAwalList = sa;
+    } catch {}
+    this.pastikanBnavDraft();
+    this.pastikanSideDraft();
+  },
+
   user() {
     try {
       return typeof OsisAuth !== "undefined" && OsisAuth.getUser ? OsisAuth.getUser() : null;
@@ -362,6 +486,13 @@ const PengaturanApp = {
     // Baca hash awal kalau ada (cth: pengaturan#media)
     const hashCat = location.hash.replace(/^#\/?/, "").trim().toLowerCase();
     if (hashCat) this.activeCat = hashCat;
+
+    // Hangatkan state dari SWR cache lokal dulu biar tidak pernah null & tanpa kedip
+    this.hangatkanDariCache();
+    const catsAwal = this.kategoriTersedia();
+    if (!catsAwal.some((c) => c.id === this.activeCat)) {
+      this.activeCat = "akun";
+    }
 
     // Render instan dari state lokal dulu
     this.renderNav();
@@ -531,11 +662,11 @@ const PengaturanApp = {
           .catch(() => {}),
         getBottomnav()
           .then((m) => {
-            this.data.bottomnav = m || this.klon(this.BOTTOMNAV_DEFAULT);
+            this.data.bottomnav = this.bersihBnav(m || this.BOTTOMNAV_DEFAULT);
             this.state.bnavDraft = this.klon(this.data.bottomnav);
           })
           .catch(() => {
-            this.state.bnavDraft = this.klon(this.BOTTOMNAV_DEFAULT);
+            this.pastikanBnavDraft();
           }),
         getSidebarMenu("sidebar_menu")
           .then((arr) => {
@@ -543,7 +674,7 @@ const PengaturanApp = {
             this.state.sideDraft = this.klon(this.data.sidebar);
           })
           .catch(() => {
-            this.state.sideDraft = this.klon(this.SIDEBAR_DEFAULT);
+            this.pastikanSideDraft();
           }),
       );
     }
@@ -882,7 +1013,7 @@ const PengaturanApp = {
     if (u && u.mode === "osis") {
       const nama = u.nama || u.username || "Pengurus OSIS";
       const inisial = String(nama).trim().charAt(0).toUpperCase() || "O";
-      const foto = u.foto ? `<img src="${this.esc(getFoto(u.foto))}" alt="Foto Profil" />` : this.esc(inisial);
+      const foto = u.foto ? `<img src="${this.esc(this.fotoUrl(u.foto))}" alt="Foto Profil" />` : this.esc(inisial);
       const daftarHak = this.isSuper()
         ? `<span class="stg-mini-tag super"><i class="fa-solid fa-crown"></i> Super Admin (Akses Penuh)</span>`
         : ((akses && Array.isArray(akses.halaman) && akses.halaman.length)
@@ -1404,7 +1535,7 @@ const PengaturanApp = {
             .map(
               (f) =>
                 `<div class="stg-photo-card">` +
-                  `<div class="stg-photo-prev${f.cover ? " cover" : ""}"><img src="${this.esc(getFoto(f.path))}" alt="${this.esc(f.title)}" /></div>` +
+                  `<div class="stg-photo-prev${f.cover ? " cover" : ""}"><img src="${this.esc(this.fotoUrl(f.path))}" alt="${this.esc(f.title)}" /></div>` +
                   `<div class="stg-photo-meta"><b>${this.esc(f.title)}</b><small>${this.esc(f.path)}</small></div>` +
                   `<button type="button" class="btn btn-white btn-sm" data-pick-foto="${this.esc(f.key)}"><i class="fa-solid fa-camera"></i> Ganti Foto</button>` +
                 `</div>`,
@@ -1644,7 +1775,7 @@ const PengaturanApp = {
 
   // 10) NAVIGASI BAWAH PUBLIK (BOTTOMNAV)
   htmlNavPublik() {
-    const d = this.state.bnavDraft || this.klon(this.BOTTOMNAV_DEFAULT);
+    const d = this.pastikanBnavDraft();
     return (
       `<article class="stg-card" data-kw="navigasi bawah publik bottomnav tab menu lainnya sheet">` +
         `<div class="stg-card-head">` +
@@ -1674,7 +1805,8 @@ const PengaturanApp = {
   },
 
   htmlBnavRow(it, sek, i) {
-    const list = sek === "tabs" ? this.state.bnavDraft.tabs : this.state.bnavDraft.sheet;
+    const d = this.pastikanBnavDraft();
+    const list = sek === "tabs" ? d.tabs : d.sheet;
     const key = sek + ":" + i;
     const isEdit = this.state.bnavEditKey === key;
     const sub = it.route ? `#/${it.route}` : it.href || "";
@@ -1682,7 +1814,7 @@ const PengaturanApp = {
     let editor = "";
     if (isEdit) {
       const dipakai = []
-        .concat(this.state.bnavDraft.tabs || [], this.state.bnavDraft.sheet || [])
+        .concat(d.tabs || [], d.sheet || [])
         .map((x) => x.route)
         .filter((r) => r && r !== it.route);
       const routeOpts = this.PUBLIC_ROUTES.filter(([r]) => !dipakai.includes(r))
@@ -1792,7 +1924,7 @@ const PengaturanApp = {
 
   // 12) MENU SIDEBAR OSIS
   htmlNavOsis() {
-    const list = this.state.sideDraft || this.klon(this.SIDEBAR_DEFAULT);
+    const list = this.pastikanSideDraft();
     return (
       `<article class="stg-card" data-kw="sidebar menu osis drawer kiri grup populer sekretaris bendahara super admin">` +
         `<div class="stg-card-head">` +
@@ -2358,7 +2490,7 @@ const PengaturanApp = {
         const mode = btn.dataset.stgTheme === "dark" ? "dark" : "light";
         if (typeof TarpanTheme !== "undefined" && TarpanTheme.set) TarpanTheme.set(mode);
         else {
-          localStorage.setItem("tarpan_theme", mode);
+          this.lsSet("tarpan_theme", mode);
           if (mode === "dark") document.documentElement.setAttribute("data-theme", "dark");
           else document.documentElement.removeAttribute("data-theme");
         }
@@ -2370,7 +2502,7 @@ const PengaturanApp = {
     main.querySelectorAll("#stgSegAgendaView button").forEach((btn) => {
       btn.addEventListener("click", () => {
         const v = btn.dataset.val === "list" ? "list" : "grid";
-        localStorage.setItem("agenda_view_mode", v);
+        this.lsSet("agenda_view_mode", v);
         main.querySelectorAll("#stgSegAgendaView button").forEach((b) => b.classList.toggle("on", b.dataset.val === v));
         this.toast("Tampilan default Agenda disimpan.");
       });
@@ -2378,7 +2510,7 @@ const PengaturanApp = {
     main.querySelectorAll("#stgSegDokView button").forEach((btn) => {
       btn.addEventListener("click", () => {
         const v = btn.dataset.val === "list" ? "list" : "grid";
-        localStorage.setItem("osis_dokumen_view", v);
+        this.lsSet("osis_dokumen_view", v);
         main.querySelectorAll("#stgSegDokView button").forEach((b) => b.classList.toggle("on", b.dataset.val === v));
         this.toast("Tampilan default Dokumen disimpan.");
       });
@@ -2386,34 +2518,32 @@ const PengaturanApp = {
 
     // Reset Hints
     document.getElementById("stgBtnResetHints")?.addEventListener("click", () => {
-      ["fotoSwipeHintOff", "angkatanSwipeHintOff", "navMoreOpened"].forEach((k) => {
-        try { localStorage.removeItem(k); } catch {}
-      });
+      ["fotoSwipeHintOff", "angkatanSwipeHintOff", "navMoreOpened"].forEach((k) => this.lsDel(k));
       this.toast("Semua petunjuk geser & pemandu akan tampil kembali.");
     });
 
     // Media & Kompresi
     document.getElementById("stgFeedAuto")?.addEventListener("change", (e) => {
-      localStorage.setItem("feed_autoplay", e.target.checked ? "1" : "0");
+      this.lsSet("feed_autoplay", e.target.checked ? "1" : "0");
       this.toast(e.target.checked ? "Putar video otomatis aktif." : "Mode hemat kuota aktif (autoplay mati).");
     });
     document.getElementById("stgFeedSuara")?.addEventListener("change", (e) => {
-      localStorage.setItem("feed_suara", e.target.checked ? "1" : "0");
+      this.lsSet("feed_suara", e.target.checked ? "1" : "0");
       this.toast(e.target.checked ? "Video Feed akan dimulai dengan suara." : "Video Feed dimulai dalam mode bisu.");
     });
     document.getElementById("stgCompEngine")?.addEventListener("change", (e) => {
       if (typeof TarpanCompress !== "undefined") TarpanCompress.setPref(e.target.value);
-      else localStorage.setItem("tarpan-video-compress", e.target.value);
+      else this.lsSet("tarpan-video-compress", e.target.value);
       this.toast("Mesin kompresi video disimpan.");
     });
     document.getElementById("stgCompRes")?.addEventListener("change", (e) => {
       if (typeof TarpanCompress !== "undefined") TarpanCompress.setMaxDim(e.target.value);
-      else localStorage.setItem("tarpan-video-res", e.target.value);
+      else this.lsSet("tarpan-video-res", e.target.value);
       this.toast("Batas resolusi video disimpan.");
     });
     document.getElementById("stgCompTarget")?.addEventListener("change", (e) => {
       if (typeof TarpanCompress !== "undefined") TarpanCompress.setTargetMB(e.target.value);
-      else localStorage.setItem("tarpan-video-target", e.target.value);
+      else this.lsSet("tarpan-video-target", e.target.value);
       this.toast("Target ukuran video disimpan.");
     });
 
@@ -2517,7 +2647,8 @@ const PengaturanApp = {
       if (!val) { this.toast("Judul polling wajib diisi.", "error"); return; }
       const u = this.user();
       if (!u) return;
-      ev.currentTarget.disabled = true;
+      const btn = ev.currentTarget;
+      btn.disabled = true;
       try {
         await saveSiteText(u.id, "polling_judul", val);
         this.data.pollingJudul = val;
@@ -2526,7 +2657,7 @@ const PengaturanApp = {
       } catch (err) {
         this.toast("Gagal simpan judul: " + err.message, "error");
       } finally {
-        ev.currentTarget.disabled = false;
+        btn.disabled = false;
       }
     });
 
@@ -2650,6 +2781,7 @@ const PengaturanApp = {
   // ---------- EDITOR BOTTOMNAV ----------
   ikatNavPublik(main) {
     if (!this.bisa("site")) return;
+    const d = this.pastikanBnavDraft();
     const rerender = () => {
       this.renderMain();
       this.isiAsyncNotifDanSimpan();
@@ -2659,7 +2791,7 @@ const PengaturanApp = {
       btn.addEventListener("click", () => {
         const [sek, idxStr, dirStr] = btn.dataset.bnavMove.split(":");
         const i = Number(idxStr), j = i + Number(dirStr);
-        const list = sek === "tabs" ? this.state.bnavDraft.tabs : this.state.bnavDraft.sheet;
+        const list = sek === "tabs" ? d.tabs : d.sheet;
         if (i < 0 || j < 0 || j >= list.length) return;
         const tmp = list[i]; list[i] = list[j]; list[j] = tmp;
         this.state.bnavEditKey = null;
@@ -2671,8 +2803,8 @@ const PengaturanApp = {
       btn.addEventListener("click", () => {
         const [sek, idxStr] = btn.dataset.bnavSwap.split(":");
         const i = Number(idxStr);
-        const dari = sek === "tabs" ? this.state.bnavDraft.tabs : this.state.bnavDraft.sheet;
-        const ke = sek === "tabs" ? this.state.bnavDraft.sheet : this.state.bnavDraft.tabs;
+        const dari = sek === "tabs" ? d.tabs : d.sheet;
+        const ke = sek === "tabs" ? d.sheet : d.tabs;
         const it = dari[i];
         if (!it) return;
         if (sek === "sheet") {
@@ -2706,7 +2838,7 @@ const PengaturanApp = {
     main.querySelectorAll("[data-bnav-apply]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const [sek, idxStr] = btn.dataset.bnavApply.split(":");
-        const list = sek === "tabs" ? this.state.bnavDraft.tabs : this.state.bnavDraft.sheet;
+        const list = sek === "tabs" ? d.tabs : d.sheet;
         const it = list[Number(idxStr)];
         if (!it) return;
         const lbl = document.getElementById("stgBnLabel")?.value.trim() || "";
@@ -2716,14 +2848,19 @@ const PengaturanApp = {
           const href = document.getElementById("stgBnHref")?.value.trim() || "";
           if (!/^(https?:\/\/|mailto:)/i.test(href)) { this.toast("Link wajib http(s):// atau mailto:.", "error"); return; }
           it.href = href;
+          delete it.route;
         } else {
           it.route = document.getElementById("stgBnRoute")?.value || it.route;
+          delete it.href;
         }
         it.label = lbl.slice(0, 20);
         it.icon = ico.slice(0, 80);
         if (sek === "sheet") {
           it.short = (document.getElementById("stgBnShort")?.value.trim() || "").slice(0, 12);
           it.sub = (document.getElementById("stgBnSub")?.value.trim() || "").slice(0, 40);
+        } else {
+          delete it.short;
+          delete it.sub;
         }
         this.state.bnavEditKey = null;
         rerender();
@@ -2733,7 +2870,7 @@ const PengaturanApp = {
     main.querySelectorAll("[data-bnav-del]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const [sek, idxStr] = btn.dataset.bnavDel.split(":");
-        const list = sek === "tabs" ? this.state.bnavDraft.tabs : this.state.bnavDraft.sheet;
+        const list = sek === "tabs" ? d.tabs : d.sheet;
         if (sek === "tabs" && list.length <= 1) { this.toast("Tab bawah minimal 1.", "error"); return; }
         if (!(await this.tanya("Hapus item ini dari draf navigasi?"))) return;
         list.splice(Number(idxStr), 1);
@@ -2743,35 +2880,36 @@ const PengaturanApp = {
     });
 
     document.getElementById("stgBnavAddTab")?.addEventListener("click", () => {
-      if (this.state.bnavDraft.tabs.length >= 4) { this.toast("Tab bawah penuh (maks 4).", "error"); return; }
-      const dipakai = [].concat(this.state.bnavDraft.tabs, this.state.bnavDraft.sheet).map((x) => x.route);
+      if (d.tabs.length >= 4) { this.toast("Tab bawah penuh (maks 4).", "error"); return; }
+      const dipakai = [].concat(d.tabs, d.sheet).map((x) => x.route);
       const sisa = this.PUBLIC_ROUTES.find(([r]) => !dipakai.includes(r));
       if (!sisa) { this.toast("Semua rute internal sudah terpasang.", "error"); return; }
-      this.state.bnavDraft.tabs.push({ route: sisa[0], label: sisa[1], icon: "fa-solid fa-link" });
-      this.state.bnavEditKey = "tabs:" + (this.state.bnavDraft.tabs.length - 1);
+      d.tabs.push({ route: sisa[0], label: sisa[1], icon: "fa-solid fa-link" });
+      this.state.bnavEditKey = "tabs:" + (d.tabs.length - 1);
       rerender();
     });
 
     document.getElementById("stgBnavAddSheetRoute")?.addEventListener("click", () => {
-      if (this.state.bnavDraft.sheet.length >= 12) { this.toast("Menu Lainnya penuh (maks 12).", "error"); return; }
-      const dipakai = [].concat(this.state.bnavDraft.tabs, this.state.bnavDraft.sheet).map((x) => x.route);
+      if (d.sheet.length >= 12) { this.toast("Menu Lainnya penuh (maks 12).", "error"); return; }
+      const dipakai = [].concat(d.tabs, d.sheet).map((x) => x.route);
       const sisa = this.PUBLIC_ROUTES.find(([r]) => !dipakai.includes(r));
       if (!sisa) { this.toast("Semua rute internal sudah terpasang.", "error"); return; }
-      this.state.bnavDraft.sheet.push({ route: sisa[0], label: sisa[1], sub: "", icon: "fa-solid fa-link", short: sisa[1].slice(0, 12) });
-      this.state.bnavEditKey = "sheet:" + (this.state.bnavDraft.sheet.length - 1);
+      d.sheet.push({ route: sisa[0], label: sisa[1], sub: "", icon: "fa-solid fa-link", short: sisa[1].slice(0, 12) });
+      this.state.bnavEditKey = "sheet:" + (d.sheet.length - 1);
       rerender();
     });
 
     document.getElementById("stgBnavAddSheetHref")?.addEventListener("click", () => {
-      if (this.state.bnavDraft.sheet.length >= 12) { this.toast("Menu Lainnya penuh (maks 12).", "error"); return; }
-      this.state.bnavDraft.sheet.push({ href: "https://osistarpanone.my.id/polling", label: "Polling OSIS", sub: "E-Voting", icon: "fa-solid fa-check-to-slot", short: "Polling" });
-      this.state.bnavEditKey = "sheet:" + (this.state.bnavDraft.sheet.length - 1);
+      if (d.sheet.length >= 12) { this.toast("Menu Lainnya penuh (maks 12).", "error"); return; }
+      d.sheet.push({ href: "https://osistarpanone.my.id/polling", label: "Polling OSIS", sub: "E-Voting", icon: "fa-solid fa-check-to-slot", short: "Polling" });
+      this.state.bnavEditKey = "sheet:" + (d.sheet.length - 1);
       rerender();
     });
 
     document.getElementById("stgBnavReset")?.addEventListener("click", async () => {
       if (!(await this.tanya("Kembalikan navigasi publik ke susunan bawaan untuk semua pengunjung?"))) return;
       const u = this.user();
+      if (!u) return;
       const def = this.klon(this.BOTTOMNAV_DEFAULT);
       try {
         await simpanBottomnav(u.id, def);
@@ -2787,11 +2925,14 @@ const PengaturanApp = {
 
     document.getElementById("stgBnavSave")?.addEventListener("click", async (ev) => {
       const u = this.user();
+      if (!u) return;
+      const bersih = this.bersihBnav(d);
       const btn = ev.currentTarget;
       btn.disabled = true;
       try {
-        await simpanBottomnav(u.id, this.state.bnavDraft);
-        this.data.bottomnav = this.klon(this.state.bnavDraft);
+        await simpanBottomnav(u.id, bersih);
+        this.data.bottomnav = this.klon(bersih);
+        this.state.bnavDraft = this.klon(bersih);
         this.toast("Susunan navigasi publik berhasil disimpan!");
       } catch (err) {
         this.toast("Gagal simpan navigasi: " + err.message, "error");
@@ -2892,6 +3033,7 @@ const PengaturanApp = {
   // ---------- EDITOR SIDEBAR OSIS ----------
   ikatSidebarOsis(main) {
     if (!this.bisa("site")) return;
+    const sList = this.pastikanSideDraft();
     const rerender = () => {
       this.renderMain();
       this.isiAsyncNotifDanSimpan();
@@ -2900,8 +3042,8 @@ const PengaturanApp = {
     main.querySelectorAll("[data-side-pop]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const idx = Number(btn.dataset.sidePop);
-        if (this.state.sideDraft[idx]) {
-          this.state.sideDraft[idx].populer = !this.state.sideDraft[idx].populer;
+        if (sList[idx]) {
+          sList[idx].populer = !sList[idx].populer;
           rerender();
         }
       });
@@ -2911,9 +3053,8 @@ const PengaturanApp = {
       btn.addEventListener("click", () => {
         const [idxStr, dirStr] = btn.dataset.sideMove.split(":");
         const i = Number(idxStr), j = i + Number(dirStr);
-        const list = this.state.sideDraft;
-        if (i < 0 || j < 0 || j >= list.length) return;
-        const tmp = list[i]; list[i] = list[j]; list[j] = tmp;
+        if (i < 0 || j < 0 || j >= sList.length) return;
+        const tmp = sList[i]; sList[i] = sList[j]; sList[j] = tmp;
         this.state.sideEditIdx = -1;
         rerender();
       });
@@ -2936,7 +3077,7 @@ const PengaturanApp = {
     main.querySelectorAll("[data-side-apply]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const idx = Number(btn.dataset.sideApply);
-        const it = this.state.sideDraft[idx];
+        const it = sList[idx];
         if (!it) return;
         const href = document.getElementById("stgSdHref")?.value.trim() || "";
         const label = document.getElementById("stgSdLabel")?.value.trim() || "";
@@ -2954,17 +3095,17 @@ const PengaturanApp = {
 
     main.querySelectorAll("[data-side-del]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (this.state.sideDraft.length <= 1) { this.toast("Menu sidebar minimal 1 item.", "error"); return; }
+        if (sList.length <= 1) { this.toast("Menu sidebar minimal 1 item.", "error"); return; }
         if (!(await this.tanya("Hapus menu ini dari draf sidebar?"))) return;
-        this.state.sideDraft.splice(Number(btn.dataset.sideDel), 1);
+        sList.splice(Number(btn.dataset.sideDel), 1);
         this.state.sideEditIdx = -1;
         rerender();
       });
     });
 
     document.getElementById("stgSideAdd")?.addEventListener("click", () => {
-      if (this.state.sideDraft.length >= 30) { this.toast("Sidebar maksimal 30 item.", "error"); return; }
-      this.state.sideDraft.push({
+      if (sList.length >= 30) { this.toast("Sidebar maksimal 30 item.", "error"); return; }
+      sList.push({
         href: "../pengaturan?from=osis",
         label: "Pengaturan",
         icon: "fa-solid fa-sliders",
@@ -2972,15 +3113,17 @@ const PengaturanApp = {
         populer: false,
         super: false,
       });
-      this.state.sideEditIdx = this.state.sideDraft.length - 1;
+      this.state.sideEditIdx = sList.length - 1;
       rerender();
     });
 
     document.getElementById("stgSideReset")?.addEventListener("click", async () => {
       if (!(await this.tanya("Kembalikan susunan Sidebar OSIS ke menu bawaan untuk seluruh pengurus?"))) return;
+      const u = this.user();
+      if (!u) return;
       const def = this.klon(this.SIDEBAR_DEFAULT);
       try {
-        await simpanSidebarMenu(this.user().id, "sidebar_menu", def);
+        await simpanSidebarMenu(u.id, "sidebar_menu", def);
         this.data.sidebar = def;
         this.state.sideDraft = this.klon(def);
         this.state.sideEditIdx = -1;
@@ -2992,11 +3135,13 @@ const PengaturanApp = {
     });
 
     document.getElementById("stgSideSave")?.addEventListener("click", async (ev) => {
+      const u = this.user();
+      if (!u) return;
       const btn = ev.currentTarget;
       btn.disabled = true;
       try {
-        await simpanSidebarMenu(this.user().id, "sidebar_menu", this.state.sideDraft);
-        this.data.sidebar = this.klon(this.state.sideDraft);
+        await simpanSidebarMenu(u.id, "sidebar_menu", sList);
+        this.data.sidebar = this.klon(sList);
         this.toast("Susunan Sidebar OSIS berhasil disimpan!");
       } catch (err) {
         this.toast("Gagal simpan sidebar: " + err.message, "error");
